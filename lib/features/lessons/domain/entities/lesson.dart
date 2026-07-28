@@ -1,4 +1,5 @@
 import '../../../../core/error/failures.dart';
+import 'audio_trim.dart';
 import 'segment.dart';
 
 /// Урок: аудиофайл, разбитый на куски текста с ручной разметкой границ.
@@ -54,6 +55,8 @@ class Lesson {
 
   /// Путь к аудио: сейчас всегда локальный файл, позже может быть URL.
   final String audioPath;
+
+  /// Длительность файла целиком — обрезка её не меняет.
   final int durationMs;
 
   /// Время создания в UTC.
@@ -62,7 +65,16 @@ class Lesson {
 
   int get segmentCount => segments.length;
 
-  /// Границы кусков: `N + 1` значение, где `b[0] = 0`, `b[N] = durationMs`.
+  /// Отрезок файла, попавший в урок. Куски идут встык и покрывают его целиком,
+  /// поэтому обрезка — это и есть края крайних кусков.
+  AudioTrim get trim => segments.isEmpty
+      ? AudioTrim.full(durationMs)
+      : AudioTrim(
+          startMs: segments.first.startMs,
+          endMs: segments.last.endMs,
+        );
+
+  /// Границы кусков: `N + 1` значение, где `b[0]` и `b[N]` — края [trim].
   List<int> get boundaries {
     if (segments.isEmpty) return const [];
     return [

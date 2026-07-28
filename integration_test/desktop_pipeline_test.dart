@@ -15,6 +15,7 @@ import 'package:shado/features/lessons/data/datasources/lesson_local_datasource_
 import 'package:shado/features/lessons/data/datasources/waveform_datasource_soloud.dart';
 import 'package:shado/features/lessons/data/models/lesson_model.dart';
 import 'package:shado/features/lessons/data/models/segment_model.dart';
+import 'package:shado/features/lessons/domain/entities/audio_trim.dart';
 
 /// Двухсекундная синусоида 440 Гц, 44100 Гц, моно, 16 бит.
 File _writeTestWav(String path) {
@@ -86,6 +87,39 @@ void main() {
     expect(File('$wavPath.peaks').existsSync(), isTrue);
     final cached = await source.loadPeaks(wavPath, resolution: 200);
     expect(cached.maxima, peaks.maxima);
+  });
+
+  test('пики отрезка считаются по нему, а не по файлу целиком', () async {
+    const source = SoLoudWaveformDataSource();
+    // Первая секунда громкая, вторая тихая. Разрешение одно и то же, поэтому у
+    // каждой половины должны быть все 200 отсчётов — иначе обрезанная дорожка
+    // теряет детализацию вместе с длиной.
+    final loud = await source.loadPeaks(
+      wavPath,
+      resolution: 200,
+      range: const AudioTrim(startMs: 0, endMs: 1000),
+    );
+    final quiet = await source.loadPeaks(
+      wavPath,
+      resolution: 200,
+      range: const AudioTrim(startMs: 1000, endMs: 2000),
+    );
+
+    expect(loud.length, 200);
+    expect(quiet.length, 200);
+    // Каждая половина нормализуется по себе, поэтому сравниваем не громкость, а
+    // ровность: перепада 0.9 -> 0.2 внутри половины быть не должно.
+    for (final peaks in [loud, quiet]) {
+      final head = peaks.maxima.take(80).reduce(math.max);
+      final tail = peaks.maxima.skip(120).take(60).reduce(math.max);
+      expect(tail, closeTo(head, head * 0.25));
+    }
+
+    // Отрезок кеш не подменяет: рядом с файлом лежит волна файла целиком.
+    final whole = await source.loadPeaks(wavPath, resolution: 200);
+    final wholeHead = whole.maxima.take(80).reduce(math.max);
+    final wholeTail = whole.maxima.skip(120).take(60).reduce(math.max);
+    expect(wholeHead, greaterThan(wholeTail * 2));
   });
 
   test('кусок играет через ClippingAudioSource и доигрывает до конца', () async {

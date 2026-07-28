@@ -4,14 +4,17 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:shado/core/constants/app_constants.dart';
 import 'package:shado/core/theme/app_theme.dart';
 import 'package:shado/features/lessons/data/models/waveform_peaks.dart';
+import 'package:shado/features/lessons/domain/entities/audio_trim.dart';
 import 'package:shado/features/lessons/presentation/widgets/waveform_editor.dart';
 
 void main() {
   const durationMs = 9000;
   const width = 400.0;
   const height = 160.0;
+  const full = AudioTrim.full(durationMs);
 
   /// Ручка границы — кружок под шкалой времени, ручка ползунка — треугольник у
   /// нижнего края. Тесты берут метки ровно за них.
@@ -19,6 +22,7 @@ void main() {
   const playheadHandleY = height - 7;
 
   /// Середина волны: здесь ручек нет, поэтому перетаскивание двигает волну.
+  /// Там же лежат язычки меток обрезки — но только когда она включена.
   const bodyY = 80.0;
 
   /// Ровная волна: для проверки жестов форма пиков не важна.
@@ -33,6 +37,9 @@ void main() {
     ValueChanged<List<int>>? onBoundariesChanged,
     ValueChanged<int>? onSeek,
     int positionMs = 0,
+    AudioTrim view = full,
+    AudioTrim? trim,
+    ValueChanged<AudioTrim>? onTrimChanged,
   }) {
     return tester.pumpWidget(
       MaterialApp(
@@ -43,13 +50,15 @@ void main() {
             height: height,
             child: WaveformEditor(
               peaks: peaks,
-              durationMs: durationMs,
+              view: view,
               boundaries: boundaries,
               positionMs: positionMs,
               showCursor: onSeek != null,
               height: height,
               onBoundariesChanged: onBoundariesChanged ?? (_) {},
               onSeek: onSeek,
+              trim: trim,
+              onTrimChanged: onTrimChanged,
             ),
           ),
         ),
@@ -311,6 +320,113 @@ void main() {
       );
       await tester.pumpAndSettle();
       expect(seeked, greaterThan(3000));
+    });
+  });
+
+  group('обрезка', () {
+    /// Язычок левой метки стоит справа от неё, правой — слева; оба на середине
+    /// волны, поэтому берут их около [bodyY].
+    const leftHandleX = 7.5;
+    const rightHandleX = width - 7.5;
+
+    testWidgets('левая метка тянется за язычок', (tester) async {
+      AudioTrim? reported;
+      await pumpEditor(
+        tester,
+        boundaries: const [0, 4500, 9000],
+        trim: full,
+        onTrimChanged: (value) => reported = value,
+      );
+
+      await tester.dragFrom(
+        const Offset(leftHandleX, bodyY),
+        const Offset(100, 0),
+      );
+      await tester.pumpAndSettle();
+
+      expect(reported, isNotNull);
+      expect(reported!.endMs, durationMs);
+      // 107.5 / 400 * 9000 ≈ 2419.
+      expect(reported!.startMs, closeTo(2419, 60));
+    });
+
+    testWidgets('правая метка тянется за язычок', (tester) async {
+      AudioTrim? reported;
+      await pumpEditor(
+        tester,
+        boundaries: const [0, 4500, 9000],
+        trim: full,
+        onTrimChanged: (value) => reported = value,
+      );
+
+      await tester.dragFrom(
+        const Offset(rightHandleX, bodyY),
+        const Offset(-100, 0),
+      );
+      await tester.pumpAndSettle();
+
+      expect(reported, isNotNull);
+      expect(reported!.startMs, 0);
+      // 292.5 / 400 * 9000 ≈ 6581.
+      expect(reported!.endMs, closeTo(6581, 60));
+    });
+
+    testWidgets('метки не сходятся ближе kMinTrimMs', (tester) async {
+      AudioTrim? reported;
+      await pumpEditor(
+        tester,
+        boundaries: const [0, 4500, 9000],
+        trim: full,
+        onTrimChanged: (value) => reported = value,
+      );
+
+      // Тянем левую метку через всю волну — она упрётся в правую.
+      await tester.dragFrom(
+        const Offset(leftHandleX, bodyY),
+        const Offset(width, 0),
+      );
+      await tester.pumpAndSettle();
+
+      expect(reported, isNotNull);
+      expect(reported!.startMs, durationMs - kMinTrimMs);
+    });
+
+    testWidgets('пока идёт обрезка, метки границ кусков не двигаются', (
+      tester,
+    ) async {
+      List<int>? reported;
+      await pumpEditor(
+        tester,
+        boundaries: const [0, 3000, 6000, 9000],
+        trim: full,
+        onBoundariesChanged: (value) => reported = value,
+        onTrimChanged: (_) {},
+      );
+
+      // Тот же жест, что двигает метку в обычном режиме.
+      await tester.dragFrom(const Offset(133, handleY), const Offset(100, 0));
+      await tester.pumpAndSettle();
+
+      expect(reported, isNull);
+    });
+
+    testWidgets('обрезанная дорожка занимает окно целиком', (tester) async {
+      int? seeked;
+      await pumpEditor(
+        tester,
+        boundaries: const [1000, 8000],
+        view: const AudioTrim(startMs: 1000, endMs: 8000),
+        onSeek: (value) => seeked = value,
+      );
+
+      // Левый край окна — начало обрезки, правый — её конец.
+      await tester.tapAt(const Offset(0, bodyY));
+      await tester.pumpAndSettle();
+      expect(seeked, closeTo(1000, 40));
+
+      await tester.tapAt(const Offset(width - 1, bodyY));
+      await tester.pumpAndSettle();
+      expect(seeked, closeTo(8000, 40));
     });
   });
 }

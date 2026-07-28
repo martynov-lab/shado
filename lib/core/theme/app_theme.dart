@@ -8,6 +8,8 @@ class WaveformColors extends ThemeExtension<WaveformColors> {
     required this.boundary,
     required this.cursor,
     required this.background,
+    required this.trimHandle,
+    required this.trimmedAway,
   });
 
   final Color wave;
@@ -16,6 +18,12 @@ class WaveformColors extends ThemeExtension<WaveformColors> {
   final Color cursor;
   final Color background;
 
+  /// Метки обрезки со стрелочками.
+  final Color trimHandle;
+
+  /// Затемнение по краям волны — то, что обрезка отрежет.
+  final Color trimmedAway;
+
   @override
   WaveformColors copyWith({
     Color? wave,
@@ -23,6 +31,8 @@ class WaveformColors extends ThemeExtension<WaveformColors> {
     Color? boundary,
     Color? cursor,
     Color? background,
+    Color? trimHandle,
+    Color? trimmedAway,
   }) {
     return WaveformColors(
       wave: wave ?? this.wave,
@@ -30,6 +40,8 @@ class WaveformColors extends ThemeExtension<WaveformColors> {
       boundary: boundary ?? this.boundary,
       cursor: cursor ?? this.cursor,
       background: background ?? this.background,
+      trimHandle: trimHandle ?? this.trimHandle,
+      trimmedAway: trimmedAway ?? this.trimmedAway,
     );
   }
 
@@ -42,6 +54,8 @@ class WaveformColors extends ThemeExtension<WaveformColors> {
       boundary: Color.lerp(boundary, other.boundary, t)!,
       cursor: Color.lerp(cursor, other.cursor, t)!,
       background: Color.lerp(background, other.background, t)!,
+      trimHandle: Color.lerp(trimHandle, other.trimHandle, t)!,
+      trimmedAway: Color.lerp(trimmedAway, other.trimmedAway, t)!,
     );
   }
 }
@@ -73,6 +87,10 @@ class AppTheme {
           boundary: scheme.tertiary,
           cursor: scheme.error,
           background: scheme.surfaceContainerHighest,
+          trimHandle: scheme.secondary,
+          // Затемнение поверх волны: обрезаемые края видно, но они не спорят с
+          // остающейся серединой.
+          trimmedAway: scheme.scrim.withValues(alpha: 0.45),
         ),
       ],
     );

@@ -7,6 +7,7 @@ import 'package:path/path.dart' as p;
 
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/error/failures.dart';
+import '../../domain/entities/audio_trim.dart';
 import '../models/waveform_peaks.dart';
 
 /// Источник пиков волны для отрисовки.
@@ -14,10 +15,17 @@ abstract interface class WaveformDataSource {
   /// [cache] выключают для файла, который ещё не принадлежит приложению
   /// (выбранное, но не импортированное аудио): рядом с чужим файлом мусорить
   /// нельзя, пики считаются на один показ.
+  ///
+  /// [range] — отрезок файла, который пойдёт на волну. Разрешение постоянное,
+  /// поэтому у обрезанной дорожки на её длину приходятся все [resolution]
+  /// отсчётов: иначе от файла в час на 73 секунды урока досталась бы пара сотен
+  /// отсчётов, и паузы между фразами размазались бы в кашу. `null` — файл
+  /// целиком.
   Future<WaveformPeaks> loadPeaks(
     String audioPath, {
     int resolution = kWaveformResolution,
     bool cache = true,
+    AudioTrim? range,
   });
 }
 
@@ -31,9 +39,12 @@ class JustWaveformDataSource implements WaveformDataSource {
     String audioPath, {
     int resolution = kWaveformResolution,
     bool cache = true,
+    AudioTrim? range,
   }) async {
+    // Извлечение идёт по файлу целиком и кешируется целиком: отрезок вырезаем
+    // уже из готовых пикселей, это дёшево.
     final waveform = await _obtainWaveform(audioPath, cache);
-    return _resample(waveform, resolution);
+    return _resample(waveform, resolution, range);
   }
 
   Future<Waveform> _obtainWaveform(String audioPath, bool cache) async {
@@ -78,20 +89,34 @@ class JustWaveformDataSource implements WaveformDataSource {
     }
   }
 
-  /// Прореживает пики до [resolution] столбиков и нормализует их к `-1..1`.
-  WaveformPeaks _resample(Waveform waveform, int resolution) {
+  /// Прореживает пики отрезка [range] до [resolution] столбиков и нормализует
+  /// их к `-1..1`.
+  WaveformPeaks _resample(Waveform waveform, int resolution, AudioTrim? range) {
     final pixels = waveform.length;
     if (pixels <= 0) {
       return const WaveformPeaks(minima: [], maxima: []);
     }
-    final buckets = math.min(resolution, pixels);
+    var start = 0;
+    var end = pixels;
+    if (range != null) {
+      start = waveform
+          .positionToPixel(Duration(milliseconds: range.startMs))
+          .floor()
+          .clamp(0, pixels - 1);
+      end = waveform
+          .positionToPixel(Duration(milliseconds: range.endMs))
+          .ceil()
+          .clamp(start + 1, pixels);
+    }
+    final span = end - start;
+    final buckets = math.min(resolution, span);
     final scale = waveform.flags == 0 ? 32768.0 : 128.0;
     final minima = List<double>.filled(buckets, 0);
     final maxima = List<double>.filled(buckets, 0);
 
     for (var bucket = 0; bucket < buckets; bucket++) {
-      final from = pixels * bucket ~/ buckets;
-      final to = math.max(from + 1, pixels * (bucket + 1) ~/ buckets);
+      final from = start + span * bucket ~/ buckets;
+      final to = math.max(from + 1, start + span * (bucket + 1) ~/ buckets);
       var minValue = 0;
       var maxValue = 0;
       for (var i = from; i < to; i++) {

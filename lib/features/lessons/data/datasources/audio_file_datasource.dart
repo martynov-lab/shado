@@ -85,16 +85,28 @@ class LocalAudioFileDataSource implements AudioFileDataSource {
       if (await audio.exists()) {
         await audio.delete();
       }
-      // `.wave` пишет just_waveform на мобильных, `.peaks` — flutter_soloud
-      // на десктопе; какой из них есть, зависит от платформы.
-      for (final suffix in const ['.wave', '.peaks']) {
-        final cache = File('$audioPath$suffix');
-        if (await cache.exists()) {
-          await cache.delete();
-        }
-      }
+      await _deleteWaveformCaches(audio);
     } catch (error) {
       throw AudioFailure('Не удалось удалить аудиофайл', cause: error);
+    }
+  }
+
+  /// Убирает волны, накопившиеся рядом с аудио.
+  ///
+  /// `.wave` пишет just_waveform на мобильных, `.peaks` — flutter_soloud на
+  /// десктопе, и у последнего таких файлов несколько: волна файла целиком плюс
+  /// по волне на каждый обрезанный отрезок. Поэтому не перечисляем суффиксы, а
+  /// смотрим, что вообще легло рядом под этим именем.
+  Future<void> _deleteWaveformCaches(File audio) async {
+    final directory = audio.parent;
+    if (!await directory.exists()) return;
+    final prefix = '${p.basename(audio.path)}.';
+    await for (final entity in directory.list(followLinks: false)) {
+      if (entity is! File) continue;
+      final name = p.basename(entity.path);
+      if (!name.startsWith(prefix)) continue;
+      if (!name.endsWith('.peaks') && !name.endsWith('.wave')) continue;
+      await entity.delete();
     }
   }
 }

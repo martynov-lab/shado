@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:just_audio/just_audio.dart';
 
 import '../../../../core/constants/app_constants.dart';
+import '../../domain/entities/audio_trim.dart';
 import '../../domain/entities/lesson.dart';
 import '../../domain/entities/segment_boundaries.dart';
 import '../../domain/usecases/create_lesson.dart';
@@ -34,6 +35,8 @@ class EditLessonState {
     required this.title,
     required this.text,
     required this.boundaries,
+    required this.trim,
+    this.pendingTrim,
     this.playheadMs = 0,
     this.isPlaying = false,
     this.isSaving = false,
@@ -44,8 +47,15 @@ class EditLessonState {
   final String text;
   final List<int> boundaries;
 
+  /// Отрезок файла, оставленный обрезкой.
+  final AudioTrim trim;
+
+  /// Отрезок, который метки обрезки показывают прямо сейчас. `null` — обрезка
+  /// не идёт.
+  final AudioTrim? pendingTrim;
+
   /// Откуда играть: ползунок на волне, который перетаскивают вручную и на
-  /// котором аудио останавливается по паузе.
+  /// котором аудио останавливается по паузе. В миллисекундах файла.
   final int playheadMs;
 
   final bool isPlaying;
@@ -53,12 +63,27 @@ class EditLessonState {
 
   int get segmentCount => CreateLesson.splitIntoSegments(text).length;
 
-  bool get canSave => !isSaving && title.trim().isNotEmpty && segmentCount > 0;
+  bool get isTrimming => pendingTrim != null;
+
+  /// Что сейчас в окне волны: во время обрезки — файл целиком, чтобы обрезанное
+  /// можно было вернуть обратно.
+  AudioTrim get view =>
+      isTrimming ? AudioTrim.full(lesson.durationMs) : trim;
+
+  bool get canSave =>
+      !isSaving &&
+      // Незавершённая обрезка — сначала «Применить» или «Отменить».
+      !isTrimming &&
+      title.trim().isNotEmpty &&
+      segmentCount > 0;
 
   EditLessonState copyWith({
     String? title,
     String? text,
     List<int>? boundaries,
+    AudioTrim? trim,
+    AudioTrim? pendingTrim,
+    bool clearPendingTrim = false,
     int? playheadMs,
     bool? isPlaying,
     bool? isSaving,
@@ -68,6 +93,8 @@ class EditLessonState {
       title: title ?? this.title,
       text: text ?? this.text,
       boundaries: boundaries ?? this.boundaries,
+      trim: trim ?? this.trim,
+      pendingTrim: clearPendingTrim ? null : (pendingTrim ?? this.pendingTrim),
       playheadMs: playheadMs ?? this.playheadMs,
       isPlaying: isPlaying ?? this.isPlaying,
       isSaving: isSaving ?? this.isSaving,
@@ -89,14 +116,29 @@ class EditLessonController extends AsyncNotifier<EditLessonState> {
     final lesson = await ref.watch(getLessonProvider)(lessonId);
     // Именно watch: плеер под autoDispose и должен жить, пока жив контроллер.
     final player = ref.watch(editLessonPlayerProvider(lessonId));
-    final subscription = player.playerStateStream.listen(_onPlayerState);
-    ref.onDispose(subscription.cancel);
+    final stateSubscription = player.playerStateStream.listen(_onPlayerState);
+    ref.onDispose(stateSubscription.cancel);
+    final positionSubscription = player.positionStream.listen(_onPosition);
+    ref.onDispose(positionSubscription.cancel);
     return EditLessonState(
       lesson: lesson,
       title: lesson.title,
       text: initialText(lesson),
       boundaries: lesson.boundaries,
+      trim: lesson.trim,
+      // Урок начинается там, где кончается обрезанная голова.
+      playheadMs: lesson.trim.startMs,
     );
+  }
+
+  /// Файл заряжен в плеер целиком, поэтому конец обрезанной дорожки стережём
+  /// сами: дальше него аудио к уроку уже не относится.
+  void _onPosition(Duration position) {
+    final current = state.value;
+    if (current == null || !current.isPlaying || current.isTrimming) return;
+    if (position.inMilliseconds < current.trim.endMs) return;
+    unawaited(_player.pause());
+    unawaited(seek(current.trim.endMs));
   }
 
   void _onPlayerState(PlayerState playerState) {
@@ -139,7 +181,7 @@ class EditLessonController extends AsyncNotifier<EditLessonState> {
             : SegmentBoundaries.resize(
                 next.boundaries,
                 next.segmentCount,
-                next.lesson.durationMs,
+                next.trim,
               ),
       ),
     );
@@ -151,12 +193,65 @@ class EditLessonController extends AsyncNotifier<EditLessonState> {
     state = AsyncValue.data(current.copyWith(boundaries: boundaries));
   }
 
+  // --- Обрезка ---------------------------------------------------------------
+
+  /// Включает режим обрезки: метки встают по краям того, что оставлено сейчас,
+  /// а в окно возвращается файл целиком — отрезанное можно вернуть.
+  void startTrim() {
+    final current = state.value;
+    if (current == null || current.isTrimming) return;
+    state = AsyncValue.data(current.copyWith(pendingTrim: current.trim));
+  }
+
+  void updateTrim(AudioTrim trim) {
+    final current = state.value;
+    if (current == null || !current.isTrimming) return;
+    state = AsyncValue.data(current.copyWith(pendingTrim: trim));
+  }
+
+  Future<void> cancelTrim() async {
+    final current = state.value;
+    if (current == null || !current.isTrimming) return;
+    state = AsyncValue.data(current.copyWith(clearPendingTrim: true));
+    // Ползунок мог уехать в ту часть файла, которой в уроке нет.
+    await seek(current.trim.clampMs(current.playheadMs));
+  }
+
+  /// Применяет обрезку: метки кусков переезжают внутрь нового отрезка, дальше
+  /// урок размечают уже по нему.
+  Future<void> applyTrim() async {
+    final current = state.value;
+    final pending = current?.pendingTrim;
+    if (current == null || pending == null) return;
+    state = AsyncValue.data(
+      current.copyWith(
+        trim: pending,
+        clearPendingTrim: true,
+        // Число кусков обрезка не меняет — двигаются только сами метки.
+        // Разметка, отставшая от текста, всё равно разложится заново.
+        boundaries: current.boundaries.length == current.segmentCount + 1
+            ? SegmentBoundaries.refit(current.boundaries, pending)
+            : SegmentBoundaries.resize(
+                current.boundaries,
+                current.segmentCount,
+                pending,
+              ),
+      ),
+    );
+    await seek(pending.clampMs(current.playheadMs));
+  }
+
   /// Ставит ползунок в заданное место аудио. Если оно играет, продолжает с
   /// новой точки, не прерываясь.
+  ///
+  /// Во время обрезки ползунок ходит по файлу целиком — иначе не послушать то,
+  /// что собираются отрезать.
   Future<void> seek(int positionMs) async {
     final current = state.value;
     if (current == null) return;
-    final clamped = positionMs.clamp(0, current.lesson.durationMs);
+    final clamped = current.isTrimming
+        ? positionMs.clamp(0, current.lesson.durationMs)
+        : current.trim.clampMs(positionMs);
     state = AsyncValue.data(current.copyWith(playheadMs: clamped));
     if (_player.audioSource != null) {
       await _player.seek(Duration(milliseconds: clamped));
@@ -180,7 +275,12 @@ class EditLessonController extends AsyncNotifier<EditLessonState> {
     if (player.audioSource == null) {
       await player.setFilePath(current.lesson.audioPath);
     }
-    await player.seek(Duration(milliseconds: current.playheadMs));
+    // С самого конца играть нечего — начинаем дорожку заново.
+    await seek(
+      !current.isTrimming && current.playheadMs >= current.trim.endMs
+          ? current.trim.startMs
+          : current.playheadMs,
+    );
     // play() завершается только по окончании воспроизведения — не ждём его.
     unawaited(player.play());
   }
@@ -196,6 +296,7 @@ class EditLessonController extends AsyncNotifier<EditLessonState> {
         title: current.title,
         rawText: current.text,
         boundaries: current.boundaries,
+        trim: current.trim,
       );
       ref.invalidate(lessonsControllerProvider);
     } catch (_) {

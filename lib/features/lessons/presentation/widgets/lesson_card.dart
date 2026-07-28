@@ -51,8 +51,9 @@ class LessonCard extends StatelessWidget {
           subtitle: Padding(
             padding: const EdgeInsets.only(top: 4),
             child: Text(
+              // Длительность урока, а не файла: обрезанные края не в счёт.
               '${_segmentsLabel(lesson.segmentCount)} · '
-              '${formatPosition(lesson.durationMs)} · '
+              '${formatPosition(lesson.trim.durationMs)} · '
               '${formatDate(lesson.createdAt)}',
             ),
           ),

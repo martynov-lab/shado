@@ -1,3 +1,4 @@
+import '../entities/audio_trim.dart';
 import '../entities/lesson.dart';
 
 /// Единственная точка доступа к урокам, которую знает presentation.
@@ -12,12 +13,14 @@ abstract interface class LessonRepository {
   /// Импортирует аудио, определяет длительность и создаёт урок.
   ///
   /// [boundaries] — размеченные на экране создания границы (`N + 1` значение);
-  /// без них куски раскладываются равномерно.
+  /// без них куски раскладываются равномерно. [trim] — оставленный обрезкой
+  /// отрезок файла; без него урок занимает файл целиком.
   Future<Lesson> createLesson({
     required String title,
     required String sourceAudioPath,
     required List<String> segmentTexts,
     List<int>? boundaries,
+    AudioTrim? trim,
   });
 
   /// Длительность аудиофайла, ещё не привязанного к уроку: нужна, чтобы

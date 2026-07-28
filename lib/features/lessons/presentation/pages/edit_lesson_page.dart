@@ -143,17 +143,22 @@ class _EditFormState extends ConsumerState<_EditForm> {
               ),
             ),
             const SizedBox(height: 8),
-            Text(
-              'Метки берутся за кружок сверху, ползунок — за треугольник '
-              'снизу; перетаскивание в стороне от них двигает волну. Растянуть '
-              'волну: щипок двумя пальцами или Ctrl + колесо мыши. Пробел — '
-              'играть или пауза',
-              style: theme.textTheme.bodySmall,
-            ),
+            Text(_hint(state), style: theme.textTheme.bodySmall),
           ],
         ),
       ),
     );
+  }
+
+  String _hint(EditLessonState state) {
+    if (state.isTrimming) {
+      return 'Тяните метки со стрелочками: затемнённые края отрежутся. '
+          '«Применить» оставит только середину, «Отменить» вернёт как было. '
+          'Пробел — послушать';
+    }
+    return 'Метки берутся за кружок сверху, ползунок — за треугольник снизу; '
+        'перетаскивание в стороне от них двигает волну. Растянуть волну: щипок '
+        'двумя пальцами или Ctrl + колесо мыши. Пробел — играть или пауза';
   }
 }
 
@@ -177,18 +182,28 @@ class _WaveformWithPlayback extends ConsumerWidget {
         ? (position?.inMilliseconds ?? state.playheadMs)
         : state.playheadMs;
 
+    // Время показываем от левого края того, что сейчас в окне: после обрезки
+    // урок начинается с нуля, а во время обрезки — начало файла.
+    final view = state.view;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         WaveformCard(
           audioPath: state.lesson.audioPath,
           durationMs: state.lesson.durationMs,
+          view: view,
           boundaries: state.boundaries,
           onBoundariesChanged: controller.setBoundaries,
           onSeek: controller.seek,
           positionMs: playheadMs,
           showCursor: true,
           margin: EdgeInsets.zero,
+          trim: state.pendingTrim,
+          onTrimChanged: controller.updateTrim,
+          onTrimStart: controller.startTrim,
+          onTrimApply: controller.applyTrim,
+          onTrimCancel: controller.cancelTrim,
         ),
         const SizedBox(height: 8),
         Row(
@@ -200,8 +215,8 @@ class _WaveformWithPlayback extends ConsumerWidget {
             ),
             const SizedBox(width: 12),
             Text(
-              '${formatPosition(playheadMs)} / '
-              '${formatPosition(state.lesson.durationMs)}',
+              '${formatPosition(playheadMs - view.startMs)} / '
+              '${formatPosition(view.durationMs)}',
               style: Theme.of(context).textTheme.bodyMedium,
             ),
           ],

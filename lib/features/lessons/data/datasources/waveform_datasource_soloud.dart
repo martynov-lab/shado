@@ -6,6 +6,7 @@ import 'package:path/path.dart' as p;
 
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/error/failures.dart';
+import '../../domain/entities/audio_trim.dart';
 import '../models/waveform_peaks.dart';
 import 'waveform_datasource.dart';
 
@@ -26,9 +27,10 @@ class SoLoudWaveformDataSource implements WaveformDataSource {
     String audioPath, {
     int resolution = kWaveformResolution,
     bool cache = true,
+    AudioTrim? range,
   }) async {
     if (cache) {
-      final cached = await _readCache(audioPath, resolution);
+      final cached = await _readCache(audioPath, resolution, range);
       if (cached != null) return _toPeaks(cached);
     }
 
@@ -48,6 +50,10 @@ class SoLoudWaveformDataSource implements WaveformDataSource {
       envelope = await SoLoud.instance.readSamplesFromFile(
         audioPath,
         resolution,
+        // Декодер сам раскладывает нужное число отсчётов по заданному отрезку;
+        // -1 у endTime означает «до конца файла».
+        startTime: range == null ? 0 : range.startMs / 1000,
+        endTime: range == null ? -1 : range.endMs / 1000,
         average: true,
       );
     } catch (error) {
@@ -55,7 +61,7 @@ class SoLoudWaveformDataSource implements WaveformDataSource {
     }
 
     final normalized = _normalize(envelope);
-    if (cache) await _writeCache(audioPath, normalized);
+    if (cache) await _writeCache(audioPath, normalized, range);
     return _toPeaks(normalized);
   }
 
@@ -90,10 +96,21 @@ class SoLoudWaveformDataSource implements WaveformDataSource {
 
   static const int _cacheMagic = 0x53485044; // 'SHPD'
 
-  File _cacheFile(String audioPath) => File('$audioPath.peaks');
+  /// У файла целиком кеш один, у каждого обрезанного отрезка — свой: волна
+  /// отрезка считается по нему, поэтому и складывать её надо отдельно.
+  /// Все они убираются вместе с аудио в [AudioFileDataSource.deleteAudio].
+  File _cacheFile(String audioPath, AudioTrim? range) => File(
+    range == null
+        ? '$audioPath.peaks'
+        : '$audioPath.${range.startMs}-${range.endMs}.peaks',
+  );
 
-  Future<Float32List?> _readCache(String audioPath, int resolution) async {
-    final file = _cacheFile(audioPath);
+  Future<Float32List?> _readCache(
+    String audioPath,
+    int resolution,
+    AudioTrim? range,
+  ) async {
+    final file = _cacheFile(audioPath, range);
     try {
       if (!await file.exists()) return null;
       final bytes = await file.readAsBytes();
@@ -113,14 +130,18 @@ class SoLoudWaveformDataSource implements WaveformDataSource {
     }
   }
 
-  Future<void> _writeCache(String audioPath, Float32List envelope) async {
+  Future<void> _writeCache(
+    String audioPath,
+    Float32List envelope,
+    AudioTrim? range,
+  ) async {
     try {
       final bytes = Uint8List(8 + envelope.lengthInBytes);
       bytes.buffer.asByteData()
         ..setUint32(0, _cacheMagic)
         ..setUint32(4, envelope.length);
       bytes.setRange(8, bytes.length, envelope.buffer.asUint8List());
-      await _cacheFile(audioPath).writeAsBytes(bytes, flush: true);
+      await _cacheFile(audioPath, range).writeAsBytes(bytes, flush: true);
     } catch (_) {
       // Кеш — оптимизация, его отсутствие ничего не ломает.
     }

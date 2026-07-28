@@ -89,10 +89,7 @@ class _AddLessonPageState extends ConsumerState<AddLessonPage> {
               style: theme.textTheme.bodySmall,
             ),
             const SizedBox(height: 16),
-            _WaveformPreview(
-              state: state,
-              onBoundariesChanged: controller.setBoundaries,
-            ),
+            _WaveformPreview(state: state, controller: controller),
             const SizedBox(height: 16),
             FilledButton(
               onPressed: state.canSubmit ? _submit : null,
@@ -111,16 +108,13 @@ class _AddLessonPageState extends ConsumerState<AddLessonPage> {
   }
 }
 
-/// Волна выбранного файла с метками границ — разметка идёт ещё до создания
-/// урока, чтобы куски сразу попали на свои места.
+/// Волна выбранного файла с метками границ — разметка и обрезка идут ещё до
+/// создания урока, чтобы куски сразу попали на свои места.
 class _WaveformPreview extends StatelessWidget {
-  const _WaveformPreview({
-    required this.state,
-    required this.onBoundariesChanged,
-  });
+  const _WaveformPreview({required this.state, required this.controller});
 
   final AddLessonFormState state;
-  final ValueChanged<List<int>> onBoundariesChanged;
+  final AddLessonController controller;
 
   @override
   Widget build(BuildContext context) {
@@ -158,22 +152,34 @@ class _WaveformPreview extends StatelessWidget {
         WaveformCard(
           audioPath: state.audioPath!,
           durationMs: state.durationMs,
+          view: state.view,
           boundaries: state.boundaries,
-          onBoundariesChanged: onBoundariesChanged,
+          onBoundariesChanged: controller.setBoundaries,
           // Файл ещё чужой: кеш пиков рядом с ним не создаём.
           cachePeaks: false,
           margin: EdgeInsets.zero,
+          trim: state.pendingTrim,
+          onTrimChanged: controller.updateTrim,
+          onTrimStart: controller.startTrim,
+          onTrimApply: controller.applyTrim,
+          onTrimCancel: controller.cancelTrim,
         ),
         const SizedBox(height: 8),
-        Text(
-          state.segmentCount == 0
-              ? 'Введите текст — метки границ появятся на волне'
-              : 'Метки берутся за кружок сверху, перетаскивание в стороне от '
-                    'них двигает волну. Растянуть волну: щипок двумя пальцами '
-                    'или Ctrl + колесо мыши',
-          style: theme.textTheme.bodySmall,
-        ),
+        Text(_hint(state), style: theme.textTheme.bodySmall),
       ],
     );
+  }
+
+  String _hint(AddLessonFormState state) {
+    if (state.isTrimming) {
+      return 'Тяните метки со стрелочками: затемнённые края отрежутся. '
+          '«Применить» оставит только середину, «Отменить» вернёт как было';
+    }
+    if (state.segmentCount == 0) {
+      return 'Введите текст — метки границ появятся на волне';
+    }
+    return 'Метки берутся за кружок сверху, перетаскивание в стороне от них '
+        'двигает волну. Растянуть волну: щипок двумя пальцами или Ctrl + '
+        'колесо мыши';
   }
 }

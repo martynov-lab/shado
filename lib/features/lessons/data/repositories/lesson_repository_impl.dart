@@ -1,5 +1,6 @@
 import 'package:uuid/uuid.dart';
 
+import '../../domain/entities/audio_trim.dart';
 import '../../domain/entities/lesson.dart';
 import '../../domain/entities/segment_boundaries.dart';
 import '../../domain/repositories/lesson_repository.dart';
@@ -40,6 +41,7 @@ class LessonRepositoryImpl implements LessonRepository {
     required String sourceAudioPath,
     required List<String> segmentTexts,
     List<int>? boundaries,
+    AudioTrim? trim,
   }) async {
     // UUID, а не автоинкремент: идентификатор должен совпасть с серверным,
     // когда появится бэкенд.
@@ -50,7 +52,7 @@ class LessonRepositoryImpl implements LessonRepository {
     );
     try {
       final durationMs = await _audio.resolveDurationMs(audioPath);
-      var lesson = Lesson.withEvenBoundaries(
+      final lesson = Lesson.withEvenBoundaries(
         id: id,
         title: title,
         audioPath: audioPath,
@@ -58,13 +60,19 @@ class LessonRepositoryImpl implements LessonRepository {
         createdAt: DateTime.now().toUtc(),
         segmentTexts: segmentTexts,
       );
-      if (boundaries != null && boundaries.length == segmentTexts.length + 1) {
-        lesson = lesson.withBoundaries(
-          SegmentBoundaries.normalize(boundaries, durationMs),
-        );
-      }
-      await _local.upsertLesson(LessonModel.fromEntity(lesson));
-      return lesson;
+      // Экран создания считал длительность своим замером — до импорта; настоящая
+      // могла разойтись на несколько миллисекунд, поэтому обрезку вписываем в
+      // файл заново.
+      final range = (trim ?? AudioTrim.full(durationMs)).clampedTo(durationMs);
+      final source = boundaries != null &&
+              boundaries.length == segmentTexts.length + 1
+          ? boundaries
+          : SegmentBoundaries.even(segmentTexts.length, range);
+      final trimmed = lesson.withBoundaries(
+        SegmentBoundaries.normalize(source, range),
+      );
+      await _local.upsertLesson(LessonModel.fromEntity(trimmed));
+      return trimmed;
     } catch (_) {
       // Урок не создался — не оставляем осиротевшую копию аудио.
       await _audio.deleteAudio(audioPath);
