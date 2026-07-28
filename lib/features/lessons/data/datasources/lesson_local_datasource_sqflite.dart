@@ -2,9 +2,11 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:path/path.dart' as p;
+import 'package:path_provider/path_provider.dart';
 import 'package:sqflite/sqflite.dart';
 
 import '../../../../core/error/failures.dart';
+import '../../../../core/platform/platform_setup.dart';
 import '../models/lesson_model.dart';
 import '../models/segment_model.dart';
 import 'lesson_local_datasource.dart';
@@ -27,9 +29,18 @@ class SqfliteLessonLocalDataSource implements LessonLocalDataSource {
     return _opening ??= _open();
   }
 
+  /// Каталог БД. На мобильных его знает сам плагин, а FFI-фабрика на десктопе
+  /// по умолчанию кладёт файл в `.dart_tool` рядом с рабочим каталогом —
+  /// поэтому там берём тот же каталог документов, что и для аудио.
+  Future<String> _databaseDirectory() async {
+    if (!isPluginlessDesktop) return getDatabasesPath();
+    final documents = await getApplicationDocumentsDirectory();
+    return documents.path;
+  }
+
   Future<Database> _open() async {
     try {
-      final path = p.join(await getDatabasesPath(), _databaseName);
+      final path = p.join(await _databaseDirectory(), _databaseName);
       final db = await openDatabase(
         path,
         version: 1,

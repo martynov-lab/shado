@@ -62,7 +62,7 @@ class AddLessonController extends Notifier<AddLessonFormState> {
   Future<bool> pickAudio() async {
     final result = await FilePicker.pickFiles(
       type: FileType.custom,
-      allowedExtensions: kAllowedAudioExtensions,
+      allowedExtensions: allowedAudioExtensions,
     );
     final path = result?.files.singleOrNull?.path;
     if (path == null) return false;

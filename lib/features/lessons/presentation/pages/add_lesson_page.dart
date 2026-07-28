@@ -96,7 +96,7 @@ class _AddLessonPageState extends ConsumerState<AddLessonPage> {
             ),
             const SizedBox(height: 8),
             Text(
-              'Поддерживаются ${kAllowedAudioExtensions.join(', ')}',
+              'Поддерживаются ${allowedAudioExtensions.join(', ')}',
               style: theme.textTheme.bodySmall,
             ),
             const SizedBox(height: 24),

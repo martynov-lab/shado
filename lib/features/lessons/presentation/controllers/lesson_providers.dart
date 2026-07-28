@@ -1,9 +1,11 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../core/platform/platform_setup.dart';
 import '../../data/datasources/audio_file_datasource.dart';
 import '../../data/datasources/lesson_local_datasource.dart';
 import '../../data/datasources/lesson_local_datasource_sqflite.dart';
 import '../../data/datasources/waveform_datasource.dart';
+import '../../data/datasources/waveform_datasource_soloud.dart';
 import '../../data/repositories/lesson_repository_impl.dart';
 import '../../domain/repositories/lesson_repository.dart';
 import '../../domain/usecases/create_lesson.dart';
@@ -21,8 +23,12 @@ final audioFileDataSourceProvider = Provider<AudioFileDataSource>(
   (ref) => const LocalAudioFileDataSource(),
 );
 
+/// На Windows/Linux `just_waveform` нативной части не имеет, там пики читает
+/// `flutter_soloud`.
 final waveformDataSourceProvider = Provider<WaveformDataSource>(
-  (ref) => const JustWaveformDataSource(),
+  (ref) => isPluginlessDesktop
+      ? const SoLoudWaveformDataSource()
+      : const JustWaveformDataSource(),
 );
 
 final lessonRepositoryProvider = Provider<LessonRepository>(

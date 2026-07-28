@@ -85,9 +85,13 @@ class LocalAudioFileDataSource implements AudioFileDataSource {
       if (await audio.exists()) {
         await audio.delete();
       }
-      final waveCache = File('$audioPath.wave');
-      if (await waveCache.exists()) {
-        await waveCache.delete();
+      // `.wave` пишет just_waveform на мобильных, `.peaks` — flutter_soloud
+      // на десктопе; какой из них есть, зависит от платформы.
+      for (final suffix in const ['.wave', '.peaks']) {
+        final cache = File('$audioPath$suffix');
+        if (await cache.exists()) {
+          await cache.delete();
+        }
       }
     } catch (error) {
       throw AudioFailure('Не удалось удалить аудиофайл', cause: error);
