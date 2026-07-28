@@ -1,5 +1,8 @@
-// Временная проверка windows-цепочки: media_kit -> длительность,
-// flutter_soloud -> пики, sqflite ffi -> сохранение урока.
+// Проверка windows-цепочки: flutter_soloud -> пики запасного пути,
+// media_kit -> воспроизведение, sqflite ffi -> кеш урока.
+//
+// Длительность и пики в обычной работе считает сервер; здесь остаётся то, что
+// исполняется на самом устройстве.
 import 'dart:async';
 import 'dart:io';
 import 'dart:math' as math;
@@ -10,8 +13,8 @@ import 'package:integration_test/integration_test.dart';
 import 'package:just_audio/just_audio.dart';
 import 'package:path/path.dart' as p;
 import 'package:shado/core/platform/platform_setup.dart';
-import 'package:shado/features/lessons/data/datasources/audio_file_datasource.dart';
 import 'package:shado/features/lessons/data/datasources/lesson_local_datasource_sqflite.dart';
+import 'package:shado/features/lessons/data/datasources/waveform_datasource.dart';
 import 'package:shado/features/lessons/data/datasources/waveform_datasource_soloud.dart';
 import 'package:shado/features/lessons/data/models/lesson_model.dart';
 import 'package:shado/features/lessons/data/models/segment_model.dart';
@@ -66,15 +69,18 @@ void main() {
 
   tearDownAll(() => tempDir.deleteSync(recursive: true));
 
-  test('длительность читается через just_audio', () async {
-    const source = LocalAudioFileDataSource();
-    final durationMs = await source.resolveDurationMs(wavPath);
-    expect(durationMs, closeTo(2000, 100));
-  });
+  /// Запрос к запасному локальному источнику: у него всё построено на файле.
+  WaveformQuery query({int resolution = 200, AudioTrim? range}) => WaveformQuery(
+    audioId: 'local',
+    localPath: wavPath,
+    durationMs: 2000,
+    resolution: resolution,
+    range: range,
+  );
 
   test('пики читаются и отражают перепад громкости', () async {
     const source = SoLoudWaveformDataSource();
-    final peaks = await source.loadPeaks(wavPath, resolution: 200);
+    final peaks = await source.loadPeaks(query());
     expect(peaks.length, 200);
     expect(peaks.maxima.every((v) => v >= 0 && v <= 1), isTrue);
     expect(peaks.minima.every((v) => v <= 0 && v >= -1), isTrue);
@@ -85,7 +91,7 @@ void main() {
 
     // Второй вызов должен прийти из кеша и совпасть.
     expect(File('$wavPath.peaks').existsSync(), isTrue);
-    final cached = await source.loadPeaks(wavPath, resolution: 200);
+    final cached = await source.loadPeaks(query());
     expect(cached.maxima, peaks.maxima);
   });
 
@@ -95,14 +101,10 @@ void main() {
     // каждой половины должны быть все 200 отсчётов — иначе обрезанная дорожка
     // теряет детализацию вместе с длиной.
     final loud = await source.loadPeaks(
-      wavPath,
-      resolution: 200,
-      range: const AudioTrim(startMs: 0, endMs: 1000),
+      query(range: const AudioTrim(startMs: 0, endMs: 1000)),
     );
     final quiet = await source.loadPeaks(
-      wavPath,
-      resolution: 200,
-      range: const AudioTrim(startMs: 1000, endMs: 2000),
+      query(range: const AudioTrim(startMs: 1000, endMs: 2000)),
     );
 
     expect(loud.length, 200);
@@ -116,7 +118,7 @@ void main() {
     }
 
     // Отрезок кеш не подменяет: рядом с файлом лежит волна файла целиком.
-    final whole = await source.loadPeaks(wavPath, resolution: 200);
+    final whole = await source.loadPeaks(query());
     final wholeHead = whole.maxima.take(80).reduce(math.max);
     final wholeTail = whole.maxima.skip(120).take(60).reduce(math.max);
     expect(wholeHead, greaterThan(wholeTail * 2));
@@ -148,9 +150,12 @@ void main() {
     final lesson = LessonModel(
       id: 'test-lesson',
       title: 'Проверка',
+      audioId: 'test-audio',
       audioPath: wavPath,
       durationMs: 2000,
       createdAt: DateTime.now().toUtc(),
+      updatedAt: DateTime.now().toUtc(),
+      version: 1,
       segments: const [
         SegmentModel(index: 0, text: 'Hello', startMs: 0, endMs: 1000),
         SegmentModel(index: 1, text: 'World', startMs: 1000, endMs: 2000),

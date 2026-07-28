@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../../core/config/app_config.dart';
 import '../../../../core/constants/app_constants.dart';
 import '../controllers/add_lesson_controller.dart';
 import '../widgets/segment_text_field.dart';
@@ -79,15 +80,24 @@ class _AddLessonPageState extends ConsumerState<AddLessonPage> {
             ),
             const SizedBox(height: 16),
             OutlinedButton.icon(
-              onPressed: state.isSubmitting ? null : _pickAudio,
+              onPressed: state.isSubmitting || state.isUploading
+                  ? null
+                  : _pickAudio,
               icon: const Icon(Icons.audiotrack),
               label: Text(state.audioFileName ?? 'Выбрать аудио'),
             ),
             const SizedBox(height: 8),
-            Text(
-              'Поддерживаются ${allowedAudioExtensions.join(', ')}',
-              style: theme.textTheme.bodySmall,
-            ),
+            if (state.isUploading)
+              _UploadProgress(
+                progress: state.uploadProgress,
+                onCancel: controller.cancelUpload,
+              )
+            else
+              Text(
+                'Поддерживаются ${allowedAudioExtensions.join(', ')}, '
+                'до ${AppConfig.maxUploadBytes ~/ (1024 * 1024)} МБ',
+                style: theme.textTheme.bodySmall,
+              ),
             const SizedBox(height: 16),
             _WaveformPreview(state: state, controller: controller),
             const SizedBox(height: 16),
@@ -108,6 +118,38 @@ class _AddLessonPageState extends ConsumerState<AddLessonPage> {
   }
 }
 
+/// Ход отправки файла на сервер. Полсотни мегабайт летят не мгновенно, поэтому
+/// показываем прогресс и даём прервать загрузку.
+class _UploadProgress extends StatelessWidget {
+  const _UploadProgress({required this.progress, required this.onCancel});
+
+  final double progress;
+  final VoidCallback onCancel;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Row(
+      children: [
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              LinearProgressIndicator(value: progress == 0 ? null : progress),
+              const SizedBox(height: 6),
+              Text(
+                'Загрузка на сервер — ${(progress * 100).round()}%',
+                style: theme.textTheme.bodySmall,
+              ),
+            ],
+          ),
+        ),
+        TextButton(onPressed: onCancel, child: const Text('Отменить')),
+      ],
+    );
+  }
+}
+
 /// Волна выбранного файла с метками границ — разметка и обрезка идут ещё до
 /// создания урока, чтобы куски сразу попали на свои места.
 class _WaveformPreview extends StatelessWidget {
@@ -119,7 +161,7 @@ class _WaveformPreview extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    if (state.isProbingAudio) {
+    if (state.isUploading) {
       return const Card(
         margin: EdgeInsets.zero,
         child: SizedBox(
@@ -150,12 +192,13 @@ class _WaveformPreview extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         WaveformCard(
-          audioPath: state.audioPath!,
+          audioId: state.audioId!,
           durationMs: state.durationMs,
           view: state.view,
           boundaries: state.boundaries,
           onBoundariesChanged: controller.setBoundaries,
-          // Файл ещё чужой: кеш пиков рядом с ним не создаём.
+          // Пики считает сервер; запасному локальному пути кеш рядом с чужим
+          // файлом создавать нельзя.
           cachePeaks: false,
           margin: EdgeInsets.zero,
           trim: state.pendingTrim,
@@ -173,7 +216,9 @@ class _WaveformPreview extends StatelessWidget {
   String _hint(AddLessonFormState state) {
     if (state.isTrimming) {
       return 'Тяните метки со стрелочками: затемнённые края отрежутся. '
-          '«Применить» оставит только середину, «Отменить» вернёт как было';
+          '«Применить» оставит только середину, «Отменить» вернёт как было. '
+          'Обрезка помогает разметить середину файла, но в сохранённый урок '
+          'аудио уходит целиком: края достанутся крайним кускам';
     }
     if (state.segmentCount == 0) {
       return 'Введите текст — метки границ появятся на волне';

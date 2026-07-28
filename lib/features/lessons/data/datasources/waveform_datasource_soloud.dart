@@ -23,12 +23,14 @@ class SoLoudWaveformDataSource implements WaveformDataSource {
   const SoLoudWaveformDataSource();
 
   @override
-  Future<WaveformPeaks> loadPeaks(
-    String audioPath, {
-    int resolution = kWaveformResolution,
-    bool cache = true,
-    AudioTrim? range,
-  }) async {
+  Future<WaveformPeaks> loadPeaks(WaveformQuery query) async {
+    final audioPath = query.localPath;
+    if (audioPath == null) {
+      throw const AudioFailure('Файл ещё не скачан — волну строить не из чего');
+    }
+    final resolution = query.resolution;
+    final range = query.range;
+    final cache = query.cache;
     if (cache) {
       final cached = await _readCache(audioPath, resolution, range);
       if (cached != null) return _toPeaks(cached);

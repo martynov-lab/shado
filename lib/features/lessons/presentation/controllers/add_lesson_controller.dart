@@ -1,3 +1,4 @@
+import 'package:dio/dio.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -14,22 +15,26 @@ class AddLessonFormState {
   const AddLessonFormState({
     this.title = '',
     this.text = '',
-    this.audioPath,
+    this.audioId,
     this.audioFileName,
     this.durationMs = 0,
     this.trim = const AudioTrim.full(0),
     this.pendingTrim,
     this.boundaries = const [],
-    this.isProbingAudio = false,
+    this.isUploading = false,
+    this.uploadProgress = 0,
     this.isSubmitting = false,
   });
 
   final String title;
   final String text;
-  final String? audioPath;
+
+  /// Аудио, принятое сервером; `null` — файл ещё не выбран или не загружен.
+  final String? audioId;
+
   final String? audioFileName;
 
-  /// Длительность выбранного файла; `0` — файл ещё не разобран.
+  /// Длительность выбранного файла по версии сервера; `0` — файла ещё нет.
   final int durationMs;
 
   /// Отрезок файла, оставленный обрезкой. Пока не обрезали — файл целиком.
@@ -43,13 +48,18 @@ class AddLessonFormState {
   /// либо аудио.
   final List<int> boundaries;
 
-  final bool isProbingAudio;
+  /// Идёт отправка файла на сервер.
+  final bool isUploading;
+
+  /// Доля отправленного, `0..1`.
+  final double uploadProgress;
+
   final bool isSubmitting;
 
   int get segmentCount => CreateLesson.splitIntoSegments(text).length;
 
-  /// Волну показываем, когда есть что показывать: файл выбран и разобран.
-  bool get hasWaveform => audioPath != null && durationMs > 0;
+  /// Волну показываем, когда есть что показывать: файл загружен и разобран.
+  bool get hasWaveform => audioId != null && durationMs > 0;
 
   bool get isTrimming => pendingTrim != null;
 
@@ -59,44 +69,55 @@ class AddLessonFormState {
 
   bool get canSubmit =>
       !isSubmitting &&
-      !isProbingAudio &&
+      !isUploading &&
       // Незавершённая обрезка — сначала «Применить» или «Отменить».
       !isTrimming &&
       title.trim().isNotEmpty &&
       segmentCount > 0 &&
-      audioPath != null;
+      audioId != null;
 
   AddLessonFormState copyWith({
     String? title,
     String? text,
-    String? audioPath,
+    String? audioId,
+    bool clearAudio = false,
     String? audioFileName,
     int? durationMs,
     AudioTrim? trim,
     AudioTrim? pendingTrim,
     bool clearPendingTrim = false,
     List<int>? boundaries,
-    bool? isProbingAudio,
+    bool? isUploading,
+    double? uploadProgress,
     bool? isSubmitting,
   }) {
     return AddLessonFormState(
       title: title ?? this.title,
       text: text ?? this.text,
-      audioPath: audioPath ?? this.audioPath,
-      audioFileName: audioFileName ?? this.audioFileName,
+      audioId: clearAudio ? null : (audioId ?? this.audioId),
+      audioFileName: clearAudio
+          ? null
+          : (audioFileName ?? this.audioFileName),
       durationMs: durationMs ?? this.durationMs,
       trim: trim ?? this.trim,
       pendingTrim: clearPendingTrim ? null : (pendingTrim ?? this.pendingTrim),
       boundaries: boundaries ?? this.boundaries,
-      isProbingAudio: isProbingAudio ?? this.isProbingAudio,
+      isUploading: isUploading ?? this.isUploading,
+      uploadProgress: uploadProgress ?? this.uploadProgress,
       isSubmitting: isSubmitting ?? this.isSubmitting,
     );
   }
 }
 
 class AddLessonController extends Notifier<AddLessonFormState> {
+  /// Позволяет прервать долгую загрузку — на 50 МБ это не мгновение.
+  CancelToken? _uploadCancel;
+
   @override
-  AddLessonFormState build() => const AddLessonFormState();
+  AddLessonFormState build() {
+    ref.onDispose(() => _uploadCancel?.cancel());
+    return const AddLessonFormState();
+  }
 
   void setTitle(String title) => state = state.copyWith(title: title);
 
@@ -152,9 +173,13 @@ class AddLessonController extends Notifier<AddLessonFormState> {
     );
   }
 
-  /// Возвращает `true`, если файл выбран.
+  // --- Аудио -----------------------------------------------------------------
+
+  /// Выбирает файл и сразу отправляет его на сервер.
   ///
-  /// Длительность читается сразу: без неё нельзя показать волну с метками.
+  /// Длительность и пики считает сервер, поэтому до ответа волны нет — зато
+  /// после него не нужен ни локальный замер, ни собственный декодер.
+  /// Возвращает `true`, если файл выбран.
   Future<bool> pickAudio() async {
     final result = await FilePicker.pickFiles(
       type: FileType.custom,
@@ -162,46 +187,84 @@ class AddLessonController extends Notifier<AddLessonFormState> {
     );
     final path = result?.files.singleOrNull?.path;
     if (path == null) return false;
+    final name = result!.files.single.name;
+
+    _uploadCancel?.cancel();
+    final cancelToken = _uploadCancel = CancelToken();
     state = state.copyWith(
-      audioPath: path,
-      audioFileName: result!.files.single.name,
+      clearAudio: true,
+      audioFileName: name,
       durationMs: 0,
       trim: const AudioTrim.full(0),
       clearPendingTrim: true,
       boundaries: const [],
-      isProbingAudio: true,
+      isUploading: true,
+      uploadProgress: 0,
     );
+
     try {
-      final durationMs = await ref.read(getAudioDurationProvider)(path);
-      // Пока файл разбирался, могли выбрать другой — тот ответ уже не нужен.
-      if (state.audioPath != path) return true;
+      final upload = await ref.read(uploadAudioProvider)(
+        filePath: path,
+        cancel: cancelToken,
+        onProgress: (sent, total) {
+          // Пока файл летел, могли выбрать другой — тот прогресс уже не наш.
+          if (_uploadCancel != cancelToken || total <= 0) return;
+          state = state.copyWith(uploadProgress: sent / total);
+        },
+      );
+      if (_uploadCancel != cancelToken) return true;
       final next = state.copyWith(
-        durationMs: durationMs,
+        audioId: upload.audioId,
+        durationMs: upload.durationMs,
         // Новый файл приходит необрезанным.
-        trim: AudioTrim.full(durationMs),
-        isProbingAudio: false,
+        trim: AudioTrim.full(upload.durationMs),
+        isUploading: false,
+        uploadProgress: 1,
       );
       state = next.copyWith(boundaries: _fitBoundaries(next));
     } catch (_) {
-      if (state.audioPath == path) {
-        state = state.copyWith(isProbingAudio: false, durationMs: 0);
+      if (_uploadCancel == cancelToken) {
+        state = state.copyWith(
+          isUploading: false,
+          uploadProgress: 0,
+          durationMs: 0,
+          clearAudio: true,
+        );
       }
       rethrow;
+    } finally {
+      if (_uploadCancel == cancelToken) _uploadCancel = null;
     }
     return true;
   }
 
+  /// Прерывает загрузку: файл остаётся невыбранным.
+  void cancelUpload() {
+    _uploadCancel?.cancel();
+    _uploadCancel = null;
+    state = state.copyWith(
+      isUploading: false,
+      uploadProgress: 0,
+      durationMs: 0,
+      clearAudio: true,
+    );
+  }
+
   /// Создаёт урок и обновляет список на главной.
   Future<Lesson> submit() async {
+    final audioId = state.audioId;
+    if (audioId == null) {
+      throw StateError('Файл ещё не загружен');
+    }
     state = state.copyWith(isSubmitting: true);
     try {
       final lesson = await ref.read(createLessonProvider)(
         CreateLessonParams(
           title: state.title,
           rawText: state.text,
-          sourceAudioPath: state.audioPath ?? '',
+          audioId: audioId,
+          durationMs: state.durationMs,
           boundaries: state.boundaries.isEmpty ? null : state.boundaries,
-          trim: state.trim,
         ),
       );
       ref.invalidate(lessonsControllerProvider);

@@ -11,6 +11,7 @@ class Lesson {
     required this.durationMs,
     required this.createdAt,
     required this.segments,
+    this.audioId = '',
   });
 
   /// Создаёт урок с равномерно расставленными начальными границами:
@@ -53,8 +54,13 @@ class Lesson {
   final String id;
   final String title;
 
-  /// Путь к аудио: сейчас всегда локальный файл, позже может быть URL.
+  /// Путь к готовому к воспроизведению локальному файлу. Репозиторий следит,
+  /// чтобы файл был на месте, докачивая его при необходимости.
   final String audioPath;
+
+  /// Аудио на сервере. По нему берутся пики волны; у урока, собранного в
+  /// тестах или ещё не побывавшего на сервере, пусто.
+  final String audioId;
 
   /// Длительность файла целиком — обрезка её не меняет.
   final int durationMs;
@@ -127,6 +133,7 @@ class Lesson {
     String? id,
     String? title,
     String? audioPath,
+    String? audioId,
     int? durationMs,
     DateTime? createdAt,
     List<Segment>? segments,
@@ -135,6 +142,7 @@ class Lesson {
       id: id ?? this.id,
       title: title ?? this.title,
       audioPath: audioPath ?? this.audioPath,
+      audioId: audioId ?? this.audioId,
       durationMs: durationMs ?? this.durationMs,
       createdAt: createdAt ?? this.createdAt,
       segments: segments ?? this.segments,

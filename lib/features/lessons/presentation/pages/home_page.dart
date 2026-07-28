@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../auth/presentation/controllers/auth_controller.dart';
 import '../../domain/entities/lesson.dart';
 import '../controllers/lessons_controller.dart';
 import '../widgets/lesson_card.dart';
@@ -13,7 +14,10 @@ class HomePage extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final lessons = ref.watch(lessonsControllerProvider);
     return Scaffold(
-      appBar: AppBar(title: const Text('Главная')),
+      appBar: AppBar(
+        title: const Text('Главная'),
+        actions: const [_AccountMenu()],
+      ),
       body: lessons.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (error, _) => _ErrorView(
@@ -66,6 +70,56 @@ class HomePage extends ConsumerWidget {
     );
     if (confirmed != true) return;
     await ref.read(lessonsControllerProvider.notifier).delete(lesson.id);
+  }
+}
+
+/// Кто вошёл, выход и — владельцу — раздел с пользователями.
+class _AccountMenu extends ConsumerWidget {
+  const _AccountMenu();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final auth = ref.watch(authControllerProvider);
+    final email = auth.user?.email ?? '';
+
+    return PopupMenuButton<String>(
+      tooltip: email.isEmpty ? 'Аккаунт' : email,
+      icon: const Icon(Icons.account_circle_outlined),
+      onSelected: (value) async {
+        switch (value) {
+          case 'admin':
+            context.push('/admin/users');
+          case 'logout':
+            await ref.read(authControllerProvider.notifier).signOut();
+        }
+      },
+      itemBuilder: (context) => [
+        if (email.isNotEmpty)
+          PopupMenuItem(
+            enabled: false,
+            child: Text(email, overflow: TextOverflow.ellipsis),
+          ),
+        // Раздел показываем владельцу, но полагаться на это как на защиту
+        // нельзя: роль проверяет сервер.
+        if (auth.isOwner)
+          const PopupMenuItem(
+            value: 'admin',
+            child: ListTile(
+              contentPadding: EdgeInsets.zero,
+              leading: Icon(Icons.people_outline),
+              title: Text('Пользователи'),
+            ),
+          ),
+        const PopupMenuItem(
+          value: 'logout',
+          child: ListTile(
+            contentPadding: EdgeInsets.zero,
+            leading: Icon(Icons.logout),
+            title: Text('Выйти'),
+          ),
+        ),
+      ],
+    );
   }
 }
 

@@ -286,13 +286,18 @@ class EditLessonController extends AsyncNotifier<EditLessonState> {
   }
 
   /// Сохраняет правки и обновляет список уроков.
+  ///
+  /// Урок мог измениться на другом устройстве — тогда сервер отвечает
+  /// конфликтом версий, а репозиторий кладёт свежую версию в кеш. Молча
+  /// перезаписывать её нельзя, поэтому ошибка уходит наверх: экран покажет её
+  /// и предложит переоткрыть урок.
   Future<void> save() async {
     final current = state.value;
     if (current == null || !current.canSave) return;
     state = AsyncValue.data(current.copyWith(isSaving: true));
     try {
       await ref.read(updateLessonContentProvider)(
-        lessonId: lessonId,
+        lesson: current.lesson,
         title: current.title,
         rawText: current.text,
         boundaries: current.boundaries,

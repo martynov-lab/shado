@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/utils/duration_format.dart';
+import '../../data/datasources/waveform_datasource.dart';
 import '../../domain/entities/audio_trim.dart';
 import '../controllers/waveform_controller.dart';
 import 'waveform_editor.dart';
@@ -17,11 +18,12 @@ import 'waveform_editor.dart';
 class WaveformCard extends ConsumerWidget {
   const WaveformCard({
     super.key,
-    required this.audioPath,
+    required this.audioId,
     required this.durationMs,
     required this.view,
     required this.boundaries,
     required this.onBoundariesChanged,
+    this.audioPath,
     this.onSeek,
     this.cachePeaks = true,
     this.positionMs = 0,
@@ -36,7 +38,12 @@ class WaveformCard extends ConsumerWidget {
     this.onTrimCancel,
   });
 
-  final String audioPath;
+  /// Аудио на сервере: по нему приходят пики.
+  final String audioId;
+
+  /// Локальная копия файла, если она уже есть. Нужна только запасному пути,
+  /// когда сервер недоступен.
+  final String? audioPath;
 
   /// Длительность файла целиком: по ней разложены пики.
   final int durationMs;
@@ -74,14 +81,19 @@ class WaveformCard extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    // Для необрезанного файла отрезок не задаём: только у волны на весь файл
-    // есть кеш, и переспрашивать её при каждом входе в режим обрезки незачем.
+    // Для необрезанного файла отрезок не задаём: волна на весь файл — это тот
+    // же ответ сервера, и переспрашивать её при каждом входе в режим обрезки
+    // незачем.
     final peaksAsync = ref.watch(
-      waveformPeaksProvider((
-        audioPath: audioPath,
-        cache: cachePeaks,
-        range: view.isTrimmedFrom(durationMs) ? view : null,
-      )),
+      waveformPeaksProvider(
+        WaveformQuery(
+          audioId: audioId,
+          localPath: audioPath,
+          durationMs: durationMs,
+          cache: cachePeaks,
+          range: view.isTrimmedFrom(durationMs) ? view : null,
+        ),
+      ),
     );
     final card = Card(
       margin: margin,

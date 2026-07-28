@@ -10,41 +10,103 @@ import '../../../../core/error/failures.dart';
 import '../../domain/entities/audio_trim.dart';
 import '../models/waveform_peaks.dart';
 
-/// Источник пиков волны для отрисовки.
-abstract interface class WaveformDataSource {
-  /// [cache] выключают для файла, который ещё не принадлежит приложению
-  /// (выбранное, но не импортированное аудио): рядом с чужим файлом мусорить
-  /// нельзя, пики считаются на один показ.
-  ///
-  /// [range] — отрезок файла, который пойдёт на волну. Разрешение постоянное,
-  /// поэтому у обрезанной дорожки на её длину приходятся все [resolution]
-  /// отсчётов: иначе от файла в час на 73 секунды урока досталась бы пара сотен
-  /// отсчётов, и паузы между фразами размазались бы в кашу. `null` — файл
-  /// целиком.
-  Future<WaveformPeaks> loadPeaks(
-    String audioPath, {
-    int resolution = kWaveformResolution,
-    bool cache = true,
-    AudioTrim? range,
+/// Что рисуем: аудио на сервере, его локальная копия (если уже скачана) и
+/// отрезок, который должен занять всю ширину волны.
+///
+/// [audioId] нужен серверному источнику, [localPath] — локальным: первому пики
+/// считает сервер, вторым нужен сам файл.
+class WaveformQuery {
+  const WaveformQuery({
+    required this.audioId,
+    this.localPath,
+    this.durationMs = 0,
+    this.resolution = kWaveformResolution,
+    this.range,
+    this.cache = true,
   });
+
+  final String audioId;
+
+  /// Путь к скачанному файлу; `null` — файла ещё нет, и остаётся только сервер.
+  final String? localPath;
+
+  /// Длительность файла целиком: по ней серверные пики переводятся в
+  /// миллисекунды при вырезании [range].
+  final int durationMs;
+
+  final int resolution;
+
+  /// Отрезок файла, который пойдёт на волну. `null` — файл целиком.
+  final AudioTrim? range;
+
+  /// Локальным источникам: писать ли кеш пиков рядом с файлом. У чужого файла,
+  /// ещё не принадлежащего приложению, кеш не создаём.
+  final bool cache;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is WaveformQuery &&
+          other.audioId == audioId &&
+          other.localPath == localPath &&
+          other.durationMs == durationMs &&
+          other.resolution == resolution &&
+          other.range == range &&
+          other.cache == cache;
+
+  @override
+  int get hashCode =>
+      Object.hash(audioId, localPath, durationMs, resolution, range, cache);
 }
 
-/// Реализация на `just_waveform`. Результат извлечения кешируется рядом с
-/// аудио в файле `<audioPath>.wave`, чтобы не считать пики при каждом открытии.
+/// Источник пиков волны для отрисовки.
+///
+/// Основная реализация — серверная (`RemoteWaveformDataSource`): волна выходит
+/// одинаковой на Android, iOS и Windows. Локальные остаются запасным путём,
+/// когда сервер недоступен, а файл уже скачан.
+abstract interface class WaveformDataSource {
+  Future<WaveformPeaks> loadPeaks(WaveformQuery query);
+}
+
+/// Вырезает из готовых пиков отрезок [range] и отдаёт его как самостоятельную
+/// волну.
+///
+/// Серверные пики приходят на файл целиком, а показать иногда нужно кусок:
+/// на десятиминутном файле обрезанной минуте досталась бы пара сотен отсчётов,
+/// и паузы между фразами слились бы в кашу.
+WaveformPeaks slicePeaks(
+  WaveformPeaks peaks,
+  AudioTrim? range,
+  int durationMs,
+) {
+  if (range == null || durationMs <= 0 || peaks.isEmpty) return peaks;
+  if (!range.isTrimmedFrom(durationMs)) return peaks;
+
+  final total = peaks.length;
+  final from = (total * range.startMs ~/ durationMs).clamp(0, total - 1);
+  final to = (total * range.endMs / durationMs).ceil().clamp(from + 1, total);
+  return WaveformPeaks(
+    minima: peaks.minima.sublist(from, math.min(to, peaks.minima.length)),
+    maxima: peaks.maxima.sublist(from, to),
+  );
+}
+
+/// Реализация на `just_waveform` для Android/iOS. Результат извлечения
+/// кешируется рядом с аудио в файле `<audioPath>.wave`, чтобы не считать пики
+/// при каждом открытии.
 class JustWaveformDataSource implements WaveformDataSource {
   const JustWaveformDataSource();
 
   @override
-  Future<WaveformPeaks> loadPeaks(
-    String audioPath, {
-    int resolution = kWaveformResolution,
-    bool cache = true,
-    AudioTrim? range,
-  }) async {
+  Future<WaveformPeaks> loadPeaks(WaveformQuery query) async {
+    final audioPath = query.localPath;
+    if (audioPath == null) {
+      throw const AudioFailure('Файл ещё не скачан — волну строить не из чего');
+    }
     // Извлечение идёт по файлу целиком и кешируется целиком: отрезок вырезаем
     // уже из готовых пикселей, это дёшево.
-    final waveform = await _obtainWaveform(audioPath, cache);
-    return _resample(waveform, resolution, range);
+    final waveform = await _obtainWaveform(audioPath, query.cache);
+    return _resample(waveform, query.resolution, query.range);
   }
 
   Future<Waveform> _obtainWaveform(String audioPath, bool cache) async {

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../core/network/api_exception.dart';
 import '../../../../core/utils/duration_format.dart';
 import '../controllers/edit_lesson_controller.dart';
 import '../widgets/segment_text_field.dart';
@@ -55,11 +56,48 @@ class EditLessonPage extends ConsumerWidget {
     try {
       await ref.read(editLessonControllerProvider(lessonId).notifier).save();
       navigator.pop(true);
+    } on ApiException catch (error) {
+      if (!error.isVersionConflict) {
+        messenger.showSnackBar(
+          SnackBar(content: Text('Не удалось сохранить: ${error.message}')),
+        );
+        return;
+      }
+      if (context.mounted) await _resolveConflict(context, ref);
     } catch (error) {
       messenger.showSnackBar(
         SnackBar(content: Text('Не удалось сохранить: $error')),
       );
     }
+  }
+
+  /// Урок правили на другом устройстве.
+  ///
+  /// Свежая версия уже в кеше — предлагаем открыть её и переписать правку
+  /// поверх: молча затирать чужие изменения нельзя.
+  Future<void> _resolveConflict(BuildContext context, WidgetRef ref) async {
+    final reload = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Урок изменён на другом устройстве'),
+        content: const Text(
+          'Пока вы правили, урок сохранили в другом месте. Свежая версия уже '
+          'загружена — откройте её и повторите правку поверх.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Остаться'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: const Text('Открыть свежую'),
+          ),
+        ],
+      ),
+    );
+    if (reload != true) return;
+    ref.invalidate(editLessonControllerProvider(lessonId));
   }
 }
 
@@ -190,6 +228,7 @@ class _WaveformWithPlayback extends ConsumerWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         WaveformCard(
+          audioId: state.lesson.audioId,
           audioPath: state.lesson.audioPath,
           durationMs: state.lesson.durationMs,
           view: view,

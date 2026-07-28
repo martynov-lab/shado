@@ -1,33 +1,51 @@
-import '../entities/audio_trim.dart';
+import 'dart:async';
+
+import '../entities/audio_upload.dart';
 import '../entities/lesson.dart';
 
 /// Единственная точка доступа к урокам, которую знает presentation.
 ///
-/// Сейчас за интерфейсом стоит только локальный источник; позже внутри `data`
-/// появится удалённый источник и синхронизация — домен и UI не изменятся.
+/// За интерфейсом — сервер как источник истины и локальный кеш поверх него.
+/// Для домена и UI ничего не изменилось: `Lesson.audioPath` по-прежнему путь к
+/// готовому к воспроизведению файлу, только теперь репозиторий при
+/// необходимости его докачивает.
 abstract interface class LessonRepository {
+  /// Список из кеша — то, что известно после последней синхронизации.
   Future<List<Lesson>> getLessons();
 
+  /// Тянет с сервера изменения с прошлого раза и применяет их к кешу:
+  /// новые и правленые уроки обновляются, удалённые на другом устройстве
+  /// исчезают вместе с осиротевшим аудио.
+  Future<void> syncLessons();
+
+  /// Урок целиком, с гарантией, что аудио лежит локально и его можно играть.
   Future<Lesson?> getLesson(String id);
 
-  /// Импортирует аудио, определяет длительность и создаёт урок.
+  /// Отправляет выбранный файл на сервер. Длительность и пики считает он же.
   ///
-  /// [boundaries] — размеченные на экране создания границы (`N + 1` значение);
-  /// без них куски раскладываются равномерно. [trim] — оставленный обрезкой
-  /// отрезок файла; без него урок занимает файл целиком.
-  Future<Lesson> createLesson({
-    required String title,
-    required String sourceAudioPath,
-    required List<String> segmentTexts,
-    List<int>? boundaries,
-    AudioTrim? trim,
+  /// [onProgress] показывает ход загрузки, [cancel] её прерывает.
+  Future<AudioUpload> uploadAudio({
+    required String filePath,
+    void Function(int sent, int total)? onProgress,
+    Object? cancel,
   });
 
-  /// Длительность аудиофайла, ещё не привязанного к уроку: нужна, чтобы
-  /// показать волну и разметку до создания урока.
-  Future<int> resolveAudioDurationMs(String audioPath);
+  /// Создаёт урок из уже загруженного аудио.
+  ///
+  /// [boundaries] — размеченные на волне границы (`N + 1` значение); без них
+  /// куски раскладываются равномерно.
+  Future<Lesson> createLesson({
+    required String title,
+    required String audioId,
+    required int durationMs,
+    required List<String> segmentTexts,
+    List<int>? boundaries,
+  });
 
   Future<void> updateLesson(Lesson lesson);
 
   Future<void> deleteLesson(String id);
+
+  /// Стирает кеш уроков и скачанное аудио: выход из аккаунта.
+  Future<void> clearCache();
 }

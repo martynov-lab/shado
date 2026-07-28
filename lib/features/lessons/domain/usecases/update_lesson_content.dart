@@ -9,14 +9,17 @@ import 'create_lesson.dart';
 /// этих кусков на аудио и обрезка.
 ///
 /// Число кусков может измениться, поэтому урок пересобирается целиком. Сам
-/// аудиофайл не трогаем: обрезка живёт в краях крайних кусков.
+/// аудиофайл не трогаем: он иммутабелен и общий для всех уроков, которые на
+/// него ссылаются.
 class UpdateLessonContent {
   const UpdateLessonContent(this._repository);
 
   final LessonRepository _repository;
 
+  /// [lesson] — то, что правим: экран правки уже держит его у себя, и
+  /// перечитывать урок по сети ради этого незачем.
   Future<Lesson> call({
-    required String lessonId,
+    required Lesson lesson,
     required String title,
     required String rawText,
     required List<int> boundaries,
@@ -29,10 +32,6 @@ class UpdateLessonContent {
     final segmentTexts = CreateLesson.splitIntoSegments(rawText);
     if (segmentTexts.isEmpty) {
       throw const ValidationFailure('Текст не содержит ни одного куска');
-    }
-    final lesson = await _repository.getLesson(lessonId);
-    if (lesson == null) {
-      throw NotFoundFailure('Урок $lessonId не найден');
     }
     final range = (trim ?? lesson.trim).clampedTo(lesson.durationMs);
     // Разметка могла отстать от текста — тогда куски раскладываются заново.
