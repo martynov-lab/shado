@@ -3,6 +3,7 @@ import 'dart:io';
 import 'dart:math' as math;
 
 import 'package:just_waveform/just_waveform.dart';
+import 'package:path/path.dart' as p;
 
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/error/failures.dart';
@@ -10,9 +11,13 @@ import '../models/waveform_peaks.dart';
 
 /// Источник пиков волны для отрисовки.
 abstract interface class WaveformDataSource {
+  /// [cache] выключают для файла, который ещё не принадлежит приложению
+  /// (выбранное, но не импортированное аудио): рядом с чужим файлом мусорить
+  /// нельзя, пики считаются на один показ.
   Future<WaveformPeaks> loadPeaks(
     String audioPath, {
     int resolution = kWaveformResolution,
+    bool cache = true,
   });
 }
 
@@ -25,14 +30,24 @@ class JustWaveformDataSource implements WaveformDataSource {
   Future<WaveformPeaks> loadPeaks(
     String audioPath, {
     int resolution = kWaveformResolution,
+    bool cache = true,
   }) async {
-    final waveform = await _obtainWaveform(audioPath);
+    final waveform = await _obtainWaveform(audioPath, cache);
     return _resample(waveform, resolution);
   }
 
-  Future<Waveform> _obtainWaveform(String audioPath) async {
-    final cacheFile = File('$audioPath.wave');
-    if (await cacheFile.exists()) {
+  Future<Waveform> _obtainWaveform(String audioPath, bool cache) async {
+    // Извлечению всё равно нужен файл на выходе, поэтому без кеша пишем во
+    // временный каталог и убираем за собой.
+    final cacheFile = cache
+        ? File('$audioPath.wave')
+        : File(
+            p.join(
+              Directory.systemTemp.path,
+              'shado-preview-${DateTime.now().microsecondsSinceEpoch}.wave',
+            ),
+          );
+    if (cache && await cacheFile.exists()) {
       try {
         return await JustWaveform.parse(cacheFile);
       } catch (_) {
@@ -52,6 +67,14 @@ class JustWaveformDataSource implements WaveformDataSource {
       return result.waveform!;
     } catch (error) {
       throw AudioFailure('Не удалось построить волновую форму', cause: error);
+    } finally {
+      if (!cache) {
+        try {
+          if (await cacheFile.exists()) await cacheFile.delete();
+        } catch (_) {
+          // Временный файл не удалился — не повод рушить показ волны.
+        }
+      }
     }
   }
 

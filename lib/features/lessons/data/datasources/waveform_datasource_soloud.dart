@@ -25,9 +25,12 @@ class SoLoudWaveformDataSource implements WaveformDataSource {
   Future<WaveformPeaks> loadPeaks(
     String audioPath, {
     int resolution = kWaveformResolution,
+    bool cache = true,
   }) async {
-    final cached = await _readCache(audioPath, resolution);
-    if (cached != null) return _toPeaks(cached);
+    if (cache) {
+      final cached = await _readCache(audioPath, resolution);
+      if (cached != null) return _toPeaks(cached);
+    }
 
     final extension = p
         .extension(audioPath)
@@ -52,7 +55,7 @@ class SoLoudWaveformDataSource implements WaveformDataSource {
     }
 
     final normalized = _normalize(envelope);
-    await _writeCache(audioPath, normalized);
+    if (cache) await _writeCache(audioPath, normalized);
     return _toPeaks(normalized);
   }
 

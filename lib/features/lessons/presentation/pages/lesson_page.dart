@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../../core/constants/app_constants.dart';
 import '../controllers/lesson_controller.dart';
-import '../controllers/waveform_controller.dart';
 import '../widgets/segment_tile.dart';
-import '../widgets/waveform_editor.dart';
+import '../widgets/waveform_card.dart';
 
 class LessonPage extends ConsumerWidget {
   const LessonPage({super.key, required this.lessonId});
@@ -18,6 +18,13 @@ class LessonPage extends ConsumerWidget {
     return Scaffold(
       appBar: AppBar(
         title: Text(lessonAsync.value?.lesson.title ?? 'Урок'),
+        actions: [
+          IconButton(
+            tooltip: 'Править разбивку',
+            onPressed: lessonAsync.hasValue ? () => _edit(context, ref) : null,
+            icon: const Icon(Icons.edit_outlined),
+          ),
+        ],
       ),
       body: lessonAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
@@ -30,6 +37,14 @@ class LessonPage extends ConsumerWidget {
         data: (state) => _LessonView(lessonId: lessonId, state: state),
       ),
     );
+  }
+
+  /// Возврат с экрана правки: разбивка могла измениться целиком, поэтому урок
+  /// перечитывается, а плеер сбрасывается.
+  Future<void> _edit(BuildContext context, WidgetRef ref) async {
+    final saved = await context.push<bool>('/lesson/$lessonId/edit');
+    if (saved != true) return;
+    await ref.read(lessonControllerProvider(lessonId).notifier).reload();
   }
 }
 
@@ -90,7 +105,6 @@ class _WaveformSection extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final controller = ref.read(lessonControllerProvider(lessonId).notifier);
-    final peaksAsync = ref.watch(waveformPeaksProvider(state.lesson.audioPath));
     // Плеер отдаёт позицию внутри вырезанного куска — на волне её нужно
     // отложить от начала этого куска.
     final position = ref.watch(playbackPositionProvider(lessonId)).value;
@@ -100,35 +114,14 @@ class _WaveformSection extends ConsumerWidget {
         : state.lesson.segments[activeIndex].startMs +
               (position?.inMilliseconds ?? 0);
 
-    return Card(
-      margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-      clipBehavior: Clip.antiAlias,
-      child: SizedBox(
-        height: 152,
-        child: peaksAsync.when(
-          loading: () => const Center(child: CircularProgressIndicator()),
-          error: (error, _) => Center(
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Text(
-                'Волна недоступна: $error',
-                textAlign: TextAlign.center,
-                style: Theme.of(context).textTheme.bodySmall,
-              ),
-            ),
-          ),
-          data: (peaks) => WaveformEditor(
-            peaks: peaks,
-            durationMs: state.lesson.durationMs,
-            boundaries: state.lesson.boundaries,
-            positionMs: absolutePositionMs,
-            activeSegmentIndex: activeIndex,
-            showCursor: activeIndex != null,
-            height: 152,
-            onBoundariesChanged: controller.updateBoundaries,
-          ),
-        ),
-      ),
+    return WaveformCard(
+      audioPath: state.lesson.audioPath,
+      durationMs: state.lesson.durationMs,
+      boundaries: state.lesson.boundaries,
+      onBoundariesChanged: controller.updateBoundaries,
+      positionMs: absolutePositionMs,
+      activeSegmentIndex: activeIndex,
+      showCursor: activeIndex != null,
     );
   }
 }

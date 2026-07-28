@@ -173,6 +173,19 @@ class LessonController extends AsyncNotifier<LessonState> {
     await _player.setSpeed(speed);
   }
 
+  /// Перечитывает урок после правки на отдельном экране: там могло измениться
+  /// и число кусков, поэтому старые индексы (активный кусок, зацикленные)
+  /// больше не годятся.
+  Future<void> reload() async {
+    await _player.stop();
+    _loopedSegments.clear();
+    state = const AsyncValue.loading();
+    state = await AsyncValue.guard(() async {
+      final lesson = await ref.read(getLessonProvider)(lessonId);
+      return LessonState(lesson: lesson, speed: _speed);
+    });
+  }
+
   /// Сохраняет новые границы после перетаскивания метки на волне.
   Future<void> updateBoundaries(List<int> boundaries) async {
     final current = state.value;

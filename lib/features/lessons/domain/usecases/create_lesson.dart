@@ -8,6 +8,7 @@ class CreateLessonParams {
     required this.title,
     required this.rawText,
     required this.sourceAudioPath,
+    this.boundaries,
   });
 
   final String title;
@@ -15,6 +16,10 @@ class CreateLessonParams {
   /// Текст целиком, куски разделены [kSegmentDelimiter].
   final String rawText;
   final String sourceAudioPath;
+
+  /// Границы, размеченные на волне до создания урока (`N + 1` значение).
+  /// `null` — разложить куски равномерно.
+  final List<int>? boundaries;
 }
 
 /// Создание урока: разбиение текста на куски и передача их репозиторию,
@@ -36,10 +41,16 @@ class CreateLesson {
     if (segmentTexts.isEmpty) {
       throw const ValidationFailure('Текст не содержит ни одного куска');
     }
+    final boundaries = params.boundaries;
     return _repository.createLesson(
       title: title,
       sourceAudioPath: params.sourceAudioPath,
       segmentTexts: segmentTexts,
+      // Разметка с экрана создания годится, только если она про этот же набор
+      // кусков: текст могли поправить после перетаскивания меток.
+      boundaries: boundaries != null && boundaries.length == segmentTexts.length + 1
+          ? boundaries
+          : null,
     );
   }
 

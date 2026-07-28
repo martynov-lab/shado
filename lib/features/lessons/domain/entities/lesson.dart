@@ -73,9 +73,24 @@ class Lesson {
 
   /// Пересобирает сегменты по новому набору границ, сохраняя тексты.
   Lesson withBoundaries(List<int> boundaries) {
-    if (boundaries.length != segments.length + 1) {
+    return withSegments(
+      texts: [for (final segment in segments) segment.text],
+      boundaries: boundaries,
+    );
+  }
+
+  /// Пересобирает урок под новую разбивку: тексты кусков и их границы задаются
+  /// вместе, поэтому число кусков может измениться.
+  Lesson withSegments({
+    required List<String> texts,
+    required List<int> boundaries,
+  }) {
+    if (texts.isEmpty) {
+      throw const ValidationFailure('Урок должен содержать хотя бы один кусок');
+    }
+    if (boundaries.length != texts.length + 1) {
       throw ValidationFailure(
-        'Ожидалось ${segments.length + 1} границ, получено ${boundaries.length}',
+        'Ожидалось ${texts.length + 1} границ, получено ${boundaries.length}',
       );
     }
     for (var i = 1; i < boundaries.length; i++) {
@@ -85,8 +100,13 @@ class Lesson {
     }
     return copyWith(
       segments: [
-        for (var i = 0; i < segments.length; i++)
-          segments[i].copyWith(startMs: boundaries[i], endMs: boundaries[i + 1]),
+        for (var i = 0; i < texts.length; i++)
+          Segment(
+            index: i,
+            text: texts[i],
+            startMs: boundaries[i],
+            endMs: boundaries[i + 1],
+          ),
       ],
     );
   }

@@ -9,13 +9,20 @@ abstract interface class LessonRepository {
 
   Future<Lesson?> getLesson(String id);
 
-  /// Импортирует аудио, определяет длительность и создаёт урок с равномерно
-  /// расставленными границами кусков.
+  /// Импортирует аудио, определяет длительность и создаёт урок.
+  ///
+  /// [boundaries] — размеченные на экране создания границы (`N + 1` значение);
+  /// без них куски раскладываются равномерно.
   Future<Lesson> createLesson({
     required String title,
     required String sourceAudioPath,
     required List<String> segmentTexts,
+    List<int>? boundaries,
   });
+
+  /// Длительность аудиофайла, ещё не привязанного к уроку: нужна, чтобы
+  /// показать волну и разметку до создания урока.
+  Future<int> resolveAudioDurationMs(String audioPath);
 
   Future<void> updateLesson(Lesson lesson);
 

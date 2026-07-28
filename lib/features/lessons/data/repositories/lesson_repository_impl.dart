@@ -1,6 +1,7 @@
 import 'package:uuid/uuid.dart';
 
 import '../../domain/entities/lesson.dart';
+import '../../domain/entities/segment_boundaries.dart';
 import '../../domain/repositories/lesson_repository.dart';
 import '../datasources/audio_file_datasource.dart';
 import '../datasources/lesson_local_datasource.dart';
@@ -38,6 +39,7 @@ class LessonRepositoryImpl implements LessonRepository {
     required String title,
     required String sourceAudioPath,
     required List<String> segmentTexts,
+    List<int>? boundaries,
   }) async {
     // UUID, а не автоинкремент: идентификатор должен совпасть с серверным,
     // когда появится бэкенд.
@@ -48,7 +50,7 @@ class LessonRepositoryImpl implements LessonRepository {
     );
     try {
       final durationMs = await _audio.resolveDurationMs(audioPath);
-      final lesson = Lesson.withEvenBoundaries(
+      var lesson = Lesson.withEvenBoundaries(
         id: id,
         title: title,
         audioPath: audioPath,
@@ -56,6 +58,11 @@ class LessonRepositoryImpl implements LessonRepository {
         createdAt: DateTime.now().toUtc(),
         segmentTexts: segmentTexts,
       );
+      if (boundaries != null && boundaries.length == segmentTexts.length + 1) {
+        lesson = lesson.withBoundaries(
+          SegmentBoundaries.normalize(boundaries, durationMs),
+        );
+      }
       await _local.upsertLesson(LessonModel.fromEntity(lesson));
       return lesson;
     } catch (_) {
@@ -64,6 +71,10 @@ class LessonRepositoryImpl implements LessonRepository {
       rethrow;
     }
   }
+
+  @override
+  Future<int> resolveAudioDurationMs(String audioPath) =>
+      _audio.resolveDurationMs(audioPath);
 
   @override
   Future<void> updateLesson(Lesson lesson) {

@@ -79,4 +79,41 @@ void main() {
       );
     });
   });
+
+  group('Lesson.withSegments', () {
+    test('меняет число кусков вместе с границами', () {
+      final updated = buildLesson().withSegments(
+        texts: const ['Один', 'Два'],
+        boundaries: const [0, 4000, 9000],
+      );
+
+      expect(updated.segmentCount, 2);
+      expect(updated.segments.map((s) => s.text), ['Один', 'Два']);
+      expect(updated.segments.map((s) => s.index), [0, 1]);
+      expect(updated.boundaries, [0, 4000, 9000]);
+    });
+
+    test('не трогает аудио и метаданные урока', () {
+      final lesson = buildLesson();
+      final updated = lesson.withSegments(
+        texts: const ['Один'],
+        boundaries: const [0, 9000],
+      );
+
+      expect(updated.id, lesson.id);
+      expect(updated.audioPath, lesson.audioPath);
+      expect(updated.durationMs, lesson.durationMs);
+      expect(updated.createdAt, lesson.createdAt);
+    });
+
+    test('требует границу на каждый стык', () {
+      expect(
+        () => buildLesson().withSegments(
+          texts: const ['Один', 'Два'],
+          boundaries: const [0, 9000],
+        ),
+        throwsA(isA<ValidationFailure>()),
+      );
+    });
+  });
 }

@@ -4,6 +4,8 @@ import 'package:go_router/go_router.dart';
 
 import '../../../../core/constants/app_constants.dart';
 import '../controllers/add_lesson_controller.dart';
+import '../widgets/segment_text_field.dart';
+import '../widgets/waveform_card.dart';
 
 class AddLessonPage extends ConsumerStatefulWidget {
   const AddLessonPage({super.key});
@@ -70,23 +72,10 @@ class _AddLessonPageState extends ConsumerState<AddLessonPage> {
               onChanged: controller.setTitle,
             ),
             const SizedBox(height: 16),
-            TextField(
+            SegmentTextField(
               controller: _textController,
-              decoration: const InputDecoration(
-                labelText: 'Текст',
-                helperText:
-                    'Разделяйте предложения символом «$kSegmentDelimiter»',
-                alignLabelWithHint: true,
-              ),
-              minLines: 6,
-              maxLines: 12,
-              keyboardType: TextInputType.multiline,
               onChanged: controller.setText,
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'Кусков получится: ${state.segmentCount}',
-              style: theme.textTheme.bodySmall,
+              segmentCount: state.segmentCount,
             ),
             const SizedBox(height: 16),
             OutlinedButton.icon(
@@ -99,7 +88,12 @@ class _AddLessonPageState extends ConsumerState<AddLessonPage> {
               'Поддерживаются ${allowedAudioExtensions.join(', ')}',
               style: theme.textTheme.bodySmall,
             ),
-            const SizedBox(height: 24),
+            const SizedBox(height: 16),
+            _WaveformPreview(
+              state: state,
+              onBoundariesChanged: controller.setBoundaries,
+            ),
+            const SizedBox(height: 16),
             FilledButton(
               onPressed: state.canSubmit ? _submit : null,
               child: state.isSubmitting
@@ -113,6 +107,72 @@ class _AddLessonPageState extends ConsumerState<AddLessonPage> {
           ],
         ),
       ),
+    );
+  }
+}
+
+/// Волна выбранного файла с метками границ — разметка идёт ещё до создания
+/// урока, чтобы куски сразу попали на свои места.
+class _WaveformPreview extends StatelessWidget {
+  const _WaveformPreview({
+    required this.state,
+    required this.onBoundariesChanged,
+  });
+
+  final AddLessonFormState state;
+  final ValueChanged<List<int>> onBoundariesChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    if (state.isProbingAudio) {
+      return const Card(
+        margin: EdgeInsets.zero,
+        child: SizedBox(
+          height: 168,
+          child: Center(child: CircularProgressIndicator()),
+        ),
+      );
+    }
+    if (!state.hasWaveform) {
+      return Card(
+        margin: EdgeInsets.zero,
+        child: SizedBox(
+          height: 96,
+          child: Center(
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Text(
+                'Выберите аудио — здесь появится волна с метками границ',
+                textAlign: TextAlign.center,
+                style: theme.textTheme.bodySmall,
+              ),
+            ),
+          ),
+        ),
+      );
+    }
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        WaveformCard(
+          audioPath: state.audioPath!,
+          durationMs: state.durationMs,
+          boundaries: state.boundaries,
+          onBoundariesChanged: onBoundariesChanged,
+          // Файл ещё чужой: кеш пиков рядом с ним не создаём.
+          cachePeaks: false,
+          margin: EdgeInsets.zero,
+        ),
+        const SizedBox(height: 8),
+        Text(
+          state.segmentCount == 0
+              ? 'Введите текст — метки границ появятся на волне'
+              : 'Перетащите метки, чтобы совместить куски с речью. '
+                    'Растянуть волну: «+/−», щипок или Ctrl + колесо мыши',
+          style: theme.textTheme.bodySmall,
+        ),
+      ],
     );
   }
 }

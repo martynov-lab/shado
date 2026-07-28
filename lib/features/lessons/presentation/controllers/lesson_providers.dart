@@ -10,8 +10,10 @@ import '../../data/repositories/lesson_repository_impl.dart';
 import '../../domain/repositories/lesson_repository.dart';
 import '../../domain/usecases/create_lesson.dart';
 import '../../domain/usecases/delete_lesson.dart';
+import '../../domain/usecases/get_audio_duration.dart';
 import '../../domain/usecases/get_lesson.dart';
 import '../../domain/usecases/get_lessons.dart';
+import '../../domain/usecases/update_lesson_content.dart';
 import '../../domain/usecases/update_segment_boundaries.dart';
 
 /// Сборка зависимостей фичи. Presentation дальше видит только use case'ы.
@@ -56,4 +58,12 @@ final deleteLessonProvider = Provider<DeleteLesson>(
 
 final updateSegmentBoundariesProvider = Provider<UpdateSegmentBoundaries>(
   (ref) => UpdateSegmentBoundaries(ref.watch(lessonRepositoryProvider)),
+);
+
+final updateLessonContentProvider = Provider<UpdateLessonContent>(
+  (ref) => UpdateLessonContent(ref.watch(lessonRepositoryProvider)),
+);
+
+final getAudioDurationProvider = Provider<GetAudioDuration>(
+  (ref) => GetAudioDuration(ref.watch(lessonRepositoryProvider)),
 );
