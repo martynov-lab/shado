@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../core/utils/duration_format.dart';
 import '../controllers/edit_lesson_controller.dart';
 import '../widgets/segment_text_field.dart';
 import '../widgets/waveform_card.dart';
@@ -75,11 +77,31 @@ class _EditFormState extends ConsumerState<_EditForm> {
   late final _titleController = TextEditingController(text: widget.state.title);
   late final _textController = TextEditingController(text: widget.state.text);
 
+  /// Фокус самого экрана: пока он здесь, пробел работает как play/pause.
+  final _pageFocus = FocusNode(debugLabel: 'edit-lesson-page');
+
   @override
   void dispose() {
     _titleController.dispose();
     _textController.dispose();
+    _pageFocus.dispose();
     super.dispose();
+  }
+
+  /// Пробел как play/pause — привычка из любого редактора аудио.
+  ///
+  /// Срабатывает только когда фокус на самом экране: в текстовом поле пробел
+  /// остаётся пробелом, а на кнопке ▶ его обрабатывает сама кнопка.
+  KeyEventResult _onKeyEvent(FocusNode node, KeyEvent event) {
+    if (event is! KeyDownEvent ||
+        event.logicalKey != LogicalKeyboardKey.space ||
+        !node.hasPrimaryFocus) {
+      return KeyEventResult.ignored;
+    }
+    ref
+        .read(editLessonControllerProvider(widget.lessonId).notifier)
+        .togglePlay();
+    return KeyEventResult.handled;
   }
 
   @override
@@ -90,38 +112,101 @@ class _EditFormState extends ConsumerState<_EditForm> {
       editLessonControllerProvider(widget.lessonId).notifier,
     );
 
-    return SafeArea(
-      child: ListView(
-        padding: const EdgeInsets.all(16),
-        children: [
-          TextField(
-            controller: _titleController,
-            decoration: const InputDecoration(labelText: 'Название'),
-            textInputAction: TextInputAction.next,
-            onChanged: controller.setTitle,
-          ),
-          const SizedBox(height: 16),
-          SegmentTextField(
-            controller: _textController,
-            onChanged: controller.setText,
-            segmentCount: state.segmentCount,
-          ),
-          const SizedBox(height: 16),
-          WaveformCard(
-            audioPath: state.lesson.audioPath,
-            durationMs: state.lesson.durationMs,
-            boundaries: state.boundaries,
-            onBoundariesChanged: controller.setBoundaries,
-            margin: EdgeInsets.zero,
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'Перетащите метки, чтобы совместить куски с речью. '
-            'Растянуть волну: «+/−», щипок или Ctrl + колесо мыши',
-            style: theme.textTheme.bodySmall,
-          ),
-        ],
+    return Focus(
+      focusNode: _pageFocus,
+      autofocus: true,
+      onKeyEvent: _onKeyEvent,
+      child: SafeArea(
+        child: ListView(
+          padding: const EdgeInsets.all(16),
+          children: [
+            TextField(
+              controller: _titleController,
+              decoration: const InputDecoration(labelText: 'Название'),
+              textInputAction: TextInputAction.next,
+              onChanged: controller.setTitle,
+            ),
+            const SizedBox(height: 16),
+            SegmentTextField(
+              controller: _textController,
+              onChanged: controller.setText,
+              segmentCount: state.segmentCount,
+            ),
+            const SizedBox(height: 16),
+            // Тронули волну — забираем фокус из текстового поля, иначе пробел
+            // так и останется пробелом.
+            Listener(
+              onPointerDown: (_) => _pageFocus.requestFocus(),
+              child: _WaveformWithPlayback(
+                lessonId: widget.lessonId,
+                state: state,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Метки берутся за кружок сверху, ползунок — за треугольник '
+              'снизу; перетаскивание в стороне от них двигает волну. Растянуть '
+              'волну: щипок двумя пальцами или Ctrl + колесо мыши. Пробел — '
+              'играть или пауза',
+              style: theme.textTheme.bodySmall,
+            ),
+          ],
+        ),
       ),
+    );
+  }
+}
+
+/// Волна с ползунком и кнопкой воспроизведения: аудио играет с того места,
+/// куда поставили ползунок, повторное нажатие ставит на паузу.
+class _WaveformWithPlayback extends ConsumerWidget {
+  const _WaveformWithPlayback({required this.lessonId, required this.state});
+
+  final String lessonId;
+  final EditLessonState state;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final controller = ref.read(
+      editLessonControllerProvider(lessonId).notifier,
+    );
+    // Пока играет, ползунок ведёт сам плеер; на паузе он стоит там, где его
+    // оставили.
+    final position = ref.watch(editPlaybackPositionProvider(lessonId)).value;
+    final playheadMs = state.isPlaying
+        ? (position?.inMilliseconds ?? state.playheadMs)
+        : state.playheadMs;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        WaveformCard(
+          audioPath: state.lesson.audioPath,
+          durationMs: state.lesson.durationMs,
+          boundaries: state.boundaries,
+          onBoundariesChanged: controller.setBoundaries,
+          onSeek: controller.seek,
+          positionMs: playheadMs,
+          showCursor: true,
+          margin: EdgeInsets.zero,
+        ),
+        const SizedBox(height: 8),
+        Row(
+          children: [
+            IconButton.filled(
+              tooltip: state.isPlaying ? 'Пауза' : 'Играть с ползунка',
+              onPressed: controller.togglePlay,
+              icon: Icon(state.isPlaying ? Icons.pause : Icons.play_arrow),
+            ),
+            const SizedBox(width: 12),
+            Text(
+              '${formatPosition(playheadMs)} / '
+              '${formatPosition(state.lesson.durationMs)}',
+              style: Theme.of(context).textTheme.bodyMedium,
+            ),
+          ],
+        ),
+      ],
     );
   }
 }

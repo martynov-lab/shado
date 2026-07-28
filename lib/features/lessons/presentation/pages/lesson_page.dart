@@ -5,7 +5,6 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/constants/app_constants.dart';
 import '../controllers/lesson_controller.dart';
 import '../widgets/segment_tile.dart';
-import '../widgets/waveform_card.dart';
 
 class LessonPage extends ConsumerWidget {
   const LessonPage({super.key, required this.lessonId});
@@ -75,7 +74,7 @@ class _LessonView extends ConsumerWidget {
         ),
         Expanded(
           child: ListView.builder(
-            padding: const EdgeInsets.only(bottom: 8),
+            padding: const EdgeInsets.only(bottom: 16),
             itemCount: segments.length,
             itemBuilder: (context, index) {
               final segment = segments[index];
@@ -90,38 +89,7 @@ class _LessonView extends ConsumerWidget {
             },
           ),
         ),
-        _WaveformSection(lessonId: lessonId, state: state),
       ],
-    );
-  }
-}
-
-class _WaveformSection extends ConsumerWidget {
-  const _WaveformSection({required this.lessonId, required this.state});
-
-  final String lessonId;
-  final LessonState state;
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final controller = ref.read(lessonControllerProvider(lessonId).notifier);
-    // Плеер отдаёт позицию внутри вырезанного куска — на волне её нужно
-    // отложить от начала этого куска.
-    final position = ref.watch(playbackPositionProvider(lessonId)).value;
-    final activeIndex = state.activeSegmentIndex;
-    final absolutePositionMs = activeIndex == null
-        ? 0
-        : state.lesson.segments[activeIndex].startMs +
-              (position?.inMilliseconds ?? 0);
-
-    return WaveformCard(
-      audioPath: state.lesson.audioPath,
-      durationMs: state.lesson.durationMs,
-      boundaries: state.lesson.boundaries,
-      onBoundariesChanged: controller.updateBoundaries,
-      positionMs: absolutePositionMs,
-      activeSegmentIndex: activeIndex,
-      showCursor: activeIndex != null,
     );
   }
 }

@@ -14,7 +14,6 @@ import '../../domain/usecases/get_audio_duration.dart';
 import '../../domain/usecases/get_lesson.dart';
 import '../../domain/usecases/get_lessons.dart';
 import '../../domain/usecases/update_lesson_content.dart';
-import '../../domain/usecases/update_segment_boundaries.dart';
 
 /// Сборка зависимостей фичи. Presentation дальше видит только use case'ы.
 final lessonLocalDataSourceProvider = Provider<LessonLocalDataSource>(
@@ -54,10 +53,6 @@ final createLessonProvider = Provider<CreateLesson>(
 
 final deleteLessonProvider = Provider<DeleteLesson>(
   (ref) => DeleteLesson(ref.watch(lessonRepositoryProvider)),
-);
-
-final updateSegmentBoundariesProvider = Provider<UpdateSegmentBoundaries>(
-  (ref) => UpdateSegmentBoundaries(ref.watch(lessonRepositoryProvider)),
 );
 
 final updateLessonContentProvider = Provider<UpdateLessonContent>(

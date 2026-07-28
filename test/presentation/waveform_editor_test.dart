@@ -1,4 +1,8 @@
+import 'dart:math' as math;
+
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shado/core/theme/app_theme.dart';
 import 'package:shado/features/lessons/data/models/waveform_peaks.dart';
@@ -8,6 +12,14 @@ void main() {
   const durationMs = 9000;
   const width = 400.0;
   const height = 160.0;
+
+  /// Ручка границы — кружок под шкалой времени, ручка ползунка — треугольник у
+  /// нижнего края. Тесты берут метки ровно за них.
+  const handleY = 22.0;
+  const playheadHandleY = height - 7;
+
+  /// Середина волны: здесь ручек нет, поэтому перетаскивание двигает волну.
+  const bodyY = 80.0;
 
   /// Ровная волна: для проверки жестов форма пиков не важна.
   final peaks = WaveformPeaks(
@@ -19,6 +31,8 @@ void main() {
     WidgetTester tester, {
     required List<int> boundaries,
     ValueChanged<List<int>>? onBoundariesChanged,
+    ValueChanged<int>? onSeek,
+    int positionMs = 0,
   }) {
     return tester.pumpWidget(
       MaterialApp(
@@ -31,9 +45,11 @@ void main() {
               peaks: peaks,
               durationMs: durationMs,
               boundaries: boundaries,
-              positionMs: 0,
+              positionMs: positionMs,
+              showCursor: onSeek != null,
               height: height,
               onBoundariesChanged: onBoundariesChanged ?? (_) {},
+              onSeek: onSeek,
             ),
           ),
         ),
@@ -41,82 +57,260 @@ void main() {
     );
   }
 
-  testWidgets('перетаскивание метки отдаёт новые границы', (tester) async {
-    List<int>? reported;
-    await pumpEditor(
-      tester,
-      boundaries: const [0, 3000, 6000, 9000],
-      onBoundariesChanged: (value) => reported = value,
-    );
+  /// Ctrl + колесо мыши: масштаб меняется в `exp(-dy / 300)` раз, момент под
+  /// курсором остаётся на месте.
+  Future<void> ctrlWheel(WidgetTester tester, Offset at, double dy) async {
+    await tester.sendKeyDownEvent(LogicalKeyboardKey.controlLeft);
+    final pointer = TestPointer(1, PointerDeviceKind.mouse);
+    await tester.sendEventToBinding(pointer.hover(at));
+    await tester.sendEventToBinding(pointer.scroll(Offset(0, dy)));
+    await tester.pump();
+    await tester.sendKeyUpEvent(LogicalKeyboardKey.controlLeft);
+  }
 
-    // Метка 3000 мс стоит на x = 3000 / 9000 * 400.
-    await tester.dragFrom(const Offset(133, 80), const Offset(100, 0));
-    await tester.pumpAndSettle();
+  group('метки границ', () {
+    testWidgets('тянутся за верхний кружок', (tester) async {
+      List<int>? reported;
+      await pumpEditor(
+        tester,
+        boundaries: const [0, 3000, 6000, 9000],
+        onBoundariesChanged: (value) => reported = value,
+      );
 
-    expect(reported, isNotNull);
-    expect(reported!.first, 0);
-    expect(reported!.last, durationMs);
-    expect(reported![2], 6000);
-    // 233 / 400 * 9000 ≈ 5243.
-    expect(reported![1], closeTo(5243, 60));
+      // Метка 3000 мс стоит на x = 3000 / 9000 * 400.
+      await tester.dragFrom(const Offset(133, handleY), const Offset(100, 0));
+      await tester.pumpAndSettle();
+
+      expect(reported, isNotNull);
+      expect(reported!.first, 0);
+      expect(reported!.last, durationMs);
+      expect(reported![2], 6000);
+      // 233 / 400 * 9000 ≈ 5243.
+      expect(reported![1], closeTo(5243, 60));
+    });
+
+    testWidgets('за середину волны не тянутся', (tester) async {
+      List<int>? reported;
+      await pumpEditor(
+        tester,
+        boundaries: const [0, 3000, 6000, 9000],
+        onBoundariesChanged: (value) => reported = value,
+      );
+
+      // Тот же x, но ниже кружка — это перетаскивание волны, не метки.
+      await tester.dragFrom(const Offset(133, bodyY), const Offset(100, 0));
+      await tester.pumpAndSettle();
+
+      expect(reported, isNull);
+    });
+
+    testWidgets('крайние метки не двигаются', (tester) async {
+      List<int>? reported;
+      await pumpEditor(
+        tester,
+        boundaries: const [0, 4500, 9000],
+        onBoundariesChanged: (value) => reported = value,
+      );
+
+      // Тянем от самого края: там только неподвижная граница 0.
+      await tester.dragFrom(const Offset(2, handleY), const Offset(80, 0));
+      await tester.pumpAndSettle();
+
+      expect(reported, isNull);
+    });
   });
 
-  testWidgets('крайние метки не двигаются', (tester) async {
-    List<int>? reported;
-    await pumpEditor(
+  group('масштаб и перетаскивание волны', () {
+    testWidgets('Ctrl + колесо растягивает волну вокруг курсора', (
       tester,
-      boundaries: const [0, 4500, 9000],
-      onBoundariesChanged: (value) => reported = value,
-    );
+    ) async {
+      int? seeked;
+      await pumpEditor(
+        tester,
+        boundaries: const [0, 9000],
+        onSeek: (value) => seeked = value,
+      );
 
-    // Тянем от самого края: там только неподвижная граница 0.
-    await tester.dragFrom(const Offset(2, 80), const Offset(80, 0));
-    await tester.pumpAndSettle();
+      // Курсор в середине окна — под ним 4500 мс, там же и останется.
+      await ctrlWheel(tester, const Offset(200, bodyY), -300);
+      await tester.pumpAndSettle();
 
-    expect(reported, isNull);
+      await tester.tapAt(const Offset(200, bodyY));
+      await tester.pumpAndSettle();
+      expect(seeked, closeTo(4500, 60));
+
+      // Правее курсора время теперь идёт вчетверо (e ≈ 2.72) медленнее.
+      final zoom = math.exp(1);
+      await tester.tapAt(const Offset(300, bodyY));
+      await tester.pumpAndSettle();
+      expect(seeked, closeTo(4500 + 100 / (width * zoom) * durationMs, 60));
+    });
+
+    testWidgets('перетаскивание волны сдвигает окно', (tester) async {
+      int? seeked;
+      await pumpEditor(
+        tester,
+        boundaries: const [0, 9000],
+        onSeek: (value) => seeked = value,
+      );
+
+      await ctrlWheel(tester, const Offset(200, bodyY), -300);
+      await tester.pumpAndSettle();
+
+      // Тянем волну влево: под точкой x = 200 оказывается более позднее время.
+      await tester.dragFrom(const Offset(200, bodyY), const Offset(-100, 0));
+      await tester.pumpAndSettle();
+
+      await tester.tapAt(const Offset(200, bodyY));
+      await tester.pumpAndSettle();
+
+      // Волна поехала не на все 100 пикселей: первые kDragSlopDefault уходят
+      // на распознавание жеста — до него ещё не известно, перетаскивание это
+      // или тап.
+      final zoom = math.exp(1);
+      const pannedPixels = 100 - kDragSlopDefault;
+      expect(
+        seeked,
+        closeTo(4500 + pannedPixels / (width * zoom) * durationMs, 40),
+      );
+    });
+
+    testWidgets('щипок двумя пальцами растягивает волну', (tester) async {
+      int? seeked;
+      await pumpEditor(
+        tester,
+        boundaries: const [0, 9000],
+        onSeek: (value) => seeked = value,
+      );
+
+      // Пальцы разъезжаются симметрично: центр (x = 200, он же 4500 мс) стоит
+      // на месте, расстояние между ними растёт втрое.
+      final first = await tester.startGesture(const Offset(150, bodyY));
+      final second = await tester.startGesture(const Offset(250, bodyY));
+      await first.moveTo(const Offset(50, bodyY));
+      await second.moveTo(const Offset(350, bodyY));
+      await first.up();
+      await second.up();
+      await tester.pumpAndSettle();
+
+      await tester.tapAt(const Offset(300, bodyY));
+      await tester.pumpAndSettle();
+      expect(seeked, closeTo(4500 + 100 / (width * 3) * durationMs, 120));
+    });
+
+    testWidgets('на растянутой волне метка ставится точнее', (tester) async {
+      List<int>? reported;
+      await pumpEditor(
+        tester,
+        boundaries: const [0, 4500, 9000],
+        onBoundariesChanged: (value) => reported = value,
+      );
+
+      // Растягиваем вокруг середины — метка 4500 мс остаётся на x = 200.
+      await ctrlWheel(tester, const Offset(200, bodyY), -300);
+      await tester.pumpAndSettle();
+
+      await tester.dragFrom(const Offset(200, handleY), const Offset(40, 0));
+      await tester.pumpAndSettle();
+
+      expect(reported, isNotNull);
+      // Те же 40 пикселей стоят во столько же раз меньше времени, во сколько
+      // растянута волна: ~330 мс вместо 900.
+      final zoom = math.exp(1);
+      expect(
+        reported![1] - 4500,
+        closeTo(40 / (width * zoom) * durationMs, 60),
+      );
+    });
   });
 
-  testWidgets('кнопки меняют масштаб и сбрасывают его', (tester) async {
-    await pumpEditor(tester, boundaries: const [0, 3000, 6000, 9000]);
+  group('ползунок воспроизведения', () {
+    testWidgets('тап по волне переносит ползунок', (tester) async {
+      int? seeked;
+      await pumpEditor(
+        tester,
+        boundaries: const [0, 9000],
+        onSeek: (value) => seeked = value,
+      );
 
-    expect(find.text('1.0×'), findsOneWidget);
+      await tester.tapAt(const Offset(300, bodyY));
+      await tester.pumpAndSettle();
 
-    await tester.tap(find.byIcon(Icons.add));
-    await tester.pumpAndSettle();
-    expect(find.text('1.6×'), findsOneWidget);
+      // 300 / 400 * 9000 = 6750.
+      expect(seeked, closeTo(6750, 40));
+    });
 
-    await tester.tap(find.byIcon(Icons.add));
-    await tester.pumpAndSettle();
-    expect(find.text('2.6×'), findsOneWidget);
+    testWidgets('тянется за нижний треугольник', (tester) async {
+      int? seeked;
+      await pumpEditor(
+        tester,
+        boundaries: const [0, 9000],
+        positionMs: 2250,
+        onSeek: (value) => seeked = value,
+      );
 
-    // Клик по подписи возвращает волну к исходному масштабу.
-    await tester.tap(find.text('2.6×'));
-    await tester.pumpAndSettle();
-    expect(find.text('1.0×'), findsOneWidget);
-  });
+      // Ползунок 2250 мс стоит на x = 100.
+      await tester.dragFrom(
+        const Offset(100, playheadHandleY),
+        const Offset(80, 0),
+      );
+      await tester.pumpAndSettle();
 
-  testWidgets('на растянутой волне метка ставится точнее', (tester) async {
-    List<int>? reported;
-    await pumpEditor(
+      // 180 / 400 * 9000 = 4050.
+      expect(seeked, closeTo(4050, 60));
+    });
+
+    testWidgets('за середину волны не тянется', (tester) async {
+      int? seeked;
+      await pumpEditor(
+        tester,
+        boundaries: const [0, 9000],
+        positionMs: 2250,
+        onSeek: (value) => seeked = value,
+      );
+
+      await tester.dragFrom(const Offset(100, bodyY), const Offset(80, 0));
+      await tester.pumpAndSettle();
+
+      expect(seeked, isNull);
+    });
+
+    testWidgets('без onSeek волна ползунком не управляет', (tester) async {
+      int? seeked;
+      await pumpEditor(tester, boundaries: const [0, 9000]);
+
+      await tester.tapAt(const Offset(300, bodyY));
+      await tester.pumpAndSettle();
+
+      expect(seeked, isNull);
+    });
+
+    testWidgets('ручки границы и ползунка не мешают друг другу', (
       tester,
-      boundaries: const [0, 4500, 9000],
-      onBoundariesChanged: (value) => reported = value,
-    );
+    ) async {
+      List<int>? reported;
+      int? seeked;
+      await pumpEditor(
+        tester,
+        boundaries: const [0, 3000, 6000, 9000],
+        positionMs: 3000,
+        onBoundariesChanged: (value) => reported = value,
+        onSeek: (value) => seeked = value,
+      );
 
-    // Кнопки тянут масштаб к середине окна, поэтому метка 4500 мс остаётся
-    // ровно посередине — на x = 200.
-    await tester.tap(find.byIcon(Icons.add));
-    await tester.tap(find.byIcon(Icons.add));
-    await tester.tap(find.byIcon(Icons.add));
-    await tester.pumpAndSettle();
-    expect(find.text('4.1×'), findsOneWidget);
+      // Обе ручки на x = 133, но по вертикали разведены: сверху — граница.
+      await tester.dragFrom(const Offset(133, handleY), const Offset(60, 0));
+      await tester.pumpAndSettle();
+      expect(seeked, isNull);
+      expect(reported?[1], greaterThan(3000));
 
-    await tester.dragFrom(const Offset(200, 80), const Offset(40, 0));
-    await tester.pumpAndSettle();
-
-    expect(reported, isNotNull);
-    // Те же 40 пикселей на 4× стоят вчетверо меньше времени: ~220 мс вместо
-    // 900 на исходном масштабе.
-    expect(reported![1] - 4500, closeTo(220, 60));
+      // Снизу — ползунок.
+      await tester.dragFrom(
+        const Offset(133, playheadHandleY),
+        const Offset(60, 0),
+      );
+      await tester.pumpAndSettle();
+      expect(seeked, greaterThan(3000));
+    });
   });
 }

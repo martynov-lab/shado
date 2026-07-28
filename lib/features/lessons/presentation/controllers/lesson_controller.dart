@@ -15,13 +15,6 @@ final lessonAudioPlayerProvider = Provider.autoDispose
       return player;
     });
 
-/// Позиция воспроизведения — отдельным провайдером, чтобы частые тики
-/// перерисовывали только курсор на волне.
-final playbackPositionProvider = StreamProvider.autoDispose
-    .family<Duration, String>((ref, lessonId) {
-      return ref.watch(lessonAudioPlayerProvider(lessonId)).positionStream;
-    });
-
 /// Состояние экрана урока.
 class LessonState {
   const LessonState({
@@ -68,7 +61,8 @@ class LessonState {
   }
 }
 
-/// Проигрывание кусков, зацикливание, скорость и правка границ.
+/// Проигрывание кусков, зацикливание и скорость. Разметка правится на
+/// отдельном экране — здесь урок уже нарезан.
 class LessonController extends AsyncNotifier<LessonState> {
   LessonController(this.lessonId);
 
@@ -186,24 +180,6 @@ class LessonController extends AsyncNotifier<LessonState> {
     });
   }
 
-  /// Сохраняет новые границы после перетаскивания метки на волне.
-  Future<void> updateBoundaries(List<int> boundaries) async {
-    final current = state.value;
-    if (current == null) return;
-    final updated = await ref.read(updateSegmentBoundariesProvider)(
-      lessonId: lessonId,
-      boundaries: boundaries,
-    );
-    // Заряженный в плеер кусок мог поменять границы — сбрасываем источник.
-    await _player.stop();
-    state = AsyncValue.data(
-      current.copyWith(
-        lesson: updated,
-        clearActiveSegment: true,
-        isPlaying: false,
-      ),
-    );
-  }
 }
 
 final lessonControllerProvider = AsyncNotifierProvider.autoDispose

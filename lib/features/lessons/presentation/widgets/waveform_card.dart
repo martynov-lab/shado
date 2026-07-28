@@ -15,6 +15,7 @@ class WaveformCard extends ConsumerWidget {
     required this.durationMs,
     required this.boundaries,
     required this.onBoundariesChanged,
+    this.onSeek,
     this.cachePeaks = true,
     this.positionMs = 0,
     this.activeSegmentIndex,
@@ -27,6 +28,9 @@ class WaveformCard extends ConsumerWidget {
   final int durationMs;
   final List<int> boundaries;
   final ValueChanged<List<int>> onBoundariesChanged;
+
+  /// Задан — на волне появляется перетаскиваемый ползунок воспроизведения.
+  final ValueChanged<int>? onSeek;
 
   /// Кеш пиков рядом с файлом уместен только для аудио, которое уже
   /// принадлежит приложению.
@@ -69,6 +73,7 @@ class WaveformCard extends ConsumerWidget {
             showCursor: showCursor,
             height: height,
             onBoundariesChanged: onBoundariesChanged,
+            onSeek: onSeek,
           ),
         ),
       ),

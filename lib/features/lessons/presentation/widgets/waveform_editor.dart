@@ -15,10 +15,17 @@ import '../../data/models/waveform_peaks.dart';
 /// Границы общие: для `N` кусков приходит `N + 1` значение, крайние из них
 /// прибиты к краям аудио, а перетаскивать можно `N - 1` внутреннюю метку.
 ///
-/// Волну можно растягивать: при масштабе больше единицы в окно попадает лишь
-/// часть аудио, и метку удаётся поставить точнее. Масштаб меняют щипком,
-/// колесом мыши с Ctrl или кнопками «+/−»; двигают растянутую волну
-/// перетаскиванием мимо меток и колесом мыши.
+/// Если задан [onSeek], на волне появляется ползунок воспроизведения: его
+/// таскают за ручку внизу или переносят тапом по волне.
+///
+/// Управление устроено так, чтобы жест никогда не значил двух вещей сразу:
+///
+/// - ручки (кружок границы наверху, треугольник ползунка внизу) тащат саму
+///   метку — взять её можно только за ручку;
+/// - перетаскивание в любом другом месте двигает волну под окном; на
+///   растянутой волне это единственный способ добраться до её остальной части;
+/// - масштаб — щипок двумя пальцами или Ctrl + колесо мыши; растянутая волна
+///   показывает лишь часть аудио, зато метку удаётся поставить точнее.
 class WaveformEditor extends StatefulWidget {
   const WaveformEditor({
     super.key,
@@ -27,6 +34,7 @@ class WaveformEditor extends StatefulWidget {
     required this.boundaries,
     required this.positionMs,
     required this.onBoundariesChanged,
+    this.onSeek,
     this.activeSegmentIndex,
     this.showCursor = false,
     this.height = 140,
@@ -36,8 +44,16 @@ class WaveformEditor extends StatefulWidget {
   final WaveformPeaks peaks;
   final int durationMs;
   final List<int> boundaries;
+
+  /// Где стоит ползунок воспроизведения.
   final int positionMs;
+
   final ValueChanged<List<int>> onBoundariesChanged;
+
+  /// Куда перенесли ползунок: тапом по волне или перетаскиванием его ручки.
+  /// `null` — волна только для разметки, ползунок неподвижен.
+  final ValueChanged<int>? onSeek;
+
   final int? activeSegmentIndex;
   final bool showCursor;
   final double height;
@@ -49,9 +65,21 @@ class WaveformEditor extends StatefulWidget {
   State<WaveformEditor> createState() => _WaveformEditorState();
 }
 
+/// Высота полоски с временной шкалой сверху.
+const double _rulerHeight = 14;
+
+/// Кружок-ручка границы: центр под шкалой, у самого верха волны.
+const double _boundaryHandleY = _rulerHeight + 8;
+const double _boundaryHandleRadius = 6;
+
+/// Треугольная ручка ползунка у нижнего края волны.
+const double _playheadHandleHeight = 14;
+
 class _WaveformEditorState extends State<WaveformEditor> {
-  /// Радиус захвата метки пальцем.
-  static const double _touchSlop = 24;
+  /// Радиус, в котором ручка считается взятой. Заметно больше самой ручки:
+  /// палец толще кружка, но и не настолько, чтобы перехватывать перетаскивание
+  /// волны из середины.
+  static const double _handleGrabRadius = 22;
 
   /// Пределы растяжения: дальше 200× секунда занимает пол-экрана и точность
   /// упирается уже в сами пики, а не в масштаб.
@@ -65,6 +93,10 @@ class _WaveformEditorState extends State<WaveformEditor> {
 
   late List<int> _boundaries = List<int>.of(widget.boundaries);
   int? _draggedIndex;
+
+  /// Положение ползунка, пока его тащат: наружу оно уходит только по отпуске,
+  /// чтобы не гонять плеер на каждом кадре.
+  int? _draggedPlayheadMs;
 
   /// Во сколько раз волна шире окна.
   double _zoom = 1;
@@ -124,15 +156,6 @@ class _WaveformEditorState extends State<WaveformEditor> {
     });
   }
 
-  void _zoomBy(double factor) => _setZoom(_zoom * factor, _viewportWidth / 2);
-
-  void _resetZoom() {
-    setState(() {
-      _zoom = 1;
-      _offset = 0;
-    });
-  }
-
   // --- Ввод ------------------------------------------------------------------
 
   /// Колесо мыши достаётся либо волне, либо прокрутке страницы под ней —
@@ -169,23 +192,51 @@ class _WaveformEditorState extends State<WaveformEditor> {
     }
   }
 
+  /// Ползунок виден только там, где им управляют.
+  bool get _hasPlayhead => widget.onSeek != null && widget.showCursor;
+
+  int get _playheadMs => _draggedPlayheadMs ?? widget.positionMs;
+
+  bool get _isDragging => _draggedIndex != null || _draggedPlayheadMs != null;
+
+  /// Центр кружка-ручки границы.
+  Offset _boundaryHandleCenter(int index) =>
+      Offset(_msToX(_boundaries[index]), _boundaryHandleY);
+
+  /// Центр треугольной ручки ползунка.
+  Offset get _playheadHandleCenter =>
+      Offset(_msToX(_playheadMs), widget.height - _playheadHandleHeight / 2);
+
   void _onScaleStart(ScaleStartDetails details) {
     _zoomAtScaleStart = _zoom;
     if (details.pointerCount > 1) return;
-    final x = details.localFocalPoint.dx;
+    final point = details.localFocalPoint;
+
     var nearest = -1;
     var nearestDistance = double.infinity;
     for (var i = 1; i < _boundaries.length - 1; i++) {
-      final distance = (_msToX(_boundaries[i]) - x).abs();
+      final distance = (_boundaryHandleCenter(i) - point).distance;
       if (distance < nearestDistance) {
         nearestDistance = distance;
         nearest = i;
       }
     }
-    if (nearest > 0 && nearestDistance <= _touchSlop) {
-      setState(() => _draggedIndex = nearest);
-      _dragPointerX = x;
+    // Ручки ползунка и границы могут оказаться рядом — берём ту, что ближе.
+    final playheadDistance = _hasPlayhead
+        ? (_playheadHandleCenter - point).distance
+        : double.infinity;
+
+    if (playheadDistance <= _handleGrabRadius &&
+        playheadDistance <= nearestDistance) {
+      _dragPointerX = point.dx;
+      setState(() => _draggedPlayheadMs = _playheadMs);
+      return;
     }
+    if (nearest > 0 && nearestDistance <= _handleGrabRadius) {
+      setState(() => _draggedIndex = nearest);
+      _dragPointerX = point.dx;
+    }
+    // Мимо ручек — перетаскивание уедет в панораму волны.
   }
 
   void _onScaleUpdate(ScaleUpdateDetails details) {
@@ -194,13 +245,22 @@ class _WaveformEditorState extends State<WaveformEditor> {
       _setOffset(_offset - details.focalPointDelta.dx);
       return;
     }
-    if (_draggedIndex == null) {
+    if (!_isDragging) {
       _setOffset(_offset - details.focalPointDelta.dx);
       return;
     }
     _dragPointerX = details.localFocalPoint.dx;
     _updateAutoScroll();
-    _moveDraggedBoundary();
+    _moveDragTarget();
+  }
+
+  /// Двигает то, что взяли: метку границы или ползунок.
+  void _moveDragTarget() {
+    if (_draggedPlayheadMs != null) {
+      _moveDraggedPlayhead();
+    } else {
+      _moveDraggedBoundary();
+    }
   }
 
   void _moveDraggedBoundary() {
@@ -213,6 +273,14 @@ class _WaveformEditorState extends State<WaveformEditor> {
     final ms = _xToMs(x).clamp(lowerLimit, upperLimit);
     if (ms == _boundaries[index]) return;
     setState(() => _boundaries[index] = ms);
+  }
+
+  void _moveDraggedPlayhead() {
+    final x = _dragPointerX;
+    if (x == null) return;
+    final ms = _xToMs(x).clamp(0, widget.durationMs);
+    if (ms == _draggedPlayheadMs) return;
+    setState(() => _draggedPlayheadMs = ms);
   }
 
   /// Тянет волну, пока метку держат у края окна: иначе на большом масштабе её
@@ -248,7 +316,7 @@ class _WaveformEditorState extends State<WaveformEditor> {
         return;
       }
       _setOffset(_offset + step);
-      _moveDraggedBoundary();
+      _moveDragTarget();
     });
   }
 
@@ -260,9 +328,23 @@ class _WaveformEditorState extends State<WaveformEditor> {
   void _onScaleEnd(ScaleEndDetails details) {
     _stopAutoScroll();
     _dragPointerX = null;
+    final playheadMs = _draggedPlayheadMs;
+    if (playheadMs != null) {
+      setState(() => _draggedPlayheadMs = null);
+      widget.onSeek?.call(playheadMs);
+      return;
+    }
     if (_draggedIndex == null) return;
     setState(() => _draggedIndex = null);
     widget.onBoundariesChanged(List<int>.unmodifiable(_boundaries));
+  }
+
+  /// Тап по волне переносит ползунок — так до нужного места быстрее, чем
+  /// тащить его через весь урок.
+  void _onTapUp(TapUpDetails details) {
+    final onSeek = widget.onSeek;
+    if (onSeek == null) return;
+    onSeek(_xToMs(details.localPosition.dx).clamp(0, widget.durationMs));
   }
 
   @override
@@ -275,129 +357,35 @@ class _WaveformEditorState extends State<WaveformEditor> {
           _viewportWidth = constraints.maxWidth;
           _offset = _offset.clamp(0.0, _maxOffset);
         }
-        return Stack(
-          children: [
-            Positioned.fill(
-              child: Listener(
-                onPointerSignal: _onPointerSignal,
-                child: GestureDetector(
-                  behavior: HitTestBehavior.opaque,
-                  onScaleStart: _onScaleStart,
-                  onScaleUpdate: _onScaleUpdate,
-                  onScaleEnd: _onScaleEnd,
-                  child: CustomPaint(
-                    size: Size(_viewportWidth, widget.height),
-                    painter: _WaveformPainter(
-                      peaks: widget.peaks,
-                      durationMs: widget.durationMs,
-                      boundaries: _boundaries,
-                      activeSegmentIndex: widget.activeSegmentIndex,
-                      positionMs: widget.showCursor ? widget.positionMs : null,
-                      draggedIndex: _draggedIndex,
-                      colors: colors,
-                      zoom: _zoom,
-                      offset: _offset,
-                      showSegmentNumbers: widget.showSegmentNumbers,
-                      textDirection: Directionality.of(context),
-                    ),
-                  ),
-                ),
-              ),
-            ),
-            Positioned(
-              right: 4,
-              bottom: 4,
-              child: _ZoomControls(
+        return Listener(
+          onPointerSignal: _onPointerSignal,
+          child: GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            onScaleStart: _onScaleStart,
+            onScaleUpdate: _onScaleUpdate,
+            onScaleEnd: _onScaleEnd,
+            onTapUp: widget.onSeek == null ? null : _onTapUp,
+            child: CustomPaint(
+              size: Size(_viewportWidth, widget.height),
+              painter: _WaveformPainter(
+                peaks: widget.peaks,
+                durationMs: widget.durationMs,
+                boundaries: _boundaries,
+                activeSegmentIndex: widget.activeSegmentIndex,
+                positionMs: widget.showCursor ? _playheadMs : null,
+                isPlayheadDraggable: _hasPlayhead,
+                isPlayheadDragged: _draggedPlayheadMs != null,
+                draggedIndex: _draggedIndex,
+                colors: colors,
                 zoom: _zoom,
-                canZoomIn: _zoom < _maxZoom,
-                canZoomOut: _zoom > _minZoom,
-                onZoomIn: () => _zoomBy(1.6),
-                onZoomOut: () => _zoomBy(1 / 1.6),
-                onReset: _resetZoom,
+                offset: _offset,
+                showSegmentNumbers: widget.showSegmentNumbers,
+                textDirection: Directionality.of(context),
               ),
             ),
-          ],
+          ),
         );
       },
-    );
-  }
-}
-
-/// Кнопки масштаба: на десктопе без колеса мыши и на телефоне это
-/// единственный способ растянуть волну одной рукой.
-class _ZoomControls extends StatelessWidget {
-  const _ZoomControls({
-    required this.zoom,
-    required this.canZoomIn,
-    required this.canZoomOut,
-    required this.onZoomIn,
-    required this.onZoomOut,
-    required this.onReset,
-  });
-
-  final double zoom;
-  final bool canZoomIn;
-  final bool canZoomOut;
-  final VoidCallback onZoomIn;
-  final VoidCallback onZoomOut;
-  final VoidCallback onReset;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return Material(
-      color: theme.colorScheme.surface.withValues(alpha: 0.85),
-      borderRadius: BorderRadius.circular(20),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          _ZoomButton(
-            icon: Icons.remove,
-            tooltip: 'Сузить',
-            onPressed: canZoomOut ? onZoomOut : null,
-          ),
-          InkWell(
-            onTap: canZoomOut ? onReset : null,
-            borderRadius: BorderRadius.circular(4),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
-              child: Text(
-                '${zoom < 10 ? zoom.toStringAsFixed(1) : zoom.round()}×',
-                style: theme.textTheme.labelSmall,
-              ),
-            ),
-          ),
-          _ZoomButton(
-            icon: Icons.add,
-            tooltip: 'Растянуть',
-            onPressed: canZoomIn ? onZoomIn : null,
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _ZoomButton extends StatelessWidget {
-  const _ZoomButton({
-    required this.icon,
-    required this.tooltip,
-    required this.onPressed,
-  });
-
-  final IconData icon;
-  final String tooltip;
-  final VoidCallback? onPressed;
-
-  @override
-  Widget build(BuildContext context) {
-    return IconButton(
-      icon: Icon(icon, size: 18),
-      tooltip: tooltip,
-      onPressed: onPressed,
-      visualDensity: VisualDensity.compact,
-      constraints: const BoxConstraints.tightFor(width: 32, height: 32),
-      padding: EdgeInsets.zero,
     );
   }
 }
@@ -409,6 +397,8 @@ class _WaveformPainter extends CustomPainter {
     required this.boundaries,
     required this.activeSegmentIndex,
     required this.positionMs,
+    required this.isPlayheadDraggable,
+    required this.isPlayheadDragged,
     required this.draggedIndex,
     required this.colors,
     required this.zoom,
@@ -422,15 +412,14 @@ class _WaveformPainter extends CustomPainter {
   final List<int> boundaries;
   final int? activeSegmentIndex;
   final int? positionMs;
+  final bool isPlayheadDraggable;
+  final bool isPlayheadDragged;
   final int? draggedIndex;
   final WaveformColors colors;
   final double zoom;
   final double offset;
   final bool showSegmentNumbers;
   final TextDirection textDirection;
-
-  /// Высота полоски с временной шкалой сверху.
-  static const double _rulerHeight = 14;
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -450,6 +439,7 @@ class _WaveformPainter extends CustomPainter {
     _paintSegmentNumbers(canvas, size);
     _paintCursor(canvas, size);
     _paintScrollbar(canvas, size);
+    _paintZoomLabel(canvas, size);
   }
 
   /// Ширина растянутой волны целиком; в окно шириной [viewportWidth] попадает
@@ -561,10 +551,10 @@ class _WaveformPainter extends CustomPainter {
               ..strokeWidth = 3)
           : handlePaint;
       canvas.drawLine(Offset(x, 0), Offset(x, size.height), paint);
-      // Ручка-кружок сверху, чтобы метку было за что взять.
+      // Кружок сверху — единственное место, за которое метку берут.
       canvas.drawCircle(
-        Offset(x, _rulerHeight + 8),
-        isDragged ? 8 : 6,
+        Offset(x, _boundaryHandleY),
+        isDragged ? _boundaryHandleRadius + 2 : _boundaryHandleRadius,
         Paint()..color = colors.boundary,
       );
       if (isDragged) {
@@ -604,13 +594,45 @@ class _WaveformPainter extends CustomPainter {
     final position = positionMs;
     if (position == null) return;
     final x = _msToX(position, size.width);
-    if (x < 0 || x > size.width) return;
-    canvas.drawLine(
-      Offset(x, 0),
-      Offset(x, size.height),
-      Paint()
-        ..color = colors.cursor
-        ..strokeWidth = 2,
+    if (x < -12 || x > size.width + 12) return;
+    final paint = Paint()
+      ..color = colors.cursor
+      ..strokeWidth = isPlayheadDragged ? 3 : 2;
+    canvas.drawLine(Offset(x, 0), Offset(x, size.height), paint);
+    if (!isPlayheadDraggable) return;
+
+    // Ручка внизу — треугольник, чтобы ползунок не путался с круглыми
+    // ручками границ наверху.
+    final width = isPlayheadDragged ? 13.0 : 10.0;
+    final baseY = size.height - _playheadHandleHeight;
+    canvas.drawPath(
+      Path()
+        ..moveTo(x - width / 2, size.height)
+        ..lineTo(x + width / 2, size.height)
+        ..lineTo(x, baseY)
+        ..close(),
+      Paint()..color = colors.cursor,
+    );
+    if (isPlayheadDragged) {
+      _paintLabel(
+        canvas,
+        formatPosition(position),
+        Offset(x + 10, baseY - 12),
+        colors.cursor,
+        11,
+      );
+    }
+  }
+
+  /// Текущий масштаб: кнопок нет, а понимать, насколько волна растянута,
+  /// нужно. Пока она помещается целиком, подпись не нужна.
+  void _paintZoomLabel(Canvas canvas, Size size) {
+    if (zoom <= 1.05) return;
+    final text = '${zoom < 10 ? zoom.toStringAsFixed(1) : zoom.round()}×';
+    final painter = _layoutLabel(text, colors.wave, 10);
+    painter.paint(
+      canvas,
+      Offset(size.width - painter.width - 6, size.height - painter.height - 8),
     );
   }
 
@@ -640,7 +662,11 @@ class _WaveformPainter extends CustomPainter {
     Color color,
     double fontSize,
   ) {
-    final painter = TextPainter(
+    _layoutLabel(text, color, fontSize).paint(canvas, at);
+  }
+
+  TextPainter _layoutLabel(String text, Color color, double fontSize) {
+    return TextPainter(
       text: TextSpan(
         text: text,
         style: TextStyle(
@@ -651,7 +677,6 @@ class _WaveformPainter extends CustomPainter {
       ),
       textDirection: textDirection,
     )..layout();
-    painter.paint(canvas, at);
   }
 
   @override
@@ -659,6 +684,8 @@ class _WaveformPainter extends CustomPainter {
     return oldDelegate.peaks != peaks ||
         oldDelegate.durationMs != durationMs ||
         oldDelegate.positionMs != positionMs ||
+        oldDelegate.isPlayheadDraggable != isPlayheadDraggable ||
+        oldDelegate.isPlayheadDragged != isPlayheadDragged ||
         oldDelegate.activeSegmentIndex != activeSegmentIndex ||
         oldDelegate.draggedIndex != draggedIndex ||
         oldDelegate.zoom != zoom ||
