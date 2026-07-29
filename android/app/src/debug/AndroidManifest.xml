@@ -4,4 +4,8 @@
          to allow setting breakpoints, to provide hot reload, etc.
     -->
     <uses-permission android:name="android.permission.INTERNET"/>
+    <!-- Локальный сервер в разработке отдаётся по http, а Android с 9-й версии
+         режет незашифрованный трафик. Послабление живёт только в debug —
+         release-сборка ходит на прод по https. -->
+    <application android:usesCleartextTraffic="true" />
 </manifest>
