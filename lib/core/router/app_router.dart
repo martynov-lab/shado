@@ -11,11 +11,19 @@ import '../../features/lessons/presentation/pages/home_page.dart';
 import '../../features/lessons/presentation/pages/lesson_page.dart';
 import '../../features/lessons/presentation/pages/main_shell.dart';
 import '../../features/lessons/presentation/pages/splash_page.dart';
+import '../../screens/design_gallery.dart';
 
 final _rootNavigatorKey = GlobalKey<NavigatorState>();
 
 /// Маршруты, доступные без сессии.
 const Set<String> _publicRoutes = {'/login', '/register'};
+
+/// Витрина дизайн-системы. Временная точка входа: живёт вне правил сессии,
+/// чтобы её можно было открыть с любого состояния приложения.
+///
+/// Открыть сразу при запуске:
+/// `flutter run --dart-define=design_gallery=true`
+const bool _openDesignGalleryAtLaunch = bool.fromEnvironment('design_gallery');
 
 final appRouterProvider = Provider<GoRouter>((ref) {
   // Роутер пересобирать нельзя — потеряется стек навигации, поэтому о смене
@@ -30,12 +38,18 @@ final appRouterProvider = Provider<GoRouter>((ref) {
 
   return GoRouter(
     navigatorKey: _rootNavigatorKey,
-    initialLocation: '/home',
+    initialLocation: _openDesignGalleryAtLaunch
+        ? DesignGalleryScreen.routePath
+        : '/home',
     refreshListenable: refresh,
     redirect: (context, state) {
       final auth = ref.read(authControllerProvider);
       final location = state.matchedLocation;
       final isPublic = _publicRoutes.contains(location);
+
+      // Витрина не участвует в правилах сессии: она ничего не знает о данных
+      // пользователя и нужна ровно для того, чтобы посмотреть компоненты.
+      if (location == DesignGalleryScreen.routePath) return null;
 
       // Пока не знаем, жив ли refresh-токен, держим заставку: иначе на старте
       // мелькнёт экран входа у того, кто уже вошёл.
@@ -51,6 +65,11 @@ final appRouterProvider = Provider<GoRouter>((ref) {
     },
     routes: [
       GoRoute(path: '/splash', builder: (context, state) => const SplashPage()),
+      GoRoute(
+        path: DesignGalleryScreen.routePath,
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => const DesignGalleryScreen(),
+      ),
       GoRoute(path: '/login', builder: (context, state) => const LoginPage()),
       GoRoute(
         path: '/register',
