@@ -47,13 +47,18 @@ class _LessonPageState extends ConsumerState<LessonPage> {
         if (event is KeyRepeatEvent) return KeyEventResult.handled;
         _controller.togglePlayFocused();
       case LogicalKeyboardKey.escape:
-        // Нечего снимать — пусть Escape достанется тому, кто им пользуется.
-        final selection = ref
-            .read(lessonControllerProvider(widget.lessonId))
-            .value
-            ?.selection;
-        if (selection == null) return KeyEventResult.ignored;
-        _controller.clearSelection();
+        // Escape отступает по одному шагу: сначала снимает выделение, потом
+        // выходит из режима выбора. Нечего снимать — пусть достанется тому, кто
+        // им пользуется.
+        final state = ref.read(lessonControllerProvider(widget.lessonId)).value;
+        if (state == null) return KeyEventResult.ignored;
+        if (state.selection != null) {
+          _controller.clearSelection();
+        } else if (state.isSelecting) {
+          _controller.stopSelecting();
+        } else {
+          return KeyEventResult.ignored;
+        }
       case LogicalKeyboardKey.keyA:
         if (!HardwareKeyboard.instance.isControlPressed &&
             !HardwareKeyboard.instance.isMetaPressed) {
@@ -86,20 +91,37 @@ class _LessonPageState extends ConsumerState<LessonPage> {
       onKeyEvent: _onKeyEvent,
       child: Scaffold(
         appBar: AppBar(
-          title: Text(state?.lesson.title ?? 'Урок'),
+          title: Text(
+            state?.isSelecting == true
+                ? 'Выбор кусков'
+                : (state?.lesson.title ?? 'Урок'),
+          ),
           actions: [
-            if (state != null)
+            if (state != null) ...[
               IconButton(
-                tooltip: state.selection == null
-                    ? 'Выбрать все куски (Ctrl+A)'
-                    : 'Снять выбор (Esc)',
-                onPressed: state.selection == null
-                    ? _controller.selectAll
-                    : _controller.clearSelection,
-                icon: Icon(
-                  state.selection == null ? Icons.select_all : Icons.deselect,
-                ),
+                tooltip: state.isSelecting
+                    ? 'Выйти из режима выбора (Esc)'
+                    : 'Выбрать несколько кусков',
+                onPressed: state.isSelecting
+                    ? _controller.stopSelecting
+                    : _controller.startSelecting,
+                isSelected: state.isSelecting,
+                icon: const Icon(Icons.checklist_outlined),
+                selectedIcon: const Icon(Icons.checklist),
               ),
+              if (state.isSelecting)
+                IconButton(
+                  tooltip: state.selection == null
+                      ? 'Выбрать все куски (Ctrl+A)'
+                      : 'Снять выбор (Esc)',
+                  onPressed: state.selection == null
+                      ? _controller.selectAll
+                      : _controller.clearSelection,
+                  icon: Icon(
+                    state.selection == null ? Icons.select_all : Icons.deselect,
+                  ),
+                ),
+            ],
             IconButton(
               tooltip: 'Править разбивку',
               onPressed: state == null ? null : _edit,
@@ -194,6 +216,7 @@ class _LessonViewState extends ConsumerState<_LessonView> {
                 isActive: state.isSegmentActive(index),
                 isPlaying: state.isSegmentPlaying(index),
                 isLooped: state.isSegmentLooped(index),
+                isSelecting: state.isSelecting,
                 isSelected: state.isSegmentSelected(index),
                 isFocused: state.focusedIndex == index,
                 onPlayPressed: () => controller.togglePlay(index),

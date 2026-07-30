@@ -24,6 +24,7 @@ class LessonState {
     this.activeRange,
     this.isPlaying = false,
     this.loopedSegments = const {},
+    this.isSelecting = false,
     this.selection,
     this.isSelectionLooped = false,
     this.focusedIndex,
@@ -41,6 +42,10 @@ class LessonState {
   /// Индексы кусков с включённым зацикливанием: тумблер на самой плитке. У
   /// выбранного отрезка свой тумблер — [isSelectionLooped].
   final Set<int> loopedSegments;
+
+  /// Включён режим выбора: на плитках появляются галочки, а тап по плитке
+  /// набирает выделение. Вне режима галочки не занимают место перед текстом.
+  final bool isSelecting;
 
   /// Выбранные куски: только соседние, зато играются подряд одним фрагментом.
   final SegmentRange? selection;
@@ -81,6 +86,7 @@ class LessonState {
     bool clearActiveRange = false,
     bool? isPlaying,
     Set<int>? loopedSegments,
+    bool? isSelecting,
     SegmentRange? selection,
     bool clearSelection = false,
     bool? isSelectionLooped,
@@ -92,12 +98,17 @@ class LessonState {
       activeRange: clearActiveRange ? null : (activeRange ?? this.activeRange),
       isPlaying: isPlaying ?? this.isPlaying,
       loopedSegments: loopedSegments ?? this.loopedSegments,
+      isSelecting: isSelecting ?? this.isSelecting,
       selection: clearSelection ? null : (selection ?? this.selection),
       isSelectionLooped: isSelectionLooped ?? this.isSelectionLooped,
       focusedIndex: focusedIndex ?? this.focusedIndex,
     );
   }
 }
+
+/// Как часто сверяться с позицией, стерегая конец отрезка. На 10 мс перебег за
+/// границу — единицы миллисекунд, на слух этого нет.
+const _positionTick = Duration(milliseconds: 10);
 
 /// Проигрывание кусков, зацикливание, скорость и выбор нескольких кусков.
 /// Разметка правится на отдельном экране — здесь урок уже нарезан.
@@ -116,6 +127,18 @@ class LessonController extends AsyncNotifier<LessonState> {
   /// него в обе стороны.
   int? _selectionAnchor;
 
+  /// Файл, заряженный в плеер. Заряжаем его целиком и один раз на урок: переход
+  /// между кусками — это seek, а не новый источник.
+  String? _loadedPath;
+
+  /// Зацикливать ли то, что заряжено сейчас. Флаг снимается с куска или с
+  /// выделения в момент пуска — у них разные тумблеры.
+  bool _activeLooped = false;
+
+  /// Границу отрезка уже поймали и отрабатываем: позиция ещё пару тиков
+  /// постоит за ней, и второй раз перезапускать круг не нужно.
+  bool _atBoundary = false;
+
   AudioPlayer get _player => ref.read(lessonAudioPlayerProvider(lessonId));
 
   @override
@@ -123,8 +146,17 @@ class LessonController extends AsyncNotifier<LessonState> {
     final lesson = await ref.watch(getLessonProvider)(lessonId);
     // Именно watch: плеер под autoDispose и должен жить, пока жив контроллер.
     final player = ref.watch(lessonAudioPlayerProvider(lessonId));
-    final subscription = player.playerStateStream.listen(_onPlayerState);
-    ref.onDispose(subscription.cancel);
+    final stateSubscription = player.playerStateStream.listen(_onPlayerState);
+    ref.onDispose(stateSubscription.cancel);
+    // steps здесь не важен: одинаковые min и max держат период ровно тиком.
+    final positionSubscription = player
+        .createPositionStream(
+          steps: 1,
+          minPeriod: _positionTick,
+          maxPeriod: _positionTick,
+        )
+        .listen(_onPosition);
+    ref.onDispose(positionSubscription.cancel);
     return LessonState(
       lesson: lesson,
       speed: _speed,
@@ -136,11 +168,55 @@ class LessonController extends AsyncNotifier<LessonState> {
   void _onPlayerState(PlayerState playerState) {
     final current = state.value;
     if (current == null) return;
-    final isPlaying =
-        playerState.playing &&
-        playerState.processingState != ProcessingState.completed;
+    final finished = playerState.processingState == ProcessingState.completed;
+    // Конец последнего куска может совпасть с концом файла — тогда границу
+    // стеречь уже нечем, потому что позиция дальше не тикает.
+    if (finished && _activeLooped && current.activeRange != null) {
+      unawaited(_rewindTo(current, current.activeRange!, play: true));
+      return;
+    }
+    final isPlaying = playerState.playing && !finished;
     if (isPlaying != current.isPlaying) {
       state = AsyncValue.data(current.copyWith(isPlaying: isPlaying));
+    }
+  }
+
+  /// Сторож конца отрезка.
+  ///
+  /// Файл заряжен целиком, поэтому конец куска — это не конец дорожки, а просто
+  /// позиция, до которой играем. Так круг и начинается там, где надо: у
+  /// `ClippingAudioSource` с `LoopMode.one` на media_kit новый круг уезжает в
+  /// начало файла, мимо выбранного отрезка.
+  void _onPosition(Duration position) {
+    final current = state.value;
+    final range = current?.activeRange;
+    if (current == null || range == null || _atBoundary) return;
+    final segments = current.lesson.segments;
+    if (range.end >= segments.length) return;
+    if (position.inMilliseconds < segments[range.end].endMs) return;
+    _atBoundary = true;
+    unawaited(_rewindTo(current, range, play: _activeLooped));
+  }
+
+  /// Ставит дорожку на начало отрезка: новый круг, если [play], иначе стоп там,
+  /// откуда естественно начать в следующий раз.
+  Future<void> _rewindTo(
+    LessonState current,
+    SegmentRange range, {
+    required bool play,
+  }) async {
+    final player = _player;
+    final segments = current.lesson.segments;
+    try {
+      if (range.start >= segments.length) return;
+      if (!play) await player.pause();
+      // Играющему плееру seek воспроизведение не рвёт — круг выходит без щелчка.
+      await player.seek(Duration(milliseconds: segments[range.start].startMs));
+      // Доигравший до конца файла плеер остаётся «играющим», и звук после seek
+      // продолжится сам; поднимать его нужно только по-настоящему стоящему.
+      if (play && !player.playing) unawaited(player.play());
+    } finally {
+      _atBoundary = false;
     }
   }
 
@@ -185,24 +261,27 @@ class LessonController extends AsyncNotifier<LessonState> {
 
   /// Пуск или остановка того, что уже заряжено в плеер.
   Future<void> _toggleActive(LessonState current) async {
-    final player = _player;
+    final range = current.activeRange;
     if (current.isPlaying) {
-      await player.pause();
       // Именно остановка, а не пауза: кусок короткий, и следующий пуск
       // естественнее начать с его начала, чем с середины фразы.
-      await player.seek(Duration.zero);
+      if (range != null) await _rewindTo(current, range, play: false);
       return;
     }
-    if (player.processingState == ProcessingState.completed) {
-      await player.seek(Duration.zero);
+    // Последний кусок мог кончиться вместе с файлом: с этого места играть
+    // нечего, поэтому начинаем отрезок заново.
+    if (range != null && _player.processingState == ProcessingState.completed) {
+      await _rewindTo(current, range, play: true);
+      return;
     }
-    unawaited(player.play());
+    _atBoundary = false;
+    unawaited(_player.play());
   }
 
-  /// Заряжает отрезок в плеер и запускает его.
+  /// Заряжает отрезок и запускает его с начала.
   ///
   /// Куски идут встык, поэтому отрезок — это один непрерывный фрагмент аудио:
-  /// подряд он играет сам, а зацикливание — обычный `LoopMode.one`.
+  /// подряд он играет сам, а конец отрезка стережёт [_onPosition].
   Future<void> _start(
     LessonState current,
     SegmentRange range, {
@@ -211,21 +290,27 @@ class LessonController extends AsyncNotifier<LessonState> {
     final segments = current.lesson.segments;
     if (range.end >= segments.length) return;
     final player = _player;
-    await player.stop();
-    await player.setAudioSource(
-      ClippingAudioSource(
-        child: AudioSource.file(current.lesson.audioPath),
-        start: Duration(milliseconds: segments[range.start].startMs),
-        end: Duration(milliseconds: segments[range.end].endMs),
-      ),
-    );
-    await player.setLoopMode(loop ? LoopMode.one : LoopMode.off);
+    await _ensureSource(current.lesson.audioPath);
+    _activeLooped = loop;
+    _atBoundary = false;
+    await player.seek(Duration(milliseconds: segments[range.start].startMs));
     await player.setSpeed(_speed);
     state = AsyncValue.data(
       current.copyWith(activeRange: range, isPlaying: true),
     );
     // play() завершается только по окончании воспроизведения — не ждём его.
     unawaited(player.play());
+  }
+
+  /// Заряжает файл урока целиком — один раз на урок.
+  Future<void> _ensureSource(String audioPath) async {
+    if (_loadedPath == audioPath) return;
+    final player = _player;
+    await player.stop();
+    await player.setAudioSource(AudioSource.file(audioPath));
+    // Цикл сводится к seek в начало отрезка: LoopMode плееру больше не нужен.
+    await player.setLoopMode(LoopMode.off);
+    _loadedPath = audioPath;
   }
 
   Future<void> toggleLoop(int index) async {
@@ -238,7 +323,7 @@ class LessonController extends AsyncNotifier<LessonState> {
       _loopedSegments.remove(index);
     }
     if (current.activeRange == SegmentRange.single(index)) {
-      await _player.setLoopMode(enabled ? LoopMode.one : LoopMode.off);
+      _activeLooped = enabled;
     }
     state = AsyncValue.data(
       current.copyWith(loopedSegments: Set.unmodifiable(_loopedSegments)),
@@ -255,7 +340,7 @@ class LessonController extends AsyncNotifier<LessonState> {
       current.copyWith(isSelectionLooped: _selectionLooped),
     );
     if (current.activeRange == selection) {
-      await _player.setLoopMode(_selectionLooped ? LoopMode.one : LoopMode.off);
+      _activeLooped = _selectionLooped;
       return;
     }
     // Отрезок ещё не заряжен — включённый повтор сразу и запускаем.
@@ -273,7 +358,25 @@ class LessonController extends AsyncNotifier<LessonState> {
 
   // --- Выбор кусков ----------------------------------------------------------
 
-  /// Тап по галочке куска. Выделение остаётся непрерывным — правила в
+  /// Включает режим выбора: до него галочки места перед текстом не занимают.
+  void startSelecting() {
+    final current = state.value;
+    if (current == null || current.isSelecting) return;
+    state = AsyncValue.data(current.copyWith(isSelecting: true));
+  }
+
+  /// Выходит из режима выбора, снимая выделение: спрятанное выделение
+  /// продолжало бы отвечать за пробел и держать нижнюю панель.
+  void stopSelecting() {
+    final current = state.value;
+    if (current == null || !current.isSelecting) return;
+    _selectionAnchor = null;
+    state = AsyncValue.data(
+      current.copyWith(isSelecting: false, clearSelection: true),
+    );
+  }
+
+  /// Тап по куску в режиме выбора. Выделение остаётся непрерывным — правила в
   /// [SegmentRange.toggled].
   void toggleSelection(int index) {
     final current = state.value;
@@ -282,6 +385,7 @@ class LessonController extends AsyncNotifier<LessonState> {
     _selectionAnchor = selection == null ? null : index;
     state = AsyncValue.data(
       current.copyWith(
+        isSelecting: true,
         selection: selection,
         clearSelection: selection == null,
         focusedIndex: index,
@@ -296,7 +400,10 @@ class LessonController extends AsyncNotifier<LessonState> {
     if (count == 0) return;
     _selectionAnchor = 0;
     state = AsyncValue.data(
-      current.copyWith(selection: SegmentRange(0, count - 1)),
+      current.copyWith(
+        isSelecting: true,
+        selection: SegmentRange(0, count - 1),
+      ),
     );
   }
 
@@ -324,6 +431,7 @@ class LessonController extends AsyncNotifier<LessonState> {
     _selectionAnchor = anchor;
     state = AsyncValue.data(
       current.copyWith(
+        isSelecting: true,
         focusedIndex: index,
         selection: SegmentRange.between(anchor, index),
       ),
@@ -344,6 +452,10 @@ class LessonController extends AsyncNotifier<LessonState> {
     _loopedSegments.clear();
     _selectionAnchor = null;
     _selectionLooped = false;
+    _activeLooped = false;
+    _atBoundary = false;
+    // Файл могли подменить вместе с разбивкой — заряжаем заново.
+    _loadedPath = null;
     state = const AsyncValue.loading();
     state = await AsyncValue.guard(() async {
       final lesson = await ref.read(getLessonProvider)(lessonId);

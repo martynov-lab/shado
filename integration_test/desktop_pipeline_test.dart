@@ -70,13 +70,14 @@ void main() {
   tearDownAll(() => tempDir.deleteSync(recursive: true));
 
   /// Запрос к запасному локальному источнику: у него всё построено на файле.
-  WaveformQuery query({int resolution = 200, AudioTrim? range}) => WaveformQuery(
-    audioId: 'local',
-    localPath: wavPath,
-    durationMs: 2000,
-    resolution: resolution,
-    range: range,
-  );
+  WaveformQuery query({int resolution = 200, AudioTrim? range}) =>
+      WaveformQuery(
+        audioId: 'local',
+        localPath: wavPath,
+        durationMs: 2000,
+        resolution: resolution,
+        range: range,
+      );
 
   test('пики читаются и отражают перепад громкости', () async {
     const source = SoLoudWaveformDataSource();
@@ -124,18 +125,16 @@ void main() {
     expect(wholeHead, greaterThan(wholeTail * 2));
   });
 
-  test('кусок играет через ClippingAudioSource и доигрывает до конца', () async {
+  // Куски играются seek'ом по файлу целиком, а не `ClippingAudioSource`: с ним
+  // media_kit начинает новый круг с начала файла, мимо отрезка. Границы отрезка
+  // и цикл проверяет `lesson_playback_test.dart`, здесь — что звук вообще идёт.
+  test('файл открывается, играет и доигрывает до конца', () async {
     final player = AudioPlayer();
     addTearDown(player.dispose);
-    await player.setAudioSource(
-      ClippingAudioSource(
-        child: AudioSource.file(wavPath),
-        start: const Duration(milliseconds: 200),
-        end: const Duration(milliseconds: 700),
-      ),
-    );
+    await player.setAudioSource(AudioSource.file(wavPath));
     await player.setLoopMode(LoopMode.off);
     await player.setSpeed(0.75);
+    await player.seek(const Duration(milliseconds: 200));
     unawaited(player.play());
     await player.playerStateStream
         .firstWhere((s) => s.processingState == ProcessingState.completed)

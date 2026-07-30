@@ -3,7 +3,8 @@ import 'package:flutter/material.dart';
 import '../../../../core/utils/duration_format.dart';
 import '../../domain/entities/segment.dart';
 
-/// Кусок урока: галочка выбора, текст, тумблеры «играть» и «повторять».
+/// Кусок урока: текст, тумблеры «играть» и «повторять», а в режиме выбора —
+/// ещё и галочка.
 class SegmentTile extends StatelessWidget {
   const SegmentTile({
     super.key,
@@ -11,6 +12,7 @@ class SegmentTile extends StatelessWidget {
     required this.isActive,
     required this.isPlaying,
     required this.isLooped,
+    required this.isSelecting,
     required this.isSelected,
     required this.isFocused,
     required this.onPlayPressed,
@@ -26,6 +28,11 @@ class SegmentTile extends StatelessWidget {
 
   final bool isPlaying;
   final bool isLooped;
+
+  /// Включён режим выбора: галочка занимает место перед текстом, а тап по
+  /// плитке набирает выделение вместо перевода фокуса.
+  final bool isSelecting;
+
   final bool isSelected;
 
   /// Кусок под клавиатурой: на нём сработают стрелки и пробел.
@@ -35,7 +42,7 @@ class SegmentTile extends StatelessWidget {
   final VoidCallback onLoopPressed;
   final VoidCallback onSelectPressed;
 
-  /// Тап по плитке: делает кусок текущим для клавиатуры.
+  /// Тап по плитке вне режима выбора: делает кусок текущим для клавиатуры.
   final VoidCallback onPressed;
 
   @override
@@ -58,14 +65,20 @@ class SegmentTile extends StatelessWidget {
             : BorderSide.none,
       ),
       child: InkWell(
-        onTap: onPressed,
+        // В режиме выбора тап по плитке набирает выделение: попадать по
+        // галочке на телефоне неудобно.
+        onTap: isSelecting ? onSelectPressed : onPressed,
         borderRadius: borderRadius,
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(4, 8, 8, 8),
+          padding: EdgeInsets.fromLTRB(isSelecting ? 4 : 16, 8, 8, 8),
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Checkbox(value: isSelected, onChanged: (_) => onSelectPressed()),
+              if (isSelecting)
+                Checkbox(
+                  value: isSelected,
+                  onChanged: (_) => onSelectPressed(),
+                ),
               Expanded(
                 child: Padding(
                   padding: const EdgeInsets.only(top: 8),
