@@ -1,5 +1,6 @@
 import '../../../../core/error/failures.dart';
 import 'audio_trim.dart';
+import 'lesson_category.dart';
 import 'segment.dart';
 
 /// Урок: аудиофайл, разбитый на куски текста с ручной разметкой границ.
@@ -12,6 +13,9 @@ class Lesson {
     required this.createdAt,
     required this.segments,
     this.audioId = '',
+    this.accent,
+    this.level,
+    this.topic,
   });
 
   /// Создаёт урок с равномерно расставленными начальными границами:
@@ -64,6 +68,15 @@ class Lesson {
 
   /// Длительность файла целиком — обрезка её не меняет.
   final int durationMs;
+
+  /// Акцент диктора и уровень английского. Заполняются на экране создания и
+  /// приходят с сервера; `null` — у урока, собранного в тестах или пришедшего
+  /// без этих полей.
+  final LessonAccent? accent;
+  final LessonLevel? level;
+
+  /// Тема из справочника сервера. `null` — сервер её ещё не подставил.
+  final Topic? topic;
 
   /// Время создания в UTC.
   final DateTime createdAt;
@@ -137,6 +150,9 @@ class Lesson {
     int? durationMs,
     DateTime? createdAt,
     List<Segment>? segments,
+    LessonAccent? accent,
+    LessonLevel? level,
+    Topic? topic,
   }) {
     return Lesson(
       id: id ?? this.id,
@@ -146,6 +162,9 @@ class Lesson {
       durationMs: durationMs ?? this.durationMs,
       createdAt: createdAt ?? this.createdAt,
       segments: segments ?? this.segments,
+      accent: accent ?? this.accent,
+      level: level ?? this.level,
+      topic: topic ?? this.topic,
     );
   }
 
@@ -161,7 +180,10 @@ class Lesson {
         other.title == title &&
         other.audioPath == audioPath &&
         other.durationMs == durationMs &&
-        other.createdAt == createdAt;
+        other.createdAt == createdAt &&
+        other.accent == accent &&
+        other.level == level &&
+        other.topic == topic;
   }
 
   @override
@@ -172,6 +194,9 @@ class Lesson {
     durationMs,
     createdAt,
     Object.hashAll(segments),
+    accent,
+    level,
+    topic,
   );
 
   @override

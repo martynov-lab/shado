@@ -10,7 +10,9 @@ import 'package:shado/features/lessons/data/models/lesson_model.dart';
 import 'package:shado/features/lessons/data/models/segment_model.dart';
 import 'package:shado/features/lessons/data/models/waveform_peaks.dart';
 import 'package:shado/features/lessons/data/repositories/lesson_repository_impl.dart';
+import 'package:shado/features/lessons/data/datasources/topic_remote_datasource.dart';
 import 'package:shado/features/lessons/domain/entities/lesson.dart';
+import 'package:shado/features/lessons/domain/entities/lesson_category.dart';
 import 'package:shado/features/lessons/domain/entities/segment.dart';
 
 /// Ответ сервера на урок: сегменты сервер возвращает такими, какими принял.
@@ -22,6 +24,9 @@ Map<String, dynamic> lessonJson({
   String audioId = 'audio-1',
   String? deletedAt,
   String updatedAt = '2026-07-28T10:00:00.000Z',
+  String accent = 'US',
+  String level = 'b1',
+  Map<String, dynamic>? topic = const {'id': 'topic-1', 'name': 'Education'},
   List<Map<String, dynamic>>? segments,
 }) {
   return {
@@ -32,6 +37,9 @@ Map<String, dynamic> lessonJson({
     'updated_at': updatedAt,
     'deleted_at': deletedAt,
     'version': version,
+    'accent': accent,
+    'level': level,
+    'topic': topic,
     'audio': {
       'id': audioId,
       'url': 'http://localhost/v1/audio/$audioId/file',
@@ -115,6 +123,11 @@ class FakeRemoteDataSource implements LessonRemoteDataSource {
   final List<String?> sinceCalls = [];
   final List<int?> putVersions = [];
   final List<List<SegmentModel>> putSegments = [];
+
+  /// Категории, с которыми ушёл каждый `PUT`.
+  final List<({LessonAccent? accent, LessonLevel? level, String? topicId})>
+  putCategories = [];
+
   final List<String> deleted = [];
   int _page = 0;
 
@@ -137,9 +150,13 @@ class FakeRemoteDataSource implements LessonRemoteDataSource {
     required DateTime createdAt,
     required List<SegmentModel> segments,
     int? version,
+    LessonAccent? accent,
+    LessonLevel? level,
+    String? topicId,
   }) async {
     putVersions.add(version);
     putSegments.add(segments);
+    putCategories.add((accent: accent, level: level, topicId: topicId));
     final handler = onPut;
     if (handler != null) return handler(version);
     return LessonDto.fromJson(
@@ -148,6 +165,9 @@ class FakeRemoteDataSource implements LessonRemoteDataSource {
         title: title,
         audioId: audioId,
         version: (version ?? 0) + 1,
+        accent: (accent ?? LessonAccent.us).wire,
+        level: (level ?? LessonLevel.b1).wire,
+        topic: topicId == null ? null : {'id': topicId, 'name': 'Тема'},
         segments: [for (final segment in segments) segment.toJson()],
       ),
     );
@@ -155,6 +175,19 @@ class FakeRemoteDataSource implements LessonRemoteDataSource {
 
   @override
   Future<void> deleteLesson(String id) async => deleted.add(id);
+}
+
+class FakeTopicRemote implements TopicRemoteDataSource {
+  FakeTopicRemote([this.topics = const []]);
+
+  final List<Topic> topics;
+  int calls = 0;
+
+  @override
+  Future<List<Topic>> list() async {
+    calls++;
+    return topics;
+  }
 }
 
 class FakeAudioRemote implements AudioRemoteDataSource {
@@ -243,11 +276,13 @@ void main() {
   late FakeLocalDataSource local;
   late FakeAudioRemote audio;
   late FakeAudioCache cache;
+  late FakeTopicRemote topics;
 
   setUp(() {
     local = FakeLocalDataSource();
     audio = FakeAudioRemote();
     cache = FakeAudioCache();
+    topics = FakeTopicRemote();
   });
 
   LessonRepositoryImpl build(FakeRemoteDataSource remote) =>
@@ -255,6 +290,7 @@ void main() {
         localDataSource: local,
         remoteDataSource: remote,
         audioDataSource: audio,
+        topicDataSource: topics,
         audioCache: cache,
       );
 
@@ -267,6 +303,8 @@ void main() {
         audioId: 'audio-1',
         durationMs: 10000,
         segmentTexts: const ['Раз', 'Два'],
+        accent: LessonAccent.us,
+        level: LessonLevel.b1,
         boundaries: const [2000, 5000, 8000],
       );
 
@@ -286,6 +324,8 @@ void main() {
         audioId: 'audio-1',
         durationMs: 10000,
         segmentTexts: const ['Раз'],
+        accent: LessonAccent.us,
+        level: LessonLevel.b1,
       );
 
       expect(remote.putVersions.single, isNull);
@@ -299,12 +339,53 @@ void main() {
         audioId: 'audio-1',
         durationMs: 10000,
         segmentTexts: const ['Раз'],
+        accent: LessonAccent.us,
+        level: LessonLevel.b1,
       );
 
       expect(lesson.audioPath, isNotEmpty);
       // Идентификатор генерит клиент, поэтому смотрим на то, что вернулось.
       expect(local.lessons[lesson.id]?.version, 1);
       expect(local.lessons[lesson.id]?.audioId, 'audio-1');
+    });
+
+    test('категории уходят на сервер и возвращаются в урок', () async {
+      final remote = FakeRemoteDataSource();
+
+      final lesson = await build(remote).createLesson(
+        title: 'Урок',
+        audioId: 'audio-1',
+        durationMs: 10000,
+        segmentTexts: const ['Раз'],
+        accent: LessonAccent.uk,
+        level: LessonLevel.c1,
+        topicId: 'topic-7',
+      );
+
+      expect(remote.putCategories.single.accent, LessonAccent.uk);
+      expect(remote.putCategories.single.level, LessonLevel.c1);
+      expect(remote.putCategories.single.topicId, 'topic-7');
+      expect(lesson.accent, LessonAccent.uk);
+      expect(lesson.topic?.id, 'topic-7');
+      // Категории живут и в кеше: без них правка потеряла бы их при `PUT`.
+      expect(local.lessons[lesson.id]?.level, 'c1');
+    });
+
+    test('тему не выбрали — поле не уезжает вовсе', () async {
+      final remote = FakeRemoteDataSource();
+
+      await build(remote).createLesson(
+        title: 'Урок',
+        audioId: 'audio-1',
+        durationMs: 10000,
+        segmentTexts: const ['Раз'],
+        accent: LessonAccent.us,
+        level: LessonLevel.a2,
+      );
+
+      // Сервер сам поставит тему по умолчанию; прислать `null` значило бы
+      // попросить его стереть тему.
+      expect(remote.putCategories.single.topicId, isNull);
     });
   });
 
@@ -337,6 +418,20 @@ void main() {
       await build(remote).updateLesson(lessonToSave());
 
       expect(remote.putVersions.single, 3);
+    });
+
+    test('правка пересылает категории из кеша: PUT заменяет урок целиком',
+        () async {
+      seedCache();
+      final remote = FakeRemoteDataSource();
+
+      // Экран правки категории не трогает, поэтому в урок они не попали, —
+      // но не отправить их значило бы попросить сервер их потерять.
+      await build(remote).updateLesson(lessonToSave());
+
+      expect(remote.putCategories.single.accent, LessonAccent.us);
+      expect(remote.putCategories.single.level, LessonLevel.b1);
+      expect(remote.putCategories.single.topicId, 'topic-1');
     });
 
     test('конфликт версий кладёт в кеш свежий урок и не молчит', () async {

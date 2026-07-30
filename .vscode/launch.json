@@ -1,14 +1,29 @@
 {
-  // Используйте IntelliSense, чтобы узнать о возможных атрибутах.
-  // Наведите указатель мыши, чтобы просмотреть описания существующих атрибутов.
-  // Для получения дополнительной информации посетите: https://go.microsoft.com/fwlink/?linkid=830387
+  // Базовый URL сервера приложение берёт из `SHADO_API_BASE_URL`
+  // (см. lib/core/config/app_config.dart). Без флага это боевой сервер,
+  // поэтому конфигурации для локальной разработки передают адрес явно.
   "version": "0.2.0",
   "configurations": [
-  
     {
-      "name": "shado",
+      // Боевой сервер — то же, что даёт сборка без флагов.
+      "name": "shado (прод)",
       "request": "launch",
       "type": "dart"
+    },
+    {
+      // Изнутри Android-эмулятора хост-машина видна как 10.0.2.2:
+      // 127.0.0.1 там ведёт в сам эмулятор.
+      "name": "shado (локальный сервер, Android-эмулятор)",
+      "request": "launch",
+      "type": "dart",
+      "toolArgs": ["--dart-define=SHADO_API_BASE_URL=http://10.0.2.2:8080"]
+    },
+    {
+      // Windows/Linux/macOS и iOS-симулятор ходят на loopback напрямую.
+      "name": "shado (локальный сервер, десктоп / iOS-симулятор)",
+      "request": "launch",
+      "type": "dart",
+      "toolArgs": ["--dart-define=SHADO_API_BASE_URL=http://127.0.0.1:8080"]
     },
     {
       "name": "shado (profile mode)",
@@ -17,6 +32,8 @@
       "flutterMode": "profile"
     },
     {
+      // Единственный режим, где проверяется настоящая цепочка TLS: послабление
+      // на открытый HTTP живёт только в debug-манифесте Android.
       "name": "shado (release mode)",
       "request": "launch",
       "type": "dart",

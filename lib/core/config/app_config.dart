@@ -1,8 +1,16 @@
 /// Настройки сборки, задаваемые через `--dart-define`.
 ///
-/// По умолчанию приложение смотрит на локальный сервер, поднятый рядом
-/// (`shado_server`, `127.0.0.1:8080`). Прод-сборка передаёт свой адрес:
-/// `flutter build --dart-define=SHADO_API_BASE_URL=https://…`.
+/// По умолчанию приложение смотрит на боевой сервер: так собранный без флагов
+/// релиз всегда рабочий, а промахнуться можно только в отладке — и заметно
+/// сразу. Локальный `shado_server` подставляется флагом:
+///
+/// ```bash
+/// flutter run --dart-define=SHADO_API_BASE_URL=http://10.0.2.2:8080
+/// ```
+///
+/// `10.0.2.2`, а не `127.0.0.1`: изнутри Android-эмулятора loopback ведёт в сам
+/// эмулятор. На iOS-симуляторе и десктопе годится `127.0.0.1`, на живом
+/// телефоне — адрес машины в локальной сети.
 class AppConfig {
   const AppConfig._();
 
@@ -10,16 +18,23 @@ class AppConfig {
   /// поэтому в базовый URL она не входит.
   static const String apiBaseUrl = String.fromEnvironment(
     'SHADO_API_BASE_URL',
-    defaultValue: 'http://127.0.0.1:8080',
+    defaultValue: 'https://shado-martin.duckdns.org',
   );
 
   /// Предел размера аудио на сервере. Проверяем до отправки, чтобы не гонять
   /// зря трафик и не ловить `payload_too_large` после минуты загрузки.
   static const int maxUploadBytes = 50 * 1024 * 1024;
 
-  /// Сколько времени ждём ответа на обычный запрос. Загрузка и скачивание
-  /// файла идут без этого предела — там свои таймауты.
-  static const Duration requestTimeout = Duration(seconds: 20);
+  /// Сколько ждём ответа на обычный запрос — с запасом на холодный сервер и
+  /// мобильную сеть. Передача аудио живёт по [audioTimeout].
+  static const Duration requestTimeout = Duration(seconds: 60);
 
-  static const Duration connectTimeout = Duration(seconds: 10);
+  static const Duration connectTimeout = Duration(seconds: 15);
+
+  /// Предел на передачу аудиофайла: 50 МБ по слабому каналу идут минутами.
+  ///
+  /// Именно он, а не [requestTimeout], решает судьбу загрузки. Ограничение
+  /// всё же ставим, а не снимаем совсем: на мёртвом соединении запрос без
+  /// предела не оборвётся никогда и загрузка просто зависнет.
+  static const Duration audioTimeout = Duration(minutes: 10);
 }

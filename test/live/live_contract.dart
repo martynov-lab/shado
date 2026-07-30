@@ -18,6 +18,7 @@ import 'package:shado/features/lessons/data/datasources/audio_remote_datasource.
 import 'package:shado/features/lessons/data/datasources/lesson_remote_datasource.dart';
 import 'package:shado/core/storage/token_storage.dart';
 import 'package:shado/features/lessons/data/models/segment_model.dart';
+import 'package:shado/features/lessons/domain/entities/lesson_category.dart';
 import 'package:uuid/uuid.dart';
 
 /// Токены в памяти: keychain для проверки контракта ни при чём.
@@ -141,6 +142,8 @@ void main() {
         title: 'Живой урок',
         audioId: audioId,
         createdAt: DateTime.now().toUtc(),
+        accent: LessonAccent.us,
+        level: LessonLevel.b1,
         segments: [
           SegmentModel(
             index: 0,
@@ -161,6 +164,10 @@ void main() {
       expect(created.version, 1);
       expect(created.segments, hasLength(2));
       expect(created.audio.id, audioId);
+      expect(created.accent, LessonAccent.us);
+      expect(created.level, LessonLevel.b1);
+      // Тему не передавали — сервер обязан подставить свою.
+      expect(created.topic, isNotNull);
     });
 
     test('повтор того же PUT не создаёт дубль', () async {
@@ -175,6 +182,10 @@ void main() {
           title: 'Без версии',
           audioId: audioId,
           createdAt: DateTime.now().toUtc(),
+          // Категории на месте: проверяем именно отсутствие `If-Match`, а не
+          // отказ по неполному телу.
+          accent: LessonAccent.us,
+          level: LessonLevel.b1,
           segments: [
             SegmentModel(index: 0, text: 'Раз', startMs: 0, endMs: durationMs),
           ],
@@ -192,6 +203,9 @@ void main() {
         title: 'Правленый урок',
         audioId: audioId,
         createdAt: DateTime.now().toUtc(),
+        // `PUT` заменяет урок целиком: категории надо переслать и при правке.
+        accent: LessonAccent.uk,
+        level: LessonLevel.c1,
         segments: [
           SegmentModel(index: 0, text: 'Один', startMs: 0, endMs: durationMs),
         ],
@@ -201,6 +215,8 @@ void main() {
       expect(updated.version, 2);
       expect(updated.title, 'Правленый урок');
       expect(updated.segments, hasLength(1));
+      expect(updated.accent, LessonAccent.uk);
+      expect(updated.level, LessonLevel.c1);
     });
 
     test('сегменты не встык — 422 с объяснением', () async {

@@ -4,7 +4,9 @@ import 'package:go_router/go_router.dart';
 
 import '../../../../core/config/app_config.dart';
 import '../../../../core/constants/app_constants.dart';
+import '../../domain/entities/lesson_category.dart';
 import '../controllers/add_lesson_controller.dart';
+import '../controllers/lesson_providers.dart';
 import '../widgets/segment_text_field.dart';
 import '../widgets/waveform_card.dart';
 
@@ -73,6 +75,8 @@ class _AddLessonPageState extends ConsumerState<AddLessonPage> {
               onChanged: controller.setTitle,
             ),
             const SizedBox(height: 16),
+            _CategoryFields(state: state, controller: controller),
+            const SizedBox(height: 16),
             SegmentTextField(
               controller: _textController,
               onChanged: controller.setText,
@@ -114,6 +118,118 @@ class _AddLessonPageState extends ConsumerState<AddLessonPage> {
           ],
         ),
       ),
+    );
+  }
+}
+
+/// Акцент, уровень и тема — по ним потом фильтруется каталог.
+///
+/// Акцент и уровень зашиты в клиенте: это закрытые списки, сервер меняет их
+/// только релизом. Темы, наоборот, справочник — их правит владелец, поэтому
+/// список приходит с сервера при каждом входе на экран.
+class _CategoryFields extends ConsumerWidget {
+  const _CategoryFields({required this.state, required this.controller});
+
+  final AddLessonFormState state;
+  final AddLessonController controller;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final theme = Theme.of(context);
+    final busy = state.isSubmitting || state.isUploading;
+    final topics = ref.watch(topicsProvider);
+    final available = topics.value ?? const <Topic>[];
+
+    // Пока форму заполняли, выбранную тему могли удалить на другом устройстве.
+    // Убираем её из состояния, чтобы на сервер не уехал мёртвый id.
+    ref.listen(topicsProvider, (_, next) {
+      final list = next.value;
+      if (list != null) {
+        controller.dropTopicUnless([for (final topic in list) topic.id]);
+      }
+    });
+    // На отрисовку страховка нужна отдельно: список падает, если выбранного
+    // значения нет среди пунктов, а слушатель сработает только после кадра.
+    final selectedTopic = available.any((topic) => topic.id == state.topicId)
+        ? state.topicId
+        : null;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(
+              child: DropdownButtonFormField<LessonAccent>(
+                key: const ValueKey('dropdown-accent'),
+                initialValue: state.accent,
+                decoration: const InputDecoration(labelText: 'Акцент'),
+                items: [
+                  for (final accent in LessonAccent.values)
+                    DropdownMenuItem(
+                      value: accent,
+                      child: Text(accent.label, overflow: TextOverflow.ellipsis),
+                    ),
+                ],
+                onChanged: busy ? null : controller.setAccent,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: DropdownButtonFormField<LessonLevel>(
+                key: const ValueKey('dropdown-level'),
+                initialValue: state.level,
+                decoration: const InputDecoration(labelText: 'Уровень'),
+                // Подписи вида «B1 — средний» в половину строки не влезают,
+                // поэтому в закрытом поле остаётся только код уровня.
+                selectedItemBuilder: (_) => [
+                  for (final level in LessonLevel.values)
+                    Align(
+                      alignment: Alignment.centerLeft,
+                      child: Text(level.wire.toUpperCase()),
+                    ),
+                ],
+                items: [
+                  for (final level in LessonLevel.values)
+                    DropdownMenuItem(value: level, child: Text(level.label)),
+                ],
+                onChanged: busy ? null : controller.setLevel,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 16),
+        DropdownButtonFormField<String?>(
+          key: const ValueKey('dropdown-topic'),
+          initialValue: selectedTopic,
+          decoration: InputDecoration(
+            labelText: 'Тема',
+            helperText: switch (topics) {
+              AsyncError() => 'Справочник тем не загрузился — урок создастся '
+                  'с темой по умолчанию',
+              AsyncLoading() => 'Загружаем справочник тем…',
+              _ => 'Необязательно: без выбора сервер поставит тему по умолчанию',
+            },
+            helperMaxLines: 2,
+            helperStyle: topics is AsyncError
+                ? theme.textTheme.bodySmall?.copyWith(
+                    color: theme.colorScheme.error,
+                  )
+                : null,
+          ),
+          items: [
+            const DropdownMenuItem<String?>(child: Text('Без темы')),
+            for (final topic in available)
+              DropdownMenuItem<String?>(
+                value: topic.id,
+                child: Text(topic.name, overflow: TextOverflow.ellipsis),
+              ),
+          ],
+          // Пока справочник не пришёл, выбирать нечего.
+          onChanged: busy || available.isEmpty ? null : controller.setTopic,
+        ),
+      ],
     );
   }
 }

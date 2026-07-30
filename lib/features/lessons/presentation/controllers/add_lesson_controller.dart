@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/constants/app_constants.dart';
 import '../../domain/entities/audio_trim.dart';
 import '../../domain/entities/lesson.dart';
+import '../../domain/entities/lesson_category.dart';
 import '../../domain/entities/segment_boundaries.dart';
 import '../../domain/usecases/create_lesson.dart';
 import 'lesson_providers.dart';
@@ -15,6 +16,9 @@ class AddLessonFormState {
   const AddLessonFormState({
     this.title = '',
     this.text = '',
+    this.accent,
+    this.level,
+    this.topicId,
     this.audioId,
     this.audioFileName,
     this.durationMs = 0,
@@ -28,6 +32,14 @@ class AddLessonFormState {
 
   final String title;
   final String text;
+
+  /// Акцент и уровень — обязательный выбор (§6). `null` — ещё не выбрали, и
+  /// урок отправлять нельзя.
+  final LessonAccent? accent;
+  final LessonLevel? level;
+
+  /// Тема из справочника; `null` — «без темы», сервер поставит свою.
+  final String? topicId;
 
   /// Аудио, принятое сервером; `null` — файл ещё не выбран или не загружен.
   final String? audioId;
@@ -74,11 +86,18 @@ class AddLessonFormState {
       !isTrimming &&
       title.trim().isNotEmpty &&
       segmentCount > 0 &&
-      audioId != null;
+      audioId != null &&
+      // Без акцента и уровня сервер ответит `422` — не даём и пробовать.
+      accent != null &&
+      level != null;
 
   AddLessonFormState copyWith({
     String? title,
     String? text,
+    LessonAccent? accent,
+    LessonLevel? level,
+    String? topicId,
+    bool clearTopic = false,
     String? audioId,
     bool clearAudio = false,
     String? audioFileName,
@@ -94,6 +113,9 @@ class AddLessonFormState {
     return AddLessonFormState(
       title: title ?? this.title,
       text: text ?? this.text,
+      accent: accent ?? this.accent,
+      level: level ?? this.level,
+      topicId: clearTopic ? null : (topicId ?? this.topicId),
       audioId: clearAudio ? null : (audioId ?? this.audioId),
       audioFileName: clearAudio
           ? null
@@ -129,6 +151,24 @@ class AddLessonController extends Notifier<AddLessonFormState> {
 
   void setBoundaries(List<int> boundaries) =>
       state = state.copyWith(boundaries: boundaries);
+
+  void setAccent(LessonAccent? accent) =>
+      state = state.copyWith(accent: accent);
+
+  void setLevel(LessonLevel? level) => state = state.copyWith(level: level);
+
+  /// `null` — «без темы»: сервер поставит уроку тему по умолчанию.
+  void setTopic(String? topicId) => state = topicId == null
+      ? state.copyWith(clearTopic: true)
+      : state.copyWith(topicId: topicId);
+
+  /// Убирает выбранную тему, если её больше нет в справочнике: пока форму
+  /// заполняли, тему могли удалить на другом устройстве.
+  void dropTopicUnless(Iterable<String> availableIds) {
+    final selected = state.topicId;
+    if (selected == null || availableIds.contains(selected)) return;
+    state = state.copyWith(clearTopic: true);
+  }
 
   void reset() => state = const AddLessonFormState();
 
@@ -256,6 +296,11 @@ class AddLessonController extends Notifier<AddLessonFormState> {
     if (audioId == null) {
       throw StateError('Файл ещё не загружен');
     }
+    final accent = state.accent;
+    final level = state.level;
+    if (accent == null || level == null) {
+      throw StateError('Акцент и уровень не выбраны');
+    }
     state = state.copyWith(isSubmitting: true);
     try {
       final lesson = await ref.read(createLessonProvider)(
@@ -264,6 +309,9 @@ class AddLessonController extends Notifier<AddLessonFormState> {
           rawText: state.text,
           audioId: audioId,
           durationMs: state.durationMs,
+          accent: accent,
+          level: level,
+          topicId: state.topicId,
           boundaries: state.boundaries.isEmpty ? null : state.boundaries,
         ),
       );

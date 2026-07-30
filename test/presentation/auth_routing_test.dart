@@ -9,6 +9,7 @@ import 'package:shado/features/auth/domain/repositories/auth_repository.dart';
 import 'package:shado/features/auth/presentation/controllers/auth_providers.dart';
 import 'package:shado/features/lessons/domain/entities/audio_upload.dart';
 import 'package:shado/features/lessons/domain/entities/lesson.dart';
+import 'package:shado/features/lessons/domain/entities/lesson_category.dart';
 import 'package:shado/features/lessons/domain/repositories/lesson_repository.dart';
 import 'package:shado/features/lessons/presentation/controllers/lesson_providers.dart';
 
@@ -81,11 +82,17 @@ class FakeLessonRepository implements LessonRepository {
   }) async => const AudioUpload(audioId: 'a', durationMs: 1, sizeBytes: 1);
 
   @override
+  Future<List<Topic>> getTopics() async => const [];
+
+  @override
   Future<Lesson> createLesson({
     required String title,
     required String audioId,
     required int durationMs,
     required List<String> segmentTexts,
+    required LessonAccent accent,
+    required LessonLevel level,
+    String? topicId,
     List<int>? boundaries,
   }) async => throw UnimplementedError();
 

@@ -7,15 +7,18 @@ import '../../data/datasources/audio_remote_datasource.dart';
 import '../../data/datasources/lesson_local_datasource.dart';
 import '../../data/datasources/lesson_local_datasource_sqflite.dart';
 import '../../data/datasources/lesson_remote_datasource.dart';
+import '../../data/datasources/topic_remote_datasource.dart';
 import '../../data/datasources/waveform_datasource.dart';
 import '../../data/datasources/waveform_datasource_remote.dart';
 import '../../data/datasources/waveform_datasource_soloud.dart';
 import '../../data/repositories/lesson_repository_impl.dart';
+import '../../domain/entities/lesson_category.dart';
 import '../../domain/repositories/lesson_repository.dart';
 import '../../domain/usecases/create_lesson.dart';
 import '../../domain/usecases/delete_lesson.dart';
 import '../../domain/usecases/get_lesson.dart';
 import '../../domain/usecases/get_lessons.dart';
+import '../../domain/usecases/get_topics.dart';
 import '../../domain/usecases/sync_lessons.dart';
 import '../../domain/usecases/update_lesson_content.dart';
 import '../../domain/usecases/upload_audio.dart';
@@ -31,6 +34,10 @@ final lessonRemoteDataSourceProvider = Provider<LessonRemoteDataSource>(
 
 final audioRemoteDataSourceProvider = Provider<AudioRemoteDataSource>(
   (ref) => ApiAudioRemoteDataSource(ref.watch(apiClientProvider)),
+);
+
+final topicRemoteDataSourceProvider = Provider<TopicRemoteDataSource>(
+  (ref) => ApiTopicRemoteDataSource(ref.watch(apiClientProvider)),
 );
 
 final audioCacheProvider = Provider<AudioCache>((ref) => const FileAudioCache());
@@ -54,6 +61,7 @@ final lessonRepositoryProvider = Provider<LessonRepository>(
     localDataSource: ref.watch(lessonLocalDataSourceProvider),
     remoteDataSource: ref.watch(lessonRemoteDataSourceProvider),
     audioDataSource: ref.watch(audioRemoteDataSourceProvider),
+    topicDataSource: ref.watch(topicRemoteDataSourceProvider),
     audioCache: ref.watch(audioCacheProvider),
   ),
 );
@@ -84,4 +92,16 @@ final updateLessonContentProvider = Provider<UpdateLessonContent>(
 
 final uploadAudioProvider = Provider<UploadAudio>(
   (ref) => UploadAudio(ref.watch(lessonRepositoryProvider)),
+);
+
+final getTopicsProvider = Provider<GetTopics>(
+  (ref) => GetTopics(ref.watch(lessonRepositoryProvider)),
+);
+
+/// Справочник тем для выпадающего списка.
+///
+/// `autoDispose`: список перезапрашивается при каждом входе на экран создания —
+/// тему могли переименовать или удалить (§6).
+final topicsProvider = FutureProvider.autoDispose<List<Topic>>(
+  (ref) => ref.watch(getTopicsProvider)(),
 );

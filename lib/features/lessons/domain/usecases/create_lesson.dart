@@ -1,6 +1,7 @@
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/error/failures.dart';
 import '../entities/lesson.dart';
+import '../entities/lesson_category.dart';
 import '../repositories/lesson_repository.dart';
 
 class CreateLessonParams {
@@ -9,6 +10,9 @@ class CreateLessonParams {
     required this.rawText,
     required this.audioId,
     required this.durationMs,
+    required this.accent,
+    required this.level,
+    this.topicId,
     this.boundaries,
   });
 
@@ -22,6 +26,16 @@ class CreateLessonParams {
 
   /// Длительность файла по версии сервера — он же её и считал.
   final int durationMs;
+
+  /// Акцент и уровень — обязательный выбор (§6): пустое или незнакомое
+  /// значение сервер отвергает с `422`, поэтому в параметрах они не
+  /// обнуляемые.
+  final LessonAccent accent;
+  final LessonLevel level;
+
+  /// Тема из справочника. `null` — не выбрали, сервер поставит свою
+  /// («Other»).
+  final String? topicId;
 
   /// Границы, размеченные на волне до создания урока (`N + 1` значение).
   /// `null` — разложить куски равномерно.
@@ -58,6 +72,11 @@ class CreateLesson {
       audioId: params.audioId,
       durationMs: params.durationMs,
       segmentTexts: segmentTexts,
+      accent: params.accent,
+      level: params.level,
+      // Пустую строку сервер считает незнакомой темой, а не отсутствием
+      // выбора.
+      topicId: (params.topicId?.isEmpty ?? true) ? null : params.topicId,
       // Разметка с экрана создания годится, только если она про этот же набор
       // кусков: текст могли поправить после перетаскивания меток.
       boundaries:

@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 
 import '../../../../core/network/api_client.dart';
+import '../../domain/entities/lesson_category.dart';
 import '../models/lesson_dto.dart';
 import '../models/segment_model.dart';
 
@@ -30,6 +31,9 @@ abstract interface class LessonRemoteDataSource {
   /// `PUT`, а не `POST`, потому что UUID генерит клиент: повтор после потери
   /// сети не создаёт дубль. [version] — версия, поверх которой правим; `null`
   /// означает создание.
+  ///
+  /// `PUT` заменяет урок целиком, поэтому [accent], [level] и [topicId] нужно
+  /// передавать и при правке: без них сервер потерял бы категории урока.
   Future<LessonDto> putLesson({
     required String id,
     required String title,
@@ -37,6 +41,9 @@ abstract interface class LessonRemoteDataSource {
     required DateTime createdAt,
     required List<SegmentModel> segments,
     int? version,
+    LessonAccent? accent,
+    LessonLevel? level,
+    String? topicId,
   });
 
   Future<void> deleteLesson(String id);
@@ -76,6 +83,9 @@ class ApiLessonRemoteDataSource implements LessonRemoteDataSource {
     required DateTime createdAt,
     required List<SegmentModel> segments,
     int? version,
+    LessonAccent? accent,
+    LessonLevel? level,
+    String? topicId,
   }) async {
     final response = await _client.put(
       '/v1/lessons/$id',
@@ -83,6 +93,11 @@ class ApiLessonRemoteDataSource implements LessonRemoteDataSource {
         'title': title,
         'audio_id': audioId,
         'created_at': createdAt.toUtc().toIso8601String(),
+        'accent': ?accent?.wire,
+        'level': ?level?.wire,
+        // Тему не выбрали — ключ не отправляем вовсе: сервер сам поставит
+        // «Other». Отправить `null` значило бы попросить его стереть тему.
+        'topic_id': ?topicId,
         'segments': [for (final segment in segments) segment.toJson()],
       },
       // Правка без `If-Match` — всегда конфликт: сервер не даст перезаписать

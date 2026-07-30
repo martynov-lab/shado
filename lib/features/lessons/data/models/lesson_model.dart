@@ -1,6 +1,7 @@
 import 'package:freezed_annotation/freezed_annotation.dart';
 
 import '../../domain/entities/lesson.dart';
+import '../../domain/entities/lesson_category.dart';
 import 'lesson_dto.dart';
 import 'segment_model.dart';
 
@@ -29,6 +30,17 @@ abstract class LessonModel with _$LessonModel {
     required List<SegmentModel> segments,
     @JsonKey(name: 'audio_sha256') @Default('') String audioSha256,
     @JsonKey(name: 'audio_content_type') @Default('') String audioContentType,
+
+    /// Категории урока (§6) — как их отдал сервер: `US`/`UK` и `a1`…`c2`.
+    /// Здесь это строки, а не enum'ы: кеш только хранит их между запусками, а
+    /// разбор с проверкой живёт в [toEntity]. Пустая строка — значения нет.
+    @Default('') String accent,
+    @Default('') String level,
+
+    /// Тема: id и название рядом, чтобы список уроков не ждал справочника.
+    /// Название может измениться, id — нет.
+    @JsonKey(name: 'topic_id') @Default('') String topicId,
+    @JsonKey(name: 'topic_name') @Default('') String topicName,
   }) = _LessonModel;
 
   const LessonModel._();
@@ -50,6 +62,10 @@ abstract class LessonModel with _$LessonModel {
         segments: dto.segments,
         audioSha256: dto.audio.sha256,
         audioContentType: dto.audio.contentType,
+        accent: dto.accent?.wire ?? '',
+        level: dto.level?.wire ?? '',
+        topicId: dto.topic?.id ?? '',
+        topicName: dto.topic?.name ?? '',
       );
 
   bool get hasAudioFile => audioPath.isNotEmpty;
@@ -62,5 +78,8 @@ abstract class LessonModel with _$LessonModel {
     durationMs: durationMs,
     createdAt: createdAt.toUtc(),
     segments: segments.map((segment) => segment.toEntity()).toList(),
+    accent: LessonAccent.parse(accent),
+    level: LessonLevel.parse(level),
+    topic: topicId.isEmpty ? null : Topic(id: topicId, name: topicName),
   );
 }

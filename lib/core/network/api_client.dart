@@ -22,7 +22,10 @@ class ApiClient {
                baseUrl: baseUrl,
                connectTimeout: AppConfig.connectTimeout,
                receiveTimeout: AppConfig.requestTimeout,
-               sendTimeout: AppConfig.requestTimeout,
+               // Отправка — единственный шаг, где тело бывает на 50 МБ,
+               // поэтому предел общий и щедрый: JSON-запросы всё равно
+               // упираются в connect- и receiveTimeout раньше.
+               sendTimeout: AppConfig.audioTimeout,
                contentType: Headers.jsonContentType,
                // Разбираем статусы сами: ошибочный ответ несёт тело с кодом,
                // который нужен целиком.

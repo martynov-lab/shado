@@ -48,14 +48,18 @@ class SqfliteLessonLocalDataSource implements LessonLocalDataSource {
       final path = p.join(await _databaseDirectory(), _databaseName);
       final db = await openDatabase(
         path,
-        version: 2,
+        version: 3,
         onCreate: (db, version) => _createSchema(db),
         onUpgrade: (db, oldVersion, newVersion) async {
-          // Версия 1 хранила локально созданные уроки без связи с сервером:
-          // ни `audio_id`, ни версии агрегата у них нет, и восстановить их
-          // неоткуда. Кеш просто пересоберётся из ответа сервера.
+          // Таблицу не переносим, а пересоздаём: это кеш, источник истины —
+          // сервер, и полная выборка вернётся первым же `syncLessons`.
+          // Так было при переходе с версии 1 (уроки без `audio_id` и версии
+          // агрегата) и так же на версии 3, добавившей категории.
           await db.execute('DROP TABLE IF EXISTS $_table');
           await _createSchema(db);
+          // Метка синхронизации осталась от прежней схемы: с ней сервер отдал
+          // бы только дельту, и пересозданная таблица осталась бы почти пустой.
+          await db.delete(_metaTable);
         },
       );
       _database = db;
@@ -79,6 +83,10 @@ class SqfliteLessonLocalDataSource implements LessonLocalDataSource {
         created_at TEXT NOT NULL,
         updated_at TEXT NOT NULL,
         version INTEGER NOT NULL DEFAULT 1,
+        accent TEXT NOT NULL DEFAULT '',
+        level TEXT NOT NULL DEFAULT '',
+        topic_id TEXT NOT NULL DEFAULT '',
+        topic_name TEXT NOT NULL DEFAULT '',
         segments TEXT NOT NULL
       )
     ''');
@@ -255,6 +263,10 @@ class SqfliteLessonLocalDataSource implements LessonLocalDataSource {
     'created_at': lesson.createdAt.toUtc().toIso8601String(),
     'updated_at': lesson.updatedAt.toUtc().toIso8601String(),
     'version': lesson.version,
+    'accent': lesson.accent,
+    'level': lesson.level,
+    'topic_id': lesson.topicId,
+    'topic_name': lesson.topicName,
     'segments': jsonEncode(
       lesson.segments.map((segment) => segment.toJson()).toList(),
     ),
@@ -273,6 +285,10 @@ class SqfliteLessonLocalDataSource implements LessonLocalDataSource {
       createdAt: DateTime.parse(row['created_at']! as String).toUtc(),
       updatedAt: DateTime.parse(row['updated_at']! as String).toUtc(),
       version: row['version'] as int? ?? 1,
+      accent: row['accent'] as String? ?? '',
+      level: row['level'] as String? ?? '',
+      topicId: row['topic_id'] as String? ?? '',
+      topicName: row['topic_name'] as String? ?? '',
       segments: rawSegments
           .map((json) => SegmentModel.fromJson(json as Map<String, dynamic>))
           .toList(),

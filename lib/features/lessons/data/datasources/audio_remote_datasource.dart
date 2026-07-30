@@ -76,9 +76,12 @@ class ApiAudioRemoteDataSource implements AudioRemoteDataSource {
       data: form,
       onSendProgress: onProgress,
       cancelToken: cancelToken,
-      // Загрузка длинного файла идёт минутами — общий таймаут ответа тут не
-      // годится.
-      options: Options(sendTimeout: null, receiveTimeout: null),
+      // Отдав последний байт, ждём дольше обычного: сервер ещё декодирует
+      // файл и считает пики, и только потом отвечает.
+      options: Options(
+        sendTimeout: AppConfig.audioTimeout,
+        receiveTimeout: AppConfig.audioTimeout,
+      ),
     );
     return AudioDto.fromJson(response.data!);
   }
@@ -111,7 +114,7 @@ class ApiAudioRemoteDataSource implements AudioRemoteDataSource {
       onReceiveProgress: onProgress,
       cancelToken: cancelToken,
       options: Options(
-        receiveTimeout: null,
+        receiveTimeout: AppConfig.audioTimeout,
         headers: alreadyHave > 0 ? {'Range': 'bytes=$alreadyHave-'} : null,
       ),
     );
@@ -137,7 +140,7 @@ class ApiAudioRemoteDataSource implements AudioRemoteDataSource {
       partial.path,
       onReceiveProgress: onProgress,
       cancelToken: cancelToken,
-      options: Options(receiveTimeout: null),
+      options: Options(receiveTimeout: AppConfig.audioTimeout),
     );
   }
 }

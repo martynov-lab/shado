@@ -17,12 +17,16 @@ dart run build_runner build --force-jit   # freezed + json_serializable
 flutter run
 ```
 
-Сервер по умолчанию берётся с `http://127.0.0.1:8080`; другой адрес задаётся
-сборке:
+Сервер по умолчанию — боевой, `https://shado-martin.duckdns.org`: релиз без
+флагов собирается рабочим. Локальный `shado_server` подставляется флагом:
 
 ```bash
-flutter run --dart-define=SHADO_API_BASE_URL=https://example.com
+flutter run --dart-define=SHADO_API_BASE_URL=http://10.0.2.2:8080
 ```
+
+`10.0.2.2` — это хост-машина изнутри Android-эмулятора; `127.0.0.1` там ведёт в
+сам эмулятор. На iOS-симуляторе и десктопе — `127.0.0.1`, на живом телефоне —
+адрес машины в локальной сети (см. [docs/RUNNING.md](docs/RUNNING.md), §5).
 
 Целевые платформы — Android, iOS и Windows/Linux.
 

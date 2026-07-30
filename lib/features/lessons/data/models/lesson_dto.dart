@@ -1,4 +1,5 @@
 import '../../domain/entities/lesson.dart';
+import '../../domain/entities/lesson_category.dart';
 import 'audio_dto.dart';
 import 'segment_model.dart';
 
@@ -21,6 +22,9 @@ class LessonDto {
     required this.audio,
     required this.segments,
     this.deletedAt,
+    this.accent,
+    this.level,
+    this.topic,
   });
 
   factory LessonDto.fromJson(Map<String, dynamic> json) => LessonDto(
@@ -31,6 +35,13 @@ class LessonDto {
     updatedAt: _parseTime(json['updated_at']),
     deletedAt: json['deleted_at'] == null ? null : _parseTime(json['deleted_at']),
     version: (json['version'] as num?)?.toInt() ?? 1,
+    accent: LessonAccent.parse(json['accent'] as String?),
+    level: LessonLevel.parse(json['level'] as String?),
+    // Тема приходит объектом `{id, name}` — второй запрос ради названия не
+    // нужен.
+    topic: json['topic'] is Map
+        ? Topic.fromJson(Map<String, dynamic>.from(json['topic'] as Map))
+        : null,
     audio: AudioDto.fromJson(json['audio'] as Map<String, dynamic>),
     segments: [
       for (final segment in (json['segments'] as List<dynamic>? ?? const []))
@@ -51,6 +62,12 @@ class LessonDto {
   /// Версия агрегата. Уезжает обратно в `If-Match` при правке.
   final int version;
 
+  /// Категории урока (§6). `null` — сервер прислал пустое или незнакомое
+  /// значение; подставлять своё на его место нельзя.
+  final LessonAccent? accent;
+  final LessonLevel? level;
+  final Topic? topic;
+
   final AudioDto audio;
   final List<SegmentModel> segments;
 
@@ -65,6 +82,9 @@ class LessonDto {
     durationMs: durationMs,
     createdAt: createdAt,
     segments: segments.map((segment) => segment.toEntity()).toList(),
+    accent: accent,
+    level: level,
+    topic: topic,
   );
 
   static DateTime _parseTime(Object? raw) =>

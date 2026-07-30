@@ -8,12 +8,14 @@ import '../../../../core/network/api_exception.dart';
 import '../../domain/entities/audio_trim.dart';
 import '../../domain/entities/audio_upload.dart';
 import '../../domain/entities/lesson.dart';
+import '../../domain/entities/lesson_category.dart';
 import '../../domain/entities/segment_boundaries.dart';
 import '../../domain/repositories/lesson_repository.dart';
 import '../datasources/audio_cache.dart';
 import '../datasources/audio_remote_datasource.dart';
 import '../datasources/lesson_local_datasource.dart';
 import '../datasources/lesson_remote_datasource.dart';
+import '../datasources/topic_remote_datasource.dart';
 import '../models/audio_dto.dart';
 import '../models/lesson_dto.dart';
 import '../models/lesson_model.dart';
@@ -29,11 +31,13 @@ class LessonRepositoryImpl implements LessonRepository {
     required LessonLocalDataSource localDataSource,
     required LessonRemoteDataSource remoteDataSource,
     required AudioRemoteDataSource audioDataSource,
+    required TopicRemoteDataSource topicDataSource,
     required AudioCache audioCache,
     Uuid uuid = const Uuid(),
   }) : _local = localDataSource,
        _remote = remoteDataSource,
        _audio = audioDataSource,
+       _topics = topicDataSource,
        _cache = audioCache,
        _uuid = uuid;
 
@@ -47,6 +51,7 @@ class LessonRepositoryImpl implements LessonRepository {
   final LessonLocalDataSource _local;
   final LessonRemoteDataSource _remote;
   final AudioRemoteDataSource _audio;
+  final TopicRemoteDataSource _topics;
   final AudioCache _cache;
   final Uuid _uuid;
 
@@ -151,11 +156,17 @@ class LessonRepositoryImpl implements LessonRepository {
   }
 
   @override
+  Future<List<Topic>> getTopics() => _topics.list();
+
+  @override
   Future<Lesson> createLesson({
     required String title,
     required String audioId,
     required int durationMs,
     required List<String> segmentTexts,
+    required LessonAccent accent,
+    required LessonLevel level,
+    String? topicId,
     List<int>? boundaries,
   }) async {
     // UUID генерит клиент, поэтому повтор `PUT` после потери сети не создаёт
@@ -174,6 +185,9 @@ class LessonRepositoryImpl implements LessonRepository {
       audioId: audioId,
       createdAt: createdAt,
       segments: segments,
+      accent: accent,
+      level: level,
+      topicId: topicId,
     );
     final audioPath = await _ensureAudioFile(dto.audio);
     final model = LessonModel.fromDto(dto, audioPath: audioPath);
@@ -202,6 +216,12 @@ class LessonRepositoryImpl implements LessonRepository {
         segments: segments,
         // Версия из кеша: правка идёт поверх того, что мы последний раз видели.
         version: cached.version,
+        // `PUT` заменяет урок целиком, поэтому категории пересылаем как есть:
+        // не отправить их — значит попросить сервер их потерять. Берём из
+        // правленого урока, а чего в нём нет — из кеша.
+        accent: lesson.accent ?? LessonAccent.parse(cached.accent),
+        level: lesson.level ?? LessonLevel.parse(cached.level),
+        topicId: lesson.topic?.id ?? _nullIfEmpty(cached.topicId),
       );
       await _local.upsertLesson(
         LessonModel.fromDto(dto, audioPath: cached.audioPath),
@@ -313,6 +333,10 @@ class LessonRepositoryImpl implements LessonRepository {
     await _cache.retainOnly(used);
     await _cache.trimToSize(_maxCacheBytes);
   }
+
+  /// Пустая строка в кеше значит «значения нет»; на сервер такое поле уезжать
+  /// не должно вовсе.
+  static String? _nullIfEmpty(String value) => value.isEmpty ? null : value;
 
   static String? _laterOf(String? current, DateTime candidate) {
     final value = candidate.toUtc().toIso8601String();

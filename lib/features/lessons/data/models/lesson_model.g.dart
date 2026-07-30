@@ -20,6 +20,10 @@ _LessonModel _$LessonModelFromJson(Map<String, dynamic> json) => _LessonModel(
       .toList(),
   audioSha256: json['audio_sha256'] as String? ?? '',
   audioContentType: json['audio_content_type'] as String? ?? '',
+  accent: json['accent'] as String? ?? '',
+  level: json['level'] as String? ?? '',
+  topicId: json['topic_id'] as String? ?? '',
+  topicName: json['topic_name'] as String? ?? '',
 );
 
 Map<String, dynamic> _$LessonModelToJson(_LessonModel instance) =>
@@ -35,4 +39,8 @@ Map<String, dynamic> _$LessonModelToJson(_LessonModel instance) =>
       'segments': instance.segments,
       'audio_sha256': instance.audioSha256,
       'audio_content_type': instance.audioContentType,
+      'accent': instance.accent,
+      'level': instance.level,
+      'topic_id': instance.topicId,
+      'topic_name': instance.topicName,
     };
