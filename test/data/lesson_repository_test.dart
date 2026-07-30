@@ -294,6 +294,20 @@ void main() {
         audioCache: cache,
       );
 
+  group('загрузка аудио', () {
+    test('возвращает копию в кеше: её играет экран создания', () async {
+      final repository = build(FakeRemoteDataSource());
+
+      final upload = await repository.uploadAudio(filePath: '/tmp/tone.mp3');
+
+      // Именно путь кеша, а не выбранный файл: тот мог быть временной
+      // распаковкой content-URI, которую система вправе стереть.
+      expect(upload.localPath, '/cache/audio-1.mp3');
+      expect(upload.audioId, 'audio-1');
+      expect(upload.durationMs, 10000);
+    });
+  });
+
   group('создание', () {
     test('сегменты покрывают файл целиком, обрезка на сервер не уезжает', () async {
       final remote = FakeRemoteDataSource();

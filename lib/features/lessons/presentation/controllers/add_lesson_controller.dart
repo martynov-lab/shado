@@ -20,6 +20,7 @@ class AddLessonFormState {
     this.level,
     this.topicId,
     this.audioId,
+    this.audioPath,
     this.audioFileName,
     this.durationMs = 0,
     this.trim = const AudioTrim.full(0),
@@ -43,6 +44,10 @@ class AddLessonFormState {
 
   /// Аудио, принятое сервером; `null` — файл ещё не выбран или не загружен.
   final String? audioId;
+
+  /// Копия файла в кеше приложения: её играет плеер экрана, чтобы метки можно
+  /// было расставлять на слух до сохранения урока.
+  final String? audioPath;
 
   final String? audioFileName;
 
@@ -99,6 +104,7 @@ class AddLessonFormState {
     String? topicId,
     bool clearTopic = false,
     String? audioId,
+    String? audioPath,
     bool clearAudio = false,
     String? audioFileName,
     int? durationMs,
@@ -117,6 +123,7 @@ class AddLessonFormState {
       level: level ?? this.level,
       topicId: clearTopic ? null : (topicId ?? this.topicId),
       audioId: clearAudio ? null : (audioId ?? this.audioId),
+      audioPath: clearAudio ? null : (audioPath ?? this.audioPath),
       audioFileName: clearAudio
           ? null
           : (audioFileName ?? this.audioFileName),
@@ -255,6 +262,7 @@ class AddLessonController extends Notifier<AddLessonFormState> {
       if (_uploadCancel != cancelToken) return true;
       final next = state.copyWith(
         audioId: upload.audioId,
+        audioPath: upload.localPath.isEmpty ? null : upload.localPath,
         durationMs: upload.durationMs,
         // Новый файл приходит необрезанным.
         trim: AudioTrim.full(upload.durationMs),

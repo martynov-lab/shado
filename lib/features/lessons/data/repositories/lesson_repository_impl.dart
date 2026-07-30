@@ -143,7 +143,7 @@ class LessonRepositoryImpl implements LessonRepository {
     );
     // Файл уже здесь — кладём его в кеш сразу, качать обратно после создания
     // урока незачем.
-    await _cache.put(
+    final cached = await _cache.put(
       audioId: dto.id,
       extension: dto.fileExtension,
       sourcePath: filePath,
@@ -152,6 +152,9 @@ class LessonRepositoryImpl implements LessonRepository {
       audioId: dto.id,
       durationMs: dto.durationMs,
       sizeBytes: dto.sizeBytes,
+      // Отдаём копию из кеша, а не исходный путь: выбранный файл мог быть
+      // временной распаковкой content-URI, которую система вправе стереть.
+      localPath: cached,
     );
   }
 

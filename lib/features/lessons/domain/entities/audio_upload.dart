@@ -7,11 +7,17 @@ class AudioUpload {
     required this.audioId,
     required this.durationMs,
     required this.sizeBytes,
+    this.localPath = '',
   });
 
   final String audioId;
   final int durationMs;
   final int sizeBytes;
+
+  /// Файл в кеше приложения — тот же, что только что отправили. Экран создания
+  /// играет его с любого места, чтобы метки можно было ставить на слух ещё до
+  /// сохранения урока. Пусто — копию в кеш положить не удалось.
+  final String localPath;
 
   @override
   bool operator ==(Object other) =>
