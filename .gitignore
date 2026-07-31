@@ -10,7 +10,9 @@
 .history
 .svn/
 .swiftpm/
-.claude/
+.claude/*
+# Правила для агентов — часть проекта, а не локальная настройка.
+!.claude/skills/
 migrate_working_dir/
 
 # IntelliJ related
