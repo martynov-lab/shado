@@ -34,6 +34,7 @@ void main() {
   /// Типы, которые обязаны встретиться при прокрутке всей витрины.
   const expected = <Type>[
     AppButton,
+    AppIcon,
     AppIconButton,
     AppTextField,
     AppDropdown<String>,
@@ -88,6 +89,11 @@ void main() {
       find.byType(Scrollable).first,
       const Offset(0, -300),
     );
+    // dragUntilVisible останавливается, как только виджет построен, — а внутри
+    // cacheExtent списка он ещё за краем экрана и тап по нему пролетает мимо.
+    await tester.ensureVisible(find.text('Модальный лист'));
+    await tester.pumpAndSettle();
+
     await tester.tap(find.text('Модальный лист'));
     await tester.pumpAndSettle();
     expect(find.text('Скорость воспроизведения'), findsOneWidget);

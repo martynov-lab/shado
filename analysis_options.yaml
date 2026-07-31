@@ -17,6 +17,9 @@ analyzer:
   exclude:
     - "**/*.freezed.dart"
     - "**/*.g.dart"
+    # В docs/ лежат материалы поставки (шаблоны, примеры), а не код приложения:
+    # они не собираются и не должны шуметь в анализе.
+    - "docs/**"
 
 linter:
   # The lint rules applied to this project can be customized in the

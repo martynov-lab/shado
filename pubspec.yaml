@@ -30,6 +30,7 @@ dependencies:
   flutter_secure_storage: ^10.3.1
   crypto: ^3.0.7
   shared_preferences: ^2.5.0
+  flutter_svg: ^2.3.0
 
 dependency_overrides:
   path_provider_foundation: 2.5.1
@@ -47,6 +48,11 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
+
+  # Иконки набора Shadowing — SVG-ассеты (см. lib/widgets/app_icon.dart).
+  # Имя файла = значение в AppIcons, поэтому папка подключается целиком.
+  assets:
+    - assets/app_icons/
 
   # Шрифты кладём бандлом, а не через google_fonts: приложение должно
   # открываться и рисоваться одинаково без сети.

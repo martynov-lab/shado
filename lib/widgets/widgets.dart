@@ -16,6 +16,7 @@ export 'package:shado/widgets/app_dropdown.dart';
 export 'package:shado/widgets/app_field_suffix_button.dart';
 export 'package:shado/widgets/app_filter_chip.dart';
 export 'package:shado/widgets/app_focus_ring.dart';
+export 'package:shado/widgets/app_icon.dart';
 export 'package:shado/widgets/app_icon_button.dart';
 export 'package:shado/widgets/app_list_row.dart';
 export 'package:shado/widgets/app_radio.dart';

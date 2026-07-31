@@ -4,6 +4,7 @@ import 'package:shado/screens/design_gallery/sections/gallery_buttons_section.da
 import 'package:shado/screens/design_gallery/sections/gallery_chips_section.dart';
 import 'package:shado/screens/design_gallery/sections/gallery_fields_section.dart';
 import 'package:shado/screens/design_gallery/sections/gallery_header.dart';
+import 'package:shado/screens/design_gallery/sections/gallery_icons_section.dart';
 import 'package:shado/screens/design_gallery/sections/gallery_lists_section.dart';
 import 'package:shado/screens/design_gallery/sections/gallery_overlays_section.dart';
 import 'package:shado/screens/design_gallery/sections/gallery_selection_section.dart';
@@ -45,6 +46,7 @@ class DesignGalleryScreen extends StatelessWidget {
                 GalleryHeader(),
                 SizedBox(height: AppSpacing.s8),
                 GalleryTypographySection(),
+                GalleryIconsSection(),
                 GalleryButtonsSection(),
                 GalleryFieldsSection(),
                 GallerySelectionSection(),
