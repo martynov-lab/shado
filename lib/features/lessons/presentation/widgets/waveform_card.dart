@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../../core/utils/duration_format.dart';
 import '../../data/datasources/waveform_datasource.dart';
 import '../../domain/entities/audio_trim.dart';
 import '../controllers/waveform_controller.dart';
+import 'trim_bar.dart';
 import 'waveform_editor.dart';
 
 /// Карточка с волной аудио: сама тянет пики и показывает состояние загрузки.
@@ -139,63 +139,12 @@ class WaveformCard extends ConsumerWidget {
             right: margin.right,
             top: 8,
           ),
-          child: _TrimBar(
+          child: TrimBar(
             trim: trim,
-            enabled: peaksAsync.hasValue,
-            onStart: onTrimStart,
-            onApply: onTrimApply,
-            onCancel: onTrimCancel,
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class _TrimBar extends StatelessWidget {
-  const _TrimBar({
-    required this.trim,
-    required this.enabled,
-    required this.onStart,
-    required this.onApply,
-    required this.onCancel,
-  });
-
-  final AudioTrim? trim;
-  final bool enabled;
-  final VoidCallback? onStart;
-  final VoidCallback? onApply;
-  final VoidCallback? onCancel;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final range = trim;
-    if (range == null) {
-      return Align(
-        alignment: Alignment.centerLeft,
-        child: OutlinedButton.icon(
-          onPressed: enabled ? onStart : null,
-          icon: const Icon(Icons.content_cut),
-          label: const Text('Обрезать'),
-        ),
-      );
-    }
-    return Row(
-      children: [
-        FilledButton.icon(
-          onPressed: onApply,
-          icon: const Icon(Icons.check),
-          label: const Text('Применить'),
-        ),
-        const SizedBox(width: 8),
-        TextButton(onPressed: onCancel, child: const Text('Отменить')),
-        const SizedBox(width: 12),
-        Expanded(
-          child: Text(
-            'Останется ${formatPosition(range.durationMs)}',
-            style: theme.textTheme.bodySmall,
-            overflow: TextOverflow.ellipsis,
+            isEnabled: peaksAsync.hasValue,
+            onStartPressed: onTrimStart,
+            onApplyPressed: onTrimApply,
+            onCancelPressed: onTrimCancel,
           ),
         ),
       ],

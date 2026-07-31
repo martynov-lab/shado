@@ -56,6 +56,8 @@ class ApiException extends Failure {
 
   bool get isUnauthorized => code == ApiErrorCode.unauthorized;
 
+  bool get isForbidden => code == ApiErrorCode.forbidden;
+
   bool get isNotFound => code == ApiErrorCode.notFound;
 
   bool get isVersionConflict => code == ApiErrorCode.versionConflict;

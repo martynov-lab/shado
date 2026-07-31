@@ -3,13 +3,18 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../../../core/constants/app_constants.dart';
-import '../../../../core/utils/duration_format.dart';
 import '../controllers/lesson_controller.dart';
-import '../widgets/segment_tile.dart';
+import '../widgets/lesson_view.dart';
+import '../widgets/selection_bar.dart';
+import 'edit_lesson_page.dart';
 
 class LessonPage extends ConsumerStatefulWidget {
   const LessonPage({super.key, required this.lessonId});
+
+  /// Шаблон маршрута для роутера; путь к конкретному уроку — [routeTo].
+  static const String routePath = '/lesson/:id';
+
+  static String routeTo(String lessonId) => '/lesson/$lessonId';
 
   final String lessonId;
 
@@ -74,7 +79,9 @@ class _LessonPageState extends ConsumerState<LessonPage> {
   /// Возврат с экрана правки: разбивка могла измениться целиком, поэтому урок
   /// перечитывается, а плеер сбрасывается.
   Future<void> _edit() async {
-    final saved = await context.push<bool>('/lesson/${widget.lessonId}/edit');
+    final saved = await context.push<bool>(
+      EditLessonPage.routeTo(widget.lessonId),
+    );
     if (saved != true) return;
     await _controller.reload();
     _pageFocus.requestFocus();
@@ -129,182 +136,40 @@ class _LessonPageState extends ConsumerState<LessonPage> {
             ),
           ],
         ),
-        body: lessonAsync.when(
-          loading: () => const Center(child: CircularProgressIndicator()),
-          error: (error, _) => Center(
+        body: switch (lessonAsync) {
+          AsyncError(:final error) => Center(
             child: Padding(
               padding: const EdgeInsets.all(32),
               child: Text('$error', textAlign: TextAlign.center),
             ),
           ),
-          data: (state) => _LessonView(lessonId: widget.lessonId, state: state),
-        ),
-      ),
-    );
-  }
-}
-
-class _LessonView extends ConsumerStatefulWidget {
-  const _LessonView({required this.lessonId, required this.state});
-
-  final String lessonId;
-  final LessonState state;
-
-  @override
-  ConsumerState<_LessonView> createState() => _LessonViewState();
-}
-
-class _LessonViewState extends ConsumerState<_LessonView> {
-  /// Ключи плиток: по ним прокручиваем список к куску, на который перешли
-  /// стрелкой.
-  final _itemKeys = <int, GlobalKey>{};
-
-  @override
-  void didUpdateWidget(_LessonView oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    final index = widget.state.focusedIndex;
-    if (index != null && index != oldWidget.state.focusedIndex) {
-      _ensureVisible(index);
-    }
-  }
-
-  void _ensureVisible(int index) {
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      final context = _itemKeys[index]?.currentContext;
-      // Плитки далеко за окном ещё не построены — там и прокручивать нечего:
-      // стрелки ходят по одному куску, следующий всегда рядом.
-      if (context == null) return;
-      Scrollable.ensureVisible(
-        context,
-        alignment: 0.5,
-        duration: const Duration(milliseconds: 150),
-      );
-    });
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final controller = ref.read(
-      lessonControllerProvider(widget.lessonId).notifier,
-    );
-    final state = widget.state;
-    final segments = state.lesson.segments;
-
-    return Column(
-      children: [
-        Padding(
-          padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
-          child: SegmentedButton<double>(
-            segments: const [
-              ButtonSegment(value: kSlowSpeed, label: Text('Медленно')),
-              ButtonSegment(value: kNormalSpeed, label: Text('Нормально')),
-            ],
-            selected: {state.speed},
-            onSelectionChanged: (selection) =>
-                controller.setSpeed(selection.first),
-          ),
-        ),
-        Expanded(
-          child: ListView.builder(
-            padding: const EdgeInsets.only(bottom: 16),
-            itemCount: segments.length,
-            itemBuilder: (context, index) {
-              final segment = segments[index];
-              return SegmentTile(
-                key: _itemKeys[index] ??= GlobalKey(),
-                segment: segment,
-                isActive: state.isSegmentActive(index),
-                isPlaying: state.isSegmentPlaying(index),
-                isLooped: state.isSegmentLooped(index),
-                isSelecting: state.isSelecting,
-                isSelected: state.isSegmentSelected(index),
-                isFocused: state.focusedIndex == index,
-                onPlayPressed: () => controller.togglePlay(index),
-                onLoopPressed: () => controller.toggleLoop(index),
-                onSelectPressed: () => controller.toggleSelection(index),
-                onPressed: () => controller.setFocus(index),
-              );
-            },
-          ),
-        ),
-        if (state.selection != null)
-          _SelectionBar(lessonId: widget.lessonId, state: state),
-      ],
-    );
-  }
-}
-
-/// Панель выбранных кусков: играет их подряд или зацикливает отрезок целиком.
-class _SelectionBar extends ConsumerWidget {
-  const _SelectionBar({required this.lessonId, required this.state});
-
-  final String lessonId;
-  final LessonState state;
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final controller = ref.read(lessonControllerProvider(lessonId).notifier);
-    final theme = Theme.of(context);
-    final count = state.selection!.length;
-    final isPlaying = state.isSelectionPlaying;
-
-    return Material(
-      color: theme.colorScheme.secondaryContainer,
-      child: SafeArea(
-        top: false,
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(16, 8, 8, 8),
-          child: Row(
+          AsyncData(:final value) => Column(
             children: [
               Expanded(
-                child: Text(
-                  '$count ${_segmentsWord(count)} · '
-                  '${formatPosition(state.selectionDurationMs)}',
-                  style: theme.textTheme.bodyMedium,
+                child: LessonView(
+                  state: value,
+                  onSpeedChanged: _controller.setSpeed,
+                  onPlayPressed: _controller.togglePlay,
+                  onLoopPressed: _controller.toggleLoop,
+                  onSelectPressed: _controller.toggleSelection,
+                  onSegmentPressed: _controller.setFocus,
                 ),
               ),
-              IconButton(
-                tooltip: state.isSelectionLooped
-                    ? 'Выключить повтор'
-                    : 'Повторять выбранное',
-                onPressed: controller.toggleSelectionLoop,
-                isSelected: state.isSelectionLooped,
-                icon: const Icon(Icons.repeat),
-                selectedIcon: Icon(
-                  Icons.repeat_on,
-                  color: theme.colorScheme.primary,
+              if (value.selection case final selection?)
+                SelectionBar(
+                  selectedCount: selection.length,
+                  durationMs: value.selectionDurationMs,
+                  isPlaying: value.isSelectionPlaying,
+                  isLooped: value.isSelectionLooped,
+                  onPlayPressed: _controller.togglePlaySelection,
+                  onLoopPressed: _controller.toggleSelectionLoop,
+                  onClearPressed: _controller.clearSelection,
                 ),
-              ),
-              const SizedBox(width: 4),
-              FilledButton.icon(
-                onPressed: controller.togglePlaySelection,
-                icon: Icon(isPlaying ? Icons.stop : Icons.play_arrow),
-                label: Text(isPlaying ? 'Стоп' : 'Играть'),
-              ),
-              IconButton(
-                tooltip: 'Снять выбор',
-                onPressed: controller.clearSelection,
-                icon: const Icon(Icons.close),
-              ),
             ],
           ),
-        ),
+          _ => const Center(child: CircularProgressIndicator()),
+        },
       ),
     );
-  }
-}
-
-/// «1 кусок», «2 куска», «5 кусков».
-String _segmentsWord(int count) {
-  if (count % 100 >= 11 && count % 100 <= 14) return 'кусков';
-  switch (count % 10) {
-    case 1:
-      return 'кусок';
-    case 2:
-    case 3:
-    case 4:
-      return 'куска';
-    default:
-      return 'кусков';
   }
 }

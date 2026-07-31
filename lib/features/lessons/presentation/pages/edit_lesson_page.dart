@@ -1,12 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/network/api_exception.dart';
-import '../../../../core/utils/duration_format.dart';
 import '../controllers/edit_lesson_controller.dart';
-import '../widgets/segment_text_field.dart';
-import '../widgets/waveform_card.dart';
+import '../widgets/edit_lesson_form.dart';
+import '../widgets/version_conflict_dialog.dart';
+import 'lesson_page.dart';
 
 /// Правка урока: разбивка текста на куски и границы этих кусков на волне.
 ///
@@ -15,11 +14,18 @@ import '../widgets/waveform_card.dart';
 class EditLessonPage extends ConsumerWidget {
   const EditLessonPage({super.key, required this.lessonId});
 
+  /// Правка — вложенный маршрут урока, поэтому в роутер уходит только хвост.
+  static const String routeSegment = 'edit';
+
+  static String routeTo(String lessonId) =>
+      '${LessonPage.routeTo(lessonId)}/$routeSegment';
+
   final String lessonId;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final stateAsync = ref.watch(editLessonControllerProvider(lessonId));
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Правка урока'),
@@ -37,16 +43,19 @@ class EditLessonPage extends ConsumerWidget {
             ),
         ],
       ),
-      body: stateAsync.when(
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (error, _) => Center(
+      body: switch (stateAsync) {
+        AsyncError(:final error) => Center(
           child: Padding(
             padding: const EdgeInsets.all(32),
             child: Text('$error', textAlign: TextAlign.center),
           ),
         ),
-        data: (state) => _EditForm(lessonId: lessonId, state: state),
-      ),
+        AsyncData(:final value) => EditLessonForm(
+          lessonId: lessonId,
+          state: value,
+        ),
+        _ => const Center(child: CircularProgressIndicator()),
+      },
     );
   }
 
@@ -71,196 +80,13 @@ class EditLessonPage extends ConsumerWidget {
     }
   }
 
-  /// Урок правили на другом устройстве.
-  ///
-  /// Свежая версия уже в кеше — предлагаем открыть её и переписать правку
-  /// поверх: молча затирать чужие изменения нельзя.
+  /// Урок правили на другом устройстве: предлагаем открыть свежую версию.
   Future<void> _resolveConflict(BuildContext context, WidgetRef ref) async {
     final reload = await showDialog<bool>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Урок изменён на другом устройстве'),
-        content: const Text(
-          'Пока вы правили, урок сохранили в другом месте. Свежая версия уже '
-          'загружена — откройте её и повторите правку поверх.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('Остаться'),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.of(context).pop(true),
-            child: const Text('Открыть свежую'),
-          ),
-        ],
-      ),
+      builder: (context) => const VersionConflictDialog(),
     );
     if (reload != true) return;
     ref.invalidate(editLessonControllerProvider(lessonId));
-  }
-}
-
-class _EditForm extends ConsumerStatefulWidget {
-  const _EditForm({required this.lessonId, required this.state});
-
-  final String lessonId;
-  final EditLessonState state;
-
-  @override
-  ConsumerState<_EditForm> createState() => _EditFormState();
-}
-
-class _EditFormState extends ConsumerState<_EditForm> {
-  late final _titleController = TextEditingController(text: widget.state.title);
-  late final _textController = TextEditingController(text: widget.state.text);
-
-  /// Фокус самого экрана: пока он здесь, пробел работает как play/pause.
-  final _pageFocus = FocusNode(debugLabel: 'edit-lesson-page');
-
-  @override
-  void dispose() {
-    _titleController.dispose();
-    _textController.dispose();
-    _pageFocus.dispose();
-    super.dispose();
-  }
-
-  /// Пробел как play/pause — привычка из любого редактора аудио.
-  ///
-  /// Срабатывает только когда фокус на самом экране: в текстовом поле пробел
-  /// остаётся пробелом, а на кнопке ▶ его обрабатывает сама кнопка.
-  KeyEventResult _onKeyEvent(FocusNode node, KeyEvent event) {
-    if (event is! KeyDownEvent ||
-        event.logicalKey != LogicalKeyboardKey.space ||
-        !node.hasPrimaryFocus) {
-      return KeyEventResult.ignored;
-    }
-    ref
-        .read(editLessonControllerProvider(widget.lessonId).notifier)
-        .togglePlay();
-    return KeyEventResult.handled;
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final state = widget.state;
-    final controller = ref.read(
-      editLessonControllerProvider(widget.lessonId).notifier,
-    );
-
-    return Focus(
-      focusNode: _pageFocus,
-      autofocus: true,
-      onKeyEvent: _onKeyEvent,
-      child: SafeArea(
-        child: ListView(
-          padding: const EdgeInsets.all(16),
-          children: [
-            TextField(
-              controller: _titleController,
-              decoration: const InputDecoration(labelText: 'Название'),
-              textInputAction: TextInputAction.next,
-              onChanged: controller.setTitle,
-            ),
-            const SizedBox(height: 16),
-            SegmentTextField(
-              controller: _textController,
-              onChanged: controller.setText,
-              segmentCount: state.segmentCount,
-            ),
-            const SizedBox(height: 16),
-            // Тронули волну — забираем фокус из текстового поля, иначе пробел
-            // так и останется пробелом.
-            Listener(
-              onPointerDown: (_) => _pageFocus.requestFocus(),
-              child: _WaveformWithPlayback(
-                lessonId: widget.lessonId,
-                state: state,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(_hint(state), style: theme.textTheme.bodySmall),
-          ],
-        ),
-      ),
-    );
-  }
-
-  String _hint(EditLessonState state) {
-    if (state.isTrimming) {
-      return 'Тяните метки со стрелочками: затемнённые края отрежутся. '
-          '«Применить» оставит только середину, «Отменить» вернёт как было. '
-          'Пробел — послушать';
-    }
-    return 'Метки берутся за кружок сверху, ползунок — за треугольник снизу; '
-        'перетаскивание в стороне от них двигает волну. Растянуть волну: щипок '
-        'двумя пальцами или Ctrl + колесо мыши. Пробел — играть или пауза';
-  }
-}
-
-/// Волна с ползунком и кнопкой воспроизведения: аудио играет с того места,
-/// куда поставили ползунок, повторное нажатие ставит на паузу.
-class _WaveformWithPlayback extends ConsumerWidget {
-  const _WaveformWithPlayback({required this.lessonId, required this.state});
-
-  final String lessonId;
-  final EditLessonState state;
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final controller = ref.read(
-      editLessonControllerProvider(lessonId).notifier,
-    );
-    // Пока играет, ползунок ведёт сам плеер; на паузе он стоит там, где его
-    // оставили.
-    final position = ref.watch(editPlaybackPositionProvider(lessonId)).value;
-    final playheadMs = state.isPlaying
-        ? (position?.inMilliseconds ?? state.playheadMs)
-        : state.playheadMs;
-
-    // Время показываем от левого края того, что сейчас в окне: после обрезки
-    // урок начинается с нуля, а во время обрезки — начало файла.
-    final view = state.view;
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        WaveformCard(
-          audioId: state.lesson.audioId,
-          audioPath: state.lesson.audioPath,
-          durationMs: state.lesson.durationMs,
-          view: view,
-          boundaries: state.boundaries,
-          onBoundariesChanged: controller.setBoundaries,
-          onSeek: controller.seek,
-          positionMs: playheadMs,
-          showCursor: true,
-          margin: EdgeInsets.zero,
-          trim: state.pendingTrim,
-          onTrimChanged: controller.updateTrim,
-          onTrimStart: controller.startTrim,
-          onTrimApply: controller.applyTrim,
-          onTrimCancel: controller.cancelTrim,
-        ),
-        const SizedBox(height: 8),
-        Row(
-          children: [
-            IconButton.filled(
-              tooltip: state.isPlaying ? 'Пауза' : 'Играть с ползунка',
-              onPressed: controller.togglePlay,
-              icon: Icon(state.isPlaying ? Icons.pause : Icons.play_arrow),
-            ),
-            const SizedBox(width: 12),
-            Text(
-              '${formatPosition(playheadMs - view.startMs)} / '
-              '${formatPosition(view.durationMs)}',
-              style: Theme.of(context).textTheme.bodyMedium,
-            ),
-          ],
-        ),
-      ],
-    );
   }
 }

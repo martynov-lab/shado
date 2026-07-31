@@ -6,11 +6,18 @@ import 'package:go_router/go_router.dart';
 
 import '../../domain/usecases/sign_in.dart';
 import '../controllers/auth_controller.dart';
+import '../widgets/auth_error_banner.dart';
 
 /// Вход и регистрация — одна форма на двух маршрутах: поля те же, отличаются
 /// заголовок, кнопка и то, какой запрос уходит.
 class LoginPage extends ConsumerStatefulWidget {
   const LoginPage({super.key, this.isRegistration = false});
+
+  static const String routePath = '/login';
+
+  /// Та же форма, но с регистрацией: свой путь, чтобы ссылка «нет аккаунта»
+  /// была обычным переходом, а не состоянием экрана.
+  static const String registerRoutePath = '/register';
 
   final bool isRegistration;
 
@@ -148,7 +155,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                     ),
                     if (state.error != null) ...[
                       const SizedBox(height: 16),
-                      _ErrorBanner(message: state.error!),
+                      AuthErrorBanner(message: state.error!),
                     ],
                     const SizedBox(height: 24),
                     FilledButton(
@@ -169,7 +176,11 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                               ref
                                   .read(authControllerProvider.notifier)
                                   .clearError();
-                              context.go(isRegistration ? '/login' : '/register');
+                              context.go(
+                                isRegistration
+                                    ? LoginPage.routePath
+                                    : LoginPage.registerRoutePath,
+                              );
                             },
                       child: Text(
                         isRegistration
@@ -192,41 +203,5 @@ class _LoginPageState extends ConsumerState<LoginPage> {
       return 'Повтор через ${state.retryIn.inSeconds} с';
     }
     return isRegistration ? 'Зарегистрироваться' : 'Войти';
-  }
-}
-
-class _ErrorBanner extends StatelessWidget {
-  const _ErrorBanner({required this.message});
-
-  final String message;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: theme.colorScheme.errorContainer,
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Row(
-        children: [
-          Icon(
-            Icons.error_outline,
-            color: theme.colorScheme.onErrorContainer,
-            size: 20,
-          ),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Text(
-              message,
-              style: theme.textTheme.bodyMedium?.copyWith(
-                color: theme.colorScheme.onErrorContainer,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
   }
 }

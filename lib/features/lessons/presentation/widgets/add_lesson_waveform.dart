@@ -1,0 +1,138 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+import 'package:shado/core/utils/duration_format.dart';
+
+import '../../domain/entities/audio_trim.dart';
+import '../controllers/add_lesson_controller.dart';
+import '../controllers/add_lesson_playback_controller.dart';
+import 'waveform_card.dart';
+import 'waveform_placeholder_card.dart';
+
+/// Волна выбранного файла с метками границ и ползунком воспроизведения —
+/// разметка, обрезка и прослушивание идут ещё до создания урока, чтобы куски
+/// сразу попали на свои места.
+///
+/// Плеером предпросмотра распоряжается сам: он живёт ровно столько, сколько
+/// открыт этот экран, и экрану о нём знать незачем.
+class AddLessonWaveform extends ConsumerWidget {
+  const AddLessonWaveform({
+    super.key,
+    required this.state,
+    required this.onBoundariesChanged,
+    required this.onTrimChanged,
+    required this.onTrimStart,
+    required this.onTrimApply,
+    required this.onTrimCancel,
+  });
+
+  final AddLessonFormState state;
+
+  final ValueChanged<List<int>> onBoundariesChanged;
+  final ValueChanged<AudioTrim> onTrimChanged;
+  final VoidCallback onTrimStart;
+  final VoidCallback onTrimApply;
+  final VoidCallback onTrimCancel;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final theme = Theme.of(context);
+
+    if (state.isUploading) {
+      return const WaveformPlaceholderCard(
+        height: 168,
+        child: CircularProgressIndicator(),
+      );
+    }
+    if (!state.hasWaveform) {
+      return WaveformPlaceholderCard(
+        height: 96,
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Text(
+            'Выберите аудио — здесь появится волна с метками границ',
+            textAlign: TextAlign.center,
+            style: theme.textTheme.bodySmall,
+          ),
+        ),
+      );
+    }
+
+    final playback = ref.watch(addLessonPlaybackProvider);
+    final player = ref.read(addLessonPlaybackProvider.notifier);
+    // Пока играет, ползунок ведёт сам плеер; на паузе он стоит там, где его
+    // оставили.
+    final position = ref.watch(addPlaybackPositionProvider).value;
+    final playheadMs = playback.isPlaying
+        ? (position?.inMilliseconds ?? playback.playheadMs)
+        : playback.playheadMs;
+
+    // Время показываем от левого края того, что сейчас в окне: после обрезки
+    // урок начинается с нуля, а во время обрезки — начало файла.
+    final view = state.view;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        WaveformCard(
+          audioId: state.audioId!,
+          // Файл уже лежит в кеше приложения — запасной локальный построитель
+          // волны дотянется до него, если сервер вдруг не ответит.
+          audioPath: state.audioPath,
+          durationMs: state.durationMs,
+          view: view,
+          boundaries: state.boundaries,
+          onBoundariesChanged: onBoundariesChanged,
+          onSeek: player.seek,
+          positionMs: playheadMs,
+          showCursor: true,
+          // Пики считает сервер, а кеш рядом с файлом заведёт уже сам урок:
+          // здесь разметку ещё могут бросить, не сохранив.
+          cachePeaks: false,
+          margin: EdgeInsets.zero,
+          trim: state.pendingTrim,
+          onTrimChanged: onTrimChanged,
+          onTrimStart: onTrimStart,
+          onTrimApply: onTrimApply,
+          onTrimCancel: onTrimCancel,
+        ),
+        const SizedBox(height: 8),
+        Row(
+          children: [
+            IconButton.filled(
+              tooltip: playback.isPlaying ? 'Пауза' : 'Играть с ползунка',
+              // Файла на диске нет — играть нечего, хотя волна уже пришла.
+              onPressed: state.audioPath == null ? null : player.togglePlay,
+              icon: Icon(playback.isPlaying ? Icons.pause : Icons.play_arrow),
+            ),
+            const SizedBox(width: 12),
+            Text(
+              '${formatPosition(playheadMs - view.startMs)} / '
+              '${formatPosition(view.durationMs)}',
+              style: theme.textTheme.bodyMedium,
+            ),
+          ],
+        ),
+        const SizedBox(height: 8),
+        Text(_hint(state), style: theme.textTheme.bodySmall),
+      ],
+    );
+  }
+}
+
+/// Подсказка под волной: что сейчас можно сделать жестами и клавишами.
+String _hint(AddLessonFormState state) {
+  if (state.isTrimming) {
+    return 'Тяните метки со стрелочками: затемнённые края отрежутся. '
+        '«Применить» оставит только середину, «Отменить» вернёт как было. '
+        'Обрезка помогает разметить середину файла, но в сохранённый урок '
+        'аудио уходит целиком: края достанутся крайним кускам. '
+        'Пробел — послушать';
+  }
+  if (state.segmentCount == 0) {
+    return 'Введите текст — метки границ появятся на волне';
+  }
+  return 'Метки берутся за кружок сверху, ползунок — за треугольник снизу; '
+      'перетаскивание в стороне от них двигает волну. Растянуть волну: щипок '
+      'двумя пальцами или Ctrl + колесо мыши. Пробел — играть или пауза';
+}

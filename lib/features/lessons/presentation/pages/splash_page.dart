@@ -5,6 +5,8 @@ import 'package:flutter/material.dart';
 class SplashPage extends StatelessWidget {
   const SplashPage({super.key});
 
+  static const String routePath = '/splash';
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);

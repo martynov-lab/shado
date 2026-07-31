@@ -11,12 +11,18 @@ import '../../features/lessons/presentation/pages/home_page.dart';
 import '../../features/lessons/presentation/pages/lesson_page.dart';
 import '../../features/lessons/presentation/pages/main_shell.dart';
 import '../../features/lessons/presentation/pages/splash_page.dart';
-import '../../screens/design_gallery.dart';
+import '../../screens/design_gallery/design_gallery_screen.dart';
 
 final _rootNavigatorKey = GlobalKey<NavigatorState>();
 
 /// Маршруты, доступные без сессии.
-const Set<String> _publicRoutes = {'/login', '/register'};
+const Set<String> _publicRoutes = {
+  LoginPage.routePath,
+  LoginPage.registerRoutePath,
+};
+
+/// Раздел владельца целиком: под ним могут появиться и другие страницы.
+const String _adminSectionPrefix = '/admin';
 
 /// Витрина дизайн-системы. Временная точка входа: живёт вне правил сессии,
 /// чтобы её можно было открыть с любого состояния приложения.
@@ -54,25 +60,35 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       // Пока не знаем, жив ли refresh-токен, держим заставку: иначе на старте
       // мелькнёт экран входа у того, кто уже вошёл.
       if (auth.status == AuthStatus.unknown) {
-        return location == '/splash' ? null : '/splash';
+        return location == SplashPage.routePath ? null : SplashPage.routePath;
       }
-      if (!auth.isAuthenticated) return isPublic ? null : '/login';
+      if (!auth.isAuthenticated) return isPublic ? null : LoginPage.routePath;
       // Вошедшему на экранах входа делать нечего.
-      if (isPublic || location == '/splash') return '/home';
+      if (isPublic || location == SplashPage.routePath) {
+        return HomePage.routePath;
+      }
       // Раздел админки — не защита, а порядок: сервер всё равно проверяет роль.
-      if (location.startsWith('/admin') && !auth.isOwner) return '/home';
+      if (location.startsWith(_adminSectionPrefix) && !auth.isOwner) {
+        return HomePage.routePath;
+      }
       return null;
     },
     routes: [
-      GoRoute(path: '/splash', builder: (context, state) => const SplashPage()),
+      GoRoute(
+        path: SplashPage.routePath,
+        builder: (context, state) => const SplashPage(),
+      ),
       GoRoute(
         path: DesignGalleryScreen.routePath,
         parentNavigatorKey: _rootNavigatorKey,
         builder: (context, state) => const DesignGalleryScreen(),
       ),
-      GoRoute(path: '/login', builder: (context, state) => const LoginPage()),
       GoRoute(
-        path: '/register',
+        path: LoginPage.routePath,
+        builder: (context, state) => const LoginPage(),
+      ),
+      GoRoute(
+        path: LoginPage.registerRoutePath,
         builder: (context, state) => const LoginPage(isRegistration: true),
       ),
       StatefulShellRoute.indexedStack(
@@ -82,7 +98,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           StatefulShellBranch(
             routes: [
               GoRoute(
-                path: '/home',
+                path: HomePage.routePath,
                 builder: (context, state) => const HomePage(),
               ),
             ],
@@ -90,7 +106,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           StatefulShellBranch(
             routes: [
               GoRoute(
-                path: '/add',
+                path: AddLessonPage.routePath,
                 builder: (context, state) => const AddLessonPage(),
               ),
             ],
@@ -98,18 +114,18 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         ],
       ),
       GoRoute(
-        path: '/admin/users',
+        path: AdminUsersPage.routePath,
         parentNavigatorKey: _rootNavigatorKey,
         builder: (context, state) => const AdminUsersPage(),
       ),
       GoRoute(
-        path: '/lesson/:id',
+        path: LessonPage.routePath,
         parentNavigatorKey: _rootNavigatorKey,
         builder: (context, state) =>
             LessonPage(lessonId: state.pathParameters['id']!),
         routes: [
           GoRoute(
-            path: 'edit',
+            path: EditLessonPage.routeSegment,
             parentNavigatorKey: _rootNavigatorKey,
             builder: (context, state) =>
                 EditLessonPage(lessonId: state.pathParameters['id']!),

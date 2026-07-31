@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'package:shado/theme/theme.dart';
+import 'package:shado/widgets/app_field_suffix_button.dart';
 
 /// Однострочное или многострочное поле ввода.
 ///
@@ -136,7 +137,12 @@ class _AppTextFieldState extends State<AppTextField> {
         // Мягкое кольцо вместо жёсткой обводки: фокус видно, но поле не
         // «прыгает» — тень не занимает места в раскладке.
         boxShadow: _focused && !hasError
-            ? [BoxShadow(color: c.primarySoft, spreadRadius: AppSizes.focusRing)]
+            ? [
+                BoxShadow(
+                  color: c.primarySoft,
+                  spreadRadius: AppSizes.focusRing,
+                ),
+              ]
             : const [],
       ),
       child: Row(
@@ -170,7 +176,7 @@ class _AppTextFieldState extends State<AppTextField> {
           if (widget.suffixIcon != null) ...[
             const SizedBox(width: AppSpacing.s3),
             if (widget.onSuffixPressed != null)
-              _SuffixButton(
+              AppFieldSuffixButton(
                 icon: widget.suffixIcon!,
                 semanticLabel: widget.suffixSemanticLabel,
                 onPressed: widget.enabled ? widget.onSuffixPressed : null,
@@ -192,10 +198,7 @@ class _AppTextFieldState extends State<AppTextField> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           if (widget.label != null) ...[
-            Text(
-              widget.label!,
-              style: AppText.label.copyWith(color: c.text2),
-            ),
+            Text(widget.label!, style: AppText.label.copyWith(color: c.text2)),
             const SizedBox(height: AppSpacing.s2),
           ],
           Opacity(
@@ -212,33 +215,6 @@ class _AppTextFieldState extends State<AppTextField> {
             ),
           ],
         ],
-      ),
-    );
-  }
-}
-
-/// Нажимаемая иконка справа внутри поля.
-class _SuffixButton extends StatelessWidget {
-  const _SuffixButton({
-    required this.icon,
-    required this.onPressed,
-    this.semanticLabel,
-  });
-
-  final IconData icon;
-  final VoidCallback? onPressed;
-  final String? semanticLabel;
-
-  @override
-  Widget build(BuildContext context) {
-    final c = context.colors;
-    return Semantics(
-      button: true,
-      label: semanticLabel,
-      child: InkResponse(
-        onTap: onPressed,
-        radius: AppSizes.iconLg,
-        child: Icon(icon, size: AppSizes.iconMd, color: c.text2),
       ),
     );
   }

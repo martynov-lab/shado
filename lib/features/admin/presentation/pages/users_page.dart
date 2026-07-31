@@ -5,10 +5,15 @@ import '../../../../core/network/api_exception.dart';
 import '../../../auth/domain/entities/auth_user.dart';
 import '../../../auth/presentation/controllers/auth_controller.dart';
 import '../admin_controller.dart';
+import '../widgets/admin_error_view.dart';
+import '../widgets/user_tile.dart';
+import '../widgets/users_list_footer.dart';
 
 /// Пользователи сервиса и их роли. Раздел виден только владельцу.
 class AdminUsersPage extends ConsumerStatefulWidget {
   const AdminUsersPage({super.key});
+
+  static const String routePath = '/admin/users';
 
   @override
   ConsumerState<AdminUsersPage> createState() => _AdminUsersPageState();
@@ -92,136 +97,35 @@ class _AdminUsersPageState extends ConsumerState<AdminUsersPage> {
           ),
         ),
       ),
-      body: state.when(
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (error, _) => _AdminError(
+      body: switch (state) {
+        AsyncError(:final error) => AdminErrorView(
           error: error,
-          onRetry: controller.refresh,
+          onRetryPressed: controller.refresh,
         ),
-        data: (data) {
-          if (data.users.isEmpty) {
-            return const Center(child: Text('Никого не нашлось'));
-          }
-          return RefreshIndicator(
-            onRefresh: controller.refresh,
-            child: ListView.builder(
-              controller: _scrollController,
-              itemCount: data.users.length + 1,
-              itemBuilder: (context, index) {
-                if (index == data.users.length) {
-                  return _ListFooter(state: data);
-                }
-                final user = data.users[index];
-                return _UserTile(
-                  user: user,
-                  isSelf: user.id == currentUser?.id,
-                  onRoleChanged: (role) => _setRole(user, role),
-                );
-              },
-            ),
-          );
-        },
-      ),
-    );
-  }
-}
-
-class _UserTile extends StatelessWidget {
-  const _UserTile({
-    required this.user,
-    required this.isSelf,
-    required this.onRoleChanged,
-  });
-
-  final AuthUser user;
-  final bool isSelf;
-  final ValueChanged<UserRole> onRoleChanged;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return ListTile(
-      leading: CircleAvatar(
-        child: Icon(user.isOwner ? Icons.shield_outlined : Icons.person_outline),
-      ),
-      title: Text(user.email, overflow: TextOverflow.ellipsis),
-      subtitle: Text(
-        isSelf ? 'это вы · ${user.role.name}' : user.role.name,
-        style: theme.textTheme.bodySmall,
-      ),
-      trailing: SegmentedButton<UserRole>(
-        segments: const [
-          ButtonSegment(value: UserRole.user, label: Text('user')),
-          ButtonSegment(value: UserRole.owner, label: Text('owner')),
-        ],
-        selected: {user.role},
-        showSelectedIcon: false,
-        onSelectionChanged: (roles) => onRoleChanged(roles.first),
-      ),
-    );
-  }
-}
-
-class _ListFooter extends StatelessWidget {
-  const _ListFooter({required this.state});
-
-  final AdminUsersState state;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 24),
-      child: Center(
-        child: state.isLoadingMore
-            ? const SizedBox(
-                height: 20,
-                width: 20,
-                child: CircularProgressIndicator(strokeWidth: 2),
-              )
-            : Text(
-                'Показано ${state.users.length} из ${state.total}',
-                style: theme.textTheme.bodySmall,
-              ),
-      ),
-    );
-  }
-}
-
-class _AdminError extends StatelessWidget {
-  const _AdminError({required this.error, required this.onRetry});
-
-  final Object error;
-  final Future<void> Function() onRetry;
-
-  @override
-  Widget build(BuildContext context) {
-    // 403 здесь означает, что роль сняли только что: раздел просто закрывается
-    // по возврату на главную, роутер уведёт сам.
-    final isForbidden =
-        error is ApiException && (error as ApiException).status == 403;
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(32),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              isForbidden
-                  ? 'Раздел доступен только владельцу'
-                  : 'Не удалось получить список: $error',
-              textAlign: TextAlign.center,
-            ),
-            if (!isForbidden) ...[
-              const SizedBox(height: 16),
-              FilledButton(
-                onPressed: onRetry,
-                child: const Text('Повторить'),
-              ),
-            ],
-          ],
+        AsyncData(value: final data) when data.users.isEmpty => const Center(
+          child: Text('Никого не нашлось'),
         ),
-      ),
+        AsyncData(value: final data) => RefreshIndicator(
+          onRefresh: controller.refresh,
+          child: ListView.builder(
+            controller: _scrollController,
+            // Лишний элемент в конце — хвост с «показано N из M».
+            itemCount: data.users.length + 1,
+            itemBuilder: (context, index) => index == data.users.length
+                ? UsersListFooter(
+                    shownCount: data.users.length,
+                    totalCount: data.total,
+                    isLoadingMore: data.isLoadingMore,
+                  )
+                : UserTile(
+                    user: data.users[index],
+                    isSelf: data.users[index].id == currentUser?.id,
+                    onRoleChanged: (role) => _setRole(data.users[index], role),
+                  ),
+          ),
+        ),
+        _ => const Center(child: CircularProgressIndicator()),
+      },
     );
   }
 }

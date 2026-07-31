@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:shado/screens/design_gallery.dart';
+import 'package:shado/screens/design_gallery/design_gallery_screen.dart';
 import 'package:shado/theme/theme.dart';
 import 'package:shado/widgets/widgets.dart';
 import 'package:shared_preferences/shared_preferences.dart';
