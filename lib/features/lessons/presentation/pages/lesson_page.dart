@@ -3,9 +3,12 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import 'package:shado/theme/theme.dart';
+import 'package:shado/widgets/widgets.dart';
+
 import '../controllers/lesson_controller.dart';
-import '../widgets/lesson_view.dart';
-import '../widgets/selection_bar.dart';
+import '../widgets/lesson_mobile_layout.dart';
+import '../widgets/lesson_wide_layout.dart';
 import 'edit_lesson_page.dart';
 
 class LessonPage extends ConsumerStatefulWidget {
@@ -90,82 +93,31 @@ class _LessonPageState extends ConsumerState<LessonPage> {
   @override
   Widget build(BuildContext context) {
     final lessonAsync = ref.watch(lessonControllerProvider(widget.lessonId));
-    final state = lessonAsync.value;
 
     return Focus(
       focusNode: _pageFocus,
       autofocus: true,
       onKeyEvent: _onKeyEvent,
       child: Scaffold(
-        appBar: AppBar(
-          title: Text(
-            state?.isSelecting == true
-                ? 'Выбор кусков'
-                : (state?.lesson.title ?? 'Урок'),
-          ),
-          actions: [
-            if (state != null) ...[
-              IconButton(
-                tooltip: state.isSelecting
-                    ? 'Выйти из режима выбора (Esc)'
-                    : 'Выбрать несколько кусков',
-                onPressed: state.isSelecting
-                    ? _controller.stopSelecting
-                    : _controller.startSelecting,
-                isSelected: state.isSelecting,
-                icon: const Icon(Icons.checklist_outlined),
-                selectedIcon: const Icon(Icons.checklist),
-              ),
-              if (state.isSelecting)
-                IconButton(
-                  tooltip: state.selection == null
-                      ? 'Выбрать все куски (Ctrl+A)'
-                      : 'Снять выбор (Esc)',
-                  onPressed: state.selection == null
-                      ? _controller.selectAll
-                      : _controller.clearSelection,
-                  icon: Icon(
-                    state.selection == null ? Icons.select_all : Icons.deselect,
-                  ),
-                ),
-            ],
-            IconButton(
-              tooltip: 'Править разбивку',
-              onPressed: state == null ? null : _edit,
-              icon: const Icon(Icons.edit_outlined),
-            ),
-          ],
-        ),
+        backgroundColor: context.colors.bg,
         body: switch (lessonAsync) {
           AsyncError(:final error) => Center(
             child: Padding(
-              padding: const EdgeInsets.all(32),
+              padding: const EdgeInsets.all(AppSpacing.s8),
               child: Text('$error', textAlign: TextAlign.center),
             ),
           ),
-          AsyncData(:final value) => Column(
-            children: [
-              Expanded(
-                child: LessonView(
-                  state: value,
-                  onSpeedChanged: _controller.setSpeed,
-                  onPlayPressed: _controller.togglePlay,
-                  onLoopPressed: _controller.toggleLoop,
-                  onSelectPressed: _controller.toggleSelection,
-                  onSegmentPressed: _controller.setFocus,
-                ),
-              ),
-              if (value.selection case final selection?)
-                SelectionBar(
-                  selectedCount: selection.length,
-                  durationMs: value.selectionDurationMs,
-                  isPlaying: value.isSelectionPlaying,
-                  isLooped: value.isSelectionLooped,
-                  onPlayPressed: _controller.togglePlaySelection,
-                  onLoopPressed: _controller.toggleSelectionLoop,
-                  onClearPressed: _controller.clearSelection,
-                ),
-            ],
+          AsyncData() => AppAdaptiveLayout(
+            mobile: (context) => LessonMobileLayout(
+              lessonId: widget.lessonId,
+              onBack: () => context.pop(),
+              onEdit: _edit,
+            ),
+            tablet: (context) => LessonWideLayout(
+              lessonId: widget.lessonId,
+              onBack: () => context.pop(),
+              onEdit: _edit,
+            ),
           ),
           _ => const Center(child: CircularProgressIndicator()),
         },

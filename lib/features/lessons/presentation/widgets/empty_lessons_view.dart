@@ -1,32 +1,37 @@
 import 'package:flutter/material.dart';
 
+import 'package:shado/theme/theme.dart';
+import 'package:shado/widgets/widgets.dart';
+
 /// Заглушка списка уроков: куда идти, если уроков ещё нет.
 class EmptyLessonsView extends StatelessWidget {
   const EmptyLessonsView({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
+    final colors = context.colors;
 
     return Center(
       child: Padding(
-        padding: const EdgeInsets.all(32),
+        padding: const EdgeInsets.all(AppSpacing.s8),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(
-              Icons.headphones_outlined,
-              size: 64,
-              color: theme.colorScheme.outline,
+            AppIcon(
+              AppIcons.headphones,
+              size: AppSizes.iconLg,
+              color: colors.text3,
             ),
-            const SizedBox(height: 16),
-            Text('Уроков пока нет', style: theme.textTheme.titleMedium),
-            const SizedBox(height: 8),
+            const SizedBox(height: AppSpacing.s4),
             Text(
-              'Перейдите на вкладку «Добавить», чтобы загрузить аудио '
-              'и разметить текст.',
+              'Уроков пока нет',
+              style: AppText.title.copyWith(color: colors.text),
+            ),
+            const SizedBox(height: AppSpacing.s2),
+            Text(
+              'Загрузите аудио и разметьте текст, чтобы начать заниматься.',
               textAlign: TextAlign.center,
-              style: theme.textTheme.bodyMedium,
+              style: AppText.body.copyWith(color: colors.text2),
             ),
           ],
         ),

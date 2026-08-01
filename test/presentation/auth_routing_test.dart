@@ -215,7 +215,8 @@ void main() {
 
     // Экрана входа пользователь даже не увидел.
     expect(find.text('С возвращением'), findsNothing);
-    expect(find.widgetWithText(AppBar, 'Главная'), findsOneWidget);
+    // На экране уроков — меню аккаунта в шапке.
+    expect(find.byIcon(Icons.account_circle_outlined), findsOneWidget);
   });
 
   testWidgets('вход по форме открывает главную', (tester) async {
@@ -226,7 +227,7 @@ void main() {
     await tester.tap(find.widgetWithText(AppButton, 'Войти'));
     await tester.pumpAndSettle();
 
-    expect(find.widgetWithText(AppBar, 'Главная'), findsOneWidget);
+    expect(find.byIcon(Icons.account_circle_outlined), findsOneWidget);
   });
 
   testWidgets('короткий пароль форма не пропускает дальше себя', (
@@ -240,7 +241,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Не короче 8 символов'), findsOneWidget);
-    expect(find.widgetWithText(AppBar, 'Главная'), findsNothing);
+    expect(find.byIcon(Icons.account_circle_outlined), findsNothing);
   });
 
   testWidgets('пароль показывается по нажатию на глаз', (tester) async {

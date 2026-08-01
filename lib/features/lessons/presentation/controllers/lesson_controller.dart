@@ -5,6 +5,7 @@ import 'package:just_audio/just_audio.dart';
 
 import '../../../../core/constants/app_constants.dart';
 import '../../domain/entities/lesson.dart';
+import '../../domain/entities/segment.dart';
 import '../../domain/entities/segment_range.dart';
 import 'lesson_providers.dart';
 
@@ -15,6 +16,26 @@ final lessonAudioPlayerProvider = Provider.autoDispose
       ref.onDispose(player.dispose);
       return player;
     });
+
+/// Позиция воспроизведения (мс) для курсора на дорожке.
+///
+/// Её пишет контроллер из того же потока позиции, что стережёт границы куска, —
+/// поэтому курсор идёт при любом запуске (и кнопкой плеера, и тапом по
+/// сегменту). Отдельный провайдер, чтобы на каждом тике перестраивалась только
+/// волна, а не весь экран урока.
+class LessonPositionNotifier extends Notifier<int> {
+  LessonPositionNotifier(this.lessonId);
+
+  final String lessonId;
+
+  @override
+  int build() => 0;
+
+  void set(int ms) => state = ms;
+}
+
+final lessonPositionMsProvider = NotifierProvider.autoDispose
+    .family<LessonPositionNotifier, int, String>(LessonPositionNotifier.new);
 
 /// Состояние экрана урока.
 class LessonState {
@@ -57,6 +78,24 @@ class LessonState {
   final int? focusedIndex;
 
   bool get isSlow => speed == kSlowSpeed;
+
+  /// Текущий кусок для панели плеера: тот, что под клавиатурой, или первый,
+  /// пока стрелками не пользовались. Всегда в границах разбивки.
+  int get currentIndex {
+    final count = lesson.segmentCount;
+    if (count == 0) return 0;
+    return (focusedIndex ?? 0).clamp(0, count - 1);
+  }
+
+  Segment get currentSegment => lesson.segments[currentIndex];
+
+  bool get isCurrentPlaying => isSegmentPlaying(currentIndex);
+
+  bool get isCurrentLooped => isSegmentLooped(currentIndex);
+
+  bool get canGoPrevious => currentIndex > 0;
+
+  bool get canGoNext => currentIndex < lesson.segmentCount - 1;
 
   bool isSegmentActive(int index) => activeRange?.contains(index) ?? false;
 
@@ -139,6 +178,9 @@ class LessonController extends AsyncNotifier<LessonState> {
   /// постоит за ней, и второй раз перезапускать круг не нужно.
   bool _atBoundary = false;
 
+  /// Последняя позиция, отданная на дорожку: прореживаем поток до ~25 кадров/с.
+  int _lastWaveMs = -1000;
+
   AudioPlayer get _player => ref.read(lessonAudioPlayerProvider(lessonId));
 
   @override
@@ -188,6 +230,7 @@ class LessonController extends AsyncNotifier<LessonState> {
   /// `ClippingAudioSource` с `LoopMode.one` на media_kit новый круг уезжает в
   /// начало файла, мимо выбранного отрезка.
   void _onPosition(Duration position) {
+    _pushWavePosition(position.inMilliseconds);
     final current = state.value;
     final range = current?.activeRange;
     if (current == null || range == null || _atBoundary) return;
@@ -196,6 +239,14 @@ class LessonController extends AsyncNotifier<LessonState> {
     if (position.inMilliseconds < segments[range.end].endMs) return;
     _atBoundary = true;
     unawaited(_rewindTo(current, range, play: _activeLooped));
+  }
+
+  /// Отдаёт позицию на дорожку, но не чаще ~25 кадров/с: поток тикает каждые
+  /// 10 мс, а волне такой частоты не нужно.
+  void _pushWavePosition(int ms) {
+    if ((ms - _lastWaveMs).abs() < 40) return;
+    _lastWaveMs = ms;
+    ref.read(lessonPositionMsProvider(lessonId).notifier).set(ms);
   }
 
   /// Ставит дорожку на начало отрезка: новый круг, если [play], иначе стоп там,
@@ -257,6 +308,44 @@ class LessonController extends AsyncNotifier<LessonState> {
       return;
     }
     await togglePlay(selection?.start ?? current.focusedIndex ?? 0);
+  }
+
+  /// Играет/останавливает текущий кусок — большая кнопка на панели плеера.
+  Future<void> togglePlayCurrent() async {
+    final current = state.value;
+    if (current == null) return;
+    await togglePlay(current.currentIndex);
+  }
+
+  /// Зацикливание текущего куска — тумблер на панели плеера.
+  Future<void> toggleLoopCurrent() async {
+    final current = state.value;
+    if (current == null) return;
+    await toggleLoop(current.currentIndex);
+  }
+
+  /// Переход к куску по индексу — тап по строке сегмента, а также prev/next.
+  /// Если что-то играло, новый кусок тоже заиграет (и курсор дорожки поедет по
+  /// нему); иначе кусок просто заряжается, а курсор встаёт в его начало.
+  Future<void> goToSegment(int index) async {
+    final current = state.value;
+    if (current == null) return;
+    if (index < 0 || index >= current.lesson.segmentCount) return;
+    if (index == current.currentIndex) return;
+    final wasPlaying = current.isCurrentPlaying;
+    setFocus(index);
+    if (wasPlaying) await togglePlay(index);
+  }
+
+  Future<void> next() => goToSegment((state.value?.currentIndex ?? 0) + 1);
+
+  Future<void> previous() => goToSegment((state.value?.currentIndex ?? 0) - 1);
+
+  /// Переключает скорость между нормальной и медленной — чип на панели плеера.
+  Future<void> cycleSpeed() async {
+    final current = state.value;
+    if (current == null) return;
+    await setSpeed(current.speed == kNormalSpeed ? kSlowSpeed : kNormalSpeed);
   }
 
   /// Пуск или остановка того, что уже заряжено в плеер.

@@ -2,15 +2,21 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import 'package:shado/widgets/widgets.dart';
+
 import '../../domain/entities/lesson.dart';
 import '../controllers/lessons_controller.dart';
-import '../widgets/account_menu.dart';
+import '../controllers/lessons_filter.dart';
 import '../widgets/delete_lesson_dialog.dart';
-import '../widgets/empty_lessons_view.dart';
-import '../widgets/lesson_card.dart';
+import '../widgets/lessons_desktop_layout.dart';
 import '../widgets/lessons_error_view.dart';
+import '../widgets/lessons_mobile_layout.dart';
+import '../widgets/lessons_tablet_layout.dart';
 import 'lesson_page.dart';
 
+/// Список уроков — стартовый экран. Данные и фильтрацию держат провайдеры,
+/// раскладку выбирает [AppAdaptiveLayout]. Каркас (Scaffold, фон, навигация) —
+/// у [MainShell].
 class HomePage extends ConsumerWidget {
   const HomePage({super.key});
 
@@ -20,35 +26,42 @@ class HomePage extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final lessons = ref.watch(lessonsControllerProvider);
     final controller = ref.read(lessonsControllerProvider.notifier);
+    final filtered = ref.watch(filteredLessonsProvider).value ?? const <Lesson>[];
 
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Главная'),
-        actions: const [AccountMenu()],
+    return switch (lessons) {
+      AsyncError(:final error) => LessonsErrorView(
+        message: '$error',
+        onRetryPressed: controller.refresh,
       ),
-      body: switch (lessons) {
-        AsyncError(:final error) => LessonsErrorView(
-          message: '$error',
-          onRetryPressed: controller.refresh,
-        ),
-        AsyncData(value: final items) when items.isEmpty =>
-          const EmptyLessonsView(),
-        AsyncData(value: final items) => RefreshIndicator(
+      AsyncData(value: final items) => AppAdaptiveLayout(
+        mobile: (context) => LessonsMobileLayout(
+          lessons: filtered,
+          emptyLibrary: items.isEmpty,
+          onOpen: (lesson) => _open(context, lesson),
+          onDelete: (lesson) => _confirmDelete(context, controller, lesson),
           onRefresh: controller.refresh,
-          child: ListView.builder(
-            padding: const EdgeInsets.symmetric(vertical: 8),
-            itemCount: items.length,
-            itemBuilder: (context, index) => LessonCard(
-              lesson: items[index],
-              onTap: () => context.push(LessonPage.routeTo(items[index].id)),
-              onDelete: () => _confirmDelete(context, controller, items[index]),
-            ),
-          ),
         ),
-        _ => const Center(child: CircularProgressIndicator()),
-      },
-    );
+        tablet: (context) => LessonsTabletLayout(
+          lessons: filtered,
+          emptyLibrary: items.isEmpty,
+          onOpen: (lesson) => _open(context, lesson),
+          onDelete: (lesson) => _confirmDelete(context, controller, lesson),
+          onRefresh: controller.refresh,
+        ),
+        desktop: (context) => LessonsDesktopLayout(
+          lessons: filtered,
+          emptyLibrary: items.isEmpty,
+          onOpen: (lesson) => _open(context, lesson),
+          onDelete: (lesson) => _confirmDelete(context, controller, lesson),
+          onRefresh: controller.refresh,
+        ),
+      ),
+      _ => const Center(child: CircularProgressIndicator()),
+    };
   }
+
+  void _open(BuildContext context, Lesson lesson) =>
+      context.push(LessonPage.routeTo(lesson.id));
 
   Future<void> _confirmDelete(
     BuildContext context,
