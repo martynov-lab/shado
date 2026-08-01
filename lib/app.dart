@@ -49,7 +49,9 @@ class _ShadoAppState extends ConsumerState<ShadoApp>
         theme: AppTheme.light(),
         darkTheme: AppTheme.dark(),
         themeMode: mode,
-        themeAnimationDuration: reduceMotion ? Duration.zero : AppDurations.slow,
+        themeAnimationDuration: reduceMotion
+            ? Duration.zero
+            : AppDurations.slow,
         themeAnimationCurve: AppCurves.standard,
         routerConfig: ref.watch(appRouterProvider),
       ),

@@ -55,7 +55,7 @@ class _AppDropdownState<T> extends State<AppDropdown<T>> {
 
   @override
   Widget build(BuildContext context) {
-    final c = context.colors;
+    final colors = context.colors;
     final enabled = widget.isEnabled;
 
     AppDropdownItem<T>? selected;
@@ -75,7 +75,10 @@ class _AppDropdownState<T> extends State<AppDropdown<T>> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           if (widget.label != null) ...[
-            Text(widget.label!, style: AppText.label.copyWith(color: c.text2)),
+            Text(
+              widget.label!,
+              style: AppText.label.copyWith(color: colors.text2),
+            ),
             const SizedBox(height: AppSpacing.s2),
           ],
           LayoutBuilder(
@@ -105,10 +108,10 @@ class _AppDropdownState<T> extends State<AppDropdown<T>> {
                     width: menuWidth,
                     padding: const EdgeInsets.all(AppSpacing.s2),
                     decoration: BoxDecoration(
-                      color: c.surface,
+                      color: colors.surface,
                       borderRadius: AppRadii.rLg,
                       border: Border.all(
-                        color: c.border,
+                        color: colors.border,
                         width: AppSizes.borderThin,
                       ),
                       boxShadow: context.shadows.e2,
@@ -164,10 +167,12 @@ class _AppDropdownState<T> extends State<AppDropdown<T>> {
                               vertical: AppSpacing.s3,
                             ),
                             decoration: BoxDecoration(
-                              color: c.surface2,
+                              color: colors.surface2,
                               borderRadius: AppRadii.rMd,
                               border: Border.all(
-                                color: _hovered ? c.borderStrong : c.border,
+                                color: _hovered
+                                    ? colors.borderStrong
+                                    : colors.border,
                                 width: AppSizes.borderThin,
                               ),
                             ),
@@ -177,7 +182,7 @@ class _AppDropdownState<T> extends State<AppDropdown<T>> {
                                   Icon(
                                     selected!.icon,
                                     size: AppSizes.iconMd,
-                                    color: c.text2,
+                                    color: colors.text2,
                                   ),
                                   const SizedBox(width: AppSpacing.s3),
                                 ],
@@ -186,8 +191,8 @@ class _AppDropdownState<T> extends State<AppDropdown<T>> {
                                     selected?.label ?? widget.hint ?? '',
                                     style: AppText.body.copyWith(
                                       color: selected == null
-                                          ? c.text3
-                                          : c.text,
+                                          ? colors.text3
+                                          : colors.text,
                                     ),
                                     overflow: TextOverflow.ellipsis,
                                   ),
@@ -196,7 +201,7 @@ class _AppDropdownState<T> extends State<AppDropdown<T>> {
                                 Icon(
                                   Icons.keyboard_arrow_down_rounded,
                                   size: AppSizes.iconMd,
-                                  color: c.text2,
+                                  color: colors.text2,
                                 ),
                               ],
                             ),
@@ -229,7 +234,7 @@ class _DropdownItemButton<T> extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final c = context.colors;
+    final colors = context.colors;
     return MenuItemButton(
       onPressed: onPressed,
       leadingIcon: item.icon == null
@@ -237,10 +242,14 @@ class _DropdownItemButton<T> extends StatelessWidget {
           : Icon(
               item.icon,
               size: AppSizes.iconMd,
-              color: selected ? c.primary : c.text2,
+              color: selected ? colors.primary : colors.text2,
             ),
       trailingIcon: selected
-          ? Icon(Icons.check_rounded, size: AppSizes.iconMd, color: c.primary)
+          ? Icon(
+              Icons.check_rounded,
+              size: AppSizes.iconMd,
+              color: colors.primary,
+            )
           : null,
       style: ButtonStyle(
         minimumSize: const WidgetStatePropertyAll(
@@ -254,17 +263,19 @@ class _DropdownItemButton<T> extends StatelessWidget {
         ),
         backgroundColor: WidgetStateProperty.resolveWith((states) {
           if (states.contains(WidgetState.pressed)) {
-            return c.primary.withValues(alpha: AppOpacities.press);
+            return colors.primary.withValues(alpha: AppOpacities.press);
           }
           if (states.contains(WidgetState.hovered) ||
               states.contains(WidgetState.focused)) {
-            return c.primary.withValues(alpha: AppOpacities.hover);
+            return colors.primary.withValues(alpha: AppOpacities.hover);
           }
-          return selected ? c.primarySoft : Colors.transparent;
+          return selected ? colors.primarySoft : Colors.transparent;
         }),
         overlayColor: const WidgetStatePropertyAll(Colors.transparent),
         textStyle: WidgetStatePropertyAll(AppText.body),
-        foregroundColor: WidgetStatePropertyAll(selected ? c.primary : c.text),
+        foregroundColor: WidgetStatePropertyAll(
+          selected ? colors.primary : colors.text,
+        ),
       ),
       child: Text(item.label, overflow: TextOverflow.ellipsis),
     );

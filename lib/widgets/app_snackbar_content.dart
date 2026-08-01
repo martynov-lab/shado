@@ -27,7 +27,7 @@ class AppSnackbarContent extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final c = context.colors;
+    final colors = context.colors;
 
     final (
       Color background,
@@ -36,27 +36,27 @@ class AppSnackbarContent extends StatelessWidget {
       IconData icon,
     ) = switch (variant) {
       AppSnackbarVariant.neutral => (
-        c.surfaceInv,
-        c.textInv,
-        c.textInv,
+        colors.surfaceInv,
+        colors.textInv,
+        colors.textInv,
         Icons.info_outline_rounded,
       ),
       AppSnackbarVariant.success => (
-        c.successSoft,
-        c.success,
-        c.text,
+        colors.successSoft,
+        colors.success,
+        colors.text,
         Icons.check_circle_outline_rounded,
       ),
       AppSnackbarVariant.warning => (
-        c.warningSoft,
-        c.warning,
-        c.text,
+        colors.warningSoft,
+        colors.warning,
+        colors.text,
         Icons.warning_amber_rounded,
       ),
       AppSnackbarVariant.danger => (
-        c.dangerSoft,
-        c.danger,
-        c.text,
+        colors.dangerSoft,
+        colors.danger,
+        colors.text,
         Icons.error_outline_rounded,
       ),
     };

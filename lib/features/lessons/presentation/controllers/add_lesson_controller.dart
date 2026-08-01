@@ -124,9 +124,7 @@ class AddLessonFormState {
       topicId: clearTopic ? null : (topicId ?? this.topicId),
       audioId: clearAudio ? null : (audioId ?? this.audioId),
       audioPath: clearAudio ? null : (audioPath ?? this.audioPath),
-      audioFileName: clearAudio
-          ? null
-          : (audioFileName ?? this.audioFileName),
+      audioFileName: clearAudio ? null : (audioFileName ?? this.audioFileName),
       durationMs: durationMs ?? this.durationMs,
       trim: trim ?? this.trim,
       pendingTrim: clearPendingTrim ? null : (pendingTrim ?? this.pendingTrim),

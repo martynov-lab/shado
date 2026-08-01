@@ -21,7 +21,8 @@ extension AppThemeContext on BuildContext {
   double get _width => MediaQuery.sizeOf(this).width;
 
   bool get isMobile => _width < AppBreakpoints.tablet;
-  bool get isTablet => _width >= AppBreakpoints.tablet && _width < AppBreakpoints.desktop;
+  bool get isTablet =>
+      _width >= AppBreakpoints.tablet && _width < AppBreakpoints.desktop;
   bool get isDesktop => _width >= AppBreakpoints.desktop;
 
   /// Pick a value per breakpoint. `mobile` is required; larger tiers fall

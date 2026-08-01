@@ -2,12 +2,13 @@ import 'package:flutter/material.dart';
 
 import 'package:shado/theme/theme.dart';
 import 'package:shado/widgets/app_field_suffix_button.dart';
+import 'package:shado/widgets/app_icon.dart';
 
 /// Однострочное или многострочное поле ввода.
 ///
-/// Рамка и фон рисуются вручную, а внутри стоит «раздетый» [TextField]
-/// (`InputDecoration.collapsed`) — так поле не тянет за собой стоковый
-/// Material-декор и полностью подчиняется токенам.
+/// Рамка и фон рисуются вручную, а внутри стоит «раздетый» [TextField] со
+/// снятыми бордерами — так поле не тянет за собой стоковый Material-декор
+/// (в том числе `focusedBorder` из темы) и полностью подчиняется токенам.
 ///
 /// В фокусе вокруг поля появляется мягкое кольцо primarySoft; при [errorText]
 /// рамка и подпись краснеют.
@@ -48,8 +49,8 @@ class AppTextField extends StatefulWidget {
   /// Непустой текст переводит поле в состояние ошибки.
   final String? errorText;
 
-  final IconData? prefixIcon;
-  final IconData? suffixIcon;
+  final AppIcons? prefixIcon;
+  final AppIcons? suffixIcon;
 
   /// Делает [suffixIcon] нажимаемой (показать пароль, очистить поле).
   final VoidCallback? onSuffixPressed;
@@ -109,13 +110,13 @@ class _AppTextFieldState extends State<AppTextField> {
 
   @override
   Widget build(BuildContext context) {
-    final c = context.colors;
+    final colors = context.colors;
     final hasError = widget.hasError;
 
     final borderColor = switch ((hasError, _focused)) {
-      (true, _) => c.danger,
-      (false, true) => c.primary,
-      (false, false) => c.border,
+      (true, _) => colors.danger,
+      (false, true) => colors.primary,
+      (false, false) => colors.border,
     };
 
     final field = AnimatedContainer(
@@ -126,7 +127,7 @@ class _AppTextFieldState extends State<AppTextField> {
         vertical: AppSpacing.s3,
       ),
       decoration: BoxDecoration(
-        color: widget.enabled ? c.surface2 : c.surface,
+        color: widget.enabled ? colors.surface2 : colors.surface,
         borderRadius: AppRadii.rMd,
         border: Border.all(
           color: borderColor,
@@ -139,7 +140,7 @@ class _AppTextFieldState extends State<AppTextField> {
         boxShadow: _focused && !hasError
             ? [
                 BoxShadow(
-                  color: c.primarySoft,
+                  color: colors.primarySoft,
                   spreadRadius: AppSizes.focusRing,
                 ),
               ]
@@ -149,7 +150,11 @@ class _AppTextFieldState extends State<AppTextField> {
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           if (widget.prefixIcon != null) ...[
-            Icon(widget.prefixIcon, size: AppSizes.iconMd, color: c.text3),
+            AppIcon(
+              widget.prefixIcon!,
+              size: AppSizes.iconMd,
+              color: colors.text3,
+            ),
             const SizedBox(width: AppSpacing.s3),
           ],
           Expanded(
@@ -165,11 +170,23 @@ class _AppTextFieldState extends State<AppTextField> {
               textInputAction: widget.textInputAction,
               onChanged: widget.onChanged,
               onSubmitted: widget.onSubmitted,
-              cursorColor: c.primary,
-              style: AppText.body.copyWith(color: c.text),
-              decoration: InputDecoration.collapsed(
+              cursorColor: colors.primary,
+              style: AppText.body.copyWith(color: colors.text),
+              // Рамку и фон рисует наш контейнер. Поле — «раздетое»: не только
+              // collapsed, но и все бордеры сняты явно, иначе focusedBorder из
+              // inputDecorationTheme протекает и рисует вторую рамку у курсора.
+              decoration: InputDecoration(
+                isCollapsed: true,
+                filled: false,
+                contentPadding: EdgeInsets.zero,
+                border: InputBorder.none,
+                enabledBorder: InputBorder.none,
+                focusedBorder: InputBorder.none,
+                errorBorder: InputBorder.none,
+                focusedErrorBorder: InputBorder.none,
+                disabledBorder: InputBorder.none,
                 hintText: widget.hint,
-                hintStyle: AppText.body.copyWith(color: c.text3),
+                hintStyle: AppText.body.copyWith(color: colors.text3),
               ),
             ),
           ),
@@ -182,7 +199,11 @@ class _AppTextFieldState extends State<AppTextField> {
                 onPressed: widget.enabled ? widget.onSuffixPressed : null,
               )
             else
-              Icon(widget.suffixIcon, size: AppSizes.iconMd, color: c.text3),
+              AppIcon(
+                widget.suffixIcon!,
+                size: AppSizes.iconMd,
+                color: colors.text3,
+              ),
           ],
         ],
       ),
@@ -198,7 +219,10 @@ class _AppTextFieldState extends State<AppTextField> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           if (widget.label != null) ...[
-            Text(widget.label!, style: AppText.label.copyWith(color: c.text2)),
+            Text(
+              widget.label!,
+              style: AppText.label.copyWith(color: colors.text2),
+            ),
             const SizedBox(height: AppSpacing.s2),
           ],
           Opacity(
@@ -210,7 +234,7 @@ class _AppTextFieldState extends State<AppTextField> {
             Text(
               caption,
               style: AppText.caption.copyWith(
-                color: hasError ? c.danger : c.text3,
+                color: hasError ? colors.danger : colors.text3,
               ),
             ),
           ],

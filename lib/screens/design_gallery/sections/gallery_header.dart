@@ -9,19 +9,19 @@ class GalleryHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final c = context.colors;
+    final colors = context.colors;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
           'Дизайн-система',
-          style: AppText.displayLg.copyWith(color: c.text),
+          style: AppText.displayLg.copyWith(color: colors.text),
         ),
         const SizedBox(height: AppSpacing.s2),
         Text(
           'Слушай. Повторяй. Все компоненты — на токенах.',
-          style: AppText.body.copyWith(color: c.text2),
+          style: AppText.body.copyWith(color: colors.text2),
         ),
         const SizedBox(height: AppSpacing.s6),
         Align(

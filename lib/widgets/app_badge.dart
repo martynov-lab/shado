@@ -34,12 +34,12 @@ class AppBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final c = context.colors;
+    final colors = context.colors;
 
     final (Color background, Color foreground) = switch (variant) {
-      AppBadgeVariant.fresh => (c.successSoft, c.success),
-      AppBadgeVariant.due => (c.warningSoft, c.warning),
-      AppBadgeVariant.hot => (c.accentSoft, c.accent),
+      AppBadgeVariant.fresh => (colors.successSoft, colors.success),
+      AppBadgeVariant.due => (colors.warningSoft, colors.warning),
+      AppBadgeVariant.hot => (colors.accentSoft, colors.accent),
     };
 
     return Semantics(

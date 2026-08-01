@@ -54,18 +54,18 @@ class AppSlider extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final c = context.colors;
+    final colors = context.colors;
 
     final slider = SliderTheme(
       data: SliderThemeData(
         trackHeight: AppSizes.sliderTrack,
-        activeTrackColor: c.primary,
-        inactiveTrackColor: c.waveOff,
-        disabledActiveTrackColor: c.borderStrong,
-        disabledInactiveTrackColor: c.border,
-        thumbColor: c.primary,
-        disabledThumbColor: c.borderStrong,
-        overlayColor: c.primary.withValues(alpha: AppOpacities.hover),
+        activeTrackColor: colors.primary,
+        inactiveTrackColor: colors.waveOff,
+        disabledActiveTrackColor: colors.borderStrong,
+        disabledInactiveTrackColor: colors.border,
+        thumbColor: colors.primary,
+        disabledThumbColor: colors.borderStrong,
+        overlayColor: colors.primary.withValues(alpha: AppOpacities.hover),
         trackShape: const RoundedRectSliderTrackShape(),
         thumbShape: const RoundSliderThumbShape(
           enabledThumbRadius: AppSizes.sliderThumb / 2,
@@ -73,8 +73,10 @@ class AppSlider extends StatelessWidget {
         overlayShape: const RoundSliderOverlayShape(
           overlayRadius: AppSizes.minTouchTarget / 2,
         ),
-        valueIndicatorColor: c.surfaceInv,
-        valueIndicatorTextStyle: AppText.monoTime.copyWith(color: c.textInv),
+        valueIndicatorColor: colors.surfaceInv,
+        valueIndicatorTextStyle: AppText.monoTime.copyWith(
+          color: colors.textInv,
+        ),
         showValueIndicator: ShowValueIndicator.onlyForDiscrete,
       ),
       child: Slider(
@@ -104,13 +106,13 @@ class AppSlider extends StatelessWidget {
                 Expanded(
                   child: Text(
                     label!,
-                    style: AppText.label.copyWith(color: c.text2),
+                    style: AppText.label.copyWith(color: colors.text2),
                   ),
                 ),
               if (valueLabel != null)
                 Text(
                   valueLabel!,
-                  style: AppText.monoTime.copyWith(color: c.text),
+                  style: AppText.monoTime.copyWith(color: colors.text),
                 ),
             ],
           ),

@@ -5,6 +5,7 @@
 /// ```
 library;
 
+export 'package:shado/widgets/app_adaptive_layout.dart';
 export 'package:shado/widgets/app_badge.dart';
 export 'package:shado/widgets/app_bottom_sheet.dart';
 export 'package:shado/widgets/app_bottom_sheet_content.dart';

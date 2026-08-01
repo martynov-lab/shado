@@ -43,16 +43,21 @@ lib/features/<feature>/presentation/
    для действий, `switch` по `AsyncValue` для loading/error/data.
 3. **Части.** Каждый блок — отдельный виджет, принимающий данные и колбэки
    (`on*`), а не `ref` и не идентификаторы для чтения провайдеров.
-4. **Оформление.** Только дизайн-система: `context.colors`, `AppSpacing`,
+4. **Адаптивность.** Если макет отличается на телефоне / планшете / десктопе —
+   тело экрана заворачиваем в `AppAdaptiveLayout`, на каждую платформу свой
+   view-виджет (`_mobile_view` / `_tablet_view` / `_desktop_view`). Мелкие
+   отличия — `context.responsive(...)`. Подробно —
+   [docs/ui_guidelines.md](../../../docs/ui_guidelines.md#адаптивные-экраны).
+5. **Оформление.** Только дизайн-система: `context.colors`, `AppSpacing`,
    `AppRadii`, `AppText`, компоненты `AppButton`, `AppCard`, `AppTextField`
    из `package:shado/widgets/widgets.dart`.
-5. **Маршрут.** Добавить `GoRoute` в `lib/core/router/app_router.dart`, путь в
+6. **Маршрут.** Добавить `GoRoute` в `lib/core/router/app_router.dart`, путь в
    kebab-case, у экрана — `static const routePath`. Правила доступа — в
    `redirect`, не в виджете.
-6. **Доступность.** `tooltip` у иконок, `Semantics` у нестандартных элементов,
+7. **Доступность.** `tooltip` у иконок, `Semantics` у нестандартных элементов,
    область нажатия ≥ 44 px, горячая клавиша — в подсказке.
-7. **Тесты.** Виджет-тест на поведение (см. скилл `writing-flutter-tests`).
-8. **Проверка.** `flutter analyze` и `flutter test`.
+8. **Тесты.** Виджет-тест на поведение (см. скилл `writing-flutter-tests`).
+9. **Проверка.** `flutter analyze` и `flutter test`.
 
 ## Скелет
 

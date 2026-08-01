@@ -33,7 +33,9 @@ class LessonDto {
     durationMs: (json['duration_ms'] as num?)?.toInt() ?? 0,
     createdAt: _parseTime(json['created_at']),
     updatedAt: _parseTime(json['updated_at']),
-    deletedAt: json['deleted_at'] == null ? null : _parseTime(json['deleted_at']),
+    deletedAt: json['deleted_at'] == null
+        ? null
+        : _parseTime(json['deleted_at']),
     version: (json['version'] as num?)?.toInt() ?? 1,
     accent: LessonAccent.parse(json['accent'] as String?),
     level: LessonLevel.parse(json['level'] as String?),

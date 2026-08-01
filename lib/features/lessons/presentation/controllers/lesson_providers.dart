@@ -40,7 +40,9 @@ final topicRemoteDataSourceProvider = Provider<TopicRemoteDataSource>(
   (ref) => ApiTopicRemoteDataSource(ref.watch(apiClientProvider)),
 );
 
-final audioCacheProvider = Provider<AudioCache>((ref) => const FileAudioCache());
+final audioCacheProvider = Provider<AudioCache>(
+  (ref) => const FileAudioCache(),
+);
 
 /// Пики считает сервер — волна выходит одинаковой на всех платформах.
 ///

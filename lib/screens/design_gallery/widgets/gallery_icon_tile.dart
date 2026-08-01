@@ -11,14 +11,17 @@ class GalleryIconTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final c = context.colors;
+    final colors = context.colors;
 
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        AppIcon(icon, size: AppSizes.iconLg, color: c.text),
+        AppIcon(icon, size: AppSizes.iconLg, color: colors.text),
         const SizedBox(height: AppSpacing.s2),
-        Text(icon.fileName, style: AppText.caption.copyWith(color: c.text3)),
+        Text(
+          icon.fileName,
+          style: AppText.caption.copyWith(color: colors.text3),
+        ),
       ],
     );
   }

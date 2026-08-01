@@ -13,7 +13,7 @@ class GalleryIconsSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final c = context.colors;
+    final colors = context.colors;
 
     return GallerySection(
       title: 'Иконки',
@@ -32,16 +32,36 @@ class GalleryIconsSection extends StatelessWidget {
           const GalleryLabel('Цвет — любой токен темы'),
           GalleryWrap(
             children: [
-              AppIcon(AppIcons.flame, size: AppSizes.iconLg, color: c.accent),
-              AppIcon(AppIcons.check, size: AppSizes.iconLg, color: c.success),
-              AppIcon(AppIcons.clock, size: AppSizes.iconLg, color: c.warning),
-              AppIcon(AppIcons.trash, size: AppSizes.iconLg, color: c.danger),
-              AppIcon(AppIcons.globe, size: AppSizes.iconLg, color: c.text3),
+              AppIcon(
+                AppIcons.flame,
+                size: AppSizes.iconLg,
+                color: colors.accent,
+              ),
+              AppIcon(
+                AppIcons.check,
+                size: AppSizes.iconLg,
+                color: colors.success,
+              ),
+              AppIcon(
+                AppIcons.clock,
+                size: AppSizes.iconLg,
+                color: colors.warning,
+              ),
+              AppIcon(
+                AppIcons.trash,
+                size: AppSizes.iconLg,
+                color: colors.danger,
+              ),
+              AppIcon(
+                AppIcons.globe,
+                size: AppSizes.iconLg,
+                color: colors.text3,
+              ),
               // Логотип остаётся фирменным даже с явным цветом.
               AppIcon(
                 AppIcons.brandGoogle,
                 size: AppSizes.iconLg,
-                color: c.danger,
+                color: colors.danger,
               ),
             ],
           ),

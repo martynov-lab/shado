@@ -11,33 +11,37 @@ enum AppButtonVariant { primary, secondary, ghost }
 /// иконочная кнопка выглядели одинаково без копирования switch'ей.
 extension AppButtonVariantStyle on AppButtonVariant {
   /// Цвет подписи и иконки.
-  Color foreground(AppColors c) => switch (this) {
-    AppButtonVariant.primary => c.primaryOn,
-    AppButtonVariant.secondary => c.primary,
-    AppButtonVariant.ghost => c.text2,
+  Color foreground(AppColors colors) => switch (this) {
+    AppButtonVariant.primary => colors.primaryOn,
+    AppButtonVariant.secondary => colors.primary,
+    AppButtonVariant.ghost => colors.text2,
   };
 
   /// Заливка с учётом наведения и нажатия.
-  Color background(AppColors c, {bool hovered = false, bool pressed = false}) {
+  Color background(
+    AppColors colors, {
+    bool hovered = false,
+    bool pressed = false,
+  }) {
     return switch (this) {
-      AppButtonVariant.primary when pressed => c.primaryPress,
-      AppButtonVariant.primary when hovered => c.primaryHover,
-      AppButtonVariant.primary => c.primary,
+      AppButtonVariant.primary when pressed => colors.primaryPress,
+      AppButtonVariant.primary when hovered => colors.primaryHover,
+      AppButtonVariant.primary => colors.primary,
       // Мягкую заливку темним тем же primary, но почти прозрачным — оттенок
       // остаётся из палитры, а не подбирается на глаз.
       AppButtonVariant.secondary when pressed => Color.alphaBlend(
-        c.primary.withValues(alpha: AppOpacities.press),
-        c.primarySoft,
+        colors.primary.withValues(alpha: AppOpacities.press),
+        colors.primarySoft,
       ),
       AppButtonVariant.secondary when hovered => Color.alphaBlend(
-        c.primary.withValues(alpha: AppOpacities.hover),
-        c.primarySoft,
+        colors.primary.withValues(alpha: AppOpacities.hover),
+        colors.primarySoft,
       ),
-      AppButtonVariant.secondary => c.primarySoft,
-      AppButtonVariant.ghost when pressed => c.primary.withValues(
+      AppButtonVariant.secondary => colors.primarySoft,
+      AppButtonVariant.ghost when pressed => colors.primary.withValues(
         alpha: AppOpacities.press,
       ),
-      AppButtonVariant.ghost when hovered => c.primary.withValues(
+      AppButtonVariant.ghost when hovered => colors.primary.withValues(
         alpha: AppOpacities.hover,
       ),
       AppButtonVariant.ghost => Colors.transparent,
@@ -45,8 +49,8 @@ extension AppButtonVariantStyle on AppButtonVariant {
   }
 
   /// Обводка есть только у «призрачного» варианта — остальные держатся заливкой.
-  BorderSide border(AppColors c) => this == AppButtonVariant.ghost
-      ? BorderSide(color: c.borderStrong, width: AppSizes.borderThin)
+  BorderSide border(AppColors colors) => this == AppButtonVariant.ghost
+      ? BorderSide(color: colors.borderStrong, width: AppSizes.borderThin)
       : BorderSide.none;
 }
 
@@ -103,41 +107,45 @@ class _AppButtonState extends State<AppButton> {
 
   @override
   Widget build(BuildContext context) {
-    final c = context.colors;
+    final colors = context.colors;
     final enabled = widget.isEnabled;
 
-    final (double height, double padH, TextStyle textStyle, double iconSize) =
-        switch (widget.size) {
-          AppButtonSize.sm => (
-            AppSizes.controlSm,
-            AppSpacing.s4,
-            AppText.label,
-            AppSizes.iconSm,
-          ),
-          AppButtonSize.md => (
-            AppSizes.controlMd,
-            AppSpacing.s5,
-            AppText.label,
-            AppSizes.iconMd,
-          ),
-          AppButtonSize.lg => (
-            AppSizes.controlLg,
-            AppSpacing.s6,
-            AppText.title,
-            AppSizes.iconLg,
-          ),
-        };
+    final (
+      double height,
+      double padH,
+      TextStyle textStyle,
+      double iconSize,
+    ) = switch (widget.size) {
+      AppButtonSize.sm => (
+        AppSizes.controlSm,
+        AppSpacing.s4,
+        AppText.label,
+        AppSizes.iconSm,
+      ),
+      AppButtonSize.md => (
+        AppSizes.controlMd,
+        AppSpacing.s5,
+        AppText.label,
+        AppSizes.iconMd,
+      ),
+      AppButtonSize.lg => (
+        AppSizes.controlLg,
+        AppSpacing.s6,
+        AppText.title,
+        AppSizes.iconLg,
+      ),
+    };
 
-    final fg = widget.variant.foreground(c);
+    final fg = widget.variant.foreground(colors);
     final background = widget.variant.background(
-      c,
+      colors,
       hovered: _hovered,
       pressed: _pressed,
     );
 
     final shape = RoundedRectangleBorder(
       borderRadius: AppRadii.rPill,
-      side: widget.variant.border(c),
+      side: widget.variant.border(colors),
     );
 
     Widget visual = SizedBox(

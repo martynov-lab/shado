@@ -190,7 +190,11 @@ class SqfliteLessonLocalDataSource implements LessonLocalDataSource {
   Future<Set<String>> usedAudioIds() async {
     try {
       final db = await _db();
-      final rows = await db.query(_table, columns: ['audio_id'], distinct: true);
+      final rows = await db.query(
+        _table,
+        columns: ['audio_id'],
+        distinct: true,
+      );
       return {
         for (final row in rows)
           if (row['audio_id'] case final String id) id,
@@ -217,8 +221,10 @@ class SqfliteLessonLocalDataSource implements LessonLocalDataSource {
     } on Failure {
       rethrow;
     } catch (error) {
-      throw StorageFailure('Не удалось прочитать метку синхронизации',
-          cause: error);
+      throw StorageFailure(
+        'Не удалось прочитать метку синхронизации',
+        cause: error,
+      );
     }
   }
 
@@ -226,16 +232,17 @@ class SqfliteLessonLocalDataSource implements LessonLocalDataSource {
   Future<void> writeSyncWatermark(String updatedAt) async {
     try {
       final db = await _db();
-      await db.insert(
-        _metaTable,
-        {'key': _watermarkKey, 'value': updatedAt},
-        conflictAlgorithm: ConflictAlgorithm.replace,
-      );
+      await db.insert(_metaTable, {
+        'key': _watermarkKey,
+        'value': updatedAt,
+      }, conflictAlgorithm: ConflictAlgorithm.replace);
     } on Failure {
       rethrow;
     } catch (error) {
-      throw StorageFailure('Не удалось сохранить метку синхронизации',
-          cause: error);
+      throw StorageFailure(
+        'Не удалось сохранить метку синхронизации',
+        cause: error,
+      );
     }
   }
 

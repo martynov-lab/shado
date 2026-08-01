@@ -7,11 +7,14 @@ import 'package:shado/app.dart';
 import 'package:shado/features/auth/domain/entities/auth_user.dart';
 import 'package:shado/features/auth/domain/repositories/auth_repository.dart';
 import 'package:shado/features/auth/presentation/controllers/auth_providers.dart';
+import 'package:shado/features/auth/presentation/pages/login_page.dart';
 import 'package:shado/features/lessons/domain/entities/audio_upload.dart';
 import 'package:shado/features/lessons/domain/entities/lesson.dart';
 import 'package:shado/features/lessons/domain/entities/lesson_category.dart';
 import 'package:shado/features/lessons/domain/repositories/lesson_repository.dart';
 import 'package:shado/features/lessons/presentation/controllers/lesson_providers.dart';
+import 'package:shado/theme/theme.dart';
+import 'package:shado/widgets/widgets.dart';
 
 /// Сессия без сети: тест управляет тем, что вернёт восстановление.
 class FakeAuthRepository implements AuthRepository {
@@ -108,6 +111,12 @@ class FakeLessonRepository implements LessonRepository {
 
 void main() {
   Future<void> pumpApp(WidgetTester tester, FakeAuthRepository auth) async {
+    // Телефон: у экрана входа три раскладки, и проверяем ту, что видит
+    // большинство.
+    tester.view.physicalSize = const Size(390, 900);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
@@ -122,12 +131,73 @@ void main() {
     await tester.pumpAndSettle();
   }
 
+  /// Экран входа сам по себе, без роутера: так его можно померить на любой
+  /// ширине и в любой теме.
+  Future<void> pumpLoginPage(
+    WidgetTester tester, {
+    required Size size,
+    required ThemeMode mode,
+    bool isRegistration = false,
+  }) async {
+    tester.view.physicalSize = size;
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          authRepositoryProvider.overrideWithValue(FakeAuthRepository()),
+        ],
+        child: MaterialApp(
+          theme: AppTheme.light(),
+          darkTheme: AppTheme.dark(),
+          themeMode: mode,
+          home: LoginPage(isRegistration: isRegistration),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+  }
+
+  for (final size in const [
+    Size(390, 900),
+    Size(800, 1200),
+    Size(1400, 1000),
+  ]) {
+    for (final isRegistration in const [false, true]) {
+      testWidgets(
+        'форма ${isRegistration ? 'регистрации' : 'входа'} '
+        'рисуется на ширине ${size.width}',
+        (tester) async {
+          for (final mode in ThemeMode.values) {
+            await pumpLoginPage(
+              tester,
+              size: size,
+              mode: mode,
+              isRegistration: isRegistration,
+            );
+
+            expect(tester.takeException(), isNull);
+            expect(find.byType(AppTextField), findsWidgets);
+            expect(
+              find.widgetWithText(
+                AppButton,
+                isRegistration ? 'Создать аккаунт' : 'Войти',
+              ),
+              findsOneWidget,
+            );
+          }
+        },
+      );
+    }
+  }
+
   testWidgets('без сессии приложение уводит на вход', (tester) async {
     final auth = FakeAuthRepository();
 
     await pumpApp(tester, auth);
 
-    expect(find.text('Вход в Shado'), findsOneWidget);
+    expect(find.text('С возвращением'), findsOneWidget);
     expect(auth.restoreCalls, 1);
   });
 
@@ -144,19 +214,16 @@ void main() {
     await pumpApp(tester, auth);
 
     // Экрана входа пользователь даже не увидел.
-    expect(find.text('Вход в Shado'), findsNothing);
+    expect(find.text('С возвращением'), findsNothing);
     expect(find.widgetWithText(AppBar, 'Главная'), findsOneWidget);
   });
 
   testWidgets('вход по форме открывает главную', (tester) async {
     await pumpApp(tester, FakeAuthRepository());
 
-    await tester.enterText(
-      find.byType(TextFormField).first,
-      'user@example.com',
-    );
-    await tester.enterText(find.byType(TextFormField).last, 'password123');
-    await tester.tap(find.widgetWithText(FilledButton, 'Войти'));
+    await tester.enterText(find.byType(AppTextField).first, 'user@example.com');
+    await tester.enterText(find.byType(AppTextField).last, 'password123');
+    await tester.tap(find.widgetWithText(AppButton, 'Войти'));
     await tester.pumpAndSettle();
 
     expect(find.widgetWithText(AppBar, 'Главная'), findsOneWidget);
@@ -167,16 +234,45 @@ void main() {
   ) async {
     await pumpApp(tester, FakeAuthRepository());
 
-    await tester.enterText(
-      find.byType(TextFormField).first,
-      'user@example.com',
-    );
-    await tester.enterText(find.byType(TextFormField).last, 'short');
-    await tester.tap(find.widgetWithText(FilledButton, 'Войти'));
+    await tester.enterText(find.byType(AppTextField).first, 'user@example.com');
+    await tester.enterText(find.byType(AppTextField).last, 'short');
+    await tester.tap(find.widgetWithText(AppButton, 'Войти'));
     await tester.pumpAndSettle();
 
     expect(find.text('Не короче 8 символов'), findsOneWidget);
     expect(find.widgetWithText(AppBar, 'Главная'), findsNothing);
+  });
+
+  testWidgets('пароль показывается по нажатию на глаз', (tester) async {
+    await pumpApp(tester, FakeAuthRepository());
+
+    TextField passwordField() =>
+        tester.widget<TextField>(find.byType(TextField).last);
+
+    expect(passwordField().obscureText, isTrue);
+
+    await tester.tap(find.byType(AppFieldSuffixButton));
+    await tester.pumpAndSettle();
+
+    expect(passwordField().obscureText, isFalse);
+  });
+
+  testWidgets('без согласия с условиями регистрация не отправляется', (
+    tester,
+  ) async {
+    await pumpApp(tester, FakeAuthRepository());
+
+    await tester.tap(find.text('Зарегистрироваться'));
+    await tester.pumpAndSettle();
+    expect(find.text('Создать аккаунт'), findsWidgets);
+
+    await tester.tap(find.byType(AppCheckbox));
+    await tester.pumpAndSettle();
+
+    final submit = tester.widget<AppButton>(
+      find.widgetWithText(AppButton, 'Создать аккаунт'),
+    );
+    expect(submit.onPressed, isNull);
   });
 
   testWidgets('раздел с пользователями виден только владельцу', (tester) async {
@@ -230,6 +326,6 @@ void main() {
     await tester.tap(find.text('Выйти'));
     await tester.pumpAndSettle();
 
-    expect(find.text('Вход в Shado'), findsOneWidget);
+    expect(find.text('С возвращением'), findsOneWidget);
   });
 }

@@ -48,14 +48,14 @@ class AppSegmentedControl<T> extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final c = context.colors;
+    final colors = context.colors;
 
     Widget track = Container(
       padding: const EdgeInsets.all(AppSpacing.s1),
       decoration: BoxDecoration(
-        color: c.surface2,
+        color: colors.surface2,
         borderRadius: AppRadii.rPill,
-        border: Border.all(color: c.border, width: AppSizes.borderThin),
+        border: Border.all(color: colors.border, width: AppSizes.borderThin),
       ),
       child: Row(
         mainAxisSize: expand ? MainAxisSize.max : MainAxisSize.min,

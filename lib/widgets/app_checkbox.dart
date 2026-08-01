@@ -41,7 +41,7 @@ class _AppCheckboxState extends State<AppCheckbox> {
 
   @override
   Widget build(BuildContext context) {
-    final c = context.colors;
+    final colors = context.colors;
     final enabled = widget.isEnabled;
     final indeterminate = widget.value == null;
     final checked = widget.value ?? false;
@@ -56,12 +56,12 @@ class _AppCheckboxState extends State<AppCheckbox> {
         width: AppSizes.checkbox,
         height: AppSizes.checkbox,
         decoration: BoxDecoration(
-          color: filled ? c.primary : c.surface,
+          color: filled ? colors.primary : colors.surface,
           borderRadius: AppRadii.rXs,
           border: Border.all(
             color: filled
-                ? c.primary
-                : (_hovered ? c.primary : c.borderStrong),
+                ? colors.primary
+                : (_hovered ? colors.primary : colors.borderStrong),
             width: AppSizes.borderThick,
           ),
         ),
@@ -69,7 +69,7 @@ class _AppCheckboxState extends State<AppCheckbox> {
             ? Icon(
                 indeterminate ? Icons.remove_rounded : Icons.check_rounded,
                 size: AppSizes.iconSm,
-                color: c.primaryOn,
+                color: colors.primaryOn,
               )
             : null,
       ),
@@ -85,7 +85,7 @@ class _AppCheckboxState extends State<AppCheckbox> {
               padding: const EdgeInsets.only(right: AppSpacing.s2),
               child: Text(
                 widget.label!,
-                style: AppText.body.copyWith(color: c.text),
+                style: AppText.body.copyWith(color: colors.text),
               ),
             ),
           ),

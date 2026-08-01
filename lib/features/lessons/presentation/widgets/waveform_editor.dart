@@ -358,19 +358,13 @@ class _WaveformEditorState extends State<WaveformEditor> {
     final ms = _xToMs(x);
     final AudioTrim next;
     if (edge == TrimEdge.start) {
-      final upperLimit = math.max(
-        _view.startMs,
-        trim.endMs - kMinTrimMs,
-      );
+      final upperLimit = math.max(_view.startMs, trim.endMs - kMinTrimMs);
       next = AudioTrim(
         startMs: ms.clamp(_view.startMs, upperLimit),
         endMs: trim.endMs,
       );
     } else {
-      final lowerLimit = math.min(
-        _view.endMs,
-        trim.startMs + kMinTrimMs,
-      );
+      final lowerLimit = math.min(_view.endMs, trim.startMs + kMinTrimMs);
       next = AudioTrim(
         startMs: trim.startMs,
         endMs: ms.clamp(lowerLimit, _view.endMs),
@@ -612,8 +606,8 @@ class _WaveformPainter extends CustomPainter {
     final columns = size.width.floor();
     for (var column = 0; column < columns; column++) {
       final ms = _xToMs(column.toDouble(), size.width);
-      final bucket =
-          ((ms - view.startMs) / view.durationMs * peaks.length).floor();
+      final bucket = ((ms - view.startMs) / view.durationMs * peaks.length)
+          .floor();
       if (bucket < 0 || bucket >= peaks.length) continue;
       final top = centerY + peaks.maxima[bucket] * -halfHeight;
       final bottom = centerY + peaks.minima[bucket].abs() * halfHeight;

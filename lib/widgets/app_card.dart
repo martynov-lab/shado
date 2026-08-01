@@ -36,7 +36,7 @@ class _AppCardState extends State<AppCard> {
 
   @override
   Widget build(BuildContext context) {
-    final c = context.colors;
+    final colors = context.colors;
     final interactive = widget.onTap != null;
 
     final surface = AnimatedContainer(
@@ -44,10 +44,10 @@ class _AppCardState extends State<AppCard> {
       curve: AppCurves.standard,
       padding: widget.padding,
       decoration: BoxDecoration(
-        color: c.surface,
+        color: colors.surface,
         borderRadius: AppRadii.rXl,
         border: Border.all(
-          color: widget.selected ? c.primary : c.border,
+          color: widget.selected ? colors.primary : colors.border,
           width: widget.selected ? AppSizes.borderThick : AppSizes.borderThin,
         ),
         boxShadow: interactive && _hovered

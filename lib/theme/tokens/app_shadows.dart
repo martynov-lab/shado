@@ -39,10 +39,18 @@ class AppShadows extends ThemeExtension<AppShadows> {
       BoxShadow(color: Color(0x59000000), blurRadius: 10, offset: Offset(0, 2)),
     ],
     e2: [
-      BoxShadow(color: Color(0x73000000), blurRadius: 30, offset: Offset(0, 12)),
+      BoxShadow(
+        color: Color(0x73000000),
+        blurRadius: 30,
+        offset: Offset(0, 12),
+      ),
     ],
     e3: [
-      BoxShadow(color: Color(0x8C000000), blurRadius: 54, offset: Offset(0, 24)),
+      BoxShadow(
+        color: Color(0x8C000000),
+        blurRadius: 54,
+        offset: Offset(0, 24),
+      ),
     ],
   );
 
@@ -52,11 +60,7 @@ class AppShadows extends ThemeExtension<AppShadows> {
     List<BoxShadow>? e2,
     List<BoxShadow>? e3,
   }) {
-    return AppShadows(
-      e1: e1 ?? this.e1,
-      e2: e2 ?? this.e2,
-      e3: e3 ?? this.e3,
-    );
+    return AppShadows(e1: e1 ?? this.e1, e2: e2 ?? this.e2, e3: e3 ?? this.e3);
   }
 
   @override

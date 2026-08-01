@@ -10,7 +10,7 @@ class GalleryListsSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final c = context.colors;
+    final colors = context.colors;
 
     return GallerySection(
       title: 'Списки и карточки',
@@ -63,7 +63,7 @@ class GalleryListsSection extends StatelessWidget {
                     Expanded(
                       child: Text(
                         'Нажимаемая карточка',
-                        style: AppText.h2.copyWith(color: c.text),
+                        style: AppText.h2.copyWith(color: colors.text),
                       ),
                     ),
                     const AppBadge(
@@ -76,7 +76,7 @@ class GalleryListsSection extends StatelessWidget {
                 Text(
                   'На наведении поднимается с тени e1 до e2, с клавиатуры '
                   'получает кольцо фокуса.',
-                  style: AppText.body.copyWith(color: c.text2),
+                  style: AppText.body.copyWith(color: colors.text2),
                 ),
               ],
             ),

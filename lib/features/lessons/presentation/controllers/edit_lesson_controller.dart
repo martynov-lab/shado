@@ -67,8 +67,7 @@ class EditLessonState {
 
   /// Что сейчас в окне волны: во время обрезки — файл целиком, чтобы обрезанное
   /// можно было вернуть обратно.
-  AudioTrim get view =>
-      isTrimming ? AudioTrim.full(lesson.durationMs) : trim;
+  AudioTrim get view => isTrimming ? AudioTrim.full(lesson.durationMs) : trim;
 
   bool get canSave =>
       !isSaving &&

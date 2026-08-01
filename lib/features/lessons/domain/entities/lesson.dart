@@ -32,7 +32,9 @@ class Lesson {
       throw const ValidationFailure('Урок должен содержать хотя бы один кусок');
     }
     if (durationMs <= 0) {
-      throw const ValidationFailure('Длительность аудио должна быть больше нуля');
+      throw const ValidationFailure(
+        'Длительность аудио должна быть больше нуля',
+      );
     }
     final count = segmentTexts.length;
     final segments = <Segment>[
@@ -88,10 +90,7 @@ class Lesson {
   /// поэтому обрезка — это и есть края крайних кусков.
   AudioTrim get trim => segments.isEmpty
       ? AudioTrim.full(durationMs)
-      : AudioTrim(
-          startMs: segments.first.startMs,
-          endMs: segments.last.endMs,
-        );
+      : AudioTrim(startMs: segments.first.startMs, endMs: segments.last.endMs);
 
   /// Границы кусков: `N + 1` значение, где `b[0]` и `b[N]` — края [trim].
   List<int> get boundaries {
@@ -126,7 +125,9 @@ class Lesson {
     }
     for (var i = 1; i < boundaries.length; i++) {
       if (boundaries[i] <= boundaries[i - 1]) {
-        throw const ValidationFailure('Границы должны идти строго по возрастанию');
+        throw const ValidationFailure(
+          'Границы должны идти строго по возрастанию',
+        );
       }
     }
     return copyWith(

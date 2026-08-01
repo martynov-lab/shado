@@ -51,7 +51,7 @@ class _AppIconButtonState extends State<AppIconButton> {
 
   @override
   Widget build(BuildContext context) {
-    final c = context.colors;
+    final colors = context.colors;
     final enabled = widget.isEnabled;
 
     final (double side, double iconSize) = switch (widget.size) {
@@ -65,20 +65,20 @@ class _AppIconButtonState extends State<AppIconButton> {
       AppIconButtonShape.square => AppRadii.rMd,
     };
 
-    final fg = widget.variant.foreground(c);
+    final fg = widget.variant.foreground(colors);
 
     Widget visual = SizedBox.square(
       dimension: side,
       child: Material(
         color: widget.variant.background(
-          c,
+          colors,
           hovered: _hovered,
           pressed: _pressed,
         ),
         animationDuration: context.motion(AppDurations.fast),
         shape: RoundedRectangleBorder(
           borderRadius: borderRadius,
-          side: widget.variant.border(c),
+          side: widget.variant.border(colors),
         ),
         clipBehavior: Clip.antiAlias,
         child: InkWell(

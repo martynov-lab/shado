@@ -33,7 +33,10 @@ class SegmentBoundaries {
     if (current.length < 2) return even(count, trim);
 
     return _spreadRest(
-      [for (var i = 0; i < math.min(current.length - 1, count); i++) current[i]],
+      [
+        for (var i = 0; i < math.min(current.length - 1, count); i++)
+          current[i],
+      ],
       count,
       trim,
     );
@@ -63,8 +66,7 @@ class SegmentBoundaries {
     final firstKept = kept.isEmpty ? trim.endMs : kept.first;
     for (var i = 1; i <= orphanedBefore; i++) {
       result.add(
-        trim.startMs +
-            (firstKept - trim.startMs) * i ~/ (orphanedBefore + 1),
+        trim.startMs + (firstKept - trim.startMs) * i ~/ (orphanedBefore + 1),
       );
     }
     result.addAll(kept);

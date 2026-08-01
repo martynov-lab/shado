@@ -5,7 +5,9 @@ import 'package:flutter/animation.dart';
 abstract final class AppDurations {
   static const Duration fast = Duration(milliseconds: 120); // taps, hovers
   static const Duration base = Duration(milliseconds: 200); // most transitions
-  static const Duration slow = Duration(milliseconds: 340); // theme swap, sheets
+  static const Duration slow = Duration(
+    milliseconds: 340,
+  ); // theme swap, sheets
 
   /// Сколько всплывающее сообщение висит, прежде чем уйти само. Это не
   /// анимация, а время на прочтение, поэтому шкала другая.

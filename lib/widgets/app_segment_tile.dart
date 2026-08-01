@@ -30,10 +30,12 @@ class _AppSegmentTileState<T> extends State<AppSegmentTile<T>> {
 
   @override
   Widget build(BuildContext context) {
-    final c = context.colors;
+    final colors = context.colors;
     final selected = widget.isSelected;
 
-    final foreground = selected ? c.primary : (_hovered ? c.text : c.text2);
+    final foreground = selected
+        ? colors.primary
+        : (_hovered ? colors.text : colors.text2);
     final hasLabel = widget.segment.label.isNotEmpty;
 
     return Semantics(
@@ -67,7 +69,7 @@ class _AppSegmentTileState<T> extends State<AppSegmentTile<T>> {
               ),
               padding: const EdgeInsets.symmetric(horizontal: AppSpacing.s4),
               decoration: BoxDecoration(
-                color: selected ? c.surface : Colors.transparent,
+                color: selected ? colors.surface : Colors.transparent,
                 borderRadius: AppRadii.rPill,
                 boxShadow: selected ? context.shadows.e1 : const [],
               ),

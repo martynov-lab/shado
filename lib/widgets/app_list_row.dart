@@ -55,12 +55,12 @@ class _AppListRowState extends State<AppListRow> {
 
   @override
   Widget build(BuildContext context) {
-    final c = context.colors;
+    final colors = context.colors;
     final selected = widget.selected;
 
     final background = selected
-        ? c.primarySoft
-        : (_hovered ? c.surface2 : Colors.transparent);
+        ? colors.primarySoft
+        : (_hovered ? colors.surface2 : Colors.transparent);
 
     final content = AnimatedContainer(
       duration: context.motion(AppDurations.fast),
@@ -69,10 +69,7 @@ class _AppListRowState extends State<AppListRow> {
         horizontal: AppSpacing.s3,
         vertical: AppSpacing.s2,
       ),
-      decoration: BoxDecoration(
-        color: background,
-        borderRadius: AppRadii.rLg,
-      ),
+      decoration: BoxDecoration(color: background, borderRadius: AppRadii.rLg),
       child: Row(
         children: [
           if (widget.index != null) ...[
@@ -81,7 +78,7 @@ class _AppListRowState extends State<AppListRow> {
               child: Text(
                 widget.index!.toString().padLeft(2, '0'),
                 style: AppText.monoTime.copyWith(
-                  color: selected ? c.primary : c.text3,
+                  color: selected ? colors.primary : colors.text3,
                 ),
                 textAlign: TextAlign.center,
               ),
@@ -95,11 +92,11 @@ class _AppListRowState extends State<AppListRow> {
               child:
                   widget.cover ??
                   ColoredBox(
-                    color: c.surface2,
+                    color: colors.surface2,
                     child: Icon(
                       Icons.graphic_eq_rounded,
                       size: AppSizes.iconMd,
-                      color: c.text3,
+                      color: colors.text3,
                     ),
                   ),
             ),
@@ -113,7 +110,7 @@ class _AppListRowState extends State<AppListRow> {
                 Text(
                   widget.title,
                   style: AppText.title.copyWith(
-                    color: selected ? c.primary : c.text,
+                    color: selected ? colors.primary : colors.text,
                   ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
@@ -122,7 +119,7 @@ class _AppListRowState extends State<AppListRow> {
                   const SizedBox(height: AppSpacing.s1),
                   Text(
                     widget.subtitle!,
-                    style: AppText.caption.copyWith(color: c.text2),
+                    style: AppText.caption.copyWith(color: colors.text2),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
@@ -137,7 +134,7 @@ class _AppListRowState extends State<AppListRow> {
             const SizedBox(width: AppSpacing.s3),
             Text(
               widget.trailingTime!,
-              style: AppText.monoTime.copyWith(color: c.text2),
+              style: AppText.monoTime.copyWith(color: colors.text2),
             ),
           ],
         ],

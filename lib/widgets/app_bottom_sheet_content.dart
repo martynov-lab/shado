@@ -23,7 +23,7 @@ class AppBottomSheetContent extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final c = context.colors;
+    final colors = context.colors;
 
     return Container(
       // На планшете и десктопе лист не растягивается на всю ширину — читать
@@ -35,7 +35,7 @@ class AppBottomSheetContent extends StatelessWidget {
         ),
       ),
       decoration: BoxDecoration(
-        color: c.surface,
+        color: colors.surface,
         borderRadius: const BorderRadius.vertical(
           top: Radius.circular(AppRadii.xxl),
         ),
@@ -61,7 +61,7 @@ class AppBottomSheetContent extends StatelessWidget {
                     width: AppSizes.sheetHandleWidth,
                     height: AppSizes.sheetHandleHeight,
                     decoration: BoxDecoration(
-                      color: c.borderStrong,
+                      color: colors.borderStrong,
                       borderRadius: AppRadii.rPill,
                     ),
                   ),
@@ -69,7 +69,7 @@ class AppBottomSheetContent extends StatelessWidget {
                 const SizedBox(height: AppSpacing.s5),
               ],
               if (title case final text?) ...[
-                Text(text, style: AppText.h2.copyWith(color: c.text)),
+                Text(text, style: AppText.h2.copyWith(color: colors.text)),
                 const SizedBox(height: AppSpacing.s4),
               ],
               Flexible(child: child),

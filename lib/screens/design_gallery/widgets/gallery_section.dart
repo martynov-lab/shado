@@ -18,17 +18,17 @@ class GallerySection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final c = context.colors;
+    final colors = context.colors;
 
     return Padding(
       padding: const EdgeInsets.only(bottom: AppSpacing.s10),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(title, style: AppText.h1.copyWith(color: c.text)),
+          Text(title, style: AppText.h1.copyWith(color: colors.text)),
           if (caption case final text?) ...[
             const SizedBox(height: AppSpacing.s1),
-            Text(text, style: AppText.caption.copyWith(color: c.text3)),
+            Text(text, style: AppText.caption.copyWith(color: colors.text3)),
           ],
           const SizedBox(height: AppSpacing.s5),
           AppCard(child: child),

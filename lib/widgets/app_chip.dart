@@ -50,16 +50,24 @@ class _AppChipState extends State<AppChip> {
 
   @override
   Widget build(BuildContext context) {
-    final c = context.colors;
+    final colors = context.colors;
     final selected = widget.selected;
 
     final (Color background, Color foreground, Color borderColor) = switch ((
       selected,
       widget.style,
     )) {
-      (true, AppChipStyle.on) => (c.primary, c.primaryOn, c.primary),
-      (true, AppChipStyle.onSoft) => (c.primarySoft, c.primary, c.primarySoft),
-      (false, _) => (c.surface2, c.text2, c.border),
+      (true, AppChipStyle.on) => (
+        colors.primary,
+        colors.primaryOn,
+        colors.primary,
+      ),
+      (true, AppChipStyle.onSoft) => (
+        colors.primarySoft,
+        colors.primary,
+        colors.primarySoft,
+      ),
+      (false, _) => (colors.surface2, colors.text2, colors.border),
     };
 
     // Наведение и нажатие подмешиваем к заливке, чтобы не заводить отдельные
@@ -68,8 +76,8 @@ class _AppChipState extends State<AppChip> {
         ? AppOpacities.press
         : (_hovered ? AppOpacities.hover : 0.0);
     final tint = selected && widget.style == AppChipStyle.on
-        ? c.primaryOn
-        : c.primary;
+        ? colors.primaryOn
+        : colors.primary;
     final fill = overlayAlpha == 0
         ? background
         : Color.alphaBlend(tint.withValues(alpha: overlayAlpha), background);

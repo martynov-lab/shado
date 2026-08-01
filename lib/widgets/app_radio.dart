@@ -49,7 +49,7 @@ class _AppRadioState<T> extends State<AppRadio<T>> {
 
   @override
   Widget build(BuildContext context) {
-    final c = context.colors;
+    final colors = context.colors;
     final enabled = widget.isEnabled;
     final selected = widget.isSelected;
 
@@ -62,12 +62,12 @@ class _AppRadioState<T> extends State<AppRadio<T>> {
         width: AppSizes.radio,
         height: AppSizes.radio,
         decoration: BoxDecoration(
-          color: c.surface,
+          color: colors.surface,
           shape: BoxShape.circle,
           border: Border.all(
             color: selected
-                ? c.primary
-                : (_hovered ? c.primary : c.borderStrong),
+                ? colors.primary
+                : (_hovered ? colors.primary : colors.borderStrong),
             width: AppSizes.borderThick,
           ),
         ),
@@ -78,7 +78,7 @@ class _AppRadioState<T> extends State<AppRadio<T>> {
             width: selected ? AppSizes.radioDot : 0,
             height: selected ? AppSizes.radioDot : 0,
             decoration: BoxDecoration(
-              color: c.primary,
+              color: colors.primary,
               shape: BoxShape.circle,
             ),
           ),
@@ -96,7 +96,7 @@ class _AppRadioState<T> extends State<AppRadio<T>> {
               padding: const EdgeInsets.only(right: AppSpacing.s2),
               child: Text(
                 widget.label!,
-                style: AppText.body.copyWith(color: c.text),
+                style: AppText.body.copyWith(color: colors.text),
               ),
             ),
           ),

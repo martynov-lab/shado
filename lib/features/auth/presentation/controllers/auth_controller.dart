@@ -82,8 +82,8 @@ class AuthController extends Notifier<AuthState> {
         .watch(authRepositoryProvider)
         .sessionExpired
         .listen((_) {
-      state = const AuthState(status: AuthStatus.unauthenticated);
-    });
+          state = const AuthState(status: AuthStatus.unauthenticated);
+        });
     ref.onDispose(subscription.cancel);
     // Состояние на старте — `unknown`: пока refresh не проверен, роутер держит
     // заставку и не бросает пользователя на экран входа.
@@ -110,17 +110,15 @@ class AuthController extends Notifier<AuthState> {
   }
 
   Future<bool> signIn({required String email, required String password}) {
-    return _submit(() => ref.read(signInProvider)(
-      email: email,
-      password: password,
-    ));
+    return _submit(
+      () => ref.read(signInProvider)(email: email, password: password),
+    );
   }
 
   Future<bool> signUp({required String email, required String password}) {
-    return _submit(() => ref.read(signUpProvider)(
-      email: email,
-      password: password,
-    ));
+    return _submit(
+      () => ref.read(signUpProvider)(email: email, password: password),
+    );
   }
 
   /// Общая обвязка входа и регистрации: блокировка формы, разбор ошибок,

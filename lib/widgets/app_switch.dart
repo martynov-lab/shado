@@ -39,18 +39,18 @@ class _AppSwitchState extends State<AppSwitch> {
 
   @override
   Widget build(BuildContext context) {
-    final c = context.colors;
+    final colors = context.colors;
     final enabled = widget.isEnabled;
     final on = widget.value;
 
     final trackColor = on
-        ? (_hovered ? c.primaryHover : c.primary)
+        ? (_hovered ? colors.primaryHover : colors.primary)
         : (_hovered
               ? Color.alphaBlend(
-                  c.primary.withValues(alpha: AppOpacities.hover),
-                  c.waveOff,
+                  colors.primary.withValues(alpha: AppOpacities.hover),
+                  colors.waveOff,
                 )
-              : c.waveOff);
+              : colors.waveOff);
 
     final track = AppFocusRing(
       visible: _focused,
@@ -73,7 +73,7 @@ class _AppSwitchState extends State<AppSwitch> {
             width: AppSizes.switchThumb,
             height: AppSizes.switchThumb,
             decoration: BoxDecoration(
-              color: c.surface,
+              color: colors.surface,
               shape: BoxShape.circle,
               boxShadow: context.shadows.e1,
             ),
@@ -92,7 +92,7 @@ class _AppSwitchState extends State<AppSwitch> {
               padding: const EdgeInsets.only(right: AppSpacing.s2),
               child: Text(
                 widget.label!,
-                style: AppText.body.copyWith(color: c.text),
+                style: AppText.body.copyWith(color: colors.text),
               ),
             ),
           ),

@@ -9,7 +9,7 @@ class GalleryTypographySection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final c = context.colors;
+    final colors = context.colors;
 
     return GallerySection(
       title: 'Типографика',
@@ -21,31 +21,43 @@ class GalleryTypographySection extends StatelessWidget {
         children: [
           Text(
             'Display 40/800',
-            style: AppText.displayLg.copyWith(color: c.text),
+            style: AppText.displayLg.copyWith(color: colors.text),
           ),
           const SizedBox(height: AppSpacing.s2),
-          Text('Heading 1 — 28/700', style: AppText.h1.copyWith(color: c.text)),
+          Text(
+            'Heading 1 — 28/700',
+            style: AppText.h1.copyWith(color: colors.text),
+          ),
           const SizedBox(height: AppSpacing.s2),
-          Text('Heading 2 — 22/600', style: AppText.h2.copyWith(color: c.text)),
+          Text(
+            'Heading 2 — 22/600',
+            style: AppText.h2.copyWith(color: colors.text),
+          ),
           const SizedBox(height: AppSpacing.s2),
-          Text('Title — 17/700', style: AppText.title.copyWith(color: c.text)),
+          Text(
+            'Title — 17/700',
+            style: AppText.title.copyWith(color: colors.text),
+          ),
           const SizedBox(height: AppSpacing.s2),
           Text(
             'Body — 15/400. Shadowing — это когда ты повторяешь за диктором '
             'почти одновременно с ним.',
-            style: AppText.body.copyWith(color: c.text2),
+            style: AppText.body.copyWith(color: colors.text2),
           ),
           const SizedBox(height: AppSpacing.s2),
-          Text('LABEL — 13/600', style: AppText.label.copyWith(color: c.text2)),
+          Text(
+            'LABEL — 13/600',
+            style: AppText.label.copyWith(color: colors.text2),
+          ),
           const SizedBox(height: AppSpacing.s2),
           Text(
             'Caption — 12/500',
-            style: AppText.caption.copyWith(color: c.text3),
+            style: AppText.caption.copyWith(color: colors.text3),
           ),
           const SizedBox(height: AppSpacing.s2),
           Text(
             '00:42 / 04:17 · 1.25×',
-            style: AppText.monoTime.copyWith(color: c.text),
+            style: AppText.monoTime.copyWith(color: colors.text),
           ),
         ],
       ),

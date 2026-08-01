@@ -25,7 +25,6 @@ class DesignGalleryScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final c = context.colors;
     final pad = context.responsive(
       mobile: AppSpacing.s4,
       tablet: AppSpacing.s6,
@@ -33,7 +32,7 @@ class DesignGalleryScreen extends StatelessWidget {
     );
 
     return Scaffold(
-      backgroundColor: c.bg,
+      backgroundColor: context.colors.bg,
       body: SafeArea(
         child: Center(
           child: ConstrainedBox(

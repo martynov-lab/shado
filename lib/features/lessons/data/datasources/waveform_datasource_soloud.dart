@@ -121,8 +121,7 @@ class SoLoudWaveformDataSource implements WaveformDataSource {
       if (header.getUint32(0) != _cacheMagic) return null;
       final length = header.getUint32(4);
       // Кеш от другого разрешения или обрезанный — считаем заново.
-      if (length != resolution ||
-          bytes.lengthInBytes != 8 + length * 4) {
+      if (length != resolution || bytes.lengthInBytes != 8 + length * 4) {
         return null;
       }
       return Float32List.sublistView(bytes, 8);

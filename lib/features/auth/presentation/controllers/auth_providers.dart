@@ -22,7 +22,8 @@ final authRepositoryProvider = Provider<AuthRepository>((ref) {
   );
   // Интерсептор дёргает это, когда сервер отверг refresh: чужие устройства
   // остаются со своими сессиями, а это — выходит.
-  ref.read(apiClientProvider).onSessionExpired = repository.handleSessionExpired;
+  ref.read(apiClientProvider).onSessionExpired =
+      repository.handleSessionExpired;
   ref.onDispose(repository.dispose);
   return repository;
 });
