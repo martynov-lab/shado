@@ -46,6 +46,11 @@ dev_dependencies:
   json_serializable: ">=6.9.0 <6.12.0"
   flutter_lints: ^6.0.0
 
+  # Генераторы бренд-ассетов: запускаются вручную, в рантайме не участвуют.
+  # Иконки — dart run flutter_launcher_icons; сплеш — dart run flutter_native_splash:create.
+  flutter_launcher_icons: ^0.14.1
+  flutter_native_splash: ^2.4.1
+
 flutter:
   uses-material-design: true
 
@@ -82,4 +87,43 @@ flutter:
         - asset: assets/fonts/JetBrainsMono-Regular.ttf
         - asset: assets/fonts/JetBrainsMono-Medium.ttf
           weight: 500
+
+# Иконка приложения — из вектора на фирменном градиенте (violet → magenta → pink).
+# Перегенерировать: dart run flutter_launcher_icons
+flutter_launcher_icons:
+  image_path: "assets/branding/app_icon_1024.png"
+  android: "ic_launcher"
+  ios: true
+  remove_alpha_ios: true
+  min_sdk_android: 21
+  # Адаптивная иконка Android: фон-градиент + белый знак-волна.
+  adaptive_icon_background: "assets/branding/adaptive_background.png"
+  adaptive_icon_foreground: "assets/branding/adaptive_foreground.png"
+  adaptive_icon_monochrome: "assets/branding/adaptive_foreground.png" # themed icons, Android 13+
+  web:
+    generate: true
+    image_path: "assets/branding/Icon-512.png"
+    background_color: "#100E18"
+    theme_color: "#7C5CFF"
+  windows:
+    generate: true
+    image_path: "assets/branding/app_icon_1024.png"
+    icon_size: 256
+
+# Нативный сплеш: знак на тёмном фоне #100E18, показывается до движка.
+# Перегенерировать: dart run flutter_native_splash:create
+flutter_native_splash:
+  color: "#100E18"
+  color_dark: "#100E18"
+  image: assets/branding/splash_logo.png
+  image_dark: assets/branding/splash_logo.png
+  fullscreen: true
+  android: true
+  ios: true
+  web: false # для web сплеш рисуем Flutter-виджетом (SplashPage)
+  # Android 12+: система рисует иконку в круге на цветном фоне.
+  android_12:
+    image: assets/branding/splash_icon_android12.png
+    color: "#100E18"
+    icon_background_color: "#7C5CFF"
 
