@@ -98,6 +98,30 @@ final VoidCallback onTap;
 final ValueChanged<String> onTextChanged;
 ```
 
+**Локальные переменные** — осмысленным словом, а не одной буквой: `colors`,
+`segment`, `controller`, а не `c`, `s`, `ctrl`. И в переменную выносим только то,
+что читается больше одного раза; значение из единственного места берём по месту,
+без промежуточной переменной.
+
+```dart
+// bad — одна буква и вынос ради единственного обращения
+final c = context.colors;
+return AppIcon(AppIcons.check, color: c.primary);
+
+// good — читаем по месту
+return AppIcon(AppIcons.check, color: context.colors.primary);
+
+// good — colors нужен в нескольких местах, поэтому вынесен словом
+final colors = context.colors;
+return DecoratedBox(
+  decoration: BoxDecoration(
+    color: colors.surface,
+    border: Border.all(color: colors.border),
+  ),
+  child: child,
+);
+```
+
 ## Параметры и конструкторы
 
 Если параметров больше одного — они именованные и каждый с новой строки. То же
@@ -182,10 +206,10 @@ const Alignment a = .center;
 в рантайме.
 
 ```dart
-Color foreground(AppColors c) => switch (this) {
-  AppButtonVariant.primary => c.primaryOn,
-  AppButtonVariant.secondary => c.primary,
-  AppButtonVariant.ghost => c.text2,
+Color foreground(AppColors colors) => switch (this) {
+  AppButtonVariant.primary => colors.primaryOn,
+  AppButtonVariant.secondary => colors.primary,
+  AppButtonVariant.ghost => colors.text2,
 };
 ```
 

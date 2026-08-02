@@ -56,13 +56,16 @@ class MainShellSidebar extends ConsumerWidget {
                 child: MainShellBrand(showLabel: true, size: 38),
               ),
               const SizedBox(height: AppSpacing.s6),
-              _SidebarItem(
-                destination: MainShell.destinations.first,
-                selected: currentIndex == 0,
-                onTap: () => onSelected(0),
-              ),
+              for (final i in MainShell.sectionIndexes) ...[
+                _SidebarItem(
+                  destination: MainShell.destinations[i],
+                  selected: currentIndex == i,
+                  onTap: () => onSelected(i),
+                ),
+                const SizedBox(height: AppSpacing.s1),
+              ],
               if (canAdd) ...[
-                const SizedBox(height: AppSpacing.s5),
+                const SizedBox(height: AppSpacing.s4),
                 AppButton(
                   label: 'Добавить урок',
                   icon: Icons.add_rounded,

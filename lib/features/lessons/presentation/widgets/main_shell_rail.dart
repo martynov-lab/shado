@@ -43,12 +43,15 @@ class MainShellRail extends StatelessWidget {
             children: [
               const MainShellBrand(),
               const SizedBox(height: AppSpacing.s4),
-              _RailItem(
-                icon: MainShell.destinations.first.icon,
-                label: MainShell.destinations.first.label,
-                selected: currentIndex == 0,
-                onTap: () => onSelected(0),
-              ),
+              for (final i in MainShell.sectionIndexes) ...[
+                _RailItem(
+                  icon: MainShell.destinations[i].icon,
+                  label: MainShell.destinations[i].label,
+                  selected: currentIndex == i,
+                  onTap: () => onSelected(i),
+                ),
+                const SizedBox(height: AppSpacing.s2),
+              ],
               const Spacer(),
               if (canAdd)
                 AppIconButton(

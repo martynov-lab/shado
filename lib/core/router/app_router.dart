@@ -11,6 +11,8 @@ import '../../features/lessons/presentation/pages/home_page.dart';
 import '../../features/lessons/presentation/pages/lesson_page.dart';
 import '../../features/lessons/presentation/pages/main_shell.dart';
 import '../../features/lessons/presentation/pages/splash_page.dart';
+import '../../features/progress/presentation/pages/progress_page.dart';
+import '../../features/settings/presentation/pages/settings_page.dart';
 import '../../screens/design_gallery/design_gallery_screen.dart';
 
 final _rootNavigatorKey = GlobalKey<NavigatorState>();
@@ -108,6 +110,22 @@ final appRouterProvider = Provider<GoRouter>((ref) {
               GoRoute(
                 path: AddLessonPage.routePath,
                 builder: (context, state) => const AddLessonPage(),
+              ),
+            ],
+          ),
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: ProgressPage.routePath,
+                builder: (context, state) => const ProgressPage(),
+              ),
+            ],
+          ),
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: SettingsPage.routePath,
+                builder: (context, state) => const SettingsPage(),
               ),
             ],
           ),

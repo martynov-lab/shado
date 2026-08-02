@@ -20,7 +20,7 @@ class MainShellDestination {
 
 /// Каркас приложения: нижняя навигация на телефоне, вертикальный rail на
 /// планшете и sidebar на десктопе. Пункты ведут по веткам go_router — реальным
-/// разделам приложения (Уроки и Добавить).
+/// разделам приложения (Уроки, Добавить, Прогресс и Настройки).
 class MainShell extends ConsumerWidget {
   const MainShell({super.key, required this.navigationShell});
 
@@ -30,11 +30,19 @@ class MainShell extends ConsumerWidget {
   static const List<MainShellDestination> destinations = [
     MainShellDestination(icon: AppIcons.list, label: 'Уроки'),
     MainShellDestination(icon: AppIcons.plus, label: 'Добавить'),
+    MainShellDestination(icon: AppIcons.chart, label: 'Прогресс'),
+    MainShellDestination(icon: AppIcons.settings, label: 'Настройки'),
   ];
 
   /// Индекс ветки «Добавить»: её пункт виден только тем, кто вправе создавать
-  /// уроки.
+  /// уроки, и в rail/sidebar он оформлен кнопкой, а не обычным разделом.
   static const int addIndex = 1;
+
+  /// Индексы обычных разделов — всё, кроме «Добавить». По ним rail и sidebar
+  /// рисуют пункты меню.
+  static Iterable<int> get sectionIndexes =>
+      [for (var i = 0; i < destinations.length; i++) i]
+          .where((i) => i != addIndex);
 
   void _select(int index) => navigationShell.goBranch(
     index,

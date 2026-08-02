@@ -10,10 +10,11 @@
 4. [Данные и колбэки](#данные-и-колбэки)
 5. [Дизайн-система](#дизайн-система)
 6. [Компоновка](#компоновка)
-7. [Экран](#экран)
-8. [Навигация](#навигация)
-9. [Доступность и клавиатура](#доступность-и-клавиатура)
-10. [Форматирование данных](#форматирование-данных)
+7. [Адаптивные экраны](#адаптивные-экраны)
+8. [Экран](#экран)
+9. [Навигация](#навигация)
+10. [Доступность и клавиатура](#доступность-и-клавиатура)
+11. [Форматирование данных](#форматирование-данных)
 
 ## Один виджет — один файл
 
@@ -138,8 +139,6 @@ class SegmentTile extends StatelessWidget {
 import 'package:shado/theme/theme.dart';
 import 'package:shado/widgets/widgets.dart';
 
-final c = context.colors;
-
 AppButton(
   label: 'Создать урок',
   size: AppButtonSize.lg,
@@ -151,7 +150,7 @@ Padding(
   padding: const EdgeInsets.all(AppSpacing.s4),
   child: DecoratedBox(
     decoration: BoxDecoration(
-      color: c.surface,
+      color: context.colors.surface,
       borderRadius: AppRadii.rMd,
       boxShadow: context.shadows.e1,
     ),
@@ -167,6 +166,11 @@ Padding(
 * отступы и размеры — `AppSpacing`, `AppSizes`, `AppRadii`; «магические» 12, 16,
   24 не пишем;
 * типографика — `AppText`;
+* иконки — `AppIcon(AppIcons.play)`: SVG-набор из макетов в `assets/app_icons/`.
+  Размер и цвет берутся из `IconTheme`, как у `Icon`, или задаются токенами
+  (`AppSizes.iconMd`, `context.colors.*`). Компоненты `AppIconButton`,
+  `AppChip`, `AppBadge` пока принимают `IconData` (Material Icons) — их перевод
+  на набор делается отдельной задачей, а не попутно;
 * длительности анимаций — `AppDurations` через `context.motion(...)`, чтобы
   сработала настройка «убрать анимации»;
 * нужного компонента нет — сначала смотрим `lib/screens/design_gallery.dart` и
@@ -198,6 +202,38 @@ Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [AppButton(...)
   (`MediaQuery.textScalerOf(context)`), а не константой.
 * Списки — `ListView.builder`/`SliverList`, а не `Column` внутри
   `SingleChildScrollView`, когда элементов может быть много.
+
+## Адаптивные экраны
+
+Приложение работает на телефоне, планшете и десктопе. Раскладку под платформу
+выбирает `AppAdaptiveLayout` по ширине окна — брейкпоинты заданы в
+`AppBreakpoints` (`tablet = 600`, `desktop = 1024`):
+
+```dart
+AppAdaptiveLayout(
+  mobile: (context) => LessonMobileView(state: state),
+  tablet: (context) => LessonTabletView(state: state),
+  desktop: (context) => LessonDesktopView(state: state),
+);
+```
+
+* Обязателен только `mobile` — базовая раскладка. `tablet` и `desktop`
+  необязательны и падают на ближайшую меньшую (десктоп → планшет → телефон).
+  Экрану, которому хватает одной широкой раскладки, задаём её в `tablet`, а
+  `desktop` оставляем пустым.
+* Каждая раскладка — свой виджет в отдельном файле (`<screen>_mobile_view.dart`,
+  `_tablet_view.dart`, `_desktop_view.dart`), как любой другой виджет (см.
+  [Один виджет — один файл](#один-виджет--один-файл)). `AppAdaptiveLayout` строит
+  только выбранный вариант, поэтому соседние раскладки не собираются впустую.
+* Раскладки отличаются **компоновкой** (колонки, панели, отступы), а не данными
+  и логикой: состояние и колбэки одни и те же, их раздаёт экран выше
+  `AppAdaptiveLayout`. Образец — `AuthView` и его `AuthDesktopLayout /
+  AuthTabletLayout / AuthMobileLayout`.
+* Мелкое отличие (отступ, кегль, число колонок) без отдельного виджета берём
+  через `context.responsive(mobile: ..., tablet: ..., desktop: ...)` или флаги
+  `context.isMobile / isTablet / isDesktop`.
+* Контент на десктопе не растягиваем на всю ширину — ограничиваем
+  `AppBreakpoints.maxContent`, иначе строки текста становятся нечитаемо длинными.
 
 ## Экран
 

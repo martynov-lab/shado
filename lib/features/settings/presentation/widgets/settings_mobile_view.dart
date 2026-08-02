@@ -1,0 +1,56 @@
+import 'package:flutter/material.dart';
+
+import 'package:shado/theme/theme.dart';
+
+import 'appearance_settings_section.dart';
+import 'language_settings_section.dart';
+import 'learning_settings_section.dart';
+import 'playback_settings_section.dart';
+import 'settings_profile_card.dart';
+import 'storage_settings_section.dart';
+
+/// Настройки на телефоне: профиль и разделы одной колонкой с прокруткой.
+class SettingsMobileView extends StatelessWidget {
+  const SettingsMobileView({
+    super.key,
+    required this.name,
+    required this.email,
+    required this.level,
+  });
+
+  final String name;
+  final String email;
+  final String level;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.colors;
+
+    return SafeArea(
+      bottom: false,
+      child: ListView(
+        padding: const EdgeInsets.fromLTRB(
+          AppSpacing.s5,
+          AppSpacing.s5,
+          AppSpacing.s5,
+          AppSpacing.s6,
+        ),
+        children: [
+          Text('Настройки', style: AppText.h2.copyWith(color: colors.text)),
+          const SizedBox(height: AppSpacing.s5),
+          SettingsProfileCard(name: name, email: email, level: level),
+          const SizedBox(height: AppSpacing.s4),
+          const AppearanceSettingsSection(),
+          const SizedBox(height: AppSpacing.s4),
+          const PlaybackSettingsSection(),
+          const SizedBox(height: AppSpacing.s4),
+          const LearningSettingsSection(),
+          const SizedBox(height: AppSpacing.s4),
+          const LanguageSettingsSection(),
+          const SizedBox(height: AppSpacing.s4),
+          const StorageSettingsSection(),
+        ],
+      ),
+    );
+  }
+}
