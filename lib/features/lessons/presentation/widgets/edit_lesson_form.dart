@@ -2,9 +2,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'package:shado/theme/theme.dart';
+import 'package:shado/widgets/widgets.dart';
+
+import '../../../../core/constants/app_constants.dart';
 import '../controllers/edit_lesson_controller.dart';
 import 'edit_lesson_waveform.dart';
-import 'segment_text_field.dart';
+import 'lesson_section_card.dart';
+import 'segment_splitter/marked_text_controller.dart';
+import 'segment_splitter/segment_splitter_field.dart';
 
 /// Тело экрана правки: название, разбивка текста и волна с границами.
 class EditLessonForm extends ConsumerStatefulWidget {
@@ -23,7 +29,7 @@ class EditLessonForm extends ConsumerStatefulWidget {
 
 class _EditLessonFormState extends ConsumerState<EditLessonForm> {
   late final _titleController = TextEditingController(text: widget.state.title);
-  late final _textController = TextEditingController(text: widget.state.text);
+  late final _textController = MarkedTextController(text: widget.state.text);
 
   /// Фокус самого экрана: пока он здесь, пробел работает как play/pause.
   final _pageFocus = FocusNode(debugLabel: 'edit-lesson-page');
@@ -55,7 +61,6 @@ class _EditLessonFormState extends ConsumerState<EditLessonForm> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     final state = widget.state;
     final controller = _controller;
 
@@ -63,43 +68,61 @@ class _EditLessonFormState extends ConsumerState<EditLessonForm> {
       focusNode: _pageFocus,
       autofocus: true,
       onKeyEvent: _onKeyEvent,
-      child: SafeArea(
-        child: ListView(
-          padding: const EdgeInsets.all(16),
-          children: [
-            TextField(
-              controller: _titleController,
-              decoration: const InputDecoration(labelText: 'Название'),
-              textInputAction: TextInputAction.next,
-              onChanged: controller.setTitle,
+      child: ListView(
+        padding: const EdgeInsets.all(AppSpacing.s5),
+        children: [
+          AppTextField(
+            controller: _titleController,
+            label: 'Название',
+            onChanged: controller.setTitle,
+            textInputAction: TextInputAction.next,
+          ),
+          const SizedBox(height: AppSpacing.s5),
+          LessonSectionCard(
+            label: 'Аудио',
+            note: '— границы сегментов',
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                // Тронули волну — забираем фокус из текстового поля, иначе
+                // пробел так и останется пробелом.
+                Listener(
+                  onPointerDown: (_) => _pageFocus.requestFocus(),
+                  child: EditLessonWaveform(
+                    lessonId: widget.lessonId,
+                    state: state,
+                    onPlayPressed: controller.togglePlay,
+                    onSeek: controller.seek,
+                    onBoundariesChanged: controller.setBoundaries,
+                    onTrimChanged: controller.updateTrim,
+                    onTrimStart: controller.startTrim,
+                    onTrimApply: controller.applyTrim,
+                    onTrimCancel: controller.cancelTrim,
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.s3),
+                Text(
+                  _hint(state),
+                  style: AppText.caption.copyWith(color: context.colors.text3),
+                ),
+              ],
             ),
-            const SizedBox(height: 16),
-            SegmentTextField(
+          ),
+          const SizedBox(height: AppSpacing.s5),
+          LessonSectionCard(
+            label: 'Текст',
+            note: '— разбей на сегменты',
+            hint:
+                'Нажмите «Метка» и кликните в тексте, куда поставить '
+                'разделитель (или перетащите чип). Иглу можно перетащить или '
+                'убрать тапом. На сервер уходит текст с «$kSegmentDelimiter».',
+            child: SegmentSplitterField(
               controller: _textController,
               onChanged: controller.setText,
               segmentCount: state.segmentCount,
             ),
-            const SizedBox(height: 16),
-            // Тронули волну — забираем фокус из текстового поля, иначе пробел
-            // так и останется пробелом.
-            Listener(
-              onPointerDown: (_) => _pageFocus.requestFocus(),
-              child: EditLessonWaveform(
-                lessonId: widget.lessonId,
-                state: state,
-                onPlayPressed: controller.togglePlay,
-                onSeek: controller.seek,
-                onBoundariesChanged: controller.setBoundaries,
-                onTrimChanged: controller.updateTrim,
-                onTrimStart: controller.startTrim,
-                onTrimApply: controller.applyTrim,
-                onTrimCancel: controller.cancelTrim,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(_hint(state), style: theme.textTheme.bodySmall),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }

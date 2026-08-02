@@ -143,7 +143,9 @@ abstract final class AppTheme {
       wave: colors.waveOn,
       activeSegment: colors.primarySoft,
       boundary: colors.accent,
-      cursor: colors.danger,
+      // Белый ползунок как в макете; контраст на светлой волне добавляет
+      // подложка в самом painter'е.
+      cursor: const Color(0xFFFFFFFF),
       background: colors.surface2,
       trimHandle: colors.warning,
       // Обрезаемые края гасим цветом фона, а не чёрным: так они уходят на

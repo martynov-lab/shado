@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'package:shado/theme/theme.dart';
+
 import '../../../../core/network/api_exception.dart';
 import '../controllers/edit_lesson_controller.dart';
 import '../widgets/edit_lesson_form.dart';
+import '../widgets/lesson_editor_header.dart';
 import '../widgets/version_conflict_dialog.dart';
 import 'lesson_page.dart';
 
@@ -25,37 +28,41 @@ class EditLessonPage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final stateAsync = ref.watch(editLessonControllerProvider(lessonId));
+    final state = stateAsync.value;
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Правка урока'),
-        actions: [
-          if (stateAsync.value case final state?)
-            TextButton(
-              onPressed: state.canSave ? () => _save(context, ref) : null,
-              child: state.isSaving
-                  ? const SizedBox(
-                      height: 16,
-                      width: 16,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    )
-                  : const Text('Сохранить'),
+      backgroundColor: context.colors.bg,
+      body: SafeArea(
+        child: Column(
+          children: [
+            LessonEditorHeader(
+              title: 'Редактирование урока',
+              onBack: () => Navigator.of(context).pop(),
+              onCancel: () => Navigator.of(context).pop(),
+              primaryLabel: 'Сохранить',
+              onPrimary: (state?.canSave ?? false)
+                  ? () => _save(context, ref)
+                  : null,
+              primaryLoading: state?.isSaving ?? false,
             ),
-        ],
+            Expanded(
+              child: switch (stateAsync) {
+                AsyncError(:final error) => Center(
+                  child: Padding(
+                    padding: const EdgeInsets.all(32),
+                    child: Text('$error', textAlign: TextAlign.center),
+                  ),
+                ),
+                AsyncData(:final value) => EditLessonForm(
+                  lessonId: lessonId,
+                  state: value,
+                ),
+                _ => const Center(child: CircularProgressIndicator()),
+              },
+            ),
+          ],
+        ),
       ),
-      body: switch (stateAsync) {
-        AsyncError(:final error) => Center(
-          child: Padding(
-            padding: const EdgeInsets.all(32),
-            child: Text('$error', textAlign: TextAlign.center),
-          ),
-        ),
-        AsyncData(:final value) => EditLessonForm(
-          lessonId: lessonId,
-          state: value,
-        ),
-        _ => const Center(child: CircularProgressIndicator()),
-      },
     );
   }
 

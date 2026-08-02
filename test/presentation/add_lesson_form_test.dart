@@ -5,6 +5,8 @@ import 'package:shado/features/lessons/domain/entities/lesson_category.dart';
 import 'package:shado/features/lessons/presentation/controllers/add_lesson_controller.dart';
 import 'package:shado/features/lessons/presentation/controllers/lesson_providers.dart';
 import 'package:shado/features/lessons/presentation/pages/add_lesson_page.dart';
+import 'package:shado/theme/theme.dart';
+import 'package:shado/widgets/widgets.dart';
 
 /// Экран создания урока: выбор акцента, уровня и темы.
 ///
@@ -33,7 +35,7 @@ void main() {
     await tester.pumpWidget(
       UncontrolledProviderScope(
         container: container,
-        child: const MaterialApp(home: AddLessonPage()),
+        child: MaterialApp(theme: AppTheme.light(), home: const AddLessonPage()),
       ),
     );
     await tester.pumpAndSettle();
@@ -107,16 +109,12 @@ void main() {
 
   // Какие именно поля запирают кнопку, проверяет тест выше на `canSubmit`;
   // здесь — что форма с новыми списками по-прежнему целиком отрисовывается и
-  // кнопка приходит запертой.
+  // кнопка приходит запертой. Кнопка теперь в шапке — скроллить не нужно.
   testWidgets('на пустой форме кнопка создания заперта', (tester) async {
     await pumpForm(tester);
 
-    // Кнопка внизу формы, а `ListView` строит только видимое.
-    await tester.drag(find.byType(ListView), const Offset(0, -600));
-    await tester.pumpAndSettle();
-
-    final button = tester.widget<FilledButton>(
-      find.widgetWithText(FilledButton, 'Создать урок'),
+    final button = tester.widget<AppButton>(
+      find.widgetWithText(AppButton, 'Создать урок'),
     );
     expect(button.onPressed, isNull);
   });
@@ -153,7 +151,7 @@ void main() {
     await tester.pumpWidget(
       UncontrolledProviderScope(
         container: container,
-        child: const MaterialApp(home: AddLessonPage()),
+        child: MaterialApp(theme: AppTheme.light(), home: const AddLessonPage()),
       ),
     );
     await tester.pumpAndSettle();

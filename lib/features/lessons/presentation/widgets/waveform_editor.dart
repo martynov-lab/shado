@@ -54,6 +54,7 @@ class WaveformEditor extends StatefulWidget {
     this.showCursor = false,
     this.height = 140,
     this.showSegmentNumbers = true,
+    this.cornerRadius = kWaveCornerRadius,
   });
 
   /// Пики видимого отрезка: [peaks] разложены ровно по [view].
@@ -86,6 +87,9 @@ class WaveformEditor extends StatefulWidget {
   /// Номера кусков на волне: помогают сопоставить куски текста с аудио.
   final bool showSegmentNumbers;
 
+  /// Скругление карточки, по которому painter клипует волну.
+  final double cornerRadius;
+
   @override
   State<WaveformEditor> createState() => _WaveformEditorState();
 }
@@ -93,9 +97,15 @@ class WaveformEditor extends StatefulWidget {
 /// Высота полоски с временной шкалой сверху.
 const double _rulerHeight = 14;
 
-/// Кружок-ручка границы: центр под шкалой, у самого верха волны.
-const double _boundaryHandleY = _rulerHeight + 8;
-const double _boundaryHandleRadius = 6;
+/// Кружок-ручка границы рисуется чуть выше волны — выступая за верхний край
+/// карточки, как игла в макете, — но так, чтобы его центр оставался в зоне
+/// жестов и метку можно было взять прямо за кружок.
+const double _boundaryHandleDrawY = 2;
+const double _boundaryHandleRadius = 7;
+
+/// Скругление карточки волны. Волну клипует сам painter, поэтому кружки ручек
+/// могут выступать за верхний край карточки.
+const double kWaveCornerRadius = 14;
 
 /// Треугольная ручка ползунка у нижнего края волны.
 const double _playheadHandleHeight = 14;
@@ -106,10 +116,17 @@ const double _trimHandleWidth = 15;
 const double _trimHandleHeight = 30;
 
 class _WaveformEditorState extends State<WaveformEditor> {
-  /// Радиус, в котором ручка считается взятой. Заметно больше самой ручки:
-  /// палец толще кружка, но и не настолько, чтобы перехватывать перетаскивание
-  /// волны из середины.
+  /// Радиус, в котором ручка ползунка или обрезки считается взятой. Заметно
+  /// больше самой ручки: палец толще, но не настолько, чтобы перехватывать
+  /// перетаскивание волны из середины.
   static const double _handleGrabRadius = 22;
+
+  /// Метку границы берут широкой полосой у верха: по горизонтали — в пределах
+  /// [_boundaryGrabHalfWidth] от линии, по вертикали — от верха волны до
+  /// [_boundaryGrabBottom]. Так не нужно попадать точно по тонкой линии, а
+  /// середина волны по-прежнему остаётся под перетаскивание самой волны.
+  static const double _boundaryGrabHalfWidth = 22;
+  static const double _boundaryGrabBottom = 48;
 
   /// Пределы растяжения: дальше 200× секунда занимает пол-экрана и точность
   /// упирается уже в сами пики, а не в масштаб.
@@ -251,10 +268,6 @@ class _WaveformEditorState extends State<WaveformEditor> {
       _draggedPlayheadMs != null ||
       _draggedTrimEdge != null;
 
-  /// Центр кружка-ручки границы.
-  Offset _boundaryHandleCenter(int index) =>
-      Offset(_msToX(_boundaries[index]), _boundaryHandleY);
-
   /// Центр треугольной ручки ползунка.
   Offset get _playheadHandleCenter =>
       Offset(_msToX(_playheadMs), widget.height - _playheadHandleHeight / 2);
@@ -276,13 +289,16 @@ class _WaveformEditorState extends State<WaveformEditor> {
     if (details.pointerCount > 1) return;
     final point = details.localFocalPoint;
 
+    // Метку берут широкой полосой у верха: по вертикали — от кружка до
+    // [_boundaryGrabBottom], по горизонтали — ближайшая линия в пределах
+    // [_boundaryGrabHalfWidth]. Ниже полосы жест уходит в панораму волны.
     var nearest = -1;
     var nearestDistance = double.infinity;
-    if (!_isTrimming) {
+    if (!_isTrimming && point.dy <= _boundaryGrabBottom) {
       for (var i = 1; i < _boundaries.length - 1; i++) {
-        final distance = (_boundaryHandleCenter(i) - point).distance;
-        if (distance < nearestDistance) {
-          nearestDistance = distance;
+        final dx = (_msToX(_boundaries[i]) - point.dx).abs();
+        if (dx < nearestDistance) {
+          nearestDistance = dx;
           nearest = i;
         }
       }
@@ -317,7 +333,7 @@ class _WaveformEditorState extends State<WaveformEditor> {
       setState(() => _draggedPlayheadMs = _playheadMs);
       return;
     }
-    if (nearest > 0 && nearestDistance <= _handleGrabRadius) {
+    if (nearest > 0 && nearestDistance <= _boundaryGrabHalfWidth) {
       setState(() => _draggedIndex = nearest);
       _dragPointerX = point.dx;
     }
@@ -501,6 +517,7 @@ class _WaveformEditorState extends State<WaveformEditor> {
                 zoom: _zoom,
                 offset: _offset,
                 showSegmentNumbers: widget.showSegmentNumbers,
+                cornerRadius: widget.cornerRadius,
                 textDirection: Directionality.of(context),
               ),
             ),
@@ -527,6 +544,7 @@ class _WaveformPainter extends CustomPainter {
     required this.zoom,
     required this.offset,
     required this.showSegmentNumbers,
+    required this.cornerRadius,
     required this.textDirection,
   });
 
@@ -544,13 +562,25 @@ class _WaveformPainter extends CustomPainter {
   final double zoom;
   final double offset;
   final bool showSegmentNumbers;
+  final double cornerRadius;
   final TextDirection textDirection;
 
   @override
   void paint(Canvas canvas, Size size) {
-    final background = Paint()..color = colors.background;
-    canvas.drawRect(Offset.zero & size, background);
-    if (view.isEmpty) return;
+    // Волну клипуем сами — так карточке не нужен свой клип, и кружки ручек
+    // могут выступать за её верхний край.
+    canvas.save();
+    canvas.clipRRect(
+      RRect.fromRectAndRadius(
+        Offset.zero & size,
+        Radius.circular(cornerRadius),
+      ),
+    );
+    canvas.drawRect(Offset.zero & size, Paint()..color = colors.background);
+    if (view.isEmpty) {
+      canvas.restore();
+      return;
+    }
 
     final waveTop = _rulerHeight;
     final waveHeight = size.height - _rulerHeight;
@@ -560,12 +590,17 @@ class _WaveformPainter extends CustomPainter {
     _paintActiveSegment(canvas, size);
     _paintWave(canvas, size, centerY, halfHeight);
     _paintRuler(canvas, size);
-    _paintBoundaries(canvas, size);
+    _paintBoundaryLines(canvas, size);
     _paintSegmentNumbers(canvas, size);
     _paintTrim(canvas, size, centerY);
     _paintCursor(canvas, size);
     _paintScrollbar(canvas, size);
     _paintZoomLabel(canvas, size);
+    canvas.restore();
+
+    // Кружки-ручки границ рисуем вне клипа: они выступают над верхним краем
+    // карточки, как игла в макете.
+    _paintBoundaryHandles(canvas, size);
   }
 
   /// Ширина растянутой волны целиком; в окно шириной [viewportWidth] попадает
@@ -667,14 +702,15 @@ class _WaveformPainter extends CustomPainter {
     return candidates.last;
   }
 
-  void _paintBoundaries(Canvas canvas, Size size) {
+  /// Вертикальные линии границ — внутри клипа волны.
+  void _paintBoundaryLines(Canvas canvas, Size size) {
     // Во время обрезки метки кусков не трогают — показываем их бледнее, чтобы
     // не путались с метками обрезки.
     final alpha = trim == null ? 1.0 : 0.35;
     final edgePaint = Paint()
       ..color = colors.boundary.withValues(alpha: 0.4 * alpha)
       ..strokeWidth = 1;
-    final handlePaint = Paint()
+    final linePaint = Paint()
       ..color = colors.boundary.withValues(alpha: alpha)
       ..strokeWidth = 2;
 
@@ -687,16 +723,26 @@ class _WaveformPainter extends CustomPainter {
         canvas.drawLine(Offset(x, 0), Offset(x, size.height), edgePaint);
         continue;
       }
-      final isDragged = i == draggedIndex;
-      final paint = isDragged
+      final paint = i == draggedIndex
           ? (Paint()
               ..color = colors.boundary
               ..strokeWidth = 3)
-          : handlePaint;
+          : linePaint;
       canvas.drawLine(Offset(x, 0), Offset(x, size.height), paint);
-      // Кружок сверху — единственное место, за которое метку берут.
+    }
+  }
+
+  /// Кружки на верхнем конце линий — рисуются вне клипа, поэтому выступают за
+  /// верхний край карточки. За них же метку и тянут (захват — по верху линии).
+  void _paintBoundaryHandles(Canvas canvas, Size size) {
+    final alpha = trim == null ? 1.0 : 0.35;
+    for (var i = 1; i < boundaries.length - 1; i++) {
+      final rawX = _msToX(boundaries[i], size.width);
+      if (rawX < -8 || rawX > size.width + 8) continue;
+      final x = rawX.clamp(0.5, size.width - 0.5);
+      final isDragged = i == draggedIndex;
       canvas.drawCircle(
-        Offset(x, _boundaryHandleY),
+        Offset(x, _boundaryHandleDrawY),
         isDragged ? _boundaryHandleRadius + 2 : _boundaryHandleRadius,
         Paint()..color = colors.boundary.withValues(alpha: alpha),
       );
@@ -823,9 +869,17 @@ class _WaveformPainter extends CustomPainter {
     if (position == null) return;
     final x = _msToX(position, size.width);
     if (x < -12 || x > size.width + 12) return;
+    final strokeWidth = isPlayheadDragged ? 3.0 : 2.0;
+    // Курсор белый (как в макете), но на светлой волне белое теряется — поэтому
+    // под ним лёгкая тёмная подложка чуть шире линии.
+    final backing = Paint()
+      ..color = const Color(0x59000000)
+      ..strokeWidth = strokeWidth + 2
+      ..strokeCap = StrokeCap.round;
+    canvas.drawLine(Offset(x, 0), Offset(x, size.height), backing);
     final paint = Paint()
       ..color = colors.cursor
-      ..strokeWidth = isPlayheadDragged ? 3 : 2;
+      ..strokeWidth = strokeWidth;
     canvas.drawLine(Offset(x, 0), Offset(x, size.height), paint);
     if (!isPlayheadDraggable) return;
 
@@ -833,14 +887,19 @@ class _WaveformPainter extends CustomPainter {
     // ручками границ наверху.
     final width = isPlayheadDragged ? 13.0 : 10.0;
     final baseY = size.height - _playheadHandleHeight;
+    final triangle = Path()
+      ..moveTo(x - width / 2, size.height)
+      ..lineTo(x + width / 2, size.height)
+      ..lineTo(x, baseY)
+      ..close();
     canvas.drawPath(
-      Path()
-        ..moveTo(x - width / 2, size.height)
-        ..lineTo(x + width / 2, size.height)
-        ..lineTo(x, baseY)
-        ..close(),
-      Paint()..color = colors.cursor,
+      triangle,
+      Paint()
+        ..color = const Color(0x59000000)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 3,
     );
+    canvas.drawPath(triangle, Paint()..color = colors.cursor);
     if (isPlayheadDragged) {
       _paintLabel(
         canvas,
@@ -921,6 +980,7 @@ class _WaveformPainter extends CustomPainter {
         oldDelegate.zoom != zoom ||
         oldDelegate.offset != offset ||
         oldDelegate.showSegmentNumbers != showSegmentNumbers ||
+        oldDelegate.cornerRadius != cornerRadius ||
         oldDelegate.colors != colors ||
         !_sameBoundaries(oldDelegate.boundaries, boundaries);
   }

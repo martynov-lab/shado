@@ -97,7 +97,12 @@ class WaveformCard extends ConsumerWidget {
     );
     final card = Card(
       margin: margin,
-      clipBehavior: Clip.antiAlias,
+      // Клип не ставим: волну со скруглением рисует сам painter, зато кружки
+      // ручек границ могут выступать за верхний край карточки, как в макете.
+      clipBehavior: Clip.none,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.all(Radius.circular(kWaveCornerRadius)),
+      ),
       child: SizedBox(
         height: height,
         child: peaksAsync.when(
