@@ -20,7 +20,7 @@ class MainShellDestination {
 
 /// Каркас приложения: нижняя навигация на телефоне, вертикальный rail на
 /// планшете и sidebar на десктопе. Пункты ведут по веткам go_router — реальным
-/// разделам приложения (Уроки, Добавить, Прогресс и Настройки).
+/// разделам приложения (Главная, Уроки, Добавить, Прогресс и Настройки).
 class MainShell extends ConsumerWidget {
   const MainShell({super.key, required this.navigationShell});
 
@@ -28,6 +28,7 @@ class MainShell extends ConsumerWidget {
 
   /// Порядок совпадает с ветками [StatefulShellRoute] в роутере.
   static const List<MainShellDestination> destinations = [
+    MainShellDestination(icon: AppIcons.home, label: 'Главная'),
     MainShellDestination(icon: AppIcons.list, label: 'Уроки'),
     MainShellDestination(icon: AppIcons.plus, label: 'Добавить'),
     MainShellDestination(icon: AppIcons.chart, label: 'Прогресс'),
@@ -35,8 +36,9 @@ class MainShell extends ConsumerWidget {
   ];
 
   /// Индекс ветки «Добавить»: её пункт виден только тем, кто вправе создавать
-  /// уроки, и в rail/sidebar он оформлен кнопкой, а не обычным разделом.
-  static const int addIndex = 1;
+  /// уроки, и в rail/sidebar он оформлен кнопкой, а не обычным разделом. В
+  /// нижней навигации телефона он по центру приподнятой кнопкой (FAB).
+  static const int addIndex = 2;
 
   /// Индексы обычных разделов — всё, кроме «Добавить». По ним rail и sidebar
   /// рисуют пункты меню.

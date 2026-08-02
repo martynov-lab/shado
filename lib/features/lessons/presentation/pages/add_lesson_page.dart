@@ -19,7 +19,7 @@ import '../widgets/lesson_file_chip.dart';
 import '../widgets/lesson_section_card.dart';
 import '../widgets/segment_splitter/marked_text_controller.dart';
 import '../widgets/segment_splitter/segment_splitter_field.dart';
-import 'home_page.dart';
+import '../../../home/presentation/pages/home_page.dart';
 import 'lesson_page.dart';
 
 class AddLessonPage extends ConsumerStatefulWidget {

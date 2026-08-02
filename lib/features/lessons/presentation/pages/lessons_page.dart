@@ -14,13 +14,13 @@ import '../widgets/lessons_mobile_layout.dart';
 import '../widgets/lessons_tablet_layout.dart';
 import 'lesson_page.dart';
 
-/// Список уроков — стартовый экран. Данные и фильтрацию держат провайдеры,
+/// Список уроков — раздел «Уроки». Данные и фильтрацию держат провайдеры,
 /// раскладку выбирает [AppAdaptiveLayout]. Каркас (Scaffold, фон, навигация) —
 /// у [MainShell].
-class HomePage extends ConsumerWidget {
-  const HomePage({super.key});
+class LessonsPage extends ConsumerWidget {
+  const LessonsPage({super.key});
 
-  static const String routePath = '/home';
+  static const String routePath = '/lessons';
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {

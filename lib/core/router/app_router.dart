@@ -5,10 +5,11 @@ import 'package:go_router/go_router.dart';
 import '../../features/admin/presentation/pages/users_page.dart';
 import '../../features/auth/presentation/controllers/auth_controller.dart';
 import '../../features/auth/presentation/pages/login_page.dart';
+import '../../features/home/presentation/pages/home_page.dart';
 import '../../features/lessons/presentation/pages/add_lesson_page.dart';
 import '../../features/lessons/presentation/pages/edit_lesson_page.dart';
-import '../../features/lessons/presentation/pages/home_page.dart';
 import '../../features/lessons/presentation/pages/lesson_page.dart';
+import '../../features/lessons/presentation/pages/lessons_page.dart';
 import '../../features/lessons/presentation/pages/main_shell.dart';
 import '../../features/lessons/presentation/pages/splash_page.dart';
 import '../../features/progress/presentation/pages/progress_page.dart';
@@ -102,6 +103,14 @@ final appRouterProvider = Provider<GoRouter>((ref) {
               GoRoute(
                 path: HomePage.routePath,
                 builder: (context, state) => const HomePage(),
+              ),
+            ],
+          ),
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: LessonsPage.routePath,
+                builder: (context, state) => const LessonsPage(),
               ),
             ],
           ),
