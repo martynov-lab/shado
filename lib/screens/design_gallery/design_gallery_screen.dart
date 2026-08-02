@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 
 import 'package:shado/screens/design_gallery/sections/gallery_buttons_section.dart';
 import 'package:shado/screens/design_gallery/sections/gallery_chips_section.dart';
@@ -33,6 +34,15 @@ class DesignGalleryScreen extends StatelessWidget {
 
     return Scaffold(
       backgroundColor: context.colors.bg,
+      // Шапку показываем только когда есть куда вернуться: витрину открывают и
+      // как стартовый экран, там пустой бар со стрелкой был бы лишним.
+      appBar: context.canPop()
+          ? AppBar(
+              backgroundColor: context.colors.bg,
+              elevation: 0,
+              scrolledUnderElevation: 0,
+            )
+          : null,
       body: SafeArea(
         child: Center(
           child: ConstrainedBox(
