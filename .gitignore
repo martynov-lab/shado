@@ -46,3 +46,6 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+
+# Секреты доставки в Telegram — токен бота в репозиторий не кладём.
+installer/telegram.env

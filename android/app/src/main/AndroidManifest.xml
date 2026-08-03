@@ -1,4 +1,8 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Доступ в сеть нужен release-сборке: Flutter подставляет это разрешение
+         сам только в debug/profile-манифесты, а релиз собирается по этому.
+         Без него установленный APK не может ходить на сервер — «Нет связи». -->
+    <uses-permission android:name="android.permission.INTERNET"/>
     <application
         android:label="shado"
         android:name="${applicationName}"
