@@ -22,7 +22,11 @@ String segmentNumber(int index) => (index + 1).toString().padLeft(2, '0');
 
 /// Границы сегмента «0:04–0:12» (минуты:секунды, без долей).
 String segmentTimecodes(Segment segment) =>
-    '${_clock(segment.startMs)}–${_clock(segment.endMs)}';
+    rangeTimecodes(segment.startMs, segment.endMs);
+
+/// Границы отрезка «0:04–0:20» по началу первого и концу последнего куска.
+String rangeTimecodes(int startMs, int endMs) =>
+    '${_clock(startMs)}–${_clock(endMs)}';
 
 String _clock(int milliseconds) {
   final total = milliseconds < 0 ? 0 : milliseconds;

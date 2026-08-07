@@ -52,7 +52,7 @@ class LessonTranscriptPanel extends ConsumerWidget {
           ),
           const SizedBox(height: AppSpacing.s3),
           Text(
-            state.currentSegment.text,
+            state.playerText,
             style: AppText.body.copyWith(
               fontSize: 18,
               height: 1.6,

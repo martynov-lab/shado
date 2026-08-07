@@ -92,8 +92,11 @@ class _SegmentsSheetButton extends ConsumerWidget {
           onTap: () => showAppBottomSheet<void>(
             context: context,
             title: 'Сегменты',
-            builder: (context) =>
-                LessonSegmentsPanel(lessonId: lessonId, shrinkWrap: true),
+            builder: (sheetContext) => LessonSegmentsPanel(
+              lessonId: lessonId,
+              shrinkWrap: true,
+              onClose: () => Navigator.of(sheetContext).pop(),
+            ),
           ),
           child: Padding(
             padding: const EdgeInsets.all(AppSpacing.s4),

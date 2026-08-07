@@ -186,13 +186,17 @@ void main() {
         const SegmentRange(1, 2),
       );
 
-      // Включённый повтор сам и запускает выделение.
-      await controller.toggleSelectionLoop();
+      // Включаем повтор, выходим из режима выбора (отрезок остаётся заряжен в
+      // плеер) и запускаем его кнопкой плеера: он крутится по кругу как единый
+      // фрагмент.
+      controller.toggleLoop();
+      controller.finishSelecting();
+      await controller.togglePlayCurrent();
       final player = container.read(lessonAudioPlayerProvider(lessonId));
 
       // Два круга по 2000 мс с запасом на разгон.
       final trace = await tracePositions(player, 5200);
-      await controller.togglePlaySelection();
+      await controller.togglePlayCurrent();
 
       // Отбрасываем разгон: до первого seek позиция ещё стоит в нуле.
       final started = trace.indexWhere((ms) => ms >= 1000);

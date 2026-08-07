@@ -28,17 +28,16 @@ class LessonPlayerWaveform extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    // Границы текущего сегмента и признак «играет» — перестраиваемся только при
-    // их смене, не на каждом тике позиции.
+    // Границы показанного отрезка и признак «играет» — перестраиваемся только
+    // при их смене, не на каждом тике позиции.
     final segment = ref.watch(
       lessonControllerProvider(lessonId).select((async) {
         final state = async.value;
         if (state == null) return null;
-        final current = state.currentSegment;
         return (
-          start: current.startMs,
-          end: current.endMs,
-          playing: state.isCurrentPlaying,
+          start: state.playerStartMs,
+          end: state.playerEndMs,
+          playing: state.isPlayerPlaying,
         );
       }),
     );

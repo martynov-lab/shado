@@ -28,7 +28,11 @@ class LessonPlayerPanel extends ConsumerWidget {
     final controller = ref.read(lessonControllerProvider(lessonId).notifier);
 
     final fg = lessonPlayerForeground;
-    final segment = state.currentSegment;
+    final range = state.playerRange;
+    // Для одного куска — «Сегмент 03», для отрезка — «Сегменты 03–05».
+    final rangeLabel = range.isSingle
+        ? 'Сегмент ${segmentNumber(range.start)}'
+        : 'Сегменты ${segmentNumber(range.start)}–${segmentNumber(range.end)}';
 
     return Container(
       padding: const EdgeInsets.all(AppSpacing.s6),
@@ -45,8 +49,8 @@ class LessonPlayerPanel extends ConsumerWidget {
             children: [
               Expanded(
                 child: Text(
-                  'Сегмент ${segmentNumber(state.currentIndex)} · '
-                  '${segmentTimecodes(segment)}',
+                  '$rangeLabel · '
+                  '${rangeTimecodes(state.playerStartMs, state.playerEndMs)}',
                   style: AppText.label.copyWith(
                     color: fg.withValues(alpha: 0.85),
                   ),
@@ -62,13 +66,13 @@ class LessonPlayerPanel extends ConsumerWidget {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                formatPosition(segment.startMs),
+                formatPosition(state.playerStartMs),
                 style: AppText.monoTime.copyWith(
                   color: fg.withValues(alpha: 0.6),
                 ),
               ),
               Text(
-                formatPosition(segment.endMs),
+                formatPosition(state.playerEndMs),
                 style: AppText.monoTime.copyWith(
                   color: fg.withValues(alpha: 0.6),
                 ),
@@ -90,8 +94,8 @@ class LessonPlayerPanel extends ConsumerWidget {
                 onTap: state.canGoPrevious ? controller.previous : null,
               ),
               _TransportButton(
-                icon: state.isCurrentPlaying ? AppIcons.pause : AppIcons.play,
-                semanticLabel: state.isCurrentPlaying ? 'Стоп' : 'Играть',
+                icon: state.isPlayerPlaying ? AppIcons.pause : AppIcons.play,
+                semanticLabel: state.isPlayerPlaying ? 'Стоп' : 'Играть',
                 background: colors.primary,
                 foreground: colors.primaryOn,
                 size: AppSizes.controlLg + AppSpacing.s2,
@@ -111,14 +115,14 @@ class LessonPlayerPanel extends ConsumerWidget {
               ),
               _TransportButton(
                 icon: AppIcons.loop,
-                semanticLabel: state.isCurrentLooped
+                semanticLabel: state.isLooped
                     ? 'Выключить повтор'
-                    : 'Повторять сегмент',
-                background: state.isCurrentLooped
+                    : 'Повторять',
+                background: state.isLooped
                     ? colors.primary.withValues(alpha: 0.35)
                     : fg.withValues(alpha: 0.08),
                 foreground: fg,
-                onTap: controller.toggleLoopCurrent,
+                onTap: controller.toggleLoop,
               ),
             ],
           ),

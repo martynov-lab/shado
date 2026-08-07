@@ -20,10 +20,16 @@ class LessonSegmentsPanel extends ConsumerWidget {
     super.key,
     required this.lessonId,
     this.shrinkWrap = false,
+    this.onClose,
   });
 
   final String lessonId;
   final bool shrinkWrap;
+
+  /// Закрыть панель, когда она сделала своё дело: тап по одному сегменту или
+  /// «Готово» с закреплённым отрезком. Есть только у мобильного листа —
+  /// постоянная боковая панель не закрывается.
+  final VoidCallback? onClose;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -44,7 +50,11 @@ class LessonSegmentsPanel extends ConsumerWidget {
         isPlaying: state.isSegmentPlaying(index),
         isSelecting: state.isSelecting,
         isSelected: state.isSegmentSelected(index),
-        onPressed: () => controller.goToSegment(index),
+        // Тап по одному сегменту заряжает его и закрывает лист (на мобиле).
+        onPressed: () {
+          controller.goToSegment(index);
+          onClose?.call();
+        },
         onSelectPressed: () => controller.toggleSelection(index),
       ),
     );
@@ -69,7 +79,14 @@ class LessonSegmentsPanel extends ConsumerWidget {
                     : controller.clearSelection,
               ),
               const SizedBox(width: AppSpacing.s4),
-              _ToolLink(label: 'Готово', onTap: controller.stopSelecting),
+              _ToolLink(
+                label: 'Готово',
+                // Отрезок уже заряжен в плеер — выходим из режима и закрываем
+                // лист, играть будет кнопка плеера.
+                onTap: () {
+                  if (controller.finishSelecting()) onClose?.call();
+                },
+              ),
             ] else
               _ToolLink(
                 label: 'Выбрать несколько',
@@ -92,25 +109,14 @@ class LessonSegmentsPanel extends ConsumerWidget {
               ),
               AppIconButton(
                 icon: Icons.repeat_rounded,
-                semanticLabel: state.isSelectionLooped
+                semanticLabel: state.isLooped
                     ? 'Выключить повтор выбранного'
                     : 'Повторять выбранное',
-                variant: state.isSelectionLooped
+                variant: state.isLooped
                     ? AppButtonVariant.secondary
                     : AppButtonVariant.ghost,
                 size: AppButtonSize.sm,
-                onPressed: controller.toggleSelectionLoop,
-              ),
-              const SizedBox(width: AppSpacing.s2),
-              AppButton(
-                label: state.isSelectionPlaying
-                    ? 'Стоп'
-                    : 'Проиграть (${selection.length})',
-                icon: state.isSelectionPlaying
-                    ? Icons.stop_rounded
-                    : Icons.play_arrow_rounded,
-                size: AppButtonSize.sm,
-                onPressed: controller.togglePlaySelection,
+                onPressed: controller.toggleLoop,
               ),
             ],
           ),

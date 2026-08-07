@@ -46,10 +46,10 @@ class LessonState {
     required this.speed,
     this.activeRange,
     this.isPlaying = false,
-    this.loopedSegments = const {},
+    this.isLooped = false,
     this.isSelecting = false,
     this.selection,
-    this.isSelectionLooped = false,
+    this.committedRange,
     this.focusedIndex,
   });
 
@@ -62,9 +62,9 @@ class LessonState {
 
   final bool isPlaying;
 
-  /// Индексы кусков с включённым зацикливанием: тумблер на самой плитке. У
-  /// выбранного отрезка свой тумблер — [isSelectionLooped].
-  final Set<int> loopedSegments;
+  /// Один тумблер повтора на весь плеер: держится при переходе между кусками и
+  /// применяется к тому, что заряжено сейчас — куску или закреплённому отрезку.
+  final bool isLooped;
 
   /// Включён режим выбора: на плитках появляются галочки, а тап по плитке
   /// набирает выделение. Вне режима галочки не занимают место перед текстом.
@@ -73,7 +73,10 @@ class LessonState {
   /// Выбранные куски: только соседние, зато играются подряд одним фрагментом.
   final SegmentRange? selection;
 
-  final bool isSelectionLooped;
+  /// Закреплённый в плеере отрезок из нескольких кусков: показывает их общий
+  /// текст и играет общий фрагмент. `null` — плеер показывает один кусок
+  /// [currentIndex].
+  final SegmentRange? committedRange;
 
   /// Кусок под клавиатурой: по нему ходят стрелки, его играет пробел. `null` —
   /// клавиатурой ещё не пользовались.
@@ -91,19 +94,34 @@ class LessonState {
 
   Segment get currentSegment => lesson.segments[currentIndex];
 
-  bool get isCurrentPlaying => isSegmentPlaying(currentIndex);
+  /// Что показывает плеер: закреплённый отрезок или один текущий кусок.
+  SegmentRange get playerRange =>
+      committedRange ?? SegmentRange.single(currentIndex);
 
-  bool get isCurrentLooped => isSegmentLooped(currentIndex);
+  /// Общий текст показанного отрезка: тексты его кусков подряд через пробел.
+  String get playerText {
+    final range = playerRange;
+    final segments = lesson.segments;
+    return [
+      for (var i = range.start; i <= range.end && i < segments.length; i++)
+        segments[i].text,
+    ].join(' ');
+  }
 
-  bool get canGoPrevious => currentIndex > 0;
+  int get playerStartMs => lesson.segments[playerRange.start].startMs;
 
-  bool get canGoNext => currentIndex < lesson.segmentCount - 1;
+  int get playerEndMs => lesson.segments[playerRange.end].endMs;
+
+  /// Плеер играет ровно то, что показывает, — а не кусок мимо показанного.
+  bool get isPlayerPlaying => isPlaying && activeRange == playerRange;
+
+  bool get canGoPrevious => playerRange.start > 0;
+
+  bool get canGoNext => playerRange.end < lesson.segmentCount - 1;
 
   bool isSegmentActive(int index) => activeRange?.contains(index) ?? false;
 
   bool isSegmentPlaying(int index) => isPlaying && isSegmentActive(index);
-
-  bool isSegmentLooped(int index) => loopedSegments.contains(index);
 
   bool isSegmentSelected(int index) => selection?.contains(index) ?? false;
 
@@ -126,11 +144,12 @@ class LessonState {
     SegmentRange? activeRange,
     bool clearActiveRange = false,
     bool? isPlaying,
-    Set<int>? loopedSegments,
+    bool? isLooped,
     bool? isSelecting,
     SegmentRange? selection,
     bool clearSelection = false,
-    bool? isSelectionLooped,
+    SegmentRange? committedRange,
+    bool clearCommittedRange = false,
     int? focusedIndex,
   }) {
     return LessonState(
@@ -138,10 +157,12 @@ class LessonState {
       speed: speed ?? this.speed,
       activeRange: clearActiveRange ? null : (activeRange ?? this.activeRange),
       isPlaying: isPlaying ?? this.isPlaying,
-      loopedSegments: loopedSegments ?? this.loopedSegments,
+      isLooped: isLooped ?? this.isLooped,
       isSelecting: isSelecting ?? this.isSelecting,
       selection: clearSelection ? null : (selection ?? this.selection),
-      isSelectionLooped: isSelectionLooped ?? this.isSelectionLooped,
+      committedRange: clearCommittedRange
+          ? null
+          : (committedRange ?? this.committedRange),
       focusedIndex: focusedIndex ?? this.focusedIndex,
     );
   }
@@ -161,8 +182,10 @@ class LessonController extends AsyncNotifier<LessonState> {
   /// Скорость, флаги loop и точка отсчёта выделения живут в контроллере: они
   /// переживают пересборку [build], в отличие от состояния.
   double _speed = kNormalSpeed;
-  final Set<int> _loopedSegments = <int>{};
-  bool _selectionLooped = false;
+
+  /// Один тумблер повтора на весь плеер: он держится при переходе между кусками
+  /// и применяется к тому, что заряжено сейчас (кусок или закреплённый отрезок).
+  bool _loopEnabled = false;
 
   /// Кусок, с которого начали выделять: Shift + стрелки растят выделение от
   /// него в обе стороны.
@@ -217,20 +240,18 @@ class LessonController extends AsyncNotifier<LessonState> {
     // Порог пройденности понадобится при проверке «пройдено» — прогреваем кеш.
     ref.read(completionRepsProvider);
     // Досылаем накопленную активность периодически и при уходе с экрана.
+    // Репортёр захватываем сейчас: в onDispose обращаться к ref уже нельзя
+    // (Riverpod 3 это запрещает), а досыл при уходе должен пройти по живой ссылке.
+    final reporter = _reporter;
     _flushTimer = Timer.periodic(
       const Duration(seconds: 30),
-      (_) => _reporter.flush(lessonId: lessonId),
+      (_) => reporter.flush(lessonId: lessonId),
     );
     ref.onDispose(() {
       _flushTimer?.cancel();
-      unawaited(_flushOnLeave());
+      unawaited(_flushOnLeave(reporter));
     });
-    return LessonState(
-      lesson: lesson,
-      speed: _speed,
-      loopedSegments: Set.unmodifiable(_loopedSegments),
-      isSelectionLooped: _selectionLooped,
-    );
+    return LessonState(lesson: lesson, speed: _speed, isLooped: _loopEnabled);
   }
 
   void _onPlayerState(PlayerState playerState) {
@@ -330,15 +351,16 @@ class LessonController extends AsyncNotifier<LessonState> {
   }
 
   /// Финализирует текущий интервал прослушивания и досылает активность при
-  /// уходе с экрана.
-  Future<void> _flushOnLeave() async {
+  /// уходе с экрана. Репортёр приходит извне: во время dispose читать его из
+  /// `ref` уже нельзя.
+  Future<void> _flushOnLeave(ProgressReporter reporter) async {
     final started = _playStartedAt;
     _playStartedAt = null;
     if (started != null) {
       final ms = DateTime.now().difference(started).inMilliseconds;
-      if (ms > 0) await _reporter.addListened(ms);
+      if (ms > 0) await reporter.addListened(ms);
     }
-    await _reporter.flush(lessonId: lessonId);
+    await reporter.flush(lessonId: lessonId);
   }
 
   /// Ставит дорожку на начало отрезка: новый круг, если [play], иначе стоп там,
@@ -365,17 +387,22 @@ class LessonController extends AsyncNotifier<LessonState> {
 
   // --- Воспроизведение -------------------------------------------------------
 
+  /// Пуск или остановка отрезка [range]: если он уже заряжен — тумблер, иначе
+  /// заряжаем и играем с начала.
+  Future<void> _togglePlayRange(LessonState current, SegmentRange range) async {
+    if (current.activeRange != range) {
+      await _start(current, range, loop: _loopEnabled);
+      return;
+    }
+    await _toggleActive(current);
+  }
+
   /// Тумблер «играть / остановить» для куска. Запуск другого куска
   /// останавливает текущий.
   Future<void> togglePlay(int index) async {
     final current = state.value;
     if (current == null) return;
-    final range = SegmentRange.single(index);
-    if (current.activeRange != range) {
-      await _start(current, range, loop: _loopedSegments.contains(index));
-      return;
-    }
-    await _toggleActive(current);
+    await _togglePlayRange(current, SegmentRange.single(index));
   }
 
   /// Тумблер для выбранного отрезка: играет его подряд, одним фрагментом.
@@ -383,14 +410,10 @@ class LessonController extends AsyncNotifier<LessonState> {
     final current = state.value;
     final selection = current?.selection;
     if (current == null || selection == null) return;
-    if (current.activeRange != selection) {
-      await _start(current, selection, loop: _selectionLooped);
-      return;
-    }
-    await _toggleActive(current);
+    await _togglePlayRange(current, selection);
   }
 
-  /// Пробел: играет выбранное, а если выбора нет — кусок под фокусом.
+  /// Пробел: играет набранный отрезок, а иначе — то, что показывает плеер.
   Future<void> togglePlayFocused() async {
     final current = state.value;
     if (current == null) return;
@@ -399,39 +422,35 @@ class LessonController extends AsyncNotifier<LessonState> {
       await togglePlaySelection();
       return;
     }
-    await togglePlay(selection?.start ?? current.focusedIndex ?? 0);
+    await togglePlayCurrent();
   }
 
-  /// Играет/останавливает текущий кусок — большая кнопка на панели плеера.
+  /// Играет/останавливает то, что показывает плеер (кусок или закреплённый
+  /// отрезок) — большая кнопка на панели плеера.
   Future<void> togglePlayCurrent() async {
     final current = state.value;
     if (current == null) return;
-    await togglePlay(current.currentIndex);
+    await _togglePlayRange(current, current.playerRange);
   }
 
-  /// Зацикливание текущего куска — тумблер на панели плеера.
-  Future<void> toggleLoopCurrent() async {
-    final current = state.value;
-    if (current == null) return;
-    await toggleLoop(current.currentIndex);
-  }
-
-  /// Переход к куску по индексу — тап по строке сегмента, а также prev/next.
-  /// Если что-то играло, новый кусок тоже заиграет (и курсор дорожки поедет по
-  /// нему); иначе кусок просто заряжается, а курсор встаёт в его начало.
+  /// Переход к одному куску — тап по строке сегмента, а также prev/next. Снимает
+  /// закреплённый отрезок: плеер показывает этот кусок. Если что-то играло,
+  /// новый кусок тоже заиграет (и курсор дорожки поедет по нему); иначе кусок
+  /// просто заряжается, а курсор встаёт в его начало.
   Future<void> goToSegment(int index) async {
     final current = state.value;
     if (current == null) return;
     if (index < 0 || index >= current.lesson.segmentCount) return;
-    if (index == current.currentIndex) return;
-    final wasPlaying = current.isCurrentPlaying;
+    if (index == current.currentIndex && current.committedRange == null) return;
+    final wasPlaying = current.isPlayerPlaying;
     setFocus(index);
     if (wasPlaying) await togglePlay(index);
   }
 
-  Future<void> next() => goToSegment((state.value?.currentIndex ?? 0) + 1);
+  Future<void> next() => goToSegment((state.value?.playerRange.end ?? 0) + 1);
 
-  Future<void> previous() => goToSegment((state.value?.currentIndex ?? 0) - 1);
+  Future<void> previous() =>
+      goToSegment((state.value?.playerRange.start ?? 0) - 1);
 
   /// Переключает скорость между нормальной и медленной — чип на панели плеера.
   Future<void> cycleSpeed() async {
@@ -494,38 +513,15 @@ class LessonController extends AsyncNotifier<LessonState> {
     _loadedPath = audioPath;
   }
 
-  Future<void> toggleLoop(int index) async {
+  /// Тумблер повтора плеера: единый для куска и закреплённого отрезка. Держится
+  /// при переходе между кусками и на лету включается/выключается для того, что
+  /// заряжено сейчас.
+  void toggleLoop() {
     final current = state.value;
     if (current == null) return;
-    final enabled = !_loopedSegments.contains(index);
-    if (enabled) {
-      _loopedSegments.add(index);
-    } else {
-      _loopedSegments.remove(index);
-    }
-    if (current.activeRange == SegmentRange.single(index)) {
-      _activeLooped = enabled;
-    }
-    state = AsyncValue.data(
-      current.copyWith(loopedSegments: Set.unmodifiable(_loopedSegments)),
-    );
-  }
-
-  /// Зацикливание выбранного отрезка. На лету, если он уже играет.
-  Future<void> toggleSelectionLoop() async {
-    final current = state.value;
-    final selection = current?.selection;
-    if (current == null || selection == null) return;
-    _selectionLooped = !_selectionLooped;
-    state = AsyncValue.data(
-      current.copyWith(isSelectionLooped: _selectionLooped),
-    );
-    if (current.activeRange == selection) {
-      _activeLooped = _selectionLooped;
-      return;
-    }
-    // Отрезок ещё не заряжен — включённый повтор сразу и запускаем.
-    if (_selectionLooped) await togglePlaySelection();
+    _loopEnabled = !_loopEnabled;
+    if (current.activeRange != null) _activeLooped = _loopEnabled;
+    state = AsyncValue.data(current.copyWith(isLooped: _loopEnabled));
   }
 
   /// Скорость на весь урок: применяется на лету и к последующим запускам.
@@ -557,21 +553,58 @@ class LessonController extends AsyncNotifier<LessonState> {
     );
   }
 
-  /// Тап по куску в режиме выбора. Выделение остаётся непрерывным — правила в
-  /// [SegmentRange.toggled].
-  void toggleSelection(int index) {
-    final current = state.value;
-    if (current == null) return;
-    final selection = SegmentRange.toggled(current.selection, index);
-    _selectionAnchor = selection == null ? null : index;
+  /// Заряжает набранный выбор в плеер прямо по ходу выбора: отрезок из
+  /// нескольких кусков становится закреплённым (плеер показывает их общий текст и
+  /// фрагмент), один кусок — текущим. Звук здесь не запускаем — играть или нет
+  /// решает кнопка плеера.
+  void _applySelection(LessonState current, SegmentRange? selection) {
+    final isRange = selection != null && !selection.isSingle;
     state = AsyncValue.data(
       current.copyWith(
         isSelecting: true,
         selection: selection,
         clearSelection: selection == null,
-        focusedIndex: index,
+        committedRange: isRange ? selection : null,
+        clearCommittedRange: !isRange,
+        focusedIndex: selection?.start,
       ),
     );
+  }
+
+  /// Завершение выбора кнопкой «Готово»: выходим из режима, но заряженный в
+  /// плеер отрезок остаётся — играть его будет кнопка плеера. Возвращает `true`,
+  /// если что-то было выбрано, — тогда мобильный лист сегментов можно закрыть.
+  bool finishSelecting() {
+    final current = state.value;
+    if (current == null) return false;
+    final hadSelection =
+        current.selection != null || current.committedRange != null;
+    _selectionAnchor = null;
+    state = AsyncValue.data(
+      current.copyWith(isSelecting: false, clearSelection: true),
+    );
+    return hadSelection;
+  }
+
+  /// Тап по куску в режиме выбора. Первый тап ставит якорь, второй задаёт второй
+  /// конец отрезка — все куски между ними выбираются сами. Повторный тап по
+  /// единственному выбранному куску снимает выбор.
+  void toggleSelection(int index) {
+    final current = state.value;
+    if (current == null) return;
+    final anchor = _selectionAnchor;
+    final selection = current.selection;
+    final SegmentRange? next;
+    if (anchor == null || selection == null) {
+      next = SegmentRange.single(index);
+      _selectionAnchor = index;
+    } else if (index == anchor && selection.isSingle) {
+      next = null;
+      _selectionAnchor = null;
+    } else {
+      next = SegmentRange.between(anchor, index);
+    }
+    _applySelection(current, next);
   }
 
   void selectAll() {
@@ -580,19 +613,14 @@ class LessonController extends AsyncNotifier<LessonState> {
     final count = current.lesson.segmentCount;
     if (count == 0) return;
     _selectionAnchor = 0;
-    state = AsyncValue.data(
-      current.copyWith(
-        isSelecting: true,
-        selection: SegmentRange(0, count - 1),
-      ),
-    );
+    _applySelection(current, SegmentRange(0, count - 1));
   }
 
   void clearSelection() {
     final current = state.value;
     if (current == null || current.selection == null) return;
     _selectionAnchor = null;
-    state = AsyncValue.data(current.copyWith(clearSelection: true));
+    _applySelection(current, null);
   }
 
   /// Ходит по кускам стрелками. С [extend] (Shift) выделение растёт от куска, с
@@ -605,24 +633,35 @@ class LessonController extends AsyncNotifier<LessonState> {
     final from = current.focusedIndex ?? (delta > 0 ? -1 : count);
     final index = (from + delta).clamp(0, count - 1);
     if (!extend) {
-      state = AsyncValue.data(current.copyWith(focusedIndex: index));
+      state = AsyncValue.data(
+        current.copyWith(focusedIndex: index, clearCommittedRange: true),
+      );
       return;
     }
     final anchor = _selectionAnchor ?? current.focusedIndex ?? index;
     _selectionAnchor = anchor;
+    final selection = SegmentRange.between(anchor, index);
+    // Курсор ведём по подвижному концу, а в плеер сразу заряжаем весь отрезок.
+    final isRange = !selection.isSingle;
     state = AsyncValue.data(
       current.copyWith(
         isSelecting: true,
         focusedIndex: index,
-        selection: SegmentRange.between(anchor, index),
+        selection: selection,
+        committedRange: isRange ? selection : null,
+        clearCommittedRange: !isRange,
       ),
     );
   }
 
   void setFocus(int index) {
     final current = state.value;
-    if (current == null || current.focusedIndex == index) return;
-    state = AsyncValue.data(current.copyWith(focusedIndex: index));
+    if (current == null) return;
+    if (current.focusedIndex == index && current.committedRange == null) return;
+    // Переход к одному куску снимает закреплённый отрезок.
+    state = AsyncValue.data(
+      current.copyWith(focusedIndex: index, clearCommittedRange: true),
+    );
   }
 
   /// Перечитывает урок после правки на отдельном экране: там могло измениться
@@ -630,9 +669,8 @@ class LessonController extends AsyncNotifier<LessonState> {
   /// зацикленные куски) больше не годятся.
   Future<void> reload() async {
     await _player.stop();
-    _loopedSegments.clear();
+    _loopEnabled = false;
     _selectionAnchor = null;
-    _selectionLooped = false;
     _activeLooped = false;
     _atBoundary = false;
     // Файл могли подменить вместе с разбивкой — заряжаем заново.
