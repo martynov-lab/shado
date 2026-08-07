@@ -3,10 +3,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../screens/design_gallery/design_gallery_screen.dart';
-import '../../../admin/presentation/pages/users_page.dart';
 import '../../../auth/presentation/controllers/auth_controller.dart';
 
-/// Кто вошёл, выход и — владельцу — раздел с пользователями.
+/// Кто вошёл, выход и — владельцу — витрина дизайн-системы. Пользователи
+/// переехали во вкладку «Управление».
 ///
 /// Сессию читает сам: меню аккаунта отвечает за неё целиком, и экрану знать о
 /// ней незачем.
@@ -23,8 +23,6 @@ class AccountMenu extends ConsumerWidget {
       icon: const Icon(Icons.account_circle_outlined),
       onSelected: (value) async {
         switch (value) {
-          case 'admin':
-            context.push(AdminUsersPage.routePath);
           case 'design':
             context.push(DesignGalleryScreen.routePath);
           case 'logout':
@@ -37,17 +35,9 @@ class AccountMenu extends ConsumerWidget {
             enabled: false,
             child: Text(email, overflow: TextOverflow.ellipsis),
           ),
-        // Раздел показываем владельцу, но полагаться на это как на защиту
+        // Витрину показываем владельцу, но полагаться на это как на защиту
         // нельзя: роль проверяет сервер.
-        if (auth.isOwner) ...[
-          const PopupMenuItem(
-            value: 'admin',
-            child: ListTile(
-              contentPadding: EdgeInsets.zero,
-              leading: Icon(Icons.people_outline),
-              title: Text('Пользователи'),
-            ),
-          ),
+        if (auth.isOwner)
           const PopupMenuItem(
             value: 'design',
             child: ListTile(
@@ -56,7 +46,6 @@ class AccountMenu extends ConsumerWidget {
               title: Text('Дизайн-система'),
             ),
           ),
-        ],
         const PopupMenuItem(
           value: 'logout',
           child: ListTile(

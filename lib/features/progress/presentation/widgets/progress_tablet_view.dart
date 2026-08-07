@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 
 import 'package:shado/theme/theme.dart';
 
+import '../controllers/progress_view_model.dart';
 import 'activity_heatmap.dart';
+import 'continue_lessons.dart';
 import 'level_progress_bar.dart';
 import 'minutes_bar_chart.dart';
 import 'progress_card.dart';
@@ -15,7 +17,9 @@ import 'weekly_goal_ring.dart';
 /// Прогресс на планшете: серия и цель недели в два столбца, ряд статистики,
 /// график минут рядом с тепловой картой и полоса уровня во всю ширину.
 class ProgressTabletView extends StatelessWidget {
-  const ProgressTabletView({super.key});
+  const ProgressTabletView({super.key, required this.model});
+
+  final ProgressViewModel model;
 
   @override
   Widget build(BuildContext context) {
@@ -28,44 +32,48 @@ class ProgressTabletView extends StatelessWidget {
           IntrinsicHeight(
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: const [
+              children: [
                 Expanded(
                   flex: 3,
                   child: StreakHeroCard(
-                    days: ProgressSample.streakDays,
-                    hint: ProgressSample.streakHintShort,
+                    days: model.streakDays,
+                    hint: model.streakHintShort,
                   ),
                 ),
-                SizedBox(width: AppSpacing.s4),
+                const SizedBox(width: AppSpacing.s4),
                 Expanded(
                   flex: 2,
                   child: ProgressCard(
                     title: 'Цель недели',
                     child: WeeklyGoalRing(
-                      ratio: ProgressSample.weekGoalRatio,
-                      value: ProgressSample.weekGoalValue,
-                      remaining: ProgressSample.weekGoalRemaining,
+                      ratio: model.goalRatio,
+                      value: model.goalValue,
+                      remaining: model.goalRemaining,
                     ),
                   ),
                 ),
               ],
             ),
           ),
+          if (model.recentLessonIds.isNotEmpty) ...[
+            const SizedBox(height: AppSpacing.s4),
+            ContinueLessons(lessonIds: model.recentLessonIds),
+          ],
           const SizedBox(height: AppSpacing.s4),
-          const ProgressStatsRow(stats: ProgressSample.weekStats),
+          ProgressStatsRow(stats: model.stats),
           const SizedBox(height: AppSpacing.s4),
           IntrinsicHeight(
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                const Expanded(
+                Expanded(
                   child: ProgressCard(
                     title: 'Минуты по дням',
                     caption: 'неделя',
                     child: MinutesBarChart(
-                      values: ProgressSample.weekMinutes,
-                      labels: ProgressSample.weekDays,
-                      todayIndex: ProgressSample.todayIndex,
+                      values: model.weekBars,
+                      labels: model.weekLabels,
+                      todayIndex: model.weekTodayIndex,
                     ),
                   ),
                 ),
@@ -74,13 +82,14 @@ class ProgressTabletView extends StatelessWidget {
                   child: ProgressCard(
                     title: 'Активность',
                     caption: '10 недель',
-                    child: ActivityHeatmap(cells: ProgressSample.activity),
+                    child: ActivityHeatmap(cells: model.heatmapCells),
                   ),
                 ),
               ],
             ),
           ),
           const SizedBox(height: AppSpacing.s4),
+          // Заглушка из макета: серверных данных об уровне пока нет.
           const ProgressCard(
             title: 'Твой уровень',
             child: LevelProgressBar(

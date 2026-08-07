@@ -35,6 +35,7 @@ class LessonsFilter {
     this.topicIds = const {},
     this.levels = const {},
     this.statuses = const {},
+    this.onlyPrivate = false,
   });
 
   final String query;
@@ -42,16 +43,22 @@ class LessonsFilter {
   final Set<LessonLevel> levels;
   final Set<LessonFilterStatus> statuses;
 
+  /// Показывать только приватные уроки. Сервер отдаёт приватными лишь свои,
+  /// поэтому это и есть «Мои приватные».
+  final bool onlyPrivate;
+
   /// Ни поиск, ни фильтры не заданы — список показываем целиком.
   bool get isEmpty =>
       query.isEmpty &&
       topicIds.isEmpty &&
       levels.isEmpty &&
-      statuses.isEmpty;
+      statuses.isEmpty &&
+      !onlyPrivate;
 
   /// Сколько фильтров выбрано (без строки поиска) — для бейджа «N» и кнопки
   /// «Сбросить».
-  int get activeCount => topicIds.length + levels.length + statuses.length;
+  int get activeCount =>
+      topicIds.length + levels.length + statuses.length + (onlyPrivate ? 1 : 0);
 
   /// Проходит ли урок сквозь текущие фильтры. Внутри группы — ИЛИ (любой из
   /// выбранных), между группами — И.
@@ -71,6 +78,9 @@ class LessonsFilter {
     if (statuses.isNotEmpty && !statuses.any((s) => _hasStatus(lesson, s))) {
       return false;
     }
+    if (onlyPrivate && lesson.isPublic) {
+      return false;
+    }
     return true;
   }
 
@@ -86,12 +96,14 @@ class LessonsFilter {
     Set<String>? topicIds,
     Set<LessonLevel>? levels,
     Set<LessonFilterStatus>? statuses,
+    bool? onlyPrivate,
   }) {
     return LessonsFilter(
       query: query ?? this.query,
       topicIds: topicIds ?? this.topicIds,
       levels: levels ?? this.levels,
       statuses: statuses ?? this.statuses,
+      onlyPrivate: onlyPrivate ?? this.onlyPrivate,
     );
   }
 }
@@ -113,11 +125,15 @@ class LessonsFilterNotifier extends Notifier<LessonsFilter> {
   void toggleStatus(LessonFilterStatus status) =>
       state = state.copyWith(statuses: _toggled(state.statuses, status));
 
+  void toggleOnlyPrivate() =>
+      state = state.copyWith(onlyPrivate: !state.onlyPrivate);
+
   /// Сбрасывает фильтры, но не строку поиска — крестик у поля чистит её сам.
   void clearFilters() => state = state.copyWith(
     topicIds: const {},
     levels: const {},
     statuses: const {},
+    onlyPrivate: false,
   );
 
   Set<T> _toggled<T>(Set<T> set, T value) {

@@ -15,6 +15,7 @@ class MainShellBottomNav extends StatelessWidget {
     required this.currentIndex,
     required this.onSelected,
     required this.canAdd,
+    required this.canManage,
   });
 
   final int currentIndex;
@@ -22,6 +23,9 @@ class MainShellBottomNav extends StatelessWidget {
 
   /// Показывать ли центральный FAB «Добавить».
   final bool canAdd;
+
+  /// Показывать ли пункт «Управление» (только владельцу).
+  final bool canManage;
 
   /// Диаметр FAB и то, насколько он выступает над баром.
   static const double _fabSize = 52;
@@ -77,7 +81,10 @@ class MainShellBottomNav extends StatelessWidget {
           child: Row(
             children: [
               for (var i = 0; i < MainShell.destinations.length; i++)
-                if (i != MainShell.addIndex)
+                // «Управление» — только владельцу.
+                if (i == MainShell.manageIndex && !canManage)
+                  const SizedBox.shrink()
+                else if (i != MainShell.addIndex)
                   Expanded(
                     child: _BottomNavItem(
                       destination: MainShell.destinations[i],

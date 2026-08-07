@@ -34,6 +34,10 @@ abstract interface class LessonRemoteDataSource {
   ///
   /// `PUT` заменяет урок целиком, поэтому [accent], [level] и [topicId] нужно
   /// передавать и при правке: без них сервер потерял бы категории урока.
+  ///
+  /// [isPublic] шлём, только если он задан; `null` — ключ не отправляем и
+  /// публичность определяет сервер (admin — публичен). Значение решает
+  /// контроллер по роли автора.
   Future<LessonDto> putLesson({
     required String id,
     required String title,
@@ -44,6 +48,7 @@ abstract interface class LessonRemoteDataSource {
     LessonAccent? accent,
     LessonLevel? level,
     String? topicId,
+    bool? isPublic,
   });
 
   Future<void> deleteLesson(String id);
@@ -86,6 +91,7 @@ class ApiLessonRemoteDataSource implements LessonRemoteDataSource {
     LessonAccent? accent,
     LessonLevel? level,
     String? topicId,
+    bool? isPublic,
   }) async {
     final response = await _client.put(
       '/v1/lessons/$id',
@@ -98,6 +104,9 @@ class ApiLessonRemoteDataSource implements LessonRemoteDataSource {
         // Тему не выбрали — ключ не отправляем вовсе: сервер сам поставит
         // «Other». Отправить `null` значило бы попросить его стереть тему.
         'topic_id': ?topicId,
+        // Публичность шлём только когда автор ей управляет (owner); иначе
+        // ключ не отправляем и решает сервер.
+        'is_public': ?isPublic,
         'segments': [for (final segment in segments) segment.toJson()],
       },
       // Правка без `If-Match` — всегда конфликт: сервер не даст перезаписать

@@ -1,9 +1,30 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:shado/features/progress/data/datasources/progress_remote_datasource.dart';
+import 'package:shado/features/progress/domain/entities/progress_summary.dart';
+import 'package:shado/features/progress/presentation/controllers/progress_providers.dart';
 import 'package:shado/features/progress/presentation/pages/progress_page.dart';
 import 'package:shado/features/settings/presentation/pages/settings_page.dart';
 import 'package:shado/theme/theme.dart';
+
+/// Прогресс без сети: сводка и история отдаются мгновенно, без dio-таймеров.
+class _FakeProgressRemote implements ProgressRemoteDataSource {
+  @override
+  Future<ProgressSummary> reportEvents({
+    int? listenedMs,
+    int? segmentRepeats,
+    String? lessonId,
+    bool? completed,
+  }) async => ProgressSummary.fromJson(const {});
+
+  @override
+  Future<ProgressSummary> getSummary() async =>
+      ProgressSummary.fromJson(const {});
+
+  @override
+  Future<List<ProgressDay>> getHistory({int days = 70}) async => const [];
+}
 
 void main() {
   Future<void> pumpPage(
@@ -17,6 +38,11 @@ void main() {
 
     await tester.pumpWidget(
       ProviderScope(
+        overrides: [
+          progressRemoteDataSourceProvider.overrideWithValue(
+            _FakeProgressRemote(),
+          ),
+        ],
         child: MaterialApp(
           theme: AppTheme.light(),
           darkTheme: AppTheme.dark(),
@@ -24,6 +50,8 @@ void main() {
         ),
       ),
     );
+    await tester.pump();
+    // Даём провайдерам-фьючерам разрешиться (сводка приходит из фейка).
     await tester.pump();
   }
 

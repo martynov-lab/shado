@@ -171,6 +171,7 @@ class LessonRepositoryImpl implements LessonRepository {
     required LessonLevel level,
     String? topicId,
     List<int>? boundaries,
+    bool? isPublic,
   }) async {
     // UUID генерит клиент, поэтому повтор `PUT` после потери сети не создаёт
     // дубль.
@@ -191,6 +192,7 @@ class LessonRepositoryImpl implements LessonRepository {
       accent: accent,
       level: level,
       topicId: topicId,
+      isPublic: isPublic,
     );
     final audioPath = await _ensureAudioFile(dto.audio);
     final model = LessonModel.fromDto(dto, audioPath: audioPath);
@@ -199,7 +201,7 @@ class LessonRepositoryImpl implements LessonRepository {
   }
 
   @override
-  Future<void> updateLesson(Lesson lesson) async {
+  Future<void> updateLesson(Lesson lesson, {bool? isPublic}) async {
     final cached = await _local.getLesson(lesson.id);
     if (cached == null) {
       throw NotFoundFailure('Урок ${lesson.id} не найден в кеше');
@@ -225,6 +227,7 @@ class LessonRepositoryImpl implements LessonRepository {
         accent: lesson.accent ?? LessonAccent.parse(cached.accent),
         level: lesson.level ?? LessonLevel.parse(cached.level),
         topicId: lesson.topic?.id ?? _nullIfEmpty(cached.topicId),
+        isPublic: isPublic,
       );
       await _local.upsertLesson(
         LessonModel.fromDto(dto, audioPath: cached.audioPath),

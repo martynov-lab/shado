@@ -39,7 +39,8 @@ abstract interface class LessonRepository {
   ///
   /// [boundaries] — размеченные на волне границы (`N + 1` значение); без них
   /// куски раскладываются равномерно. [topicId] можно не задавать — тогда
-  /// сервер поставит уроку тему по умолчанию.
+  /// сервер поставит уроку тему по умолчанию. [isPublic] задаёт публичность,
+  /// когда ей управляет автор (owner); `null` — решает сервер.
   Future<Lesson> createLesson({
     required String title,
     required String audioId,
@@ -49,9 +50,12 @@ abstract interface class LessonRepository {
     required LessonLevel level,
     String? topicId,
     List<int>? boundaries,
+    bool? isPublic,
   });
 
-  Future<void> updateLesson(Lesson lesson);
+  /// Правит урок. [isPublic] шлём только когда публичностью управляет автор
+  /// (owner); `null` — сервер оставляет её как есть.
+  Future<void> updateLesson(Lesson lesson, {bool? isPublic});
 
   Future<void> deleteLesson(String id);
 

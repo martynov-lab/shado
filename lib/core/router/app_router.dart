@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../features/admin/presentation/pages/management_page.dart';
 import '../../features/admin/presentation/pages/users_page.dart';
 import '../../features/auth/presentation/controllers/auth_controller.dart';
 import '../../features/auth/presentation/pages/login_page.dart';
@@ -74,6 +75,14 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       if (location.startsWith(_adminSectionPrefix) && !auth.isOwner) {
         return HomePage.routePath;
       }
+      // «Добавить» — только авторам, «Управление» — только владельцу. Это тоже
+      // порядок, а не защита: создание и админку сервер проверяет сам.
+      if (location == AddLessonPage.routePath && !auth.canAuthor) {
+        return HomePage.routePath;
+      }
+      if (location.startsWith(ManagementPage.routePath) && !auth.canManage) {
+        return HomePage.routePath;
+      }
       return null;
     },
     routes: [
@@ -135,6 +144,14 @@ final appRouterProvider = Provider<GoRouter>((ref) {
               GoRoute(
                 path: SettingsPage.routePath,
                 builder: (context, state) => const SettingsPage(),
+              ),
+            ],
+          ),
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: ManagementPage.routePath,
+                builder: (context, state) => const ManagementPage(),
               ),
             ],
           ),

@@ -4,7 +4,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shado/theme/theme.dart';
 import 'package:shado/widgets/widgets.dart';
 
+import '../../../auth/presentation/controllers/auth_controller.dart';
 import '../controllers/lesson_controller.dart';
+import '../controllers/lesson_permissions.dart';
 
 /// Шапка экрана урока: назад, название с подзаголовком «тема · сегмент N из M ·
 /// уровень» и кнопка правки разбивки.
@@ -25,6 +27,12 @@ class LessonHeader extends ConsumerWidget {
     final colors = context.colors;
     final state = ref.watch(lessonControllerProvider(lessonId)).value;
     final lesson = state?.lesson;
+    final role = ref.watch(
+      authControllerProvider.select((auth) => auth.user?.role),
+    );
+    // Кнопку правки показываем только тому, кто вправе править этот урок;
+    // окончательно решает сервер (403).
+    final canEdit = lesson != null && canModifyLesson(role, lesson);
 
     return Row(
       children: [
@@ -55,12 +63,14 @@ class LessonHeader extends ConsumerWidget {
             ],
           ),
         ),
-        const SizedBox(width: AppSpacing.s3),
-        AppIconButton(
-          icon: Icons.edit_outlined,
-          semanticLabel: 'Править разбивку',
-          onPressed: onEdit,
-        ),
+        if (canEdit) ...[
+          const SizedBox(width: AppSpacing.s3),
+          AppIconButton(
+            icon: Icons.edit_outlined,
+            semanticLabel: 'Править разбивку',
+            onPressed: onEdit,
+          ),
+        ],
       ],
     );
   }

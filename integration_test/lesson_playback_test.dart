@@ -90,10 +90,11 @@ class _OneLessonRepository implements LessonRepository {
     required LessonLevel level,
     String? topicId,
     List<int>? boundaries,
+    bool? isPublic,
   }) async => throw UnimplementedError();
 
   @override
-  Future<void> updateLesson(Lesson lesson) async {}
+  Future<void> updateLesson(Lesson lesson, {bool? isPublic}) async {}
 
   @override
   Future<void> deleteLesson(String id) async {}

@@ -16,6 +16,7 @@ class SettingsRow extends StatelessWidget {
     required this.title,
     this.subtitle,
     this.trailing,
+    this.onTap,
     this.danger = false,
   });
 
@@ -23,6 +24,10 @@ class SettingsRow extends StatelessWidget {
   final String title;
   final String? subtitle;
   final Widget? trailing;
+
+  /// Делает всю строку нажимаемой (открыть редактор значения). `null` — строка
+  /// только показывает.
+  final VoidCallback? onTap;
 
   /// Опасное действие — заголовок и иконка красятся в danger.
   final bool danger;
@@ -32,7 +37,7 @@ class SettingsRow extends StatelessWidget {
     final colors = context.colors;
     final tint = danger ? colors.danger : colors.text2;
 
-    return Padding(
+    final row = Padding(
       padding: const EdgeInsets.symmetric(vertical: AppSpacing.s3),
       child: Row(
         children: [
@@ -74,6 +79,17 @@ class SettingsRow extends StatelessWidget {
             trailing!,
           ],
         ],
+      ),
+    );
+
+    if (onTap == null) return row;
+
+    return Material(
+      type: MaterialType.transparency,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: AppRadii.rSm,
+        child: row,
       ),
     );
   }

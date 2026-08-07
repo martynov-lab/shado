@@ -13,6 +13,7 @@ class Lesson {
     required this.createdAt,
     required this.segments,
     this.audioId = '',
+    this.isPublic = true,
     this.accent,
     this.level,
     this.topic,
@@ -70,6 +71,11 @@ class Lesson {
 
   /// Длительность файла целиком — обрезка её не меняет.
   final int durationMs;
+
+  /// Публичность урока (§6). Приватный виден только автору.
+  final bool isPublic;
+
+  bool get isPrivate => !isPublic;
 
   /// Акцент диктора и уровень английского. Заполняются на экране создания и
   /// приходят с сервера; `null` — у урока, собранного в тестах или пришедшего
@@ -151,6 +157,7 @@ class Lesson {
     int? durationMs,
     DateTime? createdAt,
     List<Segment>? segments,
+    bool? isPublic,
     LessonAccent? accent,
     LessonLevel? level,
     Topic? topic,
@@ -163,6 +170,7 @@ class Lesson {
       durationMs: durationMs ?? this.durationMs,
       createdAt: createdAt ?? this.createdAt,
       segments: segments ?? this.segments,
+      isPublic: isPublic ?? this.isPublic,
       accent: accent ?? this.accent,
       level: level ?? this.level,
       topic: topic ?? this.topic,
@@ -182,6 +190,7 @@ class Lesson {
         other.audioPath == audioPath &&
         other.durationMs == durationMs &&
         other.createdAt == createdAt &&
+        other.isPublic == isPublic &&
         other.accent == accent &&
         other.level == level &&
         other.topic == topic;
@@ -195,6 +204,7 @@ class Lesson {
     durationMs,
     createdAt,
     Object.hashAll(segments),
+    isPublic,
     accent,
     level,
     topic,

@@ -14,6 +14,7 @@ class MainShellRail extends StatelessWidget {
     required this.currentIndex,
     required this.onSelected,
     required this.canAdd,
+    required this.canManage,
   });
 
   final int currentIndex;
@@ -21,6 +22,9 @@ class MainShellRail extends StatelessWidget {
 
   /// Показывать ли кнопку «Добавить» внизу rail.
   final bool canAdd;
+
+  /// Показывать ли пункт «Управление» (только владельцу).
+  final bool canManage;
 
   @override
   Widget build(BuildContext context) {
@@ -43,15 +47,17 @@ class MainShellRail extends StatelessWidget {
             children: [
               const MainShellBrand(),
               const SizedBox(height: AppSpacing.s4),
-              for (final i in MainShell.sectionIndexes) ...[
-                _RailItem(
-                  icon: MainShell.destinations[i].icon,
-                  label: MainShell.destinations[i].label,
-                  selected: currentIndex == i,
-                  onTap: () => onSelected(i),
-                ),
-                const SizedBox(height: AppSpacing.s2),
-              ],
+              for (final i in MainShell.sectionIndexes)
+                // «Управление» — только владельцу.
+                if (i != MainShell.manageIndex || canManage) ...[
+                  _RailItem(
+                    icon: MainShell.destinations[i].icon,
+                    label: MainShell.destinations[i].label,
+                    selected: currentIndex == i,
+                    onTap: () => onSelected(i),
+                  ),
+                  const SizedBox(height: AppSpacing.s2),
+                ],
               const Spacer(),
               if (canAdd)
                 AppIconButton(

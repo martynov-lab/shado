@@ -24,6 +24,7 @@ class UpdateLessonContent {
     required String rawText,
     required List<int> boundaries,
     AudioTrim? trim,
+    bool? isPublic,
   }) async {
     final trimmedTitle = title.trim();
     if (trimmedTitle.isEmpty) {
@@ -39,12 +40,14 @@ class UpdateLessonContent {
         ? boundaries
         : SegmentBoundaries.resize(boundaries, segmentTexts.length, range);
     final updated = lesson
-        .copyWith(title: trimmedTitle)
+        // Публичность обновляем только когда её задал автор (owner); иначе
+        // copyWith сохраняет прежнее значение.
+        .copyWith(title: trimmedTitle, isPublic: isPublic)
         .withSegments(
           texts: segmentTexts,
           boundaries: SegmentBoundaries.normalize(source, range),
         );
-    await _repository.updateLesson(updated);
+    await _repository.updateLesson(updated, isPublic: isPublic);
     return updated;
   }
 }

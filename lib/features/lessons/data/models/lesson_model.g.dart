@@ -18,6 +18,7 @@ _LessonModel _$LessonModelFromJson(Map<String, dynamic> json) => _LessonModel(
   segments: (json['segments'] as List<dynamic>)
       .map((e) => SegmentModel.fromJson(e as Map<String, dynamic>))
       .toList(),
+  isPublic: json['is_public'] as bool? ?? true,
   audioSha256: json['audio_sha256'] as String? ?? '',
   audioContentType: json['audio_content_type'] as String? ?? '',
   accent: json['accent'] as String? ?? '',
@@ -37,6 +38,7 @@ Map<String, dynamic> _$LessonModelToJson(_LessonModel instance) =>
       'updated_at': instance.updatedAt.toIso8601String(),
       'version': instance.version,
       'segments': instance.segments,
+      'is_public': instance.isPublic,
       'audio_sha256': instance.audioSha256,
       'audio_content_type': instance.audioContentType,
       'accent': instance.accent,

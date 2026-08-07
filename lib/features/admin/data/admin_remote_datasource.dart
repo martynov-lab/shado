@@ -65,7 +65,7 @@ class ApiAdminRemoteDataSource implements AdminRemoteDataSource {
   }) async {
     final response = await _client.patch(
       '/v1/admin/users/$userId/role',
-      data: {'role': role.name},
+      data: {'role': role.wire},
     );
     return AuthUser.fromJson(response.data!);
   }

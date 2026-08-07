@@ -48,6 +48,12 @@ class LessonsFilterBar extends ConsumerWidget {
             count: filter.statuses.length,
             onTap: () => _open(context, LessonFilterGroup.status),
           ),
+          const SizedBox(width: AppSpacing.s2),
+          _FilterTrigger(
+            label: LessonFilterGroup.access.title,
+            count: filter.onlyPrivate ? 1 : 0,
+            onTap: () => _open(context, LessonFilterGroup.access),
+          ),
           if (filter.activeCount > 0) ...[
             const SizedBox(width: AppSpacing.s2),
             _ClearButton(onTap: notifier.clearFilters),

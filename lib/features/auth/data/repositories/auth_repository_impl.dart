@@ -38,10 +38,12 @@ class AuthRepositoryImpl implements AuthRepository {
   Future<AuthUser> register({
     required String email,
     required String password,
+    String? name,
   }) async {
     final session = await _remote.register(
       email: normalizeEmail(email),
       password: password,
+      name: name,
     );
     await _tokens.save(session.tokens);
     return _currentUser = session.user;
@@ -79,6 +81,19 @@ class AuthRepositoryImpl implements AuthRepository {
   @override
   Future<AuthUser> refreshCurrentUser() async {
     return _currentUser = await _remote.me();
+  }
+
+  @override
+  Future<AuthUser> updateProfile({
+    String? name,
+    String? studiedLanguage,
+    int? dailyGoalMinutes,
+  }) async {
+    return _currentUser = await _remote.updateProfile(
+      name: name,
+      studiedLanguage: studiedLanguage,
+      dailyGoalMinutes: dailyGoalMinutes,
+    );
   }
 
   @override

@@ -40,6 +40,13 @@ class AuthState {
 
   bool get isOwner => user?.isOwner ?? false;
 
+  /// Кто вправе создавать уроки (user-pro/admin/owner) — по нему показываем
+  /// «Добавить».
+  bool get canAuthor => user?.role.canAuthor ?? false;
+
+  /// Кто видит вкладку «Управление» (owner).
+  bool get canManage => user?.role.canManage ?? false;
+
   /// Сколько ещё ждать после превышения лимита попыток.
   Duration get retryIn {
     final until = retryAt;
@@ -115,9 +122,17 @@ class AuthController extends Notifier<AuthState> {
     );
   }
 
-  Future<bool> signUp({required String email, required String password}) {
+  Future<bool> signUp({
+    required String email,
+    required String password,
+    String? name,
+  }) {
     return _submit(
-      () => ref.read(signUpProvider)(email: email, password: password),
+      () => ref.read(signUpProvider)(
+        email: email,
+        password: password,
+        name: name,
+      ),
     );
   }
 
@@ -154,6 +169,21 @@ class AuthController extends Notifier<AuthState> {
     } catch (_) {
       // Не выходить же из-за неудачной проверки роли.
     }
+  }
+
+  /// Правит профиль и обновляет закешированного пользователя. Ошибки
+  /// (валидация, `422`) уходят наверх — их разбирает экран настроек.
+  Future<void> updateProfile({
+    String? name,
+    String? studiedLanguage,
+    int? dailyGoalMinutes,
+  }) async {
+    final updated = await ref.read(updateProfileProvider)(
+      name: name,
+      studiedLanguage: studiedLanguage,
+      dailyGoalMinutes: dailyGoalMinutes,
+    );
+    state = state.copyWith(user: updated);
   }
 
   Future<void> signOut() async {

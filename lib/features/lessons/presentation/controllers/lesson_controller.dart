@@ -4,6 +4,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:just_audio/just_audio.dart';
 
 import '../../../../core/constants/app_constants.dart';
+import '../../../progress/data/progress_reporter.dart';
+import '../../../progress/presentation/controllers/progress_providers.dart';
 import '../../domain/entities/lesson.dart';
 import '../../domain/entities/segment.dart';
 import '../../domain/entities/segment_range.dart';
@@ -181,6 +183,19 @@ class LessonController extends AsyncNotifier<LessonState> {
   /// Последняя позиция, отданная на дорожку: прореживаем поток до ~25 кадров/с.
   int _lastWaveMs = -1000;
 
+  /// Момент, с которого плеер играет непрерывно, — для подсчёта прослушанного
+  /// времени (wall-clock). `null` — сейчас не играет.
+  DateTime? _playStartedAt;
+
+  /// Когда последний раз засчитали проход отрезка: дедуп near-simultaneous
+  /// срабатываний сторожа границы и «плеер доиграл файл».
+  DateTime? _lastPassAt;
+
+  /// Периодически досылает накопленную активность, пока открыт урок.
+  Timer? _flushTimer;
+
+  ProgressReporter get _reporter => ref.read(progressReporterProvider);
+
   AudioPlayer get _player => ref.read(lessonAudioPlayerProvider(lessonId));
 
   @override
@@ -199,6 +214,17 @@ class LessonController extends AsyncNotifier<LessonState> {
         )
         .listen(_onPosition);
     ref.onDispose(positionSubscription.cancel);
+    // Порог пройденности понадобится при проверке «пройдено» — прогреваем кеш.
+    ref.read(completionRepsProvider);
+    // Досылаем накопленную активность периодически и при уходе с экрана.
+    _flushTimer = Timer.periodic(
+      const Duration(seconds: 30),
+      (_) => _reporter.flush(lessonId: lessonId),
+    );
+    ref.onDispose(() {
+      _flushTimer?.cancel();
+      unawaited(_flushOnLeave());
+    });
     return LessonState(
       lesson: lesson,
       speed: _speed,
@@ -211,9 +237,11 @@ class LessonController extends AsyncNotifier<LessonState> {
     final current = state.value;
     if (current == null) return;
     final finished = playerState.processingState == ProcessingState.completed;
+    _updateClock(playerState.playing && !finished);
     // Конец последнего куска может совпасть с концом файла — тогда границу
     // стеречь уже нечем, потому что позиция дальше не тикает.
     if (finished && _activeLooped && current.activeRange != null) {
+      _recordPass(current.activeRange!);
       unawaited(_rewindTo(current, current.activeRange!, play: true));
       return;
     }
@@ -238,6 +266,8 @@ class LessonController extends AsyncNotifier<LessonState> {
     if (range.end >= segments.length) return;
     if (position.inMilliseconds < segments[range.end].endMs) return;
     _atBoundary = true;
+    // Отрезок доигран до конца — засчитываем проход каждому его сегменту.
+    _recordPass(range);
     unawaited(_rewindTo(current, range, play: _activeLooped));
   }
 
@@ -247,6 +277,68 @@ class LessonController extends AsyncNotifier<LessonState> {
     if ((ms - _lastWaveMs).abs() < 40) return;
     _lastWaveMs = ms;
     ref.read(lessonPositionMsProvider(lessonId).notifier).set(ms);
+  }
+
+  // --- Инструментирование прогресса ------------------------------------------
+
+  /// Копит прослушанное время по интервалам воспроизведения (wall-clock).
+  void _updateClock(bool playing) {
+    if (playing) {
+      _playStartedAt ??= DateTime.now();
+      return;
+    }
+    final started = _playStartedAt;
+    if (started == null) return;
+    _playStartedAt = null;
+    final ms = DateTime.now().difference(started).inMilliseconds;
+    if (ms > 0) unawaited(_reporter.addListened(ms));
+  }
+
+  /// Засчитывает один доигранный проход отрезка: `+1` каждому его сегменту.
+  /// Дедуп по времени гасит двойное срабатывание сторожа границы и «доиграл
+  /// файл» на последнем куске.
+  void _recordPass(SegmentRange range) {
+    final now = DateTime.now();
+    final last = _lastPassAt;
+    if (last != null &&
+        now.difference(last) < const Duration(milliseconds: 250)) {
+      return;
+    }
+    _lastPassAt = now;
+    final indices = [for (var i = range.start; i <= range.end; i++) i];
+    unawaited(
+      _reporter
+          .recordSegmentPass(lessonId, indices)
+          .then((_) => _maybeReportCompletion()),
+    );
+  }
+
+  /// Проверяет, не пройден ли урок целиком, и один раз шлёт `completed`.
+  void _maybeReportCompletion() {
+    final current = state.value;
+    if (current == null) return;
+    // Порог ещё не загрузился — проверим на следующем проходе.
+    final target = ref.read(completionRepsProvider).asData?.value;
+    if (target == null) return;
+    unawaited(
+      _reporter.reportCompletedIfDone(
+        lessonId: lessonId,
+        segmentCount: current.lesson.segmentCount,
+        completionReps: target,
+      ),
+    );
+  }
+
+  /// Финализирует текущий интервал прослушивания и досылает активность при
+  /// уходе с экрана.
+  Future<void> _flushOnLeave() async {
+    final started = _playStartedAt;
+    _playStartedAt = null;
+    if (started != null) {
+      final ms = DateTime.now().difference(started).inMilliseconds;
+      if (ms > 0) await _reporter.addListened(ms);
+    }
+    await _reporter.flush(lessonId: lessonId);
   }
 
   /// Ставит дорожку на начало отрезка: новый круг, если [play], иначе стоп там,

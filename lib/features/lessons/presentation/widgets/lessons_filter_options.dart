@@ -12,7 +12,8 @@ import '../controllers/lessons_filter.dart';
 enum LessonFilterGroup {
   topic('Тема'),
   level('Уровень'),
-  status('Статус');
+  status('Статус'),
+  access('Доступ');
 
   const LessonFilterGroup(this.title);
 
@@ -48,6 +49,7 @@ class LessonsFilterOptions extends StatelessWidget {
     LessonFilterGroup.topic => const _TopicOptions(),
     LessonFilterGroup.level => const _LevelOptions(),
     LessonFilterGroup.status => const _StatusOptions(),
+    LessonFilterGroup.access => const _AccessOptions(),
   };
 }
 
@@ -206,6 +208,26 @@ class _LevelOptions extends ConsumerWidget {
             onToggle: () => notifier.toggleLevel(level),
           ),
       ],
+    );
+  }
+}
+
+class _AccessOptions extends ConsumerWidget {
+  const _AccessOptions();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final onlyPrivate = ref.watch(
+      lessonsFilterProvider.select((filter) => filter.onlyPrivate),
+    );
+    final notifier = ref.read(lessonsFilterProvider.notifier);
+
+    // Сервер отдаёт приватными только свои уроки, поэтому у обычного
+    // пользователя фильтр просто ничего не отберёт — это ожидаемо.
+    return _OptionRow(
+      label: 'Мои приватные',
+      selected: onlyPrivate,
+      onToggle: notifier.toggleOnlyPrivate,
     );
   }
 }

@@ -29,8 +29,8 @@ class LoginPage extends ConsumerStatefulWidget {
 }
 
 class _LoginPageState extends ConsumerState<LoginPage> {
-  /// Имя есть в макете регистрации, но серверу его отправить некуда:
-  /// `/v1/auth/register` принимает только email и пароль.
+  /// Имя из формы регистрации: уходит в `/v1/auth/register` необязательным
+  /// полем (язык и цель задаются позже в настройках).
   final _nameController = TextEditingController();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
@@ -62,7 +62,11 @@ class _LoginPageState extends ConsumerState<LoginPage> {
     final email = _emailController.text.trim();
     final password = _passwordController.text;
     final ok = widget.isRegistration
-        ? await controller.signUp(email: email, password: password)
+        ? await controller.signUp(
+            email: email,
+            password: password,
+            name: _nameController.text,
+          )
         : await controller.signIn(email: email, password: password);
     if (!ok) _startCooldownTicker();
   }

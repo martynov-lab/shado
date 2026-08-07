@@ -128,6 +128,9 @@ class FakeRemoteDataSource implements LessonRemoteDataSource {
   final List<({LessonAccent? accent, LessonLevel? level, String? topicId})>
   putCategories = [];
 
+  /// Значение `is_public`, с которым ушёл каждый `PUT` (`null` — не отправляли).
+  final List<bool?> putIsPublic = [];
+
   final List<String> deleted = [];
   int _page = 0;
 
@@ -153,10 +156,12 @@ class FakeRemoteDataSource implements LessonRemoteDataSource {
     LessonAccent? accent,
     LessonLevel? level,
     String? topicId,
+    bool? isPublic,
   }) async {
     putVersions.add(version);
     putSegments.add(segments);
     putCategories.add((accent: accent, level: level, topicId: topicId));
+    putIsPublic.add(isPublic);
     final handler = onPut;
     if (handler != null) return handler(version);
     return LessonDto.fromJson(
@@ -343,6 +348,37 @@ void main() {
       );
 
       expect(remote.putVersions.single, isNull);
+    });
+
+    test('is_public не уходит, если публичность не задали', () async {
+      final remote = FakeRemoteDataSource();
+
+      await build(remote).createLesson(
+        title: 'Урок',
+        audioId: 'audio-1',
+        durationMs: 10000,
+        segmentTexts: const ['Раз'],
+        accent: LessonAccent.us,
+        level: LessonLevel.b1,
+      );
+
+      expect(remote.putIsPublic.single, isNull);
+    });
+
+    test('заданная публичность уходит на сервер', () async {
+      final remote = FakeRemoteDataSource();
+
+      await build(remote).createLesson(
+        title: 'Урок',
+        audioId: 'audio-1',
+        durationMs: 10000,
+        segmentTexts: const ['Раз'],
+        accent: LessonAccent.us,
+        level: LessonLevel.b1,
+        isPublic: false,
+      );
+
+      expect(remote.putIsPublic.single, isFalse);
     });
 
     test('созданный урок попадает в кеш с локальным путём к аудио', () async {

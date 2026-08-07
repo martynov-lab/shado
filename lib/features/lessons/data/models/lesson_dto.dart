@@ -21,6 +21,7 @@ class LessonDto {
     required this.version,
     required this.audio,
     required this.segments,
+    this.isPublic = true,
     this.deletedAt,
     this.accent,
     this.level,
@@ -37,6 +38,9 @@ class LessonDto {
         ? null
         : _parseTime(json['deleted_at']),
     version: (json['version'] as num?)?.toInt() ?? 1,
+    // Отсутствие поля держим за публичный урок: старый сервер не знал о
+    // приватности.
+    isPublic: json['is_public'] as bool? ?? true,
     accent: LessonAccent.parse(json['accent'] as String?),
     level: LessonLevel.parse(json['level'] as String?),
     // Тема приходит объектом `{id, name}` — второй запрос ради названия не
@@ -64,6 +68,10 @@ class LessonDto {
   /// Версия агрегата. Уезжает обратно в `If-Match` при правке.
   final int version;
 
+  /// Публичность урока (§6). Приватный виден только автору; в общем списке его
+  /// не отдают, поэтому увидели ⇒ он свой.
+  final bool isPublic;
+
   /// Категории урока (§6). `null` — сервер прислал пустое или незнакомое
   /// значение; подставлять своё на его место нельзя.
   final LessonAccent? accent;
@@ -84,6 +92,7 @@ class LessonDto {
     durationMs: durationMs,
     createdAt: createdAt,
     segments: segments.map((segment) => segment.toEntity()).toList(),
+    isPublic: isPublic,
     accent: accent,
     level: level,
     topic: topic,

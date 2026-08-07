@@ -3,24 +3,26 @@ import 'package:flutter/material.dart';
 import 'package:shado/theme/theme.dart';
 import 'package:shado/widgets/widgets.dart';
 
-/// Карточка профиля: аватар, имя, почта, уровень и метка «Изменить».
-///
-/// Метка — пока статичная (как в макете); экран редактирования профиля
-/// подключим отдельной задачей.
+/// Карточка профиля: аватар, имя, почта, изучаемый язык и кнопка «Изменить»,
+/// открывающая правку имени.
 class SettingsProfileCard extends StatelessWidget {
   const SettingsProfileCard({
     super.key,
     required this.name,
     required this.email,
-    required this.level,
+    required this.onEdit,
+    this.languageLabel,
     this.editLabel = 'Изменить',
   });
 
   final String name;
   final String email;
 
-  /// Текущий уровень, например «B1».
-  final String level;
+  /// Открывает правку имени.
+  final VoidCallback onEdit;
+
+  /// Подпись изучаемого языка, например «Английский». `null` — бейдж скрыт.
+  final String? languageLabel;
 
   final String editLabel;
 
@@ -58,43 +60,57 @@ class SettingsProfileCard extends StatelessWidget {
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
-                const SizedBox(height: AppSpacing.s2),
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: AppSpacing.s3,
-                    vertical: AppSpacing.s1,
-                  ),
-                  decoration: BoxDecoration(
-                    color: colors.primarySoft,
-                    borderRadius: AppRadii.rPill,
-                  ),
-                  child: Text(
-                    'Уровень $level',
-                    style: AppText.caption.copyWith(
-                      color: colors.primary,
-                      fontWeight: FontWeight.w700,
+                if (languageLabel != null) ...[
+                  const SizedBox(height: AppSpacing.s2),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: AppSpacing.s3,
+                      vertical: AppSpacing.s1,
+                    ),
+                    decoration: BoxDecoration(
+                      color: colors.primarySoft,
+                      borderRadius: AppRadii.rPill,
+                    ),
+                    child: Text(
+                      languageLabel!,
+                      style: AppText.caption.copyWith(
+                        color: colors.primary,
+                        fontWeight: FontWeight.w700,
+                      ),
                     ),
                   ),
-                ),
+                ],
               ],
             ),
           ),
           const SizedBox(width: AppSpacing.s3),
-          Container(
-            padding: const EdgeInsets.symmetric(
-              horizontal: AppSpacing.s4,
-              vertical: AppSpacing.s2,
-            ),
-            decoration: BoxDecoration(
-              borderRadius: AppRadii.rPill,
-              border: Border.all(
-                color: colors.border,
-                width: AppSizes.borderThin,
+          Semantics(
+            button: true,
+            label: editLabel,
+            excludeSemantics: true,
+            child: Material(
+              type: MaterialType.transparency,
+              child: InkWell(
+                onTap: onEdit,
+                borderRadius: AppRadii.rPill,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: AppSpacing.s4,
+                    vertical: AppSpacing.s2,
+                  ),
+                  decoration: BoxDecoration(
+                    borderRadius: AppRadii.rPill,
+                    border: Border.all(
+                      color: colors.border,
+                      width: AppSizes.borderThin,
+                    ),
+                  ),
+                  child: Text(
+                    editLabel,
+                    style: AppText.label.copyWith(color: colors.primary),
+                  ),
+                ),
               ),
-            ),
-            child: Text(
-              editLabel,
-              style: AppText.label.copyWith(color: colors.primary),
             ),
           ),
         ],

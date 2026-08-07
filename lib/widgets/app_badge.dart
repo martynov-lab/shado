@@ -12,6 +12,10 @@ enum AppBadgeVariant {
 
   /// «В ударе» — серия повторов не прервана. Розовый, accent.
   hot,
+
+  /// Нейтральный статус вроде «Приватный» — серо-сиреневый, без окраски
+  /// смысла, чтобы не спорить с метками прогресса.
+  neutral,
 }
 
 /// Небольшая пилюля-метка. Не интерактивна: это статус, а не кнопка.
@@ -40,6 +44,7 @@ class AppBadge extends StatelessWidget {
       AppBadgeVariant.fresh => (colors.successSoft, colors.success),
       AppBadgeVariant.due => (colors.warningSoft, colors.warning),
       AppBadgeVariant.hot => (colors.accentSoft, colors.accent),
+      AppBadgeVariant.neutral => (colors.surface2, colors.text2),
     };
 
     return Semantics(

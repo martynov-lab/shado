@@ -3,6 +3,8 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/constants/app_constants.dart';
+import '../../../auth/domain/entities/auth_user.dart';
+import '../../../auth/presentation/controllers/auth_controller.dart';
 import '../../domain/entities/audio_trim.dart';
 import '../../domain/entities/lesson.dart';
 import '../../domain/entities/lesson_category.dart';
@@ -26,6 +28,7 @@ class AddLessonFormState {
     this.trim = const AudioTrim.full(0),
     this.pendingTrim,
     this.boundaries = const [],
+    this.isPublic = true,
     this.isUploading = false,
     this.uploadProgress = 0,
     this.isSubmitting = false,
@@ -64,6 +67,10 @@ class AddLessonFormState {
   /// Разметка кусков на волне, `N + 1` значение. Пуста, пока нет либо текста,
   /// либо аудио.
   final List<int> boundaries;
+
+  /// Публичность урока — тумблером управляет только owner. Для остальных
+  /// авторов значение вычисляется по роли в [AddLessonController.submit].
+  final bool isPublic;
 
   /// Идёт отправка файла на сервер.
   final bool isUploading;
@@ -112,6 +119,7 @@ class AddLessonFormState {
     AudioTrim? pendingTrim,
     bool clearPendingTrim = false,
     List<int>? boundaries,
+    bool? isPublic,
     bool? isUploading,
     double? uploadProgress,
     bool? isSubmitting,
@@ -129,6 +137,7 @@ class AddLessonFormState {
       trim: trim ?? this.trim,
       pendingTrim: clearPendingTrim ? null : (pendingTrim ?? this.pendingTrim),
       boundaries: boundaries ?? this.boundaries,
+      isPublic: isPublic ?? this.isPublic,
       isUploading: isUploading ?? this.isUploading,
       uploadProgress: uploadProgress ?? this.uploadProgress,
       isSubmitting: isSubmitting ?? this.isSubmitting,
@@ -161,6 +170,10 @@ class AddLessonController extends Notifier<AddLessonFormState> {
       state = state.copyWith(accent: accent);
 
   void setLevel(LessonLevel? level) => state = state.copyWith(level: level);
+
+  /// Тумблер «Приватный урок» (только для owner): `true` — урок приватный.
+  void setPrivate(bool isPrivate) =>
+      state = state.copyWith(isPublic: !isPrivate);
 
   /// `null` — «без темы»: сервер поставит уроку тему по умолчанию.
   void setTopic(String? topicId) => state = topicId == null
@@ -319,6 +332,7 @@ class AddLessonController extends Notifier<AddLessonFormState> {
           level: level,
           topicId: state.topicId,
           boundaries: state.boundaries.isEmpty ? null : state.boundaries,
+          isPublic: _isPublicForRole(),
         ),
       );
       ref.invalidate(lessonsControllerProvider);
@@ -328,6 +342,18 @@ class AddLessonController extends Notifier<AddLessonFormState> {
       state = state.copyWith(isSubmitting: false);
       rethrow;
     }
+  }
+
+  /// Публичность урока для отправки, по роли автора:
+  /// owner управляет тумблером, user-pro всегда приватен, для остальных
+  /// (admin) решает сервер — ключ не шлём.
+  bool? _isPublicForRole() {
+    final role = ref.read(authControllerProvider).user?.role;
+    return switch (role) {
+      UserRole.owner => state.isPublic,
+      UserRole.userPro => false,
+      _ => null,
+    };
   }
 }
 

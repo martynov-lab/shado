@@ -48,13 +48,13 @@ class SqfliteLessonLocalDataSource implements LessonLocalDataSource {
       final path = p.join(await _databaseDirectory(), _databaseName);
       final db = await openDatabase(
         path,
-        version: 3,
+        version: 4,
         onCreate: (db, version) => _createSchema(db),
         onUpgrade: (db, oldVersion, newVersion) async {
           // Таблицу не переносим, а пересоздаём: это кеш, источник истины —
           // сервер, и полная выборка вернётся первым же `syncLessons`.
           // Так было при переходе с версии 1 (уроки без `audio_id` и версии
-          // агрегата) и так же на версии 3, добавившей категории.
+          // агрегата), на версии 3 (категории) и на версии 4 (`is_public`).
           await db.execute('DROP TABLE IF EXISTS $_table');
           await _createSchema(db);
           // Метка синхронизации осталась от прежней схемы: с ней сервер отдал
@@ -83,6 +83,7 @@ class SqfliteLessonLocalDataSource implements LessonLocalDataSource {
         created_at TEXT NOT NULL,
         updated_at TEXT NOT NULL,
         version INTEGER NOT NULL DEFAULT 1,
+        is_public INTEGER NOT NULL DEFAULT 1,
         accent TEXT NOT NULL DEFAULT '',
         level TEXT NOT NULL DEFAULT '',
         topic_id TEXT NOT NULL DEFAULT '',
@@ -270,6 +271,7 @@ class SqfliteLessonLocalDataSource implements LessonLocalDataSource {
     'created_at': lesson.createdAt.toUtc().toIso8601String(),
     'updated_at': lesson.updatedAt.toUtc().toIso8601String(),
     'version': lesson.version,
+    'is_public': lesson.isPublic ? 1 : 0,
     'accent': lesson.accent,
     'level': lesson.level,
     'topic_id': lesson.topicId,
@@ -292,6 +294,7 @@ class SqfliteLessonLocalDataSource implements LessonLocalDataSource {
       createdAt: DateTime.parse(row['created_at']! as String).toUtc(),
       updatedAt: DateTime.parse(row['updated_at']! as String).toUtc(),
       version: row['version'] as int? ?? 1,
+      isPublic: (row['is_public'] as int? ?? 1) != 0,
       accent: row['accent'] as String? ?? '',
       level: row['level'] as String? ?? '',
       topicId: row['topic_id'] as String? ?? '',

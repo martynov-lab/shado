@@ -12,7 +12,11 @@ abstract interface class AuthRepository {
   /// Роутер слушает это, чтобы увести на `/login`.
   Stream<void> get sessionExpired;
 
-  Future<AuthUser> register({required String email, required String password});
+  Future<AuthUser> register({
+    required String email,
+    required String password,
+    String? name,
+  });
 
   Future<AuthUser> login({required String email, required String password});
 
@@ -23,6 +27,14 @@ abstract interface class AuthRepository {
   /// Перечитывает `/v1/me`: роль могли поменять в админке, и она не ждёт
   /// нового access-токена.
   Future<AuthUser> refreshCurrentUser();
+
+  /// Правит профиль (`PATCH /v1/me`) и обновляет закешированного пользователя.
+  /// Передаём только меняемые поля; `null` — поле не трогаем.
+  Future<AuthUser> updateProfile({
+    String? name,
+    String? studiedLanguage,
+    int? dailyGoalMinutes,
+  });
 
   /// Гасит сессию на сервере и локально. Ошибки сети игнорируются: локально
   /// выход должен состояться в любом случае.

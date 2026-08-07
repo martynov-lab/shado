@@ -9,6 +9,7 @@ import 'package:shado/widgets/widgets.dart';
 
 import '../../../../core/config/app_config.dart';
 import '../../../../core/constants/app_constants.dart';
+import '../../../auth/presentation/controllers/auth_controller.dart';
 import '../controllers/add_lesson_controller.dart';
 import '../controllers/add_lesson_playback_controller.dart';
 import '../controllers/lesson_providers.dart';
@@ -16,6 +17,7 @@ import '../widgets/add_lesson_waveform.dart';
 import '../widgets/lesson_category_fields.dart';
 import '../widgets/lesson_editor_header.dart';
 import '../widgets/lesson_file_chip.dart';
+import '../widgets/lesson_privacy_field.dart';
 import '../widgets/lesson_section_card.dart';
 import '../widgets/segment_splitter/marked_text_controller.dart';
 import '../widgets/segment_splitter/segment_splitter_field.dart';
@@ -99,6 +101,9 @@ class _AddLessonPageState extends ConsumerState<AddLessonPage> {
     final controller = ref.read(addLessonControllerProvider.notifier);
     final topics = ref.watch(topicsProvider);
     final isBusy = state.isSubmitting || state.isUploading;
+    // Тумблер приватности показываем только владельцу: остальным авторам
+    // публичность задаёт роль.
+    final isOwner = ref.watch(authControllerProvider).isOwner;
 
     // Пока форму заполняли, выбранную тему могли удалить на другом устройстве.
     // Убираем её из состояния, чтобы на сервер не уехал мёртвый id.
@@ -161,6 +166,13 @@ class _AddLessonPageState extends ConsumerState<AddLessonPage> {
                       onLevelChanged: controller.setLevel,
                       onTopicChanged: controller.setTopic,
                     ),
+                    if (isOwner) ...[
+                      const SizedBox(height: AppSpacing.s4),
+                      LessonPrivacyField(
+                        isPrivate: !state.isPublic,
+                        onChanged: controller.setPrivate,
+                      ),
+                    ],
                     const SizedBox(height: AppSpacing.s5),
                     LessonSectionCard(
                       label: 'Аудио',

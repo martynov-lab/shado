@@ -21,12 +21,16 @@ class SettingsTabletView extends StatelessWidget {
     super.key,
     required this.name,
     required this.email,
-    required this.level,
+    required this.onEditName,
+    this.languageLabel,
   });
 
   final String name;
   final String email;
-  final String level;
+  final VoidCallback onEditName;
+
+  /// Подпись изучаемого языка; `null` — бейдж скрыт.
+  final String? languageLabel;
 
   static const double _twoColumnMinWidth = 720;
 
@@ -50,7 +54,12 @@ class SettingsTabletView extends StatelessWidget {
                     style: AppText.h2.copyWith(color: colors.text),
                   ),
                   const SizedBox(height: AppSpacing.s5),
-                  SettingsProfileCard(name: name, email: email, level: level),
+                  SettingsProfileCard(
+                    name: name,
+                    email: email,
+                    languageLabel: languageLabel,
+                    onEdit: onEditName,
+                  ),
                   const SizedBox(height: AppSpacing.s5),
                   if (twoColumns)
                     const _TwoColumnSections()

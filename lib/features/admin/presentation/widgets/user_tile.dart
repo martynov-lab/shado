@@ -30,17 +30,21 @@ class UserTile extends StatelessWidget {
       ),
       title: Text(user.email, overflow: TextOverflow.ellipsis),
       subtitle: Text(
-        isSelf ? 'это вы · ${user.role.name}' : user.role.name,
+        isSelf ? 'это вы · ${user.role.wire}' : user.role.wire,
         style: theme.textTheme.bodySmall,
       ),
-      trailing: SegmentedButton<UserRole>(
-        segments: const [
-          ButtonSegment(value: UserRole.user, label: Text('user')),
-          ButtonSegment(value: UserRole.owner, label: Text('owner')),
+      // Ролей четыре — в trailing помещается только выпадающий список, а не
+      // сегменты.
+      trailing: DropdownButton<UserRole>(
+        value: user.role,
+        underline: const SizedBox.shrink(),
+        items: [
+          for (final role in UserRole.values)
+            DropdownMenuItem(value: role, child: Text(role.wire)),
         ],
-        selected: {user.role},
-        showSelectedIcon: false,
-        onSelectionChanged: (roles) => onRoleChanged(roles.first),
+        onChanged: (role) {
+          if (role != null) onRoleChanged(role);
+        },
       ),
     );
   }

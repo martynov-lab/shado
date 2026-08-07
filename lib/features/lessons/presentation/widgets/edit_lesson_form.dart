@@ -6,8 +6,10 @@ import 'package:shado/theme/theme.dart';
 import 'package:shado/widgets/widgets.dart';
 
 import '../../../../core/constants/app_constants.dart';
+import '../../../auth/presentation/controllers/auth_controller.dart';
 import '../controllers/edit_lesson_controller.dart';
 import 'edit_lesson_waveform.dart';
+import 'lesson_privacy_field.dart';
 import 'lesson_section_card.dart';
 import 'segment_splitter/marked_text_controller.dart';
 import 'segment_splitter/segment_splitter_field.dart';
@@ -63,6 +65,9 @@ class _EditLessonFormState extends ConsumerState<EditLessonForm> {
   Widget build(BuildContext context) {
     final state = widget.state;
     final controller = _controller;
+    // Тумблер приватности видит только владелец: остальным авторам публичность
+    // задаёт роль.
+    final isOwner = ref.watch(authControllerProvider).isOwner;
 
     return Focus(
       focusNode: _pageFocus,
@@ -77,6 +82,13 @@ class _EditLessonFormState extends ConsumerState<EditLessonForm> {
             onChanged: controller.setTitle,
             textInputAction: TextInputAction.next,
           ),
+          if (isOwner) ...[
+            const SizedBox(height: AppSpacing.s4),
+            LessonPrivacyField(
+              isPrivate: !state.isPublic,
+              onChanged: controller.setPrivate,
+            ),
+          ],
           const SizedBox(height: AppSpacing.s5),
           LessonSectionCard(
             label: 'Аудио',

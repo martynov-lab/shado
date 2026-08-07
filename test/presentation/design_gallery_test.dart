@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:go_router/go_router.dart';
 import 'package:shado/screens/design_gallery/design_gallery_screen.dart';
 import 'package:shado/theme/theme.dart';
 import 'package:shado/widgets/widgets.dart';
@@ -18,13 +19,22 @@ void main() {
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.reset);
 
+    // Витрина зовёт `context.canPop()` (go_router) — в приложении она всегда
+    // открыта через роутер, поэтому и в тесте даём минимальный GoRouter.
+    final router = GoRouter(
+      routes: [
+        GoRoute(path: '/', builder: (_, _) => const DesignGalleryScreen()),
+      ],
+    );
+    addTearDown(router.dispose);
+
     await tester.pumpWidget(
       ProviderScope(
-        child: MaterialApp(
+        child: MaterialApp.router(
           theme: AppTheme.light(),
           darkTheme: AppTheme.dark(),
           themeMode: mode,
-          home: const DesignGalleryScreen(),
+          routerConfig: router,
         ),
       ),
     );

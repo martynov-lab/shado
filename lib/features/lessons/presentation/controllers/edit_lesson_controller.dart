@@ -4,6 +4,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:just_audio/just_audio.dart';
 
 import '../../../../core/constants/app_constants.dart';
+import '../../../auth/domain/entities/auth_user.dart';
+import '../../../auth/presentation/controllers/auth_controller.dart';
 import '../../domain/entities/audio_trim.dart';
 import '../../domain/entities/lesson.dart';
 import '../../domain/entities/segment_boundaries.dart';
@@ -36,6 +38,7 @@ class EditLessonState {
     required this.text,
     required this.boundaries,
     required this.trim,
+    required this.isPublic,
     this.pendingTrim,
     this.playheadMs = 0,
     this.isPlaying = false,
@@ -46,6 +49,10 @@ class EditLessonState {
   final String title;
   final String text;
   final List<int> boundaries;
+
+  /// Публичность урока — тумблером управляет только owner. Начальное значение
+  /// берётся из урока.
+  final bool isPublic;
 
   /// Отрезок файла, оставленный обрезкой.
   final AudioTrim trim;
@@ -83,6 +90,7 @@ class EditLessonState {
     AudioTrim? trim,
     AudioTrim? pendingTrim,
     bool clearPendingTrim = false,
+    bool? isPublic,
     int? playheadMs,
     bool? isPlaying,
     bool? isSaving,
@@ -94,6 +102,7 @@ class EditLessonState {
       boundaries: boundaries ?? this.boundaries,
       trim: trim ?? this.trim,
       pendingTrim: clearPendingTrim ? null : (pendingTrim ?? this.pendingTrim),
+      isPublic: isPublic ?? this.isPublic,
       playheadMs: playheadMs ?? this.playheadMs,
       isPlaying: isPlaying ?? this.isPlaying,
       isSaving: isSaving ?? this.isSaving,
@@ -125,6 +134,7 @@ class EditLessonController extends AsyncNotifier<EditLessonState> {
       text: initialText(lesson),
       boundaries: lesson.boundaries,
       trim: lesson.trim,
+      isPublic: lesson.isPublic,
       // Урок начинается там, где кончается обрезанная голова.
       playheadMs: lesson.trim.startMs,
     );
@@ -190,6 +200,13 @@ class EditLessonController extends AsyncNotifier<EditLessonState> {
     final current = state.value;
     if (current == null) return;
     state = AsyncValue.data(current.copyWith(boundaries: boundaries));
+  }
+
+  /// Тумблер «Приватный урок» (только для owner): `true` — урок приватный.
+  void setPrivate(bool isPrivate) {
+    final current = state.value;
+    if (current == null) return;
+    state = AsyncValue.data(current.copyWith(isPublic: !isPrivate));
   }
 
   // --- Обрезка ---------------------------------------------------------------
@@ -301,12 +318,24 @@ class EditLessonController extends AsyncNotifier<EditLessonState> {
         rawText: current.text,
         boundaries: current.boundaries,
         trim: current.trim,
+        isPublic: _isPublicForRole(current.isPublic),
       );
       ref.invalidate(lessonsControllerProvider);
     } catch (_) {
       state = AsyncValue.data(current.copyWith(isSaving: false));
       rethrow;
     }
+  }
+
+  /// Публичность для отправки, по роли автора: owner управляет тумблером,
+  /// user-pro всегда приватен, для остальных (admin) решает сервер.
+  bool? _isPublicForRole(bool toggled) {
+    final role = ref.read(authControllerProvider).user?.role;
+    return switch (role) {
+      UserRole.owner => toggled,
+      UserRole.userPro => false,
+      _ => null,
+    };
   }
 }
 

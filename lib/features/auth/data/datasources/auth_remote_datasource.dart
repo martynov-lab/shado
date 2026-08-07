@@ -20,9 +20,11 @@ class AuthSession {
 
 /// `/v1/auth/*` и `/v1/me`.
 abstract interface class AuthRemoteDataSource {
+  /// [name] необязательно: пустое имя не отправляем.
   Future<AuthSession> register({
     required String email,
     required String password,
+    String? name,
   });
 
   Future<AuthSession> login({required String email, required String password});
@@ -30,6 +32,14 @@ abstract interface class AuthRemoteDataSource {
   Future<AuthTokens> refresh(String refreshToken);
 
   Future<AuthUser> me();
+
+  /// Правит профиль (`PATCH /v1/me`). Шлём только переданные поля: `null` —
+  /// поле не трогаем.
+  Future<AuthUser> updateProfile({
+    String? name,
+    String? studiedLanguage,
+    int? dailyGoalMinutes,
+  });
 
   Future<void> logout(String refreshToken);
 }
@@ -48,10 +58,19 @@ class ApiAuthRemoteDataSource implements AuthRemoteDataSource {
   Future<AuthSession> register({
     required String email,
     required String password,
+    String? name,
   }) async {
+    final trimmedName = name?.trim();
     final response = await _client.post(
       '/v1/auth/register',
-      data: {'email': email, 'password': password},
+      data: {
+        'email': email,
+        'password': password,
+        // Пустое имя не отправляем — необязательное поле.
+        'name': ?(trimmedName == null || trimmedName.isEmpty
+            ? null
+            : trimmedName),
+      },
       options: _anonymous,
     );
     return AuthSession.fromJson(response.data!);
@@ -84,6 +103,23 @@ class ApiAuthRemoteDataSource implements AuthRemoteDataSource {
   Future<AuthUser> me() async {
     final json = await _client.get('/v1/me');
     return AuthUser.fromJson(json);
+  }
+
+  @override
+  Future<AuthUser> updateProfile({
+    String? name,
+    String? studiedLanguage,
+    int? dailyGoalMinutes,
+  }) async {
+    final response = await _client.patch(
+      '/v1/me',
+      data: {
+        'name': ?name,
+        'studied_language': ?studiedLanguage,
+        'daily_goal_minutes': ?dailyGoalMinutes,
+      },
+    );
+    return AuthUser.fromJson(response.data!);
   }
 
   @override

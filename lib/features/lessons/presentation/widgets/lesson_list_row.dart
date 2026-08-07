@@ -1,18 +1,23 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:shado/theme/theme.dart';
 import 'package:shado/widgets/widgets.dart';
 
 import '../../../../core/utils/duration_format.dart';
+import '../../../auth/presentation/controllers/auth_controller.dart';
+import '../../../progress/presentation/controllers/progress_providers.dart';
 import '../../domain/entities/lesson.dart';
+import '../controllers/lesson_permissions.dart';
 import '../controllers/lessons_filter.dart';
 import 'lesson_cover.dart';
 import 'lesson_labels.dart';
 import 'lesson_progress_bar.dart';
 
 /// Строка списка уроков: обложка, заголовок с меткой «New», подзаголовок,
-/// полоса прогресса и длительность. Свайп влево или долгое нажатие — удаление.
-class LessonListRow extends StatefulWidget {
+/// полоса прогресса и длительность. Свайп влево или долгое нажатие — удаление
+/// (только тому, кто вправе править урок).
+class LessonListRow extends ConsumerStatefulWidget {
   const LessonListRow({
     super.key,
     required this.lesson,
@@ -25,20 +30,37 @@ class LessonListRow extends StatefulWidget {
   final VoidCallback onDelete;
 
   @override
-  State<LessonListRow> createState() => _LessonListRowState();
+  ConsumerState<LessonListRow> createState() => _LessonListRowState();
 }
 
-class _LessonListRowState extends State<LessonListRow> {
+class _LessonListRowState extends ConsumerState<LessonListRow> {
   bool _hovered = false;
 
   @override
   Widget build(BuildContext context) {
     final colors = context.colors;
     final lesson = widget.lesson;
+    final role = ref.watch(
+      authControllerProvider.select((auth) => auth.user?.role),
+    );
+    // Свайп и долгое нажатие удаляют урок — вешаем их только тому, кто вправе.
+    final canDelete = canModifyLesson(role, lesson);
+    final progress =
+        ref
+            .watch(
+              lessonProgressProvider((
+                lessonId: lesson.id,
+                segmentCount: lesson.segmentCount,
+              )),
+            )
+            .value ??
+        0.0;
 
     return Dismissible(
       key: ValueKey('lesson-${lesson.id}'),
-      direction: DismissDirection.endToStart,
+      direction: canDelete
+          ? DismissDirection.endToStart
+          : DismissDirection.none,
       confirmDismiss: (_) async {
         widget.onDelete();
         // Удалением управляет страница: строка исчезнет вместе с данными.
@@ -64,7 +86,7 @@ class _LessonListRowState extends State<LessonListRow> {
           type: MaterialType.transparency,
           child: InkWell(
             onTap: widget.onTap,
-            onLongPress: widget.onDelete,
+            onLongPress: canDelete ? widget.onDelete : null,
             onHover: (value) => setState(() => _hovered = value),
             borderRadius: AppRadii.rLg,
             overlayColor: const WidgetStatePropertyAll(Colors.transparent),
@@ -95,6 +117,13 @@ class _LessonListRowState extends State<LessonListRow> {
                                 overflow: TextOverflow.ellipsis,
                               ),
                             ),
+                            if (lesson.isPrivate) ...[
+                              const SizedBox(width: AppSpacing.s2),
+                              const AppBadge(
+                                label: 'Приватный',
+                                variant: AppBadgeVariant.neutral,
+                              ),
+                            ],
                             if (lessonIsNew(lesson)) ...[
                               const SizedBox(width: AppSpacing.s2),
                               const AppBadge(label: 'New'),
@@ -109,7 +138,7 @@ class _LessonListRowState extends State<LessonListRow> {
                           overflow: TextOverflow.ellipsis,
                         ),
                         const SizedBox(height: AppSpacing.s2),
-                        const LessonProgressBar(),
+                        LessonProgressBar(value: progress),
                       ],
                     ),
                   ),

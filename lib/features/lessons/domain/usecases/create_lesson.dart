@@ -14,6 +14,7 @@ class CreateLessonParams {
     required this.level,
     this.topicId,
     this.boundaries,
+    this.isPublic,
   });
 
   final String title;
@@ -40,6 +41,10 @@ class CreateLessonParams {
   /// Границы, размеченные на волне до создания урока (`N + 1` значение).
   /// `null` — разложить куски равномерно.
   final List<int>? boundaries;
+
+  /// Публичность урока, когда ей управляет автор (owner). `null` — оставить
+  /// решение серверу (роль автора его и определит).
+  final bool? isPublic;
 }
 
 /// Создание урока: разбиение текста на куски и передача их репозиторию,
@@ -83,6 +88,7 @@ class CreateLesson {
           boundaries != null && boundaries.length == segmentTexts.length + 1
           ? boundaries
           : null,
+      isPublic: params.isPublic,
     );
   }
 

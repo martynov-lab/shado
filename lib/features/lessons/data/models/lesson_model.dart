@@ -28,6 +28,10 @@ abstract class LessonModel with _$LessonModel {
     @JsonKey(name: 'updated_at') required DateTime updatedAt,
     required int version,
     required List<SegmentModel> segments,
+
+    /// Публичность урока (§6). По умолчанию `true`: приватность добавилась
+    /// позже, старые записи кеша считаем публичными.
+    @JsonKey(name: 'is_public') @Default(true) bool isPublic,
     @JsonKey(name: 'audio_sha256') @Default('') String audioSha256,
     @JsonKey(name: 'audio_content_type') @Default('') String audioContentType,
 
@@ -60,6 +64,7 @@ abstract class LessonModel with _$LessonModel {
         updatedAt: dto.updatedAt,
         version: dto.version,
         segments: dto.segments,
+        isPublic: dto.isPublic,
         audioSha256: dto.audio.sha256,
         audioContentType: dto.audio.contentType,
         accent: dto.accent?.wire ?? '',
@@ -78,6 +83,7 @@ abstract class LessonModel with _$LessonModel {
     durationMs: durationMs,
     createdAt: createdAt.toUtc(),
     segments: segments.map((segment) => segment.toEntity()).toList(),
+    isPublic: isPublic,
     accent: LessonAccent.parse(accent),
     level: LessonLevel.parse(level),
     topic: topicId.isEmpty ? null : Topic(id: topicId, name: topicName),

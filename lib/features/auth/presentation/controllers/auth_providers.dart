@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/network/network_providers.dart';
 import '../../../lessons/presentation/controllers/lesson_providers.dart';
+import '../../../progress/presentation/controllers/progress_providers.dart';
 import '../../data/datasources/auth_remote_datasource.dart';
 import '../../data/repositories/auth_repository_impl.dart';
 import '../../domain/repositories/auth_repository.dart';
@@ -18,7 +19,11 @@ final authRepositoryProvider = Provider<AuthRepository>((ref) {
   final repository = AuthRepositoryImpl(
     remote: ref.watch(authRemoteDataSourceProvider),
     tokens: ref.watch(tokenStorageProvider),
-    onSignedOut: () => ref.read(lessonRepositoryProvider).clearCache(),
+    // Выход чистит и кеш уроков, и локальный прогресс.
+    onSignedOut: () async {
+      await ref.read(lessonRepositoryProvider).clearCache();
+      await ref.read(progressLocalDataSourceProvider).clear();
+    },
   );
   // Интерсептор дёргает это, когда сервер отверг refresh: чужие устройства
   // остаются со своими сессиями, а это — выходит.
@@ -42,4 +47,8 @@ final signOutProvider = Provider<SignOut>(
 
 final getCurrentUserProvider = Provider<GetCurrentUser>(
   (ref) => GetCurrentUser(ref.watch(authRepositoryProvider)),
+);
+
+final updateProfileProvider = Provider<UpdateProfile>(
+  (ref) => UpdateProfile(ref.watch(authRepositoryProvider)),
 );

@@ -51,6 +51,7 @@ class FakeAuthRepository implements AuthRepository {
   Future<AuthUser> register({
     required String email,
     required String password,
+    String? name,
   }) => login(email: email, password: password);
 
   @override
@@ -61,6 +62,13 @@ class FakeAuthRepository implements AuthRepository {
 
   @override
   Future<AuthUser> refreshCurrentUser() async => _current!;
+
+  @override
+  Future<AuthUser> updateProfile({
+    String? name,
+    String? studiedLanguage,
+    int? dailyGoalMinutes,
+  }) async => _current!;
 
   @override
   Future<void> logout() async => _current = null;
@@ -97,10 +105,11 @@ class FakeLessonRepository implements LessonRepository {
     required LessonLevel level,
     String? topicId,
     List<int>? boundaries,
+    bool? isPublic,
   }) async => throw UnimplementedError();
 
   @override
-  Future<void> updateLesson(Lesson lesson) async {}
+  Future<void> updateLesson(Lesson lesson, {bool? isPublic}) async {}
 
   @override
   Future<void> deleteLesson(String id) async {}
@@ -276,7 +285,9 @@ void main() {
     expect(submit.onPressed, isNull);
   });
 
-  testWidgets('раздел с пользователями виден только владельцу', (tester) async {
+  testWidgets('вкладка «Управление» обычному пользователю не видна', (
+    tester,
+  ) async {
     final auth = FakeAuthRepository(
       restored: AuthUser(
         id: 'user-1',
@@ -287,14 +298,12 @@ void main() {
     );
     await pumpApp(tester, auth);
 
-    await tester.tap(find.byIcon(Icons.account_circle_outlined));
-    await tester.pumpAndSettle();
-
-    expect(find.text('Пользователи'), findsNothing);
-    expect(find.text('Выйти'), findsOneWidget);
+    // Раздел «Пользователи» переехал во вкладку «Управление» — её видит только
+    // владелец.
+    expect(find.text('Управление'), findsNothing);
   });
 
-  testWidgets('владельцу раздел с пользователями показывается', (tester) async {
+  testWidgets('владельцу видна вкладка «Управление»', (tester) async {
     final auth = FakeAuthRepository(
       restored: AuthUser(
         id: 'owner-1',
@@ -305,10 +314,7 @@ void main() {
     );
     await pumpApp(tester, auth);
 
-    await tester.tap(find.byIcon(Icons.account_circle_outlined));
-    await tester.pumpAndSettle();
-
-    expect(find.text('Пользователи'), findsOneWidget);
+    expect(find.text('Управление'), findsOneWidget);
   });
 
   testWidgets('выход возвращает на экран входа', (tester) async {

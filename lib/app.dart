@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:shado/core/router/app_router.dart';
+import 'package:shado/features/progress/presentation/controllers/progress_providers.dart';
 import 'package:shado/theme/theme.dart';
 
 class ShadoApp extends ConsumerStatefulWidget {
@@ -29,6 +30,16 @@ class _ShadoAppState extends ConsumerState<ShadoApp>
   /// пересобираем, чтобы подхватить нулевую длительность.
   @override
   void didChangeAccessibilityFeatures() => setState(() {});
+
+  /// Уходя в фон, досылаем накопленный прогресс: приложение могут закрыть, не
+  /// вернувшись на экран урока.
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.paused ||
+        state == AppLifecycleState.detached) {
+      ref.read(progressReporterProvider).flush();
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
