@@ -147,15 +147,13 @@ final appRouterProvider = Provider<GoRouter>((ref) {
               ),
             ],
           ),
-          StatefulShellBranch(
-            routes: [
-              GoRoute(
-                path: ManagementPage.routePath,
-                builder: (context, state) => const ManagementPage(),
-              ),
-            ],
-          ),
         ],
+      ),
+      // Разделы владельца открываются поверх каркаса из меню аккаунта.
+      GoRoute(
+        path: ManagementPage.routePath,
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => const ManagementPage(),
       ),
       GoRoute(
         path: AdminUsersPage.routePath,

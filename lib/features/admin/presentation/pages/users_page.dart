@@ -2,10 +2,10 @@ import 'package:flutter/material.dart';
 
 import '../widgets/users_admin_section.dart';
 
-/// Пользователи сервиса и их роли. Раздел виден только владельцу.
+/// Пользователи сервиса и их роли. Экран владельца, открывается из меню
+/// аккаунта (пункт «Пользователи»).
 ///
-/// Тело вынесено в [UsersAdminSection] — тем же списком владеет вкладка
-/// «Управление». Отдельный маршрут оставлен как прямая точка входа.
+/// Тело вынесено в [UsersAdminSection]; каркас (Scaffold, AppBar) — здесь.
 class AdminUsersPage extends StatelessWidget {
   const AdminUsersPage({super.key});
 

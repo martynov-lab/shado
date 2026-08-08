@@ -18,7 +18,6 @@ class MainShellSidebar extends ConsumerWidget {
     required this.currentIndex,
     required this.onSelected,
     required this.canAdd,
-    required this.canManage,
   });
 
   final int currentIndex;
@@ -26,9 +25,6 @@ class MainShellSidebar extends ConsumerWidget {
 
   /// Показывать ли кнопку «Добавить урок».
   final bool canAdd;
-
-  /// Показывать ли пункт «Управление» (только владельцу).
-  final bool canManage;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -60,16 +56,14 @@ class MainShellSidebar extends ConsumerWidget {
                 child: MainShellBrand(showLabel: true, size: 38),
               ),
               const SizedBox(height: AppSpacing.s6),
-              for (final i in MainShell.sectionIndexes)
-                // «Управление» — только владельцу.
-                if (i != MainShell.manageIndex || canManage) ...[
-                  _SidebarItem(
-                    destination: MainShell.destinations[i],
-                    selected: currentIndex == i,
-                    onTap: () => onSelected(i),
-                  ),
-                  const SizedBox(height: AppSpacing.s1),
-                ],
+              for (final i in MainShell.sectionIndexes) ...[
+                _SidebarItem(
+                  destination: MainShell.destinations[i],
+                  selected: currentIndex == i,
+                  onTap: () => onSelected(i),
+                ),
+                const SizedBox(height: AppSpacing.s1),
+              ],
               if (canAdd) ...[
                 const SizedBox(height: AppSpacing.s4),
                 AppButton(

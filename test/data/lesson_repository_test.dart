@@ -193,6 +193,16 @@ class FakeTopicRemote implements TopicRemoteDataSource {
     calls++;
     return topics;
   }
+
+  @override
+  Future<Topic> create(String name) => throw UnimplementedError();
+
+  @override
+  Future<Topic> rename({required String id, required String name}) =>
+      throw UnimplementedError();
+
+  @override
+  Future<void> delete(String id) => throw UnimplementedError();
 }
 
 class FakeAudioRemote implements AudioRemoteDataSource {

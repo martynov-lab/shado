@@ -20,8 +20,8 @@ class MainShellDestination {
 
 /// Каркас приложения: нижняя навигация на телефоне, вертикальный rail на
 /// планшете и sidebar на десктопе. Пункты ведут по веткам go_router — реальным
-/// разделам приложения (Главная, Уроки, Добавить, Прогресс, Настройки и —
-/// владельцу — Управление).
+/// разделам приложения (Главная, Уроки, Добавить, Прогресс, Настройки).
+/// Разделы владельца («Управление», «Пользователи») живут в меню аккаунта.
 class MainShell extends ConsumerStatefulWidget {
   const MainShell({super.key, required this.navigationShell});
 
@@ -34,7 +34,6 @@ class MainShell extends ConsumerStatefulWidget {
     MainShellDestination(icon: AppIcons.plus, label: 'Добавить'),
     MainShellDestination(icon: AppIcons.chart, label: 'Прогресс'),
     MainShellDestination(icon: AppIcons.settings, label: 'Настройки'),
-    MainShellDestination(icon: AppIcons.database, label: 'Управление'),
   ];
 
   /// Индекс ветки «Добавить»: её пункт виден только тем, кто вправе создавать
@@ -42,12 +41,8 @@ class MainShell extends ConsumerStatefulWidget {
   /// нижней навигации телефона он по центру приподнятой кнопкой (FAB).
   static const int addIndex = 2;
 
-  /// Индекс ветки «Управление»: её пункт виден только владельцу.
-  static const int manageIndex = 5;
-
   /// Индексы обычных разделов — всё, кроме «Добавить». По ним rail и sidebar
-  /// рисуют пункты меню. Пункт «Управление» из набора прячет сам виджет
-  /// навигации, когда прав на него нет.
+  /// рисуют пункты меню.
   static Iterable<int> get sectionIndexes =>
       [for (var i = 0; i < destinations.length; i++) i]
           .where((i) => i != addIndex);
@@ -76,12 +71,10 @@ class _MainShellState extends ConsumerState<MainShell> {
   @override
   Widget build(BuildContext context) {
     final index = widget.navigationShell.currentIndex;
-    // «Добавить» — авторам (user-pro/admin/owner), «Управление» — владельцу.
+    // «Добавить» — авторам (user-pro/admin/owner). Разделы владельца ушли в меню
+    // аккаунта, поэтому навигации о ролях больше знать нечего.
     final canAdd = ref.watch(
       authControllerProvider.select((state) => state.canAuthor),
-    );
-    final canManage = ref.watch(
-      authControllerProvider.select((state) => state.canManage),
     );
 
     return Scaffold(
@@ -94,7 +87,6 @@ class _MainShellState extends ConsumerState<MainShell> {
               currentIndex: index,
               onSelected: _select,
               canAdd: canAdd,
-              canManage: canManage,
             ),
           ],
         ),
@@ -104,7 +96,6 @@ class _MainShellState extends ConsumerState<MainShell> {
               currentIndex: index,
               onSelected: _select,
               canAdd: canAdd,
-              canManage: canManage,
             ),
             Expanded(child: widget.navigationShell),
           ],
@@ -115,7 +106,6 @@ class _MainShellState extends ConsumerState<MainShell> {
               currentIndex: index,
               onSelected: _select,
               canAdd: canAdd,
-              canManage: canManage,
             ),
             Expanded(child: widget.navigationShell),
           ],

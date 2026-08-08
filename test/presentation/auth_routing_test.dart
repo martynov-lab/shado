@@ -285,7 +285,7 @@ void main() {
     expect(submit.onPressed, isNull);
   });
 
-  testWidgets('вкладка «Управление» обычному пользователю не видна', (
+  testWidgets('в меню аккаунта обычному пользователю нет разделов владельца', (
     tester,
   ) async {
     final auth = FakeAuthRepository(
@@ -298,12 +298,17 @@ void main() {
     );
     await pumpApp(tester, auth);
 
-    // Раздел «Пользователи» переехал во вкладку «Управление» — её видит только
-    // владелец.
+    await tester.tap(find.byIcon(Icons.account_circle_outlined));
+    await tester.pumpAndSettle();
+
+    // «Управление» и «Пользователи» — разделы владельца, их видит только owner.
     expect(find.text('Управление'), findsNothing);
+    expect(find.text('Пользователи'), findsNothing);
   });
 
-  testWidgets('владельцу видна вкладка «Управление»', (tester) async {
+  testWidgets('владельцу в меню аккаунта видны «Управление» и «Пользователи»', (
+    tester,
+  ) async {
     final auth = FakeAuthRepository(
       restored: AuthUser(
         id: 'owner-1',
@@ -314,7 +319,11 @@ void main() {
     );
     await pumpApp(tester, auth);
 
+    await tester.tap(find.byIcon(Icons.account_circle_outlined));
+    await tester.pumpAndSettle();
+
     expect(find.text('Управление'), findsOneWidget);
+    expect(find.text('Пользователи'), findsOneWidget);
   });
 
   testWidgets('выход возвращает на экран входа', (tester) async {
