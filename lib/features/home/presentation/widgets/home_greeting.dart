@@ -4,7 +4,6 @@ import 'package:shado/theme/theme.dart';
 import 'package:shado/widgets/widgets.dart';
 
 import '../../../lessons/presentation/widgets/account_menu.dart';
-import 'home_sample.dart';
 
 /// Шапка главного экрана: приветствие с именем пользователя и подсказкой, а
 /// справа — по желанию плашка серии и меню аккаунта.
@@ -12,6 +11,7 @@ class HomeGreeting extends StatelessWidget {
   const HomeGreeting({
     super.key,
     required this.name,
+    this.streakDays = 0,
     this.showStreak = false,
     this.showAccount = true,
   });
@@ -19,11 +19,17 @@ class HomeGreeting extends StatelessWidget {
   /// Имя для приветствия «Привет, …».
   final String name;
 
+  /// Число дней в серии для плашки (когда [showStreak]).
+  final int streakDays;
+
   /// Показать плашку серии занятий (в широких раскладках).
   final bool showStreak;
 
   /// Показать меню аккаунта справа (на десктопе оно живёт в sidebar каркаса).
   final bool showAccount;
+
+  /// Мотивационная подпись под приветствием — не метрика, живёт здесь.
+  static const String _subtitle = 'Продолжим тренировку слуха?';
 
   @override
   Widget build(BuildContext context) {
@@ -52,14 +58,14 @@ class HomeGreeting extends StatelessWidget {
               ),
               const SizedBox(height: AppSpacing.s1),
               Text(
-                HomeSample.greetingSubtitle,
+                _subtitle,
                 style: AppText.caption.copyWith(color: colors.text3),
               ),
             ],
           ),
         ),
         if (showStreak) ...[
-          const _StreakChip(days: HomeSample.streakDays),
+          _StreakChip(days: streakDays),
           const SizedBox(width: AppSpacing.s2),
         ],
         if (showAccount) const AccountMenu(),

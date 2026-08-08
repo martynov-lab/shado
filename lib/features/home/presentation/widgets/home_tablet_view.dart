@@ -3,12 +3,13 @@ import 'package:flutter/material.dart';
 import 'package:shado/theme/theme.dart';
 import 'package:shado/widgets/widgets.dart';
 
+import '../controllers/home_lesson_tile.dart';
+import '../controllers/home_view_model.dart';
 import 'continue_hero_card.dart';
 import 'home_card.dart';
 import 'home_goal_ring.dart';
 import 'home_greeting.dart';
 import 'home_lesson_row.dart';
-import 'home_sample.dart';
 import 'home_section_header.dart';
 import 'home_stats_row.dart';
 
@@ -18,26 +19,45 @@ class HomeTabletView extends StatelessWidget {
   const HomeTabletView({
     super.key,
     required this.name,
+    required this.model,
+    required this.lessons,
+    required this.lessonsCount,
     required this.onOpenLessons,
+    required this.onOpenLesson,
   });
 
   final String name;
+  final HomeViewModel model;
+  final List<HomeLessonTile> lessons;
+  final int lessonsCount;
   final VoidCallback onOpenLessons;
+  final void Function(String lessonId) onOpenLesson;
 
   @override
   Widget build(BuildContext context) {
+    final hero = lessons.isEmpty ? null : lessons.first;
+    final preview = lessons.take(2).toList();
+
     return SafeArea(
       child: ListView(
         padding: const EdgeInsets.all(AppSpacing.s6),
         children: [
-          HomeGreeting(name: name, showStreak: true),
+          HomeGreeting(name: name, streakDays: model.streakDays, showStreak: true),
           const SizedBox(height: AppSpacing.s5),
           // Высоту карточкам не выравниваем: в узких планшетах текст цели может
           // переноситься, и жёсткая высота дала бы переполнение.
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Expanded(flex: 3, child: ContinueHeroCard(onPlay: onOpenLessons)),
+              Expanded(
+                flex: 3,
+                child: ContinueHeroCard(
+                  lesson: hero,
+                  onOpen: hero == null
+                      ? onOpenLessons
+                      : () => onOpenLesson(hero.id),
+                ),
+              ),
               const SizedBox(width: AppSpacing.s4),
               Expanded(
                 flex: 2,
@@ -46,10 +66,10 @@ class HomeTabletView extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      const HomeGoalRing(
-                        ratio: HomeSample.weekGoalRatio,
-                        value: HomeSample.weekGoalValue,
-                        remaining: HomeSample.weekGoalRemaining,
+                      HomeGoalRing(
+                        ratio: model.goalRatio,
+                        value: model.goalValue,
+                        remaining: model.goalRemaining,
                       ),
                       const SizedBox(height: AppSpacing.s4),
                       AppButton(
@@ -65,21 +85,21 @@ class HomeTabletView extends StatelessWidget {
             ],
           ),
           const SizedBox(height: AppSpacing.s4),
-          const HomeStatsRow(stats: HomeSample.stats),
+          HomeStatsRow(stats: model.stats),
           const SizedBox(height: AppSpacing.s5),
           HomeSectionHeader(
             title: 'Мои уроки',
-            actionLabel: HomeSample.lessonsAllLabel,
+            actionLabel: 'Все $lessonsCount',
             onAction: onOpenLessons,
           ),
           const SizedBox(height: AppSpacing.s2),
-          for (var i = 0; i < 2; i++)
+          for (var i = 0; i < preview.length; i++)
             HomeLessonRow(
               index: (i + 1).toString().padLeft(2, '0'),
-              title: HomeSample.lessons[i].$1,
-              subtitle: HomeSample.lessons[i].$2,
-              time: HomeSample.lessons[i].$3,
-              onTap: onOpenLessons,
+              title: preview[i].title,
+              subtitle: preview[i].subtitle,
+              time: preview[i].time,
+              onTap: () => onOpenLesson(preview[i].id),
             ),
         ],
       ),

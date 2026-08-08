@@ -2,10 +2,11 @@ import 'package:flutter/material.dart';
 
 import 'package:shado/theme/theme.dart';
 
+import '../controllers/home_lesson_tile.dart';
+import '../controllers/home_view_model.dart';
 import 'continue_hero_card.dart';
 import 'home_greeting.dart';
 import 'home_lesson_row.dart';
-import 'home_sample.dart';
 import 'home_section_header.dart';
 import 'home_stats_row.dart';
 
@@ -15,14 +16,22 @@ class HomeMobileView extends StatelessWidget {
   const HomeMobileView({
     super.key,
     required this.name,
+    required this.model,
+    required this.lessons,
     required this.onOpenLessons,
+    required this.onOpenLesson,
   });
 
   final String name;
+  final HomeViewModel model;
+  final List<HomeLessonTile> lessons;
   final VoidCallback onOpenLessons;
+  final void Function(String lessonId) onOpenLesson;
 
   @override
   Widget build(BuildContext context) {
+    final hero = lessons.isEmpty ? null : lessons.first;
+
     return SafeArea(
       bottom: false,
       child: ListView(
@@ -35,9 +44,12 @@ class HomeMobileView extends StatelessWidget {
         children: [
           HomeGreeting(name: name),
           const SizedBox(height: AppSpacing.s5),
-          ContinueHeroCard(onPlay: onOpenLessons),
+          ContinueHeroCard(
+            lesson: hero,
+            onOpen: hero == null ? onOpenLessons : () => onOpenLesson(hero.id),
+          ),
           const SizedBox(height: AppSpacing.s5),
-          const HomeStatsRow(stats: HomeSample.stats, scrollable: true),
+          HomeStatsRow(stats: model.stats, scrollable: true),
           const SizedBox(height: AppSpacing.s6),
           HomeSectionHeader(
             title: 'Мои уроки',
@@ -45,12 +57,12 @@ class HomeMobileView extends StatelessWidget {
             onAction: onOpenLessons,
           ),
           const SizedBox(height: AppSpacing.s2),
-          for (final (title, subtitle, time) in HomeSample.lessons)
+          for (final lesson in lessons)
             HomeLessonRow(
-              title: title,
-              subtitle: subtitle,
-              time: time,
-              onTap: onOpenLessons,
+              title: lesson.title,
+              subtitle: lesson.subtitle,
+              time: lesson.time,
+              onTap: () => onOpenLesson(lesson.id),
             ),
         ],
       ),

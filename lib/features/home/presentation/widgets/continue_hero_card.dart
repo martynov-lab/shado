@@ -1,23 +1,46 @@
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:shado/theme/theme.dart';
 import 'package:shado/widgets/widgets.dart';
 
-import 'home_sample.dart';
+import '../../../progress/presentation/controllers/progress_providers.dart';
+import '../controllers/home_lesson_tile.dart';
 
 /// «Герой» главного экрана — карточка «Продолжить»: градиент, название урока,
-/// позиция в нём, эквалайзер, полоса прогресса и кнопка воспроизведения.
-class ContinueHeroCard extends StatelessWidget {
-  const ContinueHeroCard({super.key, required this.onPlay});
+/// подзаголовок, эквалайзер, полоса пройденности и кнопка воспроизведения.
+///
+/// Показывает последний урок, с которым работал пользователь; долю пройденности
+/// берёт из [lessonProgressProvider]. Пока продолжать нечего ([lesson] == null)
+/// — приглашает выбрать урок.
+class ContinueHeroCard extends ConsumerWidget {
+  const ContinueHeroCard({super.key, required this.lesson, required this.onOpen});
 
-  /// Нажатие на кнопку воспроизведения.
-  final VoidCallback onPlay;
+  /// Последний урок пользователя; `null` — ещё ни одного.
+  final HomeLessonTile? lesson;
+
+  /// Открыть урок (или список уроков, если продолжать нечего).
+  final VoidCallback onOpen;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final onGrad = context.colors.primaryOn;
+    final tile = lesson;
+    final progress = tile == null
+        ? 0.0
+        : ref
+                  .watch(
+                    lessonProgressProvider((
+                      lessonId: tile.id,
+                      segmentCount: tile.segmentCount,
+                    )),
+                  )
+                  .value ??
+              0.0;
+    final title = tile?.title ?? 'Начните первый урок';
+    final subtitle = tile?.subtitle ?? 'Выберите урок из каталога';
 
     return Container(
       padding: const EdgeInsets.all(AppSpacing.s5),
@@ -30,7 +53,7 @@ class ContinueHeroCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            HomeSample.heroEyebrow.toUpperCase(),
+            'Продолжить'.toUpperCase(),
             style: AppText.caption.copyWith(
               color: onGrad.withValues(alpha: 0.85),
               fontWeight: FontWeight.w700,
@@ -39,17 +62,19 @@ class ContinueHeroCard extends StatelessWidget {
           ),
           const SizedBox(height: AppSpacing.s2),
           Text(
-            HomeSample.heroTitle,
+            title,
             style: AppText.h2.copyWith(color: onGrad),
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
           ),
           const SizedBox(height: AppSpacing.s1),
           Text(
-            HomeSample.heroSubtitle,
+            subtitle,
             style: AppText.label.copyWith(
               color: onGrad.withValues(alpha: 0.85),
             ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
           ),
           const SizedBox(height: AppSpacing.s4),
           const _HeroWave(),
@@ -60,7 +85,7 @@ class ContinueHeroCard extends StatelessWidget {
                 child: ClipRRect(
                   borderRadius: AppRadii.rPill,
                   child: LinearProgressIndicator(
-                    value: HomeSample.heroProgress,
+                    value: progress,
                     minHeight: 6,
                     backgroundColor: onGrad.withValues(alpha: 0.25),
                     valueColor: AlwaysStoppedAnimation<Color>(onGrad),
@@ -68,7 +93,7 @@ class ContinueHeroCard extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: AppSpacing.s3),
-              _PlayButton(onTap: onPlay),
+              _PlayButton(onTap: onOpen),
             ],
           ),
         ],
