@@ -20,6 +20,7 @@ class EditLessonWaveform extends ConsumerWidget {
     required this.onPlayPressed,
     required this.onSeek,
     required this.onBoundariesChanged,
+    required this.onBoundaryRemoved,
     required this.onTrimChanged,
     required this.onTrimStart,
     required this.onTrimApply,
@@ -34,6 +35,7 @@ class EditLessonWaveform extends ConsumerWidget {
   final VoidCallback onPlayPressed;
   final ValueChanged<int> onSeek;
   final ValueChanged<List<int>> onBoundariesChanged;
+  final ValueChanged<int> onBoundaryRemoved;
   final ValueChanged<AudioTrim> onTrimChanged;
   final VoidCallback onTrimStart;
   final VoidCallback onTrimApply;
@@ -62,6 +64,7 @@ class EditLessonWaveform extends ConsumerWidget {
           view: view,
           boundaries: state.boundaries,
           onBoundariesChanged: onBoundariesChanged,
+          onBoundaryRemoved: onBoundaryRemoved,
           onSeek: onSeek,
           positionMs: playheadMs,
           showCursor: true,

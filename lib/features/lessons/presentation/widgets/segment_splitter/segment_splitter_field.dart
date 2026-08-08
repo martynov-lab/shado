@@ -44,6 +44,7 @@ class SegmentSplitterField extends StatefulWidget {
     super.key,
     required this.controller,
     required this.onChanged,
+    required this.onMarkerRemoved,
     required this.segmentCount,
     this.focusNode,
     this.enabled = true,
@@ -51,6 +52,12 @@ class SegmentSplitterField extends StatefulWidget {
 
   final MarkedTextController controller;
   final ValueChanged<String> onChanged;
+
+  /// Удаление метки №[ordinal] (1-based). Текст правит не поле, а контроллер:
+  /// парная граница на аудио убирается там же, а новый текст возвращается в
+  /// поле извне.
+  final ValueChanged<int> onMarkerRemoved;
+
   final int segmentCount;
   final FocusNode? focusNode;
   final bool enabled;
@@ -232,17 +239,20 @@ class _SegmentSplitterFieldState extends State<SegmentSplitterField> {
 
   List<Widget> _buildPins(AppColors colors) {
     return [
-      for (final marker in _markers)
+      // Метки идут по порядку (_markers отсортирован по позиции), поэтому номер
+      // метки — её место в списке.
+      for (final (position, marker) in _markers.indexed)
         _needleAt(
           marker.rect,
           colors.primary,
           hitWidth: _pinHitWidth,
           pin: _MarkerPin(
             markerIndex: marker.index,
+            number: position + 1,
             height: marker.rect.height,
             color: colors.primary,
             ringColor: colors.surface2,
-            onDelete: () => _removeMarker(marker.index),
+            onDelete: () => widget.onMarkerRemoved(position + 1),
           ),
         ),
     ];
@@ -360,11 +370,6 @@ class _SegmentSplitterFieldState extends State<SegmentSplitterField> {
     if (next != text) _apply(next, offset.clamp(0, next.length));
   }
 
-  void _removeMarker(int index) {
-    final next = removeMarker(_controller.text, index);
-    if (next != _controller.text) _apply(next, index.clamp(0, next.length));
-  }
-
   void _clearAll() {
     final next = clearMarkers(_controller.text);
     if (next == _controller.text) return;
@@ -387,13 +392,18 @@ class _SegmentSplitterFieldState extends State<SegmentSplitterField> {
 class _MarkerPin extends StatelessWidget {
   const _MarkerPin({
     required this.markerIndex,
+    required this.number,
     required this.height,
     required this.color,
     required this.ringColor,
     required this.onDelete,
   });
 
+  /// Индекс символа метки в тексте — по нему её переносят при перетаскивании.
   final int markerIndex;
+
+  /// Порядковый номер метки — его показывают в кружке и им же метку удаляют.
+  final int number;
   final double height;
   final Color color;
   final Color ringColor;
@@ -415,6 +425,7 @@ class _MarkerPin extends StatelessWidget {
             height: height,
             color: color,
             ringColor: ringColor,
+            number: number,
           ),
         ),
       ),

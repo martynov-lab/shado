@@ -35,6 +35,7 @@ void main() {
     WidgetTester tester, {
     required List<int> boundaries,
     ValueChanged<List<int>>? onBoundariesChanged,
+    ValueChanged<int>? onBoundaryRemoved,
     ValueChanged<int>? onSeek,
     int positionMs = 0,
     AudioTrim view = full,
@@ -56,6 +57,7 @@ void main() {
               showCursor: onSeek != null,
               height: height,
               onBoundariesChanged: onBoundariesChanged ?? (_) {},
+              onBoundaryRemoved: onBoundaryRemoved,
               onSeek: onSeek,
               trim: trim,
               onTrimChanged: onTrimChanged,
@@ -126,6 +128,44 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(reported, isNull);
+    });
+  });
+
+  group('удаление метки', () {
+    testWidgets('двойной тап по кружку сообщает индекс метки', (tester) async {
+      int? removed;
+      await pumpEditor(
+        tester,
+        boundaries: const [0, 3000, 6000, 9000],
+        onBoundaryRemoved: (index) => removed = index,
+      );
+
+      // Кружок метки 3000 мс стоит на x = 133, у верхнего края волны.
+      const at = Offset(133, handleY);
+      await tester.tapAt(at);
+      await tester.pump(const Duration(milliseconds: 50));
+      await tester.tapAt(at);
+      await tester.pumpAndSettle();
+
+      expect(removed, 1);
+    });
+
+    testWidgets('двойной тап мимо кружка метку не трогает', (tester) async {
+      int? removed;
+      await pumpEditor(
+        tester,
+        boundaries: const [0, 3000, 6000, 9000],
+        onBoundaryRemoved: (index) => removed = index,
+      );
+
+      // Тот же x, но по центру волны — ниже полосы захвата метки.
+      const at = Offset(133, bodyY);
+      await tester.tapAt(at);
+      await tester.pump(const Duration(milliseconds: 50));
+      await tester.tapAt(at);
+      await tester.pumpAndSettle();
+
+      expect(removed, isNull);
     });
   });
 

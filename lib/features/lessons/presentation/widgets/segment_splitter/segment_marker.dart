@@ -27,6 +27,7 @@ class SegmentMarkerNeedle extends StatelessWidget {
     required this.color,
     this.ringColor,
     this.opacity = 1,
+    this.number,
   });
 
   /// Высота линии — обычно высота строки текста.
@@ -38,6 +39,10 @@ class SegmentMarkerNeedle extends StatelessWidget {
   final Color? ringColor;
 
   final double opacity;
+
+  /// Порядковый номер метки в кружке; `null` — кружок без цифры (чип, призрак,
+  /// приглушённые иглы).
+  final int? number;
 
   @override
   Widget build(BuildContext context) {
@@ -66,11 +71,23 @@ class SegmentMarkerNeedle extends StatelessWidget {
               child: Container(
                 width: kNeedleCircle,
                 height: kNeedleCircle,
+                alignment: Alignment.center,
                 decoration: BoxDecoration(
                   color: color,
                   shape: BoxShape.circle,
                   border: Border.all(color: ring, width: AppSizes.borderThick),
                 ),
+                child: number == null
+                    ? null
+                    : Text(
+                        '$number',
+                        style: TextStyle(
+                          color: ring,
+                          fontSize: 9,
+                          height: 1,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
               ),
             ),
           ],

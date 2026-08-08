@@ -47,6 +47,7 @@ class WaveformEditor extends StatefulWidget {
     required this.boundaries,
     required this.positionMs,
     required this.onBoundariesChanged,
+    this.onBoundaryRemoved,
     this.onSeek,
     this.trim,
     this.onTrimChanged,
@@ -70,6 +71,11 @@ class WaveformEditor extends StatefulWidget {
   final int positionMs;
 
   final ValueChanged<List<int>> onBoundariesChanged;
+
+  /// Удаление внутренней метки по её индексу в [boundaries] — двойным тапом по
+  /// кружку. `null` — метки удалять нельзя (экран просмотра), и двойной тап не
+  /// перехватывается, чтобы тап-seek оставался мгновенным.
+  final ValueChanged<int>? onBoundaryRemoved;
 
   /// Куда перенесли ползунок: тапом по волне или перетаскиванием его ручки.
   /// `null` — волна только для разметки, ползунок неподвижен.
@@ -159,6 +165,9 @@ class _WaveformEditorState extends State<WaveformEditor> {
   double _zoomAtScaleStart = 1;
   double? _dragPointerX;
   Timer? _autoScrollTimer;
+
+  /// Точка последнего двойного тапа: по ней ищем метку, которую удаляют.
+  Offset? _doubleTapPos;
 
   @override
   void didUpdateWidget(WaveformEditor oldWidget) {
@@ -480,6 +489,30 @@ class _WaveformEditorState extends State<WaveformEditor> {
     onSeek(_view.clampMs(_xToMs(details.localPosition.dx)));
   }
 
+  void _onDoubleTapDown(TapDownDetails details) =>
+      _doubleTapPos = details.localPosition;
+
+  /// Двойной тап по кружку метки удаляет её. Метку ищем той же широкой полосой у
+  /// верха, что и при перетаскивании; ниже полосы и во время обрезки — мимо.
+  void _onDoubleTap() {
+    final onRemoved = widget.onBoundaryRemoved;
+    final point = _doubleTapPos;
+    if (onRemoved == null || point == null || _isTrimming) return;
+    if (point.dy > _boundaryGrabBottom) return;
+    var nearest = -1;
+    var nearestDistance = double.infinity;
+    for (var i = 1; i < _boundaries.length - 1; i++) {
+      final dx = (_msToX(_boundaries[i]) - point.dx).abs();
+      if (dx < nearestDistance) {
+        nearestDistance = dx;
+        nearest = i;
+      }
+    }
+    if (nearest > 0 && nearestDistance <= _boundaryGrabHalfWidth) {
+      onRemoved(nearest);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final colors = Theme.of(context).extension<WaveformColors>()!;
@@ -498,6 +531,12 @@ class _WaveformEditorState extends State<WaveformEditor> {
             onScaleUpdate: _onScaleUpdate,
             onScaleEnd: _onScaleEnd,
             onTapUp: widget.onSeek == null ? null : _onTapUp,
+            // Двойной тап перехватываем только там, где метки можно удалять:
+            // иначе распознаватель задерживал бы обычный тап-seek.
+            onDoubleTapDown:
+                widget.onBoundaryRemoved == null ? null : _onDoubleTapDown,
+            onDoubleTap:
+                widget.onBoundaryRemoved == null ? null : _onDoubleTap,
             child: CustomPaint(
               size: Size(_viewportWidth, widget.height),
               painter: _WaveformPainter(
@@ -745,6 +784,19 @@ class _WaveformPainter extends CustomPainter {
         Offset(x, _boundaryHandleDrawY),
         isDragged ? _boundaryHandleRadius + 2 : _boundaryHandleRadius,
         Paint()..color = colors.boundary.withValues(alpha: alpha),
+      );
+      // Номер метки внутри кружка — тот же язык, что у игл в тексте.
+      final number = _layoutLabel(
+        '$i',
+        colors.background.withValues(alpha: alpha),
+        9,
+      );
+      number.paint(
+        canvas,
+        Offset(
+          x - number.width / 2,
+          _boundaryHandleDrawY - number.height / 2,
+        ),
       );
       if (isDragged) {
         // Пока метку тащат, показываем точное время под пальцем.

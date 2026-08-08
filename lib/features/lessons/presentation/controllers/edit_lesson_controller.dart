@@ -10,6 +10,7 @@ import '../../domain/entities/audio_trim.dart';
 import '../../domain/entities/lesson.dart';
 import '../../domain/entities/segment_boundaries.dart';
 import '../../domain/usecases/create_lesson.dart';
+import '../widgets/segment_splitter/segment_boundary_math.dart' as marks;
 import 'lesson_providers.dart';
 import 'lessons_controller.dart';
 
@@ -200,6 +201,29 @@ class EditLessonController extends AsyncNotifier<EditLessonState> {
     final current = state.value;
     if (current == null) return;
     state = AsyncValue.data(current.copyWith(boundaries: boundaries));
+  }
+
+  /// Убирает метку №[ordinal] (1-based) сразу из текста и с волны: исчезает и
+  /// разделитель, и парная ему граница `boundaries[ordinal]`. Остальные границы
+  /// остаются на местах — в отличие от [setText], который переразбил бы хвост.
+  void removeMarker(int ordinal) {
+    final current = state.value;
+    if (current == null) return;
+    final indices = marks.markerIndices(current.text);
+    if (ordinal < 1 || ordinal > indices.length) return;
+    final nextText = marks.removeMarker(current.text, indices[ordinal - 1]);
+    final boundaries = current.boundaries;
+    final inSync = boundaries.length == current.segmentCount + 1;
+    final nextBoundaries = inSync && ordinal < boundaries.length - 1
+        ? ([...boundaries]..removeAt(ordinal))
+        : SegmentBoundaries.resize(
+            boundaries,
+            CreateLesson.splitIntoSegments(nextText).length,
+            current.trim,
+          );
+    state = AsyncValue.data(
+      current.copyWith(text: nextText, boundaries: nextBoundaries),
+    );
   }
 
   /// Тумблер «Приватный урок» (только для owner): `true` — урок приватный.

@@ -114,6 +114,12 @@ class _AddLessonPageState extends ConsumerState<AddLessonPage> {
       }
     });
 
+    // Метку могли удалить с волны — тогда текст правит контроллер, и его нужно
+    // вернуть в поле. При обычном вводе текст уже совпадает, синк — no-op.
+    ref.listen(addLessonControllerProvider.select((s) => s.text), (_, next) {
+      if (next != _textController.text) _textController.text = next;
+    });
+
     return Scaffold(
       backgroundColor: context.colors.bg,
       body: SafeArea(
@@ -184,6 +190,7 @@ class _AddLessonPageState extends ConsumerState<AddLessonPage> {
                         child: AddLessonWaveform(
                           state: state,
                           onBoundariesChanged: controller.setBoundaries,
+                          onBoundaryRemoved: controller.removeMarker,
                           onTrimChanged: controller.updateTrim,
                           onTrimStart: controller.startTrim,
                           onTrimApply: controller.applyTrim,
@@ -203,6 +210,7 @@ class _AddLessonPageState extends ConsumerState<AddLessonPage> {
                       child: SegmentSplitterField(
                         controller: _textController,
                         onChanged: controller.setText,
+                        onMarkerRemoved: controller.removeMarker,
                         segmentCount: state.segmentCount,
                       ),
                     ),

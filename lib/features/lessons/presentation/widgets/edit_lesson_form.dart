@@ -37,6 +37,16 @@ class _EditLessonFormState extends ConsumerState<EditLessonForm> {
   final _pageFocus = FocusNode(debugLabel: 'edit-lesson-page');
 
   @override
+  void didUpdateWidget(EditLessonForm oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // Метку могли удалить с волны — тогда текст правит контроллер, и его нужно
+    // вернуть в поле. При обычном вводе текст уже совпадает, синк — no-op.
+    if (widget.state.text != _textController.text) {
+      _textController.text = widget.state.text;
+    }
+  }
+
+  @override
   void dispose() {
     _titleController.dispose();
     _textController.dispose();
@@ -106,6 +116,7 @@ class _EditLessonFormState extends ConsumerState<EditLessonForm> {
                     onPlayPressed: controller.togglePlay,
                     onSeek: controller.seek,
                     onBoundariesChanged: controller.setBoundaries,
+                    onBoundaryRemoved: controller.removeMarker,
                     onTrimChanged: controller.updateTrim,
                     onTrimStart: controller.startTrim,
                     onTrimApply: controller.applyTrim,
@@ -131,6 +142,7 @@ class _EditLessonFormState extends ConsumerState<EditLessonForm> {
             child: SegmentSplitterField(
               controller: _textController,
               onChanged: controller.setText,
+              onMarkerRemoved: controller.removeMarker,
               segmentCount: state.segmentCount,
             ),
           ),
@@ -148,6 +160,7 @@ String _hint(EditLessonState state) {
         'Пробел — послушать';
   }
   return 'Метки берутся за кружок сверху, ползунок — за треугольник снизу; '
-      'перетаскивание в стороне от них двигает волну. Растянуть волну: щипок '
-      'двумя пальцами или Ctrl + колесо мыши. Пробел — играть или пауза';
+      'перетаскивание в стороне от них двигает волну. Двойной тап по метке '
+      'убирает её (и парную метку в тексте). Растянуть волну: щипок двумя '
+      'пальцами или Ctrl + колесо мыши. Пробел — играть или пауза';
 }

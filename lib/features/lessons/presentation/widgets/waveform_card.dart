@@ -23,6 +23,7 @@ class WaveformCard extends ConsumerWidget {
     required this.view,
     required this.boundaries,
     required this.onBoundariesChanged,
+    this.onBoundaryRemoved,
     this.audioPath,
     this.onSeek,
     this.cachePeaks = true,
@@ -54,6 +55,10 @@ class WaveformCard extends ConsumerWidget {
 
   final List<int> boundaries;
   final ValueChanged<List<int>> onBoundariesChanged;
+
+  /// Удаление внутренней метки по её индексу — двойным тапом. `null` — метки
+  /// удалять нельзя.
+  final ValueChanged<int>? onBoundaryRemoved;
 
   /// Задан — на волне появляется перетаскиваемый ползунок воспроизведения.
   final ValueChanged<int>? onSeek;
@@ -126,6 +131,7 @@ class WaveformCard extends ConsumerWidget {
             showCursor: showCursor,
             height: height,
             onBoundariesChanged: onBoundariesChanged,
+            onBoundaryRemoved: onBoundaryRemoved,
             onSeek: onSeek,
             trim: trim,
             onTrimChanged: onTrimChanged,

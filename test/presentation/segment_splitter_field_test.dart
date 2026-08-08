@@ -14,6 +14,7 @@ void main() {
     required MarkedTextController controller,
     required int segmentCount,
     ValueChanged<String>? onChanged,
+    ValueChanged<int>? onMarkerRemoved,
   }) {
     return MaterialApp(
       theme: AppTheme.light(),
@@ -25,6 +26,7 @@ void main() {
               controller: controller,
               segmentCount: segmentCount,
               onChanged: onChanged ?? (_) {},
+              onMarkerRemoved: onMarkerRemoved ?? (_) {},
             ),
           ),
         ),
@@ -140,26 +142,40 @@ void main() {
     expect(controller.text, contains('|'));
   });
 
-  testWidgets('тап по игле убирает метку', (tester) async {
-    final controller = MarkedTextController(text: 'alpha | beta');
+  testWidgets('тап по игле сообщает номер метки', (tester) async {
+    final controller = MarkedTextController(text: 'alpha | beta | gamma');
     addTearDown(controller.dispose);
-    String? changed;
+    int? removed;
 
     await tester.pumpWidget(
       wrap(
         controller: controller,
-        segmentCount: 2,
-        onChanged: (text) => changed = text,
+        segmentCount: 3,
+        onMarkerRemoved: (ordinal) => removed = ordinal,
       ),
     );
     await tester.pumpAndSettle();
 
-    // Иглы рисуются после чипа в тулбаре, поэтому игла метки — последняя.
-    await tester.tap(find.byType(SegmentMarkerNeedle).last);
+    // Иглы рисуются после чипа в тулбаре, поэтому первая игла метки — вторая с
+    // начала списка (первый — чип), а её номер — 1.
+    await tester.tap(find.byType(SegmentMarkerNeedle).at(1));
     await tester.pumpAndSettle();
 
-    expect(controller.text, 'alpha beta');
-    expect(changed, 'alpha beta');
+    // Текст правит контроллер снаружи — само поле его не трогает.
+    expect(removed, 1);
+    expect(controller.text, 'alpha | beta | gamma');
+  });
+
+  testWidgets('иглы пронумерованы по порядку', (tester) async {
+    final controller = MarkedTextController(text: 'one | two | three');
+    addTearDown(controller.dispose);
+
+    await tester.pumpWidget(wrap(controller: controller, segmentCount: 3));
+    await tester.pumpAndSettle();
+
+    // Две метки — номера 1 и 2 в кружках игл.
+    expect(find.text('1'), findsOneWidget);
+    expect(find.text('2'), findsOneWidget);
   });
 
   testWidgets('перетаскивание иглы переносит метку', (tester) async {

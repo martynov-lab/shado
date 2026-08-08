@@ -10,6 +10,7 @@ import '../../domain/entities/lesson.dart';
 import '../../domain/entities/lesson_category.dart';
 import '../../domain/entities/segment_boundaries.dart';
 import '../../domain/usecases/create_lesson.dart';
+import '../widgets/segment_splitter/segment_boundary_math.dart' as marks;
 import 'lesson_providers.dart';
 import 'lessons_controller.dart';
 
@@ -165,6 +166,23 @@ class AddLessonController extends Notifier<AddLessonFormState> {
 
   void setBoundaries(List<int> boundaries) =>
       state = state.copyWith(boundaries: boundaries);
+
+  /// Убирает метку №[ordinal] (1-based) сразу из текста и с волны: исчезает и
+  /// разделитель, и парная ему граница `boundaries[ordinal]`. Остальные границы
+  /// остаются на местах — в отличие от [setText], который переразбил бы хвост.
+  void removeMarker(int ordinal) {
+    final indices = marks.markerIndices(state.text);
+    if (ordinal < 1 || ordinal > indices.length) return;
+    final nextText = marks.removeMarker(state.text, indices[ordinal - 1]);
+    final boundaries = state.boundaries;
+    final inSync = boundaries.length == state.segmentCount + 1;
+    final next = state.copyWith(text: nextText);
+    state = next.copyWith(
+      boundaries: inSync && ordinal < boundaries.length - 1
+          ? ([...boundaries]..removeAt(ordinal))
+          : _fitBoundaries(next),
+    );
+  }
 
   void setAccent(LessonAccent? accent) =>
       state = state.copyWith(accent: accent);

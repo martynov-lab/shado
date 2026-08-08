@@ -20,6 +20,7 @@ class AddLessonWaveform extends ConsumerWidget {
     super.key,
     required this.state,
     required this.onBoundariesChanged,
+    required this.onBoundaryRemoved,
     required this.onTrimChanged,
     required this.onTrimStart,
     required this.onTrimApply,
@@ -29,6 +30,7 @@ class AddLessonWaveform extends ConsumerWidget {
   final AddLessonFormState state;
 
   final ValueChanged<List<int>> onBoundariesChanged;
+  final ValueChanged<int> onBoundaryRemoved;
   final ValueChanged<AudioTrim> onTrimChanged;
   final VoidCallback onTrimStart;
   final VoidCallback onTrimApply;
@@ -83,6 +85,7 @@ class AddLessonWaveform extends ConsumerWidget {
           view: view,
           boundaries: state.boundaries,
           onBoundariesChanged: onBoundariesChanged,
+          onBoundaryRemoved: onBoundaryRemoved,
           onSeek: player.seek,
           positionMs: playheadMs,
           showCursor: true,
@@ -133,6 +136,7 @@ String _hint(AddLessonFormState state) {
     return 'Введите текст — метки границ появятся на волне';
   }
   return 'Метки берутся за кружок сверху, ползунок — за треугольник снизу; '
-      'перетаскивание в стороне от них двигает волну. Растянуть волну: щипок '
-      'двумя пальцами или Ctrl + колесо мыши. Пробел — играть или пауза';
+      'перетаскивание в стороне от них двигает волну. Двойной тап по метке '
+      'убирает её (и парную метку в тексте). Растянуть волну: щипок двумя '
+      'пальцами или Ctrl + колесо мыши. Пробел — играть или пауза';
 }
