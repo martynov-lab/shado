@@ -1,5 +1,6 @@
 import '../../domain/entities/progress_summary.dart';
 import '../../domain/progress_streak.dart';
+import '../../domain/progress_week.dart';
 
 /// Готовые к отрисовке данные экрана прогресса: сводка сервера и история,
 /// приведённые к входам виджетов из макета.
@@ -26,7 +27,8 @@ class ProgressViewModel {
   ) {
     final today = summary.today;
     final totals = summary.totals;
-    final week = summary.week;
+    // Полная неделя: дни без занятий сервер опускает, дополняем их нулями.
+    final week = weekWithGaps(summary.week, today.day);
 
     // Столбцы графика — минуты по дням, в процентах от максимума за неделю.
     final weekMinutes = [for (final day in week) day.listenedMinutes];

@@ -16,6 +16,7 @@ import '../../features/lessons/presentation/pages/splash_page.dart';
 import '../../features/progress/presentation/pages/progress_page.dart';
 import '../../features/settings/presentation/pages/settings_page.dart';
 import '../../screens/design_gallery/design_gallery_screen.dart';
+import '../bootstrap/app_bootstrap.dart';
 
 final _rootNavigatorKey = GlobalKey<NavigatorState>();
 
@@ -37,14 +38,16 @@ const bool _openDesignGalleryAtLaunch = bool.fromEnvironment('design_gallery');
 
 final appRouterProvider = Provider<GoRouter>((ref) {
   // Роутер пересобирать нельзя — потеряется стек навигации, поэтому о смене
-  // состояния сессии он узнаёт через слушателя.
-  final refresh = ValueNotifier<AuthStatus>(AuthStatus.unknown);
+  // состояния он узнаёт через слушателя. Будим его и на смене сессии, и на
+  // завершении прогрева данных — оба решают, пора ли уходить с заставки.
+  final refresh = ValueNotifier<int>(0);
   ref.onDispose(refresh.dispose);
   ref.listen(
     authControllerProvider.select((state) => state.status),
-    (_, next) => refresh.value = next,
+    (_, _) => refresh.value++,
     fireImmediately: true,
   );
+  ref.listen(appBootstrapProvider, (_, _) => refresh.value++);
 
   return GoRouter(
     navigatorKey: _rootNavigatorKey,
@@ -67,7 +70,12 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         return location == SplashPage.routePath ? null : SplashPage.routePath;
       }
       if (!auth.isAuthenticated) return isPublic ? null : LoginPage.routePath;
-      // Вошедшему на экранах входа делать нечего.
+      // Вошли, но данные к первому кадру ещё греются — держим заставку, чтобы
+      // главный не мигнул пустыми баннерами прогресса.
+      if (ref.read(appBootstrapProvider).isLoading) {
+        return location == SplashPage.routePath ? null : SplashPage.routePath;
+      }
+      // Вошедшему на экранах входа и заставке делать нечего.
       if (isPublic || location == SplashPage.routePath) {
         return HomePage.routePath;
       }

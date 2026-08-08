@@ -134,7 +134,11 @@ class HomeDesktopView extends StatelessWidget {
                 HomeCard(
                   title: 'Минуты по дням',
                   caption: 'эта неделя',
-                  child: HomeMinutesMini(values: model.weekMinutes),
+                  child: HomeMinutesMini(
+                    values: model.weekMinutes,
+                    labels: model.weekDays,
+                    todayIndex: model.weekTodayIndex,
+                  ),
                 ),
               ],
             ),

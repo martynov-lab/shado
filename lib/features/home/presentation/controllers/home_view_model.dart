@@ -1,5 +1,6 @@
 import '../../../progress/domain/entities/progress_summary.dart';
 import '../../../progress/domain/progress_streak.dart';
+import '../../../progress/domain/progress_week.dart';
 
 /// Данные главного экрана, приведённые к входам виджетов.
 ///
@@ -127,33 +128,26 @@ class HomeViewModel {
     'Вс',
   ];
 
-  /// Раскладывает неделю по входам виджетов. Пока сводки нет ([week] пусто) —
-  /// пустая неделя с обведённым сегодняшним днём, чтобы карточки не «прыгали».
+  /// Раскладывает неделю по входам виджетов. Дни без занятий сервер опускает —
+  /// дополняем их нулями, чтобы «Эта неделя» всегда показывала все семь дней, а
+  /// пока сводки нет — пустую неделю, оканчивающуюся сегодня.
   static (List<String>, List<bool>, List<int>, int) _week(
     List<ProgressDay> week,
     ProgressDay today,
   ) {
-    if (week.isEmpty) {
-      final todayIndex = (DateTime.now().weekday - 1).clamp(0, 6);
-      return (
-        _weekdays,
-        List<bool>.filled(7, false),
-        List<int>.filled(7, 0),
-        todayIndex,
-      );
-    }
-    final labels = [for (final day in week) _weekdayLabel(day.day)];
+    final days = weekWithGaps(week, today.day);
+    final labels = [for (final day in days) _weekdayLabel(day.day)];
     final done = [
-      for (final day in week) day.listenedMs > 0 || day.segmentRepeats > 0,
+      for (final day in days) day.listenedMs > 0 || day.segmentRepeats > 0,
     ];
-    final minutes = [for (final day in week) day.listenedMinutes];
+    final minutes = [for (final day in days) day.listenedMinutes];
     final maxMinutes = minutes.fold<int>(0, (a, b) => b > a ? b : a);
     final bars = [
       for (final m in minutes)
         maxMinutes <= 0 ? 0 : (m * 100 / maxMinutes).round(),
     ];
-    var todayIndex = week.indexWhere((day) => day.day == today.day);
-    if (todayIndex < 0) todayIndex = week.length - 1;
+    var todayIndex = days.indexWhere((day) => day.day == today.day);
+    if (todayIndex < 0) todayIndex = days.length - 1;
     return (labels, done, bars, todayIndex);
   }
 

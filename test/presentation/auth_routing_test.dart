@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shado/app.dart';
+import 'package:shado/core/bootstrap/app_bootstrap.dart';
 import 'package:shado/features/auth/domain/entities/auth_user.dart';
 import 'package:shado/features/auth/domain/repositories/auth_repository.dart';
 import 'package:shado/features/auth/presentation/controllers/auth_providers.dart';
@@ -131,6 +132,9 @@ void main() {
         overrides: [
           authRepositoryProvider.overrideWithValue(auth),
           lessonRepositoryProvider.overrideWithValue(FakeLessonRepository()),
+          // Прогрев прогресса не предмет этих тестов: без сервера он бы держал
+          // заставку — здесь считаем его сразу готовым.
+          appBootstrapProvider.overrideWith((ref) async {}),
         ],
         child: const ShadoApp(),
       ),

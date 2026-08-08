@@ -44,14 +44,7 @@ class ActivityHeatmap extends StatelessWidget {
                       ),
                       child: AspectRatio(
                         aspectRatio: 1,
-                        child: DecoratedBox(
-                          decoration: BoxDecoration(
-                            color: colors.primary.withValues(
-                              alpha: _alphaFor(_valueAt(r, c)),
-                            ),
-                            borderRadius: BorderRadius.circular(_radius),
-                          ),
-                        ),
+                        child: _Cell(minutes: _valueAt(r, c), colors: colors),
                       ),
                     ),
                   ),
@@ -67,6 +60,44 @@ class ActivityHeatmap extends StatelessWidget {
   int _valueAt(int row, int col) {
     final index = row * columns + col;
     return index < cells.length ? cells[index] : 0;
+  }
+}
+
+/// Ячейка карты: насыщенность растёт с минутами, а в дни с активностью внутри
+/// показываем сами минуты. На тёмных ячейках подпись светлая, на светлых —
+/// основным цветом текста; [FittedBox] ужимает число под размер ячейки.
+class _Cell extends StatelessWidget {
+  const _Cell({required this.minutes, required this.colors});
+
+  final int minutes;
+  final AppColors colors;
+
+  @override
+  Widget build(BuildContext context) {
+    final alpha = ActivityHeatmap._alphaFor(minutes);
+
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: colors.primary.withValues(alpha: alpha),
+        borderRadius: BorderRadius.circular(ActivityHeatmap._radius),
+      ),
+      child: minutes <= 0
+          ? null
+          : Center(
+              child: Padding(
+                padding: const EdgeInsets.all(AppSpacing.s1),
+                child: FittedBox(
+                  child: Text(
+                    '$minutes',
+                    style: AppText.caption.copyWith(
+                      color: alpha >= 0.78 ? colors.primaryOn : colors.text,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+    );
   }
 }
 
