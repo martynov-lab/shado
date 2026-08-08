@@ -73,11 +73,16 @@ class LessonGridCard extends ConsumerWidget {
                       children: [
                         Wrap(
                           spacing: AppSpacing.s2,
+                          crossAxisAlignment: WrapCrossAlignment.center,
                           children: [
                             if (lesson.isPrivate)
-                              const AppBadge(
-                                label: 'Приватный',
-                                variant: AppBadgeVariant.neutral,
+                              // Признак приватности — замок; на градиенте
+                              // красим светлым, как остальной текст крышки.
+                              AppIcon(
+                                AppIcons.lock,
+                                size: AppSizes.iconSm,
+                                color: colors.primaryOn,
+                                semanticLabel: 'Приватный',
                               ),
                             if (lessonIsNew(lesson))
                               const AppBadge(label: 'New'),

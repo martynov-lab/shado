@@ -109,7 +109,9 @@ class _LessonListRowState extends ConsumerState<LessonListRow> {
                       children: [
                         Row(
                           children: [
-                            Flexible(
+                            // Заголовок занимает всю ширину и прижимает метки к
+                            // правому краю; длинное название обрезается многоточием.
+                            Expanded(
                               child: Text(
                                 lesson.title,
                                 style: AppText.title.copyWith(color: colors.text),
@@ -119,9 +121,11 @@ class _LessonListRowState extends ConsumerState<LessonListRow> {
                             ),
                             if (lesson.isPrivate) ...[
                               const SizedBox(width: AppSpacing.s2),
-                              const AppBadge(
-                                label: 'Приватный',
-                                variant: AppBadgeVariant.neutral,
+                              AppIcon(
+                                AppIcons.lock,
+                                size: AppSizes.iconSm,
+                                color: colors.text2,
+                                semanticLabel: 'Приватный',
                               ),
                             ],
                             if (lessonIsNew(lesson)) ...[
@@ -138,14 +142,21 @@ class _LessonListRowState extends ConsumerState<LessonListRow> {
                           overflow: TextOverflow.ellipsis,
                         ),
                         const SizedBox(height: AppSpacing.s2),
-                        LessonProgressBar(value: progress),
+                        // Длительность — справа от прогресса, в нижнем углу строки.
+                        Row(
+                          children: [
+                            Expanded(child: LessonProgressBar(value: progress)),
+                            const SizedBox(width: AppSpacing.s3),
+                            Text(
+                              formatClock(lesson.trim.durationMs),
+                              style: AppText.monoTime.copyWith(
+                                color: colors.text2,
+                              ),
+                            ),
+                          ],
+                        ),
                       ],
                     ),
-                  ),
-                  const SizedBox(width: AppSpacing.s3),
-                  Text(
-                    formatPosition(lesson.trim.durationMs),
-                    style: AppText.monoTime.copyWith(color: colors.text2),
                   ),
                 ],
               ),
