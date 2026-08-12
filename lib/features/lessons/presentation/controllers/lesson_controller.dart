@@ -6,6 +6,8 @@ import 'package:just_audio/just_audio.dart';
 import '../../../../core/constants/app_constants.dart';
 import '../../../progress/data/progress_reporter.dart';
 import '../../../progress/presentation/controllers/progress_providers.dart';
+import '../../../settings/domain/entities/playback_settings.dart';
+import '../../../settings/presentation/controllers/playback_settings_controller.dart';
 import '../../domain/entities/lesson.dart';
 import '../../domain/entities/segment.dart';
 import '../../domain/entities/segment_range.dart';
@@ -51,6 +53,7 @@ class LessonState {
     this.selection,
     this.committedRange,
     this.focusedIndex,
+    this.countdown,
   });
 
   final Lesson lesson;
@@ -81,6 +84,10 @@ class LessonState {
   /// Кусок под клавиатурой: по нему ходят стрелки, его играет пробел. `null` —
   /// клавиатурой ещё не пользовались.
   final int? focusedIndex;
+
+  /// Текущее число обратного отсчёта «3-2-1» перед стартом. `null` — отсчёт не
+  /// идёт (выключен или уже закончился).
+  final int? countdown;
 
   bool get isSlow => speed == kSlowSpeed;
 
@@ -151,6 +158,8 @@ class LessonState {
     SegmentRange? committedRange,
     bool clearCommittedRange = false,
     int? focusedIndex,
+    int? countdown,
+    bool clearCountdown = false,
   }) {
     return LessonState(
       lesson: lesson ?? this.lesson,
@@ -164,6 +173,7 @@ class LessonState {
           ? null
           : (committedRange ?? this.committedRange),
       focusedIndex: focusedIndex ?? this.focusedIndex,
+      countdown: clearCountdown ? null : (countdown ?? this.countdown),
     );
   }
 }
@@ -182,6 +192,20 @@ class LessonController extends AsyncNotifier<LessonState> {
   /// Скорость, флаги loop и точка отсчёта выделения живут в контроллере: они
   /// переживают пересборку [build], в отличие от состояния.
   double _speed = kNormalSpeed;
+
+  /// Скорость по умолчанию применяется один раз — при первом открытии урока;
+  /// дальше пользователь мог сменить её чипом, и пересборка [build] не должна
+  /// откатывать выбор.
+  bool _defaultsApplied = false;
+
+  /// Сколько проходов отрезка уже проиграно в текущем цикле: цикл крутится, пока
+  /// не выбран лимит [PlaybackSettings.repeatsInCycle].
+  int _passCount = 0;
+
+  /// Метка последнего действия пользователя. Отсчёт и пауза между повторами
+  /// сверяются с ней после `await`: новое действие (пуск, стоп, смена отрезка)
+  /// увеличивает метку и отменяет то, что запустило прежнее.
+  int _actionToken = 0;
 
   /// Один тумблер повтора на весь плеер: он держится при переходе между кусками
   /// и применяется к тому, что заряжено сейчас (кусок или закреплённый отрезок).
@@ -221,9 +245,24 @@ class LessonController extends AsyncNotifier<LessonState> {
 
   AudioPlayer get _player => ref.read(lessonAudioPlayerProvider(lessonId));
 
+  /// Актуальные настройки воспроизведения на момент действия. К первому запуску
+  /// они уже прочитаны в [build], поэтому здесь достаточно синхронного чтения.
+  PlaybackSettings get _settings =>
+      ref.read(playbackSettingsControllerProvider).value ??
+      const PlaybackSettings();
+
   @override
   Future<LessonState> build() async {
     final lesson = await ref.watch(getLessonProvider)(lessonId);
+    // Читаем настройки один раз (read, не watch): их правка на экране настроек
+    // не должна пересобирать плеер и откатывать выбранную скорость.
+    final settings = await ref.read(
+      playbackSettingsControllerProvider.future,
+    );
+    if (!_defaultsApplied) {
+      _speed = settings.defaultSpeed;
+      _defaultsApplied = true;
+    }
     // Именно watch: плеер под autoDispose и должен жить, пока жив контроллер.
     final player = ref.watch(lessonAudioPlayerProvider(lessonId));
     final stateSubscription = player.playerStateStream.listen(_onPlayerState);
@@ -262,8 +301,7 @@ class LessonController extends AsyncNotifier<LessonState> {
     // Конец последнего куска может совпасть с концом файла — тогда границу
     // стеречь уже нечем, потому что позиция дальше не тикает.
     if (finished && _activeLooped && current.activeRange != null) {
-      _recordPass(current.activeRange!);
-      unawaited(_rewindTo(current, current.activeRange!, play: true));
+      unawaited(_onPassCompleted(current, current.activeRange!));
       return;
     }
     final isPlaying = playerState.playing && !finished;
@@ -287,9 +325,53 @@ class LessonController extends AsyncNotifier<LessonState> {
     if (range.end >= segments.length) return;
     if (position.inMilliseconds < segments[range.end].endMs) return;
     _atBoundary = true;
-    // Отрезок доигран до конца — засчитываем проход каждому его сегменту.
-    _recordPass(range);
-    unawaited(_rewindTo(current, range, play: _activeLooped));
+    unawaited(_onPassCompleted(current, range));
+  }
+
+  /// Отрезок доигран до конца: засчитываем проход и решаем, что дальше — ещё
+  /// круг или стоп. Круг делаем, только пока не выбран лимит повторов; между
+  /// кругами вставляем паузу, если она включена.
+  Future<void> _onPassCompleted(LessonState current, SegmentRange range) async {
+    // Дедуп сторожа границы и «плеер доиграл файл»: второй раз тот же проход не
+    // считаем и круг не наматываем.
+    if (!_recordPass(range)) return;
+    _passCount++;
+    final repeats = _settings.repeatsInCycle;
+    // Бесконечный цикл (0) крутится, пока включён повтор; иначе — заданное число
+    // проходов и стоп.
+    final again =
+        _activeLooped && (repeats == kInfiniteRepeats || _passCount < repeats);
+    if (!again) {
+      _passCount = 0;
+      await _rewindTo(current, range, play: false);
+      return;
+    }
+    await _loopAgain(current, range);
+  }
+
+  /// Запускает следующий круг цикла. Если включена пауза между повторами —
+  /// сначала останавливаемся на секунду. За паузу пользователь мог нажать стоп
+  /// или сменить отрезок: тогда метка действия устаревает и круг отменяется.
+  Future<void> _loopAgain(LessonState current, SegmentRange range) async {
+    final segments = current.lesson.segments;
+    if (range.start >= segments.length) {
+      _atBoundary = false;
+      return;
+    }
+    if (_settings.pauseBetweenRepeats) {
+      final token = _actionToken;
+      await _player.pause();
+      // Встаём на начало отрезка сразу: нажми пользователь пуск во время паузы —
+      // звук пойдёт с начала круга, а не с конца предыдущего.
+      await _player.seek(Duration(milliseconds: segments[range.start].startMs));
+      await Future<void>.delayed(const Duration(seconds: 1));
+      if (token != _actionToken) {
+        _atBoundary = false;
+        return;
+      }
+    }
+    final latest = state.value ?? current;
+    await _rewindTo(latest, range, play: true);
   }
 
   /// Отдаёт позицию на дорожку, но не чаще ~25 кадров/с: поток тикает каждые
@@ -317,13 +399,13 @@ class LessonController extends AsyncNotifier<LessonState> {
 
   /// Засчитывает один доигранный проход отрезка: `+1` каждому его сегменту.
   /// Дедуп по времени гасит двойное срабатывание сторожа границы и «доиграл
-  /// файл» на последнем куске.
-  void _recordPass(SegmentRange range) {
+  /// файл» на последнем куске. Возвращает `false`, если проход отбит дедупом.
+  bool _recordPass(SegmentRange range) {
     final now = DateTime.now();
     final last = _lastPassAt;
     if (last != null &&
         now.difference(last) < const Duration(milliseconds: 250)) {
-      return;
+      return false;
     }
     _lastPassAt = now;
     final indices = [for (var i = range.start; i <= range.end; i++) i];
@@ -332,6 +414,7 @@ class LessonController extends AsyncNotifier<LessonState> {
           .recordSegmentPass(lessonId, indices)
           .then((_) => _maybeReportCompletion()),
     );
+    return true;
   }
 
   /// Проверяет, не пройден ли урок целиком, и один раз шлёт `completed`.
@@ -390,11 +473,14 @@ class LessonController extends AsyncNotifier<LessonState> {
   /// Пуск или остановка отрезка [range]: если он уже заряжен — тумблер, иначе
   /// заряжаем и играем с начала.
   Future<void> _togglePlayRange(LessonState current, SegmentRange range) async {
+    // Новое действие пользователя отменяет идущий отсчёт или паузу между
+    // повторами: и то и другое сверяется с этой меткой после своих задержек.
+    final token = ++_actionToken;
     if (current.activeRange != range) {
-      await _start(current, range, loop: _loopEnabled);
+      await _start(current, range, token, loop: _loopEnabled);
       return;
     }
-    await _toggleActive(current);
+    await _toggleActive(current, token);
   }
 
   /// Тумблер «играть / остановить» для куска. Запуск другого куска
@@ -452,29 +538,26 @@ class LessonController extends AsyncNotifier<LessonState> {
   Future<void> previous() =>
       goToSegment((state.value?.playerRange.start ?? 0) - 1);
 
-  /// Переключает скорость между нормальной и медленной — чип на панели плеера.
-  Future<void> cycleSpeed() async {
-    final current = state.value;
-    if (current == null) return;
-    await setSpeed(current.speed == kNormalSpeed ? kSlowSpeed : kNormalSpeed);
-  }
-
   /// Пуск или остановка того, что уже заряжено в плеер.
-  Future<void> _toggleActive(LessonState current) async {
+  Future<void> _toggleActive(LessonState current, int token) async {
     final range = current.activeRange;
     if (current.isPlaying) {
       // Именно остановка, а не пауза: кусок короткий, и следующий пуск
-      // естественнее начать с его начала, чем с середины фразы.
+      // естественнее начать с его начала, чем с середины фразы. Токен уже
+      // увеличен — идущий отсчёт или пауза при этом отменяются.
+      _setCountdown(null);
       if (range != null) await _rewindTo(current, range, play: false);
       return;
     }
+    _atBoundary = false;
+    _passCount = 0;
+    if (!await _runCountdown(token)) return;
     // Последний кусок мог кончиться вместе с файлом: с этого места играть
     // нечего, поэтому начинаем отрезок заново.
     if (range != null && _player.processingState == ProcessingState.completed) {
       await _rewindTo(current, range, play: true);
       return;
     }
-    _atBoundary = false;
     unawaited(_player.play());
   }
 
@@ -484,7 +567,8 @@ class LessonController extends AsyncNotifier<LessonState> {
   /// подряд он играет сам, а конец отрезка стережёт [_onPosition].
   Future<void> _start(
     LessonState current,
-    SegmentRange range, {
+    SegmentRange range,
+    int token, {
     required bool loop,
   }) async {
     final segments = current.lesson.segments;
@@ -493,13 +577,47 @@ class LessonController extends AsyncNotifier<LessonState> {
     await _ensureSource(current.lesson.audioPath);
     _activeLooped = loop;
     _atBoundary = false;
+    _passCount = 0;
     await player.seek(Duration(milliseconds: segments[range.start].startMs));
     await player.setSpeed(_speed);
+    // Заряжаем отрезок сразу; пока идёт отсчёт, он показан, но ещё не играет.
+    final showCountdown = _settings.countdownEnabled;
     state = AsyncValue.data(
-      current.copyWith(activeRange: range, isPlaying: true),
+      current.copyWith(activeRange: range, isPlaying: !showCountdown),
     );
+    if (showCountdown) {
+      if (!await _runCountdown(token)) return;
+      final ready = state.value;
+      if (ready == null) return;
+      state = AsyncValue.data(ready.copyWith(isPlaying: true));
+    }
     // play() завершается только по окончании воспроизведения — не ждём его.
     unawaited(player.play());
+  }
+
+  /// Показывает отсчёт «3-2-1» перед стартом, если он включён. Возвращает
+  /// `false`, когда за время отсчёта началось другое действие (метка устарела) —
+  /// тогда звук запускать уже не нужно.
+  Future<bool> _runCountdown(int token) async {
+    if (!_settings.countdownEnabled) return true;
+    for (var n = 3; n >= 1; n--) {
+      _setCountdown(n);
+      await Future<void>.delayed(const Duration(seconds: 1));
+      if (token != _actionToken) {
+        _setCountdown(null);
+        return false;
+      }
+    }
+    _setCountdown(null);
+    return true;
+  }
+
+  void _setCountdown(int? value) {
+    final current = state.value;
+    if (current == null || current.countdown == value) return;
+    state = AsyncValue.data(
+      current.copyWith(countdown: value, clearCountdown: value == null),
+    );
   }
 
   /// Заряжает файл урока целиком — один раз на урок.
@@ -673,6 +791,9 @@ class LessonController extends AsyncNotifier<LessonState> {
     _selectionAnchor = null;
     _activeLooped = false;
     _atBoundary = false;
+    _passCount = 0;
+    // Отменяем идущий отсчёт или паузу между повторами: урок пересобирается.
+    _actionToken++;
     // Файл могли подменить вместе с разбивкой — заряжаем заново.
     _loadedPath = null;
     state = const AsyncValue.loading();

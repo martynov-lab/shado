@@ -23,6 +23,8 @@ import 'package:shado/features/lessons/domain/entities/segment_range.dart';
 import 'package:shado/features/lessons/domain/repositories/lesson_repository.dart';
 import 'package:shado/features/lessons/presentation/controllers/lesson_controller.dart';
 import 'package:shado/features/lessons/presentation/controllers/lesson_providers.dart';
+import 'package:shado/features/settings/domain/entities/playback_settings.dart';
+import 'package:shado/features/settings/presentation/controllers/playback_settings_controller.dart';
 
 /// Ровный тон на [seconds] секунд: слушать его некому, важны только позиции.
 File _writeTestWav(String path, {int seconds = 4}) {
@@ -103,6 +105,18 @@ class _OneLessonRepository implements LessonRepository {
   Future<void> clearCache() async {}
 }
 
+/// Фиксированные настройки воспроизведения: проверяем механику границ цикла, а не
+/// поведение по умолчанию. Большой лимит повторов держит цикл «бесконечным», а
+/// выключенные пауза и отсчёт не сдвигают позиции по времени.
+class _FixedPlaybackSettings extends PlaybackSettingsController {
+  @override
+  Future<PlaybackSettings> build() async => const PlaybackSettings(
+    repeatsInCycle: 1000,
+    pauseBetweenRepeats: false,
+    countdownEnabled: false,
+  );
+}
+
 void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
   setUpPlatform();
@@ -153,6 +167,9 @@ void main() {
       overrides: [
         lessonRepositoryProvider.overrideWithValue(
           _OneLessonRepository(buildLesson()),
+        ),
+        playbackSettingsControllerProvider.overrideWith(
+          _FixedPlaybackSettings.new,
         ),
       ],
     );

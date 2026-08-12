@@ -4,31 +4,30 @@ import 'package:shado/theme/theme.dart';
 
 /// Компактный счётчик «− N +» для числовых настроек (например, повторов в цикле).
 ///
-/// Значение пока живёт локально и не сохраняется — привязку к настройкам
-/// добавим отдельной задачей.
-class SettingsStepper extends StatefulWidget {
+/// Управляемый: значение приходит извне через [value], изменение уходит в
+/// [onChanged]. Сохранение — на стороне контроллера настроек.
+class SettingsStepper extends StatelessWidget {
   const SettingsStepper({
     super.key,
-    required this.initialValue,
+    required this.value,
+    required this.onChanged,
     this.min = 1,
     this.max = 9,
+    this.formatValue,
   });
 
-  final int initialValue;
+  final int value;
+  final ValueChanged<int> onChanged;
   final int min;
   final int max;
 
-  @override
-  State<SettingsStepper> createState() => _SettingsStepperState();
-}
-
-class _SettingsStepperState extends State<SettingsStepper> {
-  late int _value = widget.initialValue;
+  /// Как показать значение в центре: по умолчанию само число, но, например,
+  /// «бесконечный» повтор рисуется знаком ∞.
+  final String Function(int value)? formatValue;
 
   void _change(int delta) {
-    setState(() {
-      _value = (_value + delta).clamp(widget.min, widget.max);
-    });
+    final next = (value + delta).clamp(min, max);
+    if (next != value) onChanged(next);
   }
 
   @override
@@ -48,12 +47,12 @@ class _SettingsStepperState extends State<SettingsStepper> {
           _StepButton(
             icon: Icons.remove_rounded,
             semanticLabel: 'Уменьшить',
-            onPressed: _value > widget.min ? () => _change(-1) : null,
+            onPressed: value > min ? () => _change(-1) : null,
           ),
           SizedBox(
             width: 34,
             child: Text(
-              '$_value',
+              formatValue?.call(value) ?? '$value',
               textAlign: TextAlign.center,
               style: AppText.monoTime.copyWith(color: colors.text),
             ),
@@ -61,7 +60,7 @@ class _SettingsStepperState extends State<SettingsStepper> {
           _StepButton(
             icon: Icons.add_rounded,
             semanticLabel: 'Увеличить',
-            onPressed: _value < widget.max ? () => _change(1) : null,
+            onPressed: value < max ? () => _change(1) : null,
           ),
         ],
       ),

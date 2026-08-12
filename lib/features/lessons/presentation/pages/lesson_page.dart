@@ -7,6 +7,7 @@ import 'package:shado/theme/theme.dart';
 import 'package:shado/widgets/widgets.dart';
 
 import '../controllers/lesson_controller.dart';
+import '../widgets/lesson_countdown_overlay.dart';
 import '../widgets/lesson_mobile_layout.dart';
 import '../widgets/lesson_wide_layout.dart';
 import 'edit_lesson_page.dart';
@@ -107,17 +108,24 @@ class _LessonPageState extends ConsumerState<LessonPage> {
               child: Text('$error', textAlign: TextAlign.center),
             ),
           ),
-          AsyncData() => AppAdaptiveLayout(
-            mobile: (context) => LessonMobileLayout(
-              lessonId: widget.lessonId,
-              onBack: () => context.pop(),
-              onEdit: _edit,
-            ),
-            tablet: (context) => LessonWideLayout(
-              lessonId: widget.lessonId,
-              onBack: () => context.pop(),
-              onEdit: _edit,
-            ),
+          AsyncData() => Stack(
+            children: [
+              AppAdaptiveLayout(
+                mobile: (context) => LessonMobileLayout(
+                  lessonId: widget.lessonId,
+                  onBack: () => context.pop(),
+                  onEdit: _edit,
+                ),
+                tablet: (context) => LessonWideLayout(
+                  lessonId: widget.lessonId,
+                  onBack: () => context.pop(),
+                  onEdit: _edit,
+                ),
+              ),
+              Positioned.fill(
+                child: LessonCountdownOverlay(lessonId: widget.lessonId),
+              ),
+            ],
           ),
           _ => const Center(child: CircularProgressIndicator()),
         },

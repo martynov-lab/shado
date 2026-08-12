@@ -12,6 +12,24 @@ const int kMinTrimMs = 500;
 const double kNormalSpeed = 1.0;
 const double kSlowSpeed = 0.75;
 
+/// Скорости, доступные в настройке «Скорость по умолчанию».
+const List<double> kPlaybackSpeeds = [0.5, 0.6, 0.75, 0.9, 1.0, 1.25, 1.5];
+
+/// Подпись скорости для UI — «1.0×».
+String speedLabel(double speed) => '$speed×';
+
+/// Сколько раз повторять отрезок в цикле: границы и значение по умолчанию.
+/// [kInfiniteRepeats] (0) — крутить бесконечно, пока включён повтор; в UI это
+/// нижний край шкалы и показывается знаком бесконечности, дальше идут 1…10.
+const int kInfiniteRepeats = 0;
+const int kMinRepeatsInCycle = kInfiniteRepeats;
+const int kMaxRepeatsInCycle = 10;
+const int kDefaultRepeatsInCycle = 3;
+
+/// Подпись числа повторов для UI: «∞» для бесконечного цикла, иначе само число.
+String repeatsLabel(int repeats) =>
+    repeats == kInfiniteRepeats ? '∞' : '$repeats';
+
 /// Число столбиков, до которого прореживаются пики волны перед отрисовкой.
 const int kWaveformResolution = 2000;
 

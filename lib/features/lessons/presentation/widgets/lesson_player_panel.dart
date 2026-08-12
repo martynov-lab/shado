@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'package:shado/core/constants/app_constants.dart';
+import 'package:shado/features/settings/presentation/widgets/playback_speed_sheet.dart';
 import 'package:shado/theme/theme.dart';
 import 'package:shado/widgets/widgets.dart';
 
@@ -109,9 +111,9 @@ class LessonPlayerPanel extends ConsumerWidget {
                 onTap: state.canGoNext ? controller.next : null,
               ),
               _SpeedChip(
-                label: '${state.speed}×',
+                label: speedLabel(state.speed),
                 foreground: fg,
-                onTap: controller.cycleSpeed,
+                onTap: () => _pickSpeed(context, ref, state.speed),
               ),
               _TransportButton(
                 icon: AppIcons.loop,
@@ -129,6 +131,25 @@ class LessonPlayerPanel extends ConsumerWidget {
         ],
       ),
     );
+  }
+
+  /// Открывает тот же список скоростей, что и в настройках, и применяет выбор к
+  /// текущему уроку. Скорость здесь действует на сессию (в отличие от скорости
+  /// по умолчанию из настроек), поэтому идёт через контроллер урока, а не в prefs.
+  Future<void> _pickSpeed(
+    BuildContext context,
+    WidgetRef ref,
+    double current,
+  ) async {
+    final selected = await showAppBottomSheet<double>(
+      context: context,
+      title: 'Скорость воспроизведения',
+      builder: (_) => PlaybackSpeedSheet(current: current),
+    );
+    if (selected == null) return;
+    await ref
+        .read(lessonControllerProvider(lessonId).notifier)
+        .setSpeed(selected);
   }
 }
 
