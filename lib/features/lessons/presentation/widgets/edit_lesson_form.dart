@@ -117,6 +117,7 @@ class _EditLessonFormState extends ConsumerState<EditLessonForm> {
                     onSeek: controller.seek,
                     onBoundariesChanged: controller.setBoundaries,
                     onBoundaryRemoved: controller.removeMarker,
+                    onPlaceBoundary: controller.placeBoundaryAtPlayhead,
                     onTrimChanged: controller.updateTrim,
                     onTrimStart: controller.startTrim,
                     onTrimApply: controller.applyTrim,
@@ -159,8 +160,10 @@ String _hint(EditLessonState state) {
         '«Применить» оставит только середину, «Отменить» вернёт как было. '
         'Пробел — послушать';
   }
-  return 'Метки берутся за кружок сверху, ползунок — за треугольник снизу; '
-      'перетаскивание в стороне от них двигает волну. Двойной тап по метке '
-      'убирает её (и парную метку в тексте). Растянуть волну: щипок двумя '
-      'пальцами или Ctrl + колесо мыши. Пробел — играть или пауза';
+  return 'Кнопка с иглой ставит метки по очереди в текущую позицию плеера — '
+      'удобно расставлять границы на слух. Метки берутся за кружок сверху, '
+      'ползунок — за треугольник снизу; перетаскивание в стороне от них '
+      'двигает волну. Двойной тап по метке убирает её (и парную метку в '
+      'тексте). Растянуть волну: щипок двумя пальцами или Ctrl + колесо мыши. '
+      'Пробел — играть или пауза';
 }

@@ -191,6 +191,7 @@ class _AddLessonPageState extends ConsumerState<AddLessonPage> {
                           state: state,
                           onBoundariesChanged: controller.setBoundaries,
                           onBoundaryRemoved: controller.removeMarker,
+                          onPlaceBoundary: controller.placeBoundaryAtPlayhead,
                           onTrimChanged: controller.updateTrim,
                           onTrimStart: controller.startTrim,
                           onTrimApply: controller.applyTrim,

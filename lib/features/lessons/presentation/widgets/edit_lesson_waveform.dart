@@ -21,6 +21,7 @@ class EditLessonWaveform extends ConsumerWidget {
     required this.onSeek,
     required this.onBoundariesChanged,
     required this.onBoundaryRemoved,
+    required this.onPlaceBoundary,
     required this.onTrimChanged,
     required this.onTrimStart,
     required this.onTrimApply,
@@ -36,6 +37,9 @@ class EditLessonWaveform extends ConsumerWidget {
   final ValueChanged<int> onSeek;
   final ValueChanged<List<int>> onBoundariesChanged;
   final ValueChanged<int> onBoundaryRemoved;
+
+  /// Ставит следующую метку в переданную позицию плеера.
+  final ValueChanged<int> onPlaceBoundary;
   final ValueChanged<AudioTrim> onTrimChanged;
   final VoidCallback onTrimStart;
   final VoidCallback onTrimApply;
@@ -82,6 +86,16 @@ class EditLessonWaveform extends ConsumerWidget {
               tooltip: state.isPlaying ? 'Пауза' : 'Играть с ползунка',
               onPressed: onPlayPressed,
               icon: Icon(state.isPlaying ? Icons.pause : Icons.play_arrow),
+            ),
+            const SizedBox(width: 8),
+            IconButton.filledTonal(
+              tooltip: state.canPlaceBoundary
+                  ? 'Поставить метку в позиции плеера'
+                  : 'Все метки расставлены',
+              onPressed: state.canPlaceBoundary
+                  ? () => onPlaceBoundary(playheadMs)
+                  : null,
+              icon: const Icon(Icons.push_pin_outlined),
             ),
             const SizedBox(width: 12),
             Text(

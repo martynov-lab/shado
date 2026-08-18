@@ -79,6 +79,31 @@ class SegmentBoundaries {
     return normalize(result, trim);
   }
 
+  /// Ставит внутреннюю метку [index] (`1..count-1`) в момент [ms], а ещё не
+  /// расставленные метки правее неё раскладывает поровну до конца [trim].
+  ///
+  /// Так границы расставляют на слух: слушают аудио и по очереди сажают метки в
+  /// позицию плеера. Если [ms] не оставляет минимального зазора от предыдущей
+  /// метки (плеер оказался перед уже проставленным стыком), новая метка встаёт
+  /// вплотную к предыдущей — а не перескакивает через неё.
+  static List<int> placeInner(
+    List<int> current,
+    int index,
+    int ms,
+    AudioTrim trim,
+  ) {
+    if (index < 1 || index > current.length - 2 || trim.isEmpty) {
+      return current;
+    }
+    final count = current.length - 1;
+    final gap = _gapMs(count, trim.durationMs);
+    final lower = current[index - 1] + gap;
+    // Правее должно остаться место под ещё не проставленные метки и правый край.
+    final upper = trim.endMs - gap * (count - index);
+    final target = ms.clamp(lower, math.max(lower, upper)).toInt();
+    return _spreadRest([...current.sublist(0, index), target], count, trim);
+  }
+
   /// Дописывает недостающие метки, поровну деля хвост отрезка за [head].
   static List<int> _spreadRest(List<int> head, int count, AudioTrim trim) {
     final result = List<int>.of(head);

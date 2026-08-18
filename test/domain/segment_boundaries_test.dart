@@ -186,4 +186,61 @@ void main() {
       }
     });
   });
+
+  group('SegmentBoundaries.placeInner', () {
+    test('ставит метку в позицию плеера, а хвост делит поровну', () {
+      final result = SegmentBoundaries.placeInner(
+        [0, 3000, 6000, 9000],
+        1,
+        2000,
+        full,
+      );
+
+      // Метка №1 встала в 2000, две метки справа поделили остаток поровну.
+      expect(result, [0, 2000, 5500, 9000]);
+    });
+
+    test('прижимает метку к предыдущей, если плеер раньше неё', () {
+      // Плеер (1000) оказался перед уже проставленной меткой №1 (4000) —
+      // новая встаёт вплотную к ней, а не перескакивает через неё.
+      final result = SegmentBoundaries.placeInner(
+        [0, 4000, 6000, 9000],
+        2,
+        1000,
+        full,
+      );
+
+      expect(result, [0, 4000, 4200, 9000]);
+      expect(result[2] - result[1], kMinSegmentGapMs);
+    });
+
+    test('расставляет метки по очереди слева направо', () {
+      var boundaries = [0, 3000, 6000, 9000];
+      boundaries = SegmentBoundaries.placeInner(boundaries, 1, 2500, full);
+      boundaries = SegmentBoundaries.placeInner(boundaries, 2, 5000, full);
+
+      // Обе метки оказались там, где стоял плеер.
+      expect(boundaries, [0, 2500, 5000, 9000]);
+    });
+
+    test('индекс вне диапазона внутренних меток ничего не меняет', () {
+      const input = [0, 3000, 6000, 9000];
+
+      expect(SegmentBoundaries.placeInner(input, 0, 1000, full), input);
+      expect(SegmentBoundaries.placeInner(input, 3, 1000, full), input);
+    });
+
+    test('на обрезанной дорожке не выходит за оставленный отрезок', () {
+      final result = SegmentBoundaries.placeInner(
+        [1000, 4500, 8000],
+        1,
+        5000,
+        trimmed,
+      );
+
+      expect(result.first, 1000);
+      expect(result.last, 8000);
+      expect(result[1], 5000);
+    });
+  });
 }
