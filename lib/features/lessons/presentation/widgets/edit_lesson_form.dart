@@ -57,6 +57,20 @@ class _EditLessonFormState extends ConsumerState<EditLessonForm> {
   EditLessonController get _controller =>
       ref.read(editLessonControllerProvider(widget.lessonId).notifier);
 
+  /// Метку поставили в тексте — сажаем парную границу под ползунок. Позицию
+  /// берём ту же, что показывает волна: пока играет — живую, на паузе — где
+  /// оставили.
+  void _insertMarker(String text, int ordinal) {
+    final state = widget.state;
+    final position = ref
+        .read(editPlaybackPositionProvider(widget.lessonId))
+        .value;
+    final playheadMs = state.isPlaying
+        ? (position?.inMilliseconds ?? state.playheadMs)
+        : state.playheadMs;
+    _controller.insertMarker(text, ordinal, playheadMs);
+  }
+
   /// Пробел как play/pause — привычка из любого редактора аудио.
   ///
   /// Срабатывает только когда фокус на самом экране: в текстовом поле пробел
@@ -117,7 +131,6 @@ class _EditLessonFormState extends ConsumerState<EditLessonForm> {
                     onSeek: controller.seek,
                     onBoundariesChanged: controller.setBoundaries,
                     onBoundaryRemoved: controller.removeMarker,
-                    onPlaceBoundary: controller.placeBoundaryAtPlayhead,
                     onTrimChanged: controller.updateTrim,
                     onTrimStart: controller.startTrim,
                     onTrimApply: controller.applyTrim,
@@ -137,12 +150,15 @@ class _EditLessonFormState extends ConsumerState<EditLessonForm> {
             label: 'Текст',
             note: '— разбей на сегменты',
             hint:
-                'Нажмите «Метка» и кликните в тексте, куда поставить '
-                'разделитель (или перетащите чип). Иглу можно перетащить или '
-                'убрать тапом. На сервер уходит текст с «$kSegmentDelimiter».',
+                'Доведите плеер до паузы между фразами, затем нажмите «Метка» и '
+                'кликните в тексте, куда поставить разделитель (или перетащите '
+                'чип) — граница на волне встанет в позицию ползунка. Иглу можно '
+                'перетащить или убрать тапом. На сервер уходит текст с '
+                '«$kSegmentDelimiter».',
             child: SegmentSplitterField(
               controller: _textController,
               onChanged: controller.setText,
+              onMarkerInserted: _insertMarker,
               onMarkerRemoved: controller.removeMarker,
               segmentCount: state.segmentCount,
             ),
@@ -160,10 +176,10 @@ String _hint(EditLessonState state) {
         '«Применить» оставит только середину, «Отменить» вернёт как было. '
         'Пробел — послушать';
   }
-  return 'Кнопка с иглой ставит метки по очереди в текущую позицию плеера — '
-      'удобно расставлять границы на слух. Метки берутся за кружок сверху, '
-      'ползунок — за треугольник снизу; перетаскивание в стороне от них '
-      'двигает волну. Двойной тап по метке убирает её (и парную метку в '
-      'тексте). Растянуть волну: щипок двумя пальцами или Ctrl + колесо мыши. '
-      'Пробел — играть или пауза';
+  return 'Границы расставляют на слух: доведите плеер до паузы между фразами, '
+      'поставьте на паузу и добавьте метку в тексте — граница встанет в позицию '
+      'ползунка. Метки берутся за кружок сверху, ползунок — за треугольник '
+      'снизу; перетаскивание в стороне от них двигает волну. Двойной тап по '
+      'метке убирает её (и парную метку в тексте). Растянуть волну: щипок двумя '
+      'пальцами или Ctrl + колесо мыши. Пробел — играть или пауза';
 }

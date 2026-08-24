@@ -75,6 +75,25 @@ class _AddLessonPageState extends ConsumerState<AddLessonPage> {
     }
   }
 
+  /// Метку поставили в тексте — сажаем парную границу под ползунок. Позицию
+  /// берём ту же, что показывает волна: пока играет — живую, на паузе — где
+  /// оставили.
+  void _insertMarker(String text, int ordinal) {
+    final controller = ref.read(addLessonControllerProvider.notifier);
+    // Без волны разметки ещё нет — позиция плеера не нужна, и поднимать его ради
+    // неё незачем.
+    if (!ref.read(addLessonControllerProvider).hasWaveform) {
+      controller.insertMarker(text, ordinal, 0);
+      return;
+    }
+    final playback = ref.read(addLessonPlaybackProvider);
+    final position = ref.read(addPlaybackPositionProvider).value;
+    final playheadMs = playback.isPlaying
+        ? (position?.inMilliseconds ?? playback.playheadMs)
+        : playback.playheadMs;
+    controller.insertMarker(text, ordinal, playheadMs);
+  }
+
   Future<void> _submit() async {
     final controller = ref.read(addLessonControllerProvider.notifier);
     try {
@@ -191,7 +210,6 @@ class _AddLessonPageState extends ConsumerState<AddLessonPage> {
                           state: state,
                           onBoundariesChanged: controller.setBoundaries,
                           onBoundaryRemoved: controller.removeMarker,
-                          onPlaceBoundary: controller.placeBoundaryAtPlayhead,
                           onTrimChanged: controller.updateTrim,
                           onTrimStart: controller.startTrim,
                           onTrimApply: controller.applyTrim,
@@ -204,13 +222,16 @@ class _AddLessonPageState extends ConsumerState<AddLessonPage> {
                       label: 'Текст',
                       note: '— разбей на сегменты',
                       hint:
-                          'Нажмите «Метка» и кликните в тексте, куда поставить '
-                          'разделитель (или перетащите чип). Иглу можно '
-                          'перетащить или убрать тапом. На сервер уходит текст '
+                          'Доведите плеер до паузы между фразами, затем нажмите '
+                          '«Метка» и кликните в тексте, куда поставить '
+                          'разделитель (или перетащите чип) — граница на волне '
+                          'встанет в позицию ползунка. Иглу можно перетащить или '
+                          'убрать тапом. На сервер уходит текст '
                           'с «$kSegmentDelimiter».',
                       child: SegmentSplitterField(
                         controller: _textController,
                         onChanged: controller.setText,
+                        onMarkerInserted: _insertMarker,
                         onMarkerRemoved: controller.removeMarker,
                         segmentCount: state.segmentCount,
                       ),

@@ -40,7 +40,6 @@ class EditLessonState {
     required this.boundaries,
     required this.trim,
     required this.isPublic,
-    this.placedBoundaryCount = 0,
     this.pendingTrim,
     this.playheadMs = 0,
     this.isPlaying = false,
@@ -51,11 +50,6 @@ class EditLessonState {
   final String title;
   final String text;
   final List<int> boundaries;
-
-  /// Сколько внутренних меток уже поставлено кнопкой «в позицию плеера».
-  /// Метки сажают по очереди слева направо, поэтому следующей ставится метка
-  /// `placedBoundaryCount + 1`. Обнуляется, когда разметку переразбивают.
-  final int placedBoundaryCount;
 
   /// Публичность урока — тумблером управляет только owner. Начальное значение
   /// берётся из урока.
@@ -79,14 +73,6 @@ class EditLessonState {
 
   bool get isTrimming => pendingTrim != null;
 
-  /// Осталась ли ещё непроставленная внутренняя метка для кнопки «в позицию
-  /// плеера». Число меток задаёт текст (`segmentCount - 1` внутренних), поэтому
-  /// кнопка лишь двигает существующие стыки, а не добавляет новые.
-  bool get canPlaceBoundary =>
-      !isTrimming &&
-      boundaries.length == segmentCount + 1 &&
-      placedBoundaryCount < segmentCount - 1;
-
   /// Что сейчас в окне волны: во время обрезки — файл целиком, чтобы обрезанное
   /// можно было вернуть обратно.
   AudioTrim get view => isTrimming ? AudioTrim.full(lesson.durationMs) : trim;
@@ -102,7 +88,6 @@ class EditLessonState {
     String? title,
     String? text,
     List<int>? boundaries,
-    int? placedBoundaryCount,
     AudioTrim? trim,
     AudioTrim? pendingTrim,
     bool clearPendingTrim = false,
@@ -116,7 +101,6 @@ class EditLessonState {
       title: title ?? this.title,
       text: text ?? this.text,
       boundaries: boundaries ?? this.boundaries,
-      placedBoundaryCount: placedBoundaryCount ?? this.placedBoundaryCount,
       trim: trim ?? this.trim,
       pendingTrim: clearPendingTrim ? null : (pendingTrim ?? this.pendingTrim),
       isPublic: isPublic ?? this.isPublic,
@@ -201,17 +185,7 @@ class EditLessonController extends AsyncNotifier<EditLessonState> {
     if (current == null) return;
     final next = current.copyWith(text: text);
     state = AsyncValue.data(
-      next.copyWith(
-        boundaries: next.segmentCount == 0
-            ? next.boundaries
-            : SegmentBoundaries.resize(
-                next.boundaries,
-                next.segmentCount,
-                next.trim,
-              ),
-        // Разметку переразобрали — расстановку меток на слух начинаем заново.
-        placedBoundaryCount: 0,
-      ),
+      next.copyWith(boundaries: _resizeBoundaries(next)),
     );
   }
 
@@ -221,32 +195,42 @@ class EditLessonController extends AsyncNotifier<EditLessonState> {
     state = AsyncValue.data(current.copyWith(boundaries: boundaries));
   }
 
-  /// Ставит следующую по счёту внутреннюю метку в позицию плеера [playheadMs].
+  /// Ставит новую метку №[ordinal] (1-based) в тексте, а парную ей границу — в
+  /// текущую позицию плеера [playheadMs].
   ///
-  /// Метки сажают по очереди слева направо: первое нажатие — метку №1, второе —
-  /// №2 и так далее. Если плеер оказался перед уже проставленной меткой, новая
-  /// встаёт вплотную к ней. Число меток задаёт текст, поэтому кнопка двигает
-  /// существующие стыки, а не добавляет новые.
-  void placeBoundaryAtPlayhead(int playheadMs) {
+  /// Так границы расставляют на слух: доводят плеер до паузы между фразами и
+  /// ставят в этом месте метку. Если плеер оказался перед предыдущей меткой
+  /// (аудио ещё не играли — ползунок в самом начале), граница встаёт вплотную к
+  /// ней.
+  void insertMarker(String text, int ordinal, int playheadMs) {
     final current = state.value;
-    if (current == null || !current.canPlaceBoundary) return;
+    if (current == null) return;
     final boundaries = current.boundaries;
-    final index = current.placedBoundaryCount + 1;
-    // Края разметки прибиты к границам оставленного отрезка — по ним и
-    // раскладываем хвост.
+    final next = current.copyWith(text: text);
+    // Разметка отстала от текста — раскладываем её заново, как при обычном вводе.
+    if (boundaries.length != current.segmentCount + 1) {
+      state = AsyncValue.data(next.copyWith(boundaries: _resizeBoundaries(next)));
+      return;
+    }
+    // Края разметки прибиты к границам оставленного отрезка — внутри них и
+    // сажаем метку.
     final span = AudioTrim(startMs: boundaries.first, endMs: boundaries.last);
     state = AsyncValue.data(
-      current.copyWith(
-        boundaries: SegmentBoundaries.placeInner(
+      next.copyWith(
+        boundaries: SegmentBoundaries.insertAt(
           boundaries,
-          index,
+          ordinal,
           playheadMs,
           span,
         ),
-        placedBoundaryCount: index,
       ),
     );
   }
+
+  /// Подгоняет разметку под текст и обрезку: пустой текст разметку не трогает.
+  List<int> _resizeBoundaries(EditLessonState form) => form.segmentCount == 0
+      ? form.boundaries
+      : SegmentBoundaries.resize(form.boundaries, form.segmentCount, form.trim);
 
   /// Убирает метку №[ordinal] (1-based) сразу из текста и с волны: исчезает и
   /// разделитель, и парная ему граница `boundaries[ordinal]`. Остальные границы
@@ -267,12 +251,7 @@ class EditLessonController extends AsyncNotifier<EditLessonState> {
             current.trim,
           );
     state = AsyncValue.data(
-      current.copyWith(
-        text: nextText,
-        boundaries: nextBoundaries,
-        // Разметка изменилась — расстановку меток на слух начинаем заново.
-        placedBoundaryCount: 0,
-      ),
+      current.copyWith(text: nextText, boundaries: nextBoundaries),
     );
   }
 
@@ -326,8 +305,6 @@ class EditLessonController extends AsyncNotifier<EditLessonState> {
                 current.segmentCount,
                 pending,
               ),
-        // Метки переехали внутрь нового отрезка — расстановку начинаем заново.
-        placedBoundaryCount: 0,
       ),
     );
     await seek(pending.clampMs(current.playheadMs));

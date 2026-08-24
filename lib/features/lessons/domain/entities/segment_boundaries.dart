@@ -79,29 +79,25 @@ class SegmentBoundaries {
     return normalize(result, trim);
   }
 
-  /// Ставит внутреннюю метку [index] (`1..count-1`) в момент [ms], а ещё не
-  /// расставленные метки правее неё раскладывает поровну до конца [trim].
+  /// Вставляет новую внутреннюю метку [ordinal] (`1..count`) в момент [ms],
+  /// удлиняя разметку на один кусок. Уже расставленные метки остаются на местах.
   ///
-  /// Так границы расставляют на слух: слушают аудио и по очереди сажают метки в
-  /// позицию плеера. Если [ms] не оставляет минимального зазора от предыдущей
-  /// метки (плеер оказался перед уже проставленным стыком), новая метка встаёт
-  /// вплотную к предыдущей — а не перескакивает через неё.
-  static List<int> placeInner(
+  /// Так границы растят по мере разбивки текста: услышал паузу между фразами —
+  /// поставил в этом месте метку. Если [ms] не оставляет минимального зазора от
+  /// предыдущей метки (плеер оказался перед ней — например, аудио ещё не играли
+  /// и ползунок в самом начале), новая метка встаёт вплотную к предыдущей, а не
+  /// перескакивает через неё.
+  static List<int> insertAt(
     List<int> current,
-    int index,
+    int ordinal,
     int ms,
     AudioTrim trim,
   ) {
-    if (index < 1 || index > current.length - 2 || trim.isEmpty) {
-      return current;
-    }
-    final count = current.length - 1;
-    final gap = _gapMs(count, trim.durationMs);
-    final lower = current[index - 1] + gap;
-    // Правее должно остаться место под ещё не проставленные метки и правый край.
-    final upper = trim.endMs - gap * (count - index);
-    final target = ms.clamp(lower, math.max(lower, upper)).toInt();
-    return _spreadRest([...current.sublist(0, index), target], count, trim);
+    if (current.length < 2 || trim.isEmpty) return current;
+    if (ordinal < 1 || ordinal > current.length - 1) return current;
+    final grown = [...current.sublist(0, ordinal), ms, ...current.sublist(ordinal)];
+    // normalize и прижмёт метку к предыдущей, если [ms] залез в её зазор.
+    return normalize(grown, trim);
   }
 
   /// Дописывает недостающие метки, поровну деля хвост отрезка за [head].

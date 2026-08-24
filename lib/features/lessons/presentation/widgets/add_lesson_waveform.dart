@@ -21,7 +21,6 @@ class AddLessonWaveform extends ConsumerWidget {
     required this.state,
     required this.onBoundariesChanged,
     required this.onBoundaryRemoved,
-    required this.onPlaceBoundary,
     required this.onTrimChanged,
     required this.onTrimStart,
     required this.onTrimApply,
@@ -33,8 +32,6 @@ class AddLessonWaveform extends ConsumerWidget {
   final ValueChanged<List<int>> onBoundariesChanged;
   final ValueChanged<int> onBoundaryRemoved;
 
-  /// Ставит следующую метку в переданную позицию плеера.
-  final ValueChanged<int> onPlaceBoundary;
   final ValueChanged<AudioTrim> onTrimChanged;
   final VoidCallback onTrimStart;
   final VoidCallback onTrimApply;
@@ -112,16 +109,6 @@ class AddLessonWaveform extends ConsumerWidget {
               onPressed: state.audioPath == null ? null : player.togglePlay,
               icon: Icon(playback.isPlaying ? Icons.pause : Icons.play_arrow),
             ),
-            const SizedBox(width: 8),
-            IconButton.filledTonal(
-              tooltip: state.canPlaceBoundary
-                  ? 'Поставить метку в позиции плеера'
-                  : 'Все метки расставлены',
-              onPressed: state.canPlaceBoundary
-                  ? () => onPlaceBoundary(playheadMs)
-                  : null,
-              icon: const Icon(Icons.push_pin_outlined),
-            ),
             const SizedBox(width: 12),
             Text(
               '${formatPosition(playheadMs - view.startMs)} / '
@@ -149,10 +136,10 @@ String _hint(AddLessonFormState state) {
   if (state.segmentCount == 0) {
     return 'Введите текст — метки границ появятся на волне';
   }
-  return 'Кнопка с иглой ставит метки по очереди в текущую позицию плеера — '
-      'удобно расставлять границы на слух. Метки берутся за кружок сверху, '
-      'ползунок — за треугольник снизу; перетаскивание в стороне от них '
-      'двигает волну. Двойной тап по метке убирает её (и парную метку в '
-      'тексте). Растянуть волну: щипок двумя пальцами или Ctrl + колесо мыши. '
-      'Пробел — играть или пауза';
+  return 'Границы расставляют на слух: доведите плеер до паузы между фразами, '
+      'поставьте на паузу и добавьте метку в тексте — граница встанет в позицию '
+      'ползунка. Метки берутся за кружок сверху, ползунок — за треугольник '
+      'снизу; перетаскивание в стороне от них двигает волну. Двойной тап по '
+      'метке убирает её (и парную метку в тексте). Растянуть волну: щипок двумя '
+      'пальцами или Ctrl + колесо мыши. Пробел — играть или пауза';
 }

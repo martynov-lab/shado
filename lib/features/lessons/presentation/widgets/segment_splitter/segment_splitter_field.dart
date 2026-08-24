@@ -44,6 +44,7 @@ class SegmentSplitterField extends StatefulWidget {
     super.key,
     required this.controller,
     required this.onChanged,
+    required this.onMarkerInserted,
     required this.onMarkerRemoved,
     required this.segmentCount,
     this.focusNode,
@@ -52,6 +53,11 @@ class SegmentSplitterField extends StatefulWidget {
 
   final MarkedTextController controller;
   final ValueChanged<String> onChanged;
+
+  /// Постановка новой метки №[ordinal] (1-based) с уже готовым текстом. В отличие
+  /// от [onChanged] контроллер не раскладывает границы заново, а ставит парную
+  /// границу в текущую позицию плеера.
+  final void Function(String text, int ordinal) onMarkerInserted;
 
   /// Удаление метки №[ordinal] (1-based). Текст правит не поле, а контроллер:
   /// парная граница на аудио убирается там же, а новый текст возвращается в
@@ -334,8 +340,18 @@ class _SegmentSplitterFieldState extends State<SegmentSplitterField> {
     final offset = _offsetForPoint(details.globalPosition);
     setState(() => _placing = false);
     if (offset == null) return;
-    final next = insertMarkerAt(_controller.text, offset);
-    if (next != _controller.text) _apply(next, caretAfterInsert(offset));
+    _insertAt(offset);
+  }
+
+  /// Ставит метку в позицию каретки [offset] и, если она добавилась, отдаёт её
+  /// порядковый номер контроллеру — тот посадит парную границу под ползунок.
+  void _insertAt(int offset) {
+    final text = _controller.text;
+    final next = insertMarkerAt(text, offset);
+    if (next == text) return;
+    final at = offset.clamp(0, text.length);
+    final ordinal = markerIndices(next).indexOf(at) + 1;
+    _apply(next, caretAfterInsert(offset), insertedOrdinal: ordinal);
   }
 
   void _onHover(PointerHoverEvent event) => _setCursor(event.localPosition);
@@ -362,8 +378,7 @@ class _SegmentSplitterFieldState extends State<SegmentSplitterField> {
     final text = _controller.text;
     final from = drag.fromMarkerIndex;
     if (from == null) {
-      final next = insertMarkerAt(text, offset);
-      if (next != text) _apply(next, caretAfterInsert(offset));
+      _insertAt(offset);
       return;
     }
     final next = moveMarker(text, from, offset);
@@ -377,13 +392,19 @@ class _SegmentSplitterFieldState extends State<SegmentSplitterField> {
   }
 
   /// Программная правка текста: обновляет поле и, поскольку `TextField.onChanged`
-  /// на такие правки не срабатывает, сам зовёт колбэк.
-  void _apply(String text, int caret) {
+  /// на такие правки не срабатывает, сам зовёт колбэк. При вставке метки
+  /// ([insertedOrdinal] задан) зовёт [onMarkerInserted] — граница ляжет под
+  /// ползунок, а не разложится заново.
+  void _apply(String text, int caret, {int? insertedOrdinal}) {
     _controller.value = TextEditingValue(
       text: text,
       selection: TextSelection.collapsed(offset: caret.clamp(0, text.length)),
     );
-    widget.onChanged(text);
+    if (insertedOrdinal != null) {
+      widget.onMarkerInserted(text, insertedOrdinal);
+    } else {
+      widget.onChanged(text);
+    }
   }
 }
 

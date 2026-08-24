@@ -14,6 +14,7 @@ void main() {
     required MarkedTextController controller,
     required int segmentCount,
     ValueChanged<String>? onChanged,
+    void Function(String text, int ordinal)? onMarkerInserted,
     ValueChanged<int>? onMarkerRemoved,
   }) {
     return MaterialApp(
@@ -26,6 +27,7 @@ void main() {
               controller: controller,
               segmentCount: segmentCount,
               onChanged: onChanged ?? (_) {},
+              onMarkerInserted: onMarkerInserted ?? (_, _) {},
               onMarkerRemoved: onMarkerRemoved ?? (_) {},
             ),
           ),
@@ -85,13 +87,17 @@ void main() {
   ) async {
     final controller = MarkedTextController(text: 'alpha beta gamma');
     addTearDown(controller.dispose);
-    String? changed;
+    String? inserted;
+    int? insertedOrdinal;
 
     await tester.pumpWidget(
       wrap(
         controller: controller,
         segmentCount: 1,
-        onChanged: (text) => changed = text,
+        onMarkerInserted: (text, ordinal) {
+          inserted = text;
+          insertedOrdinal = ordinal;
+        },
       ),
     );
     await tester.pumpAndSettle();
@@ -102,8 +108,10 @@ void main() {
     await tester.tapAt(tester.getCenter(find.byType(TextField)));
     await tester.pumpAndSettle();
 
+    // Вставка метки идёт отдельным колбэком — парную границу поставит контроллер.
     expect(controller.text, contains('|'));
-    expect(changed, contains('|'));
+    expect(inserted, contains('|'));
+    expect(insertedOrdinal, 1);
   });
 
   testWidgets('в режиме «Метка» старые метки остаются видны', (tester) async {
