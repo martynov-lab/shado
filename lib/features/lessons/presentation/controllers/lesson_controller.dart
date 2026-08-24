@@ -576,8 +576,13 @@ class LessonController extends AsyncNotifier<LessonState> {
     final player = _player;
     await _ensureSource(current.lesson.audioPath);
     _activeLooped = loop;
-    _atBoundary = false;
     _passCount = 0;
+    // Глушим сторож границы на время перехода: в состоянии ещё старый
+    // activeRange, а seek на «Следующий сегмент» ставит позицию ровно на конец
+    // прежнего куска (куски идут встык). Иначе _onPosition принял бы это за
+    // «доиграли текущий», вернул плеер в его начало — и прежний кусок проиграл
+    // бы себя целиком перед новым.
+    _atBoundary = true;
     await player.seek(Duration(milliseconds: segments[range.start].startMs));
     await player.setSpeed(_speed);
     // Заряжаем отрезок сразу; пока идёт отсчёт, он показан, но ещё не играет.
@@ -585,6 +590,8 @@ class LessonController extends AsyncNotifier<LessonState> {
     state = AsyncValue.data(
       current.copyWith(activeRange: range, isPlaying: !showCountdown),
     );
+    // Новый отрезок заряжен — сторож снова следит за его концом.
+    _atBoundary = false;
     if (showCountdown) {
       if (!await _runCountdown(token)) return;
       final ready = state.value;

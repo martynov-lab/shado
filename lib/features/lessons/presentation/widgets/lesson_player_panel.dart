@@ -85,8 +85,8 @@ class LessonPlayerPanel extends ConsumerWidget {
           Wrap(
             alignment: WrapAlignment.center,
             crossAxisAlignment: WrapCrossAlignment.center,
-            spacing: AppSpacing.s3,
-            runSpacing: AppSpacing.s3,
+            spacing: AppSpacing.s2,
+            runSpacing: AppSpacing.s2,
             children: [
               _TransportButton(
                 icon: AppIcons.prev,
@@ -100,7 +100,7 @@ class LessonPlayerPanel extends ConsumerWidget {
                 semanticLabel: state.isPlayerPlaying ? 'Стоп' : 'Играть',
                 background: colors.primary,
                 foreground: colors.primaryOn,
-                size: AppSizes.controlLg + AppSpacing.s2,
+                size: AppSizes.controlLg,
                 onTap: controller.togglePlayCurrent,
               ),
               _TransportButton(
@@ -217,7 +217,11 @@ class _TransportButton extends StatelessWidget {
               child: SizedBox.square(
                 dimension: size,
                 child: Center(
-                  child: AppIcon(icon, size: AppSizes.iconMd, color: foreground),
+                  child: AppIcon(
+                    icon,
+                    size: AppSizes.iconMd,
+                    color: foreground,
+                  ),
                 ),
               ),
             ),

@@ -268,4 +268,34 @@ void main() {
     },
     timeout: const Timeout(Duration(seconds: 90)),
   );
+
+  test(
+    '«Следующий сегмент» сразу играет новый кусок, не доигрывая прежний',
+    () async {
+      final container = buildContainer();
+      final controller = await openLesson(container);
+      final player = container.read(lessonAudioPlayerProvider(lessonId));
+
+      // Играем первый кусок (0..1000) и даём ему немного проиграться.
+      await controller.togglePlay(0);
+      await Future<void>.delayed(const Duration(milliseconds: 300));
+
+      // Переключаемся на второй кусок (1000..2000) — он должен зазвучать сразу,
+      // а не после того, как первый доиграет себя целиком.
+      await controller.next();
+      final trace = await tracePositions(player, 1500);
+
+      expect(
+        trace.reduce(math.min),
+        greaterThanOrEqualTo(1000 - toleranceMs),
+        reason: 'после «Следующий» плеер вернулся в прошлый кусок: $trace',
+      );
+      expect(
+        trace.reduce(math.max),
+        greaterThanOrEqualTo(2000 - toleranceMs),
+        reason: 'второй кусок так и не заиграл: $trace',
+      );
+    },
+    timeout: const Timeout(Duration(seconds: 90)),
+  );
 }
