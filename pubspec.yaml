@@ -1,7 +1,7 @@
 name: shado
 description: "An application for learning English using the shadowing technique"
 publish_to: 'none'
-version: 0.0.7
+version: 0.0.8
 
 environment:
   sdk: ^3.10.7
@@ -31,6 +31,7 @@ dependencies:
   crypto: ^3.0.7
   shared_preferences: ^2.5.0
   flutter_svg: ^2.3.0
+  audio_service: ^0.18.19
 
 dependency_overrides:
   path_provider_foundation: 2.5.1

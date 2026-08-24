@@ -3,6 +3,11 @@
          сам только в debug/profile-манифесты, а релиз собирается по этому.
          Без него установленный APK не может ходить на сервер — «Нет связи». -->
     <uses-permission android:name="android.permission.INTERNET"/>
+    <!-- Медиа-сессия audio_service: foreground-сервис воспроизведения нужен,
+         чтобы система доставляла кнопки гарнитуры и показывала плеер на локскрине,
+         в т.ч. когда экран приложения свёрнут. -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE"/>
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK"/>
     <application
         android:label="shado"
         android:name="${applicationName}"
@@ -34,6 +39,25 @@
         <meta-data
             android:name="flutterEmbedding"
             android:value="2" />
+
+        <!-- Медиа-сессия audio_service: сервис держит воспроизведение, ресивер
+             ловит MEDIA_BUTTON — событие кнопки гарнитуры. Двойной/тройной клик
+             система сама трактует как next/previous и шлёт этому же сервису. -->
+        <service
+            android:name="com.ryanheise.audioservice.AudioService"
+            android:foregroundServiceType="mediaPlayback"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.media.browse.MediaBrowserService"/>
+            </intent-filter>
+        </service>
+        <receiver
+            android:name="com.ryanheise.audioservice.MediaButtonReceiver"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MEDIA_BUTTON"/>
+            </intent-filter>
+        </receiver>
     </application>
     <!-- Required to query activities that can process text, see:
          https://developer.android.com/training/package-visibility and

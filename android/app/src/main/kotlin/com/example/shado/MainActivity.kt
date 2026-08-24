@@ -1,5 +1,7 @@
 package com.example.shado
 
-import io.flutter.embedding.android.FlutterActivity
+import com.ryanheise.audioservice.AudioServiceActivity
 
-class MainActivity : FlutterActivity()
+// AudioServiceActivity вместо FlutterActivity: audio_service запускает Flutter-
+// движок из своего сервиса, и тап по уведомлению/локскрину открывает это же окно.
+class MainActivity : AudioServiceActivity()

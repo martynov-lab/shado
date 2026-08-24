@@ -3,6 +3,8 @@ import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:just_audio/just_audio.dart';
 
+import '../../../../core/audio/audio_service_setup.dart';
+import '../../../../core/audio/lesson_remote_control.dart';
 import '../../../../core/constants/app_constants.dart';
 import '../../../progress/data/progress_reporter.dart';
 import '../../../progress/presentation/controllers/progress_providers.dart';
@@ -184,7 +186,8 @@ const _positionTick = Duration(milliseconds: 10);
 
 /// Проигрывание кусков, зацикливание, скорость и выбор нескольких кусков.
 /// Разметка правится на отдельном экране — здесь урок уже нарезан.
-class LessonController extends AsyncNotifier<LessonState> {
+class LessonController extends AsyncNotifier<LessonState>
+    implements LessonRemoteControl {
   LessonController(this.lessonId);
 
   final String lessonId;
@@ -276,6 +279,28 @@ class LessonController extends AsyncNotifier<LessonState> {
         )
         .listen(_onPosition);
     ref.onDispose(positionSubscription.cancel);
+    // Медиа-сессия: пока открыт урок, кнопки гарнитуры и экран блокировки правят
+    // именно им. На платформах без сессии handler == null — тогда всё как раньше.
+    final handler = ref.read(audioHandlerProvider);
+    if (handler != null) {
+      handler.attach(this);
+      ref.onDispose(() => handler.detach(this));
+      // Любое изменение состояния экрана отражаем в сессии: что звучит и играет
+      // ли — от этого зависит и подпись на локскрине, и команда одиночного клика.
+      listenSelf((_, next) {
+        final data = next.value;
+        if (data == null) return;
+        handler.setNowPlaying(
+          id: lessonId,
+          title: data.lesson.title,
+          album: data.playerText,
+          duration: Duration(
+            milliseconds: data.playerEndMs - data.playerStartMs,
+          ),
+          playing: data.isPlaying,
+        );
+      });
+    }
     // Порог пройденности понадобится при проверке «пройдено» — прогреваем кеш.
     ref.read(completionRepsProvider);
     // Досылаем накопленную активность периодически и при уходе с экрана.
@@ -657,6 +682,37 @@ class LessonController extends AsyncNotifier<LessonState> {
     state = AsyncValue.data(current.copyWith(speed: speed));
     await _player.setSpeed(speed);
   }
+
+  // --- Медиа-сессия (кнопки гарнитуры) ---------------------------------------
+
+  /// Останавливает то, что сейчас звучит, не запуская ничего заново, — для
+  /// системного стоп (свайп уведомления, потеря аудиофокуса). В отличие от
+  /// тумблера, на стоящем плеере не делает ничего.
+  Future<void> stopPlayback() async {
+    final current = state.value;
+    if (current == null || !current.isPlaying) return;
+    final range = current.activeRange;
+    if (range == null) return;
+    // Отменяем идущий отсчёт или паузу между повторами и гасим звук.
+    _actionToken++;
+    _setCountdown(null);
+    await _rewindTo(current, range, play: false);
+  }
+
+  /// Одиночный клик гарнитуры — тумблер того, что показывает плеер.
+  @override
+  void remoteToggle() => unawaited(togglePlayCurrent());
+
+  /// Двойной клик гарнитуры — следующий сегмент.
+  @override
+  void remoteNext() => unawaited(next());
+
+  /// Тройной клик гарнитуры — предыдущий сегмент.
+  @override
+  void remotePrevious() => unawaited(previous());
+
+  @override
+  void remoteStop() => unawaited(stopPlayback());
 
   // --- Выбор кусков ----------------------------------------------------------
 
