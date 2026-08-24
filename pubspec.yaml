@@ -1,7 +1,7 @@
 name: shado
 description: "An application for learning English using the shadowing technique"
 publish_to: 'none'
-version: 0.0.6
+version: 0.0.7
 
 environment:
   sdk: ^3.10.7
