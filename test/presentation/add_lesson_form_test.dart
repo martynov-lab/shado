@@ -4,6 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:shado/core/network/api_exception.dart';
 import 'package:shado/features/lessons/domain/entities/audio_upload.dart';
 import 'package:shado/features/lessons/domain/entities/lesson_category.dart';
+import 'package:shado/features/lessons/domain/entities/tts_quota.dart';
 import 'package:shado/features/lessons/domain/usecases/synthesize_tts.dart';
 import 'package:shado/features/lessons/presentation/controllers/add_lesson_controller.dart';
 import 'package:shado/features/lessons/presentation/controllers/lesson_providers.dart';
@@ -34,11 +35,20 @@ void main() {
     Topic(id: 'topic-2', name: 'Business'),
   ];
 
+  // Остаток озвучек по умолчанию: 11 из 14 на сегодня. Держит `ttsQuotaProvider`
+  // герметичным — иначе он потянул бы реальный репозиторий и сеть.
+  const defaultQuota = TtsQuota(
+    provider: 'gemini',
+    day: TtsQuotaWindow(used: 3, limit: 14, remaining: 11),
+    minute: TtsQuotaWindow(used: 0, limit: 2, remaining: 2),
+  );
+
   Future<ProviderContainer> pumpForm(
     WidgetTester tester, {
     List<Topic> available = topics,
     Object? topicsError,
     Object? ttsError,
+    TtsQuota quota = defaultQuota,
     String? text,
   }) async {
     final container = ProviderContainer(
@@ -47,6 +57,7 @@ void main() {
           if (topicsError != null) throw topicsError;
           return available;
         }),
+        ttsQuotaProvider.overrideWith((ref) async => quota),
         if (ttsError != null)
           synthesizeTtsProvider.overrideWithValue(_FailingTts(ttsError)),
       ],
@@ -167,7 +178,10 @@ void main() {
 
   testWidgets('удалённая тема уходит из состояния', (tester) async {
     final container = ProviderContainer(
-      overrides: [topicsProvider.overrideWith((ref) async => topics)],
+      overrides: [
+        topicsProvider.overrideWith((ref) async => topics),
+        ttsQuotaProvider.overrideWith((ref) async => defaultQuota),
+      ],
     );
     addTearDown(container.dispose);
     container.read(addLessonControllerProvider.notifier).setTopic('topic-1');
@@ -188,6 +202,28 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(container.read(addLessonControllerProvider).topicId, isNull);
+  });
+
+  // TTS_CLIENT_SPEC §4.1: остаток суточных озвучек виден рядом с кнопкой.
+  testWidgets('остаток суточных озвучек виден у кнопки', (tester) async {
+    await pumpForm(tester);
+
+    expect(find.text('Осталось озвучек сегодня: 11'), findsOneWidget);
+  });
+
+  testWidgets('без ограничения (limit 0) остаток не показывается', (
+    tester,
+  ) async {
+    await pumpForm(
+      tester,
+      quota: const TtsQuota(
+        provider: 'gemini',
+        day: TtsQuotaWindow(used: 5, limit: 0),
+        minute: TtsQuotaWindow(used: 0, limit: 2, remaining: 2),
+      ),
+    );
+
+    expect(find.textContaining('Осталось озвучек сегодня'), findsNothing);
   });
 
   // TTS_CLIENT_SPEC §4: коды озвучки ведут себя по-разному, а не сливаются в

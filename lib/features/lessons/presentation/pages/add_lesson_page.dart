@@ -22,6 +22,7 @@ import '../widgets/lesson_file_chip.dart';
 import '../widgets/lesson_privacy_field.dart';
 import '../widgets/lesson_section_card.dart';
 import '../widgets/synthesize_tts_dialog.dart';
+import '../widgets/tts_quota_hint.dart';
 import '../widgets/segment_splitter/marked_text_controller.dart';
 import '../widgets/segment_splitter/segment_splitter_field.dart';
 import '../../../home/presentation/pages/home_page.dart';
@@ -90,7 +91,13 @@ class _AddLessonPageState extends ConsumerState<AddLessonPage> {
     }
     try {
       await ref.read(addLessonControllerProvider.notifier).synthesizeTts();
+      // Озвучка списала суточный лимит — перечитываем остаток у кнопки.
+      ref.invalidate(ttsQuotaProvider);
     } on ApiException catch (error) {
+      // Исчерпан лимит — счётчик наверняка обнулился, обновим и его.
+      if (error.code == ApiErrorCode.ttsQuotaExceeded) {
+        ref.invalidate(ttsQuotaProvider);
+      }
       _showTtsError(error);
     } catch (error) {
       _showMessage('Не удалось озвучить: $error');
@@ -228,6 +235,7 @@ class _AddLessonPageState extends ConsumerState<AddLessonPage> {
                           'Поддерживаются ${allowedAudioExtensions.join(', ')}, '
                           'до ${AppConfig.maxUploadBytes ~/ (1024 * 1024)} МБ',
                     ),
+                    const TtsQuotaHint(),
                     const SizedBox(height: AppSpacing.s5),
                     AppTextField(
                       controller: _titleController,

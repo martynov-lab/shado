@@ -89,6 +89,9 @@ class _OneLessonRepository implements LessonRepository {
   }) async => throw UnimplementedError();
 
   @override
+  Future<TtsQuota> ttsQuota() async => throw UnimplementedError();
+
+  @override
   Future<Lesson> createLesson({
     required String title,
     required String audioId,

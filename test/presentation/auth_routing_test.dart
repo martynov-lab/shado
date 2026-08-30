@@ -12,6 +12,7 @@ import 'package:shado/features/auth/presentation/pages/login_page.dart';
 import 'package:shado/features/lessons/domain/entities/audio_upload.dart';
 import 'package:shado/features/lessons/domain/entities/lesson.dart';
 import 'package:shado/features/lessons/domain/entities/lesson_category.dart';
+import 'package:shado/features/lessons/domain/entities/tts_quota.dart';
 import 'package:shado/features/lessons/domain/repositories/lesson_repository.dart';
 import 'package:shado/features/lessons/presentation/controllers/lesson_providers.dart';
 import 'package:shado/theme/theme.dart';
@@ -100,6 +101,10 @@ class FakeLessonRepository implements LessonRepository {
   }) async => const AudioUpload(audioId: 'a', durationMs: 1, sizeBytes: 1);
 
   @override
+  Future<TtsQuota> ttsQuota() async =>
+      const TtsQuota(provider: 'gemini', day: _quotaWindow, minute: _quotaWindow);
+
+  @override
   Future<List<Topic>> getTopics() async => const [];
 
   @override
@@ -124,6 +129,8 @@ class FakeLessonRepository implements LessonRepository {
   @override
   Future<void> clearCache() async {}
 }
+
+const _quotaWindow = TtsQuotaWindow(used: 0, limit: 14, remaining: 14);
 
 void main() {
   Future<void> pumpApp(WidgetTester tester, FakeAuthRepository auth) async {

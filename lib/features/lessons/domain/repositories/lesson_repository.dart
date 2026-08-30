@@ -3,6 +3,7 @@ import 'dart:async';
 import '../entities/audio_upload.dart';
 import '../entities/lesson.dart';
 import '../entities/lesson_category.dart';
+import '../entities/tts_quota.dart';
 
 /// Единственная точка доступа к урокам, которую знает presentation.
 ///
@@ -35,6 +36,10 @@ abstract interface class LessonRepository {
   /// файла: аудио уже лежит в кеше, дальше — обычное создание урока по
   /// `audio_id`. [cancel] прерывает синтез.
   Future<AudioUpload> synthesizeTts({required String text, Object? cancel});
+
+  /// Остаток бесплатного лимита озвучек — подсказка у кнопки «Озвучить ИИ»
+  /// (сколько озвучек осталось на сегодня).
+  Future<TtsQuota> ttsQuota();
 
   /// Справочник тем с сервера. Спрашивается при входе на экран создания:
   /// тему могли переименовать или удалить.

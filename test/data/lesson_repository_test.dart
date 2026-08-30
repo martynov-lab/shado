@@ -15,6 +15,7 @@ import 'package:shado/features/lessons/data/datasources/tts_remote_datasource.da
 import 'package:shado/features/lessons/domain/entities/lesson.dart';
 import 'package:shado/features/lessons/domain/entities/lesson_category.dart';
 import 'package:shado/features/lessons/domain/entities/segment.dart';
+import 'package:shado/features/lessons/domain/entities/tts_quota.dart';
 
 /// Ответ сервера на урок: сегменты сервер возвращает такими, какими принял.
 Map<String, dynamic> lessonJson({
@@ -252,13 +253,19 @@ class FakeTtsRemote implements TtsRemoteDataSource {
     synthesized.add(text);
     return AudioDto.fromJson({
       'id': 'tts-1',
-      'content_type': 'audio/mpeg',
+      'content_type': 'audio/wav',
       'size_bytes': 200,
       'sha256': 'def',
       'duration_ms': 4200,
     });
   }
+
+  @override
+  Future<TtsQuota> quota() async =>
+      const TtsQuota(provider: 'gemini', day: _window, minute: _window);
 }
+
+const _window = TtsQuotaWindow(used: 0, limit: 14, remaining: 14);
 
 /// Кеш в памяти: файл считается лежащим на месте, как только его «скачали».
 class FakeAudioCache implements AudioCache {
@@ -358,7 +365,8 @@ void main() {
       expect(audio.downloads, 1);
       expect(upload.audioId, 'tts-1');
       expect(upload.durationMs, 4200);
-      expect(upload.localPath, '/cache/tts-1.mp3');
+      // Gemini TTS отдаёт wav — файл ложится в кеш под .wav.
+      expect(upload.localPath, '/cache/tts-1.wav');
     });
   });
 

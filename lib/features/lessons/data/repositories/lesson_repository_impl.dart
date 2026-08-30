@@ -10,6 +10,7 @@ import '../../domain/entities/audio_upload.dart';
 import '../../domain/entities/lesson.dart';
 import '../../domain/entities/lesson_category.dart';
 import '../../domain/entities/segment_boundaries.dart';
+import '../../domain/entities/tts_quota.dart';
 import '../../domain/repositories/lesson_repository.dart';
 import '../datasources/audio_cache.dart';
 import '../datasources/audio_remote_datasource.dart';
@@ -182,6 +183,9 @@ class LessonRepositoryImpl implements LessonRepository {
       localPath: localPath,
     );
   }
+
+  @override
+  Future<TtsQuota> ttsQuota() => _tts.quota();
 
   @override
   Future<List<Topic>> getTopics() => _topics.list();

@@ -24,8 +24,9 @@ void main() {
     final env = build(
       (_) async => jsonResponse(200, {
         'id': 'b21e',
-        'content_type': 'audio/mpeg',
-        'size_bytes': 29384,
+        // Gemini TTS отдаёт wav — сервер его не перекодирует.
+        'content_type': 'audio/wav',
+        'size_bytes': 204844,
         'sha256': '3f2a',
         'duration_ms': 4200,
         'cached': false,
@@ -41,6 +42,44 @@ void main() {
     expect(audio.id, 'b21e');
     expect(audio.durationMs, 4200);
     // Поле cached клиент не читает — на разбор оно не влияет.
-    expect(audio.contentType, 'audio/mpeg');
+    expect(audio.contentType, 'audio/wav');
+    // wav кладётся в кеш под расширением .wav.
+    expect(audio.fileExtension, 'wav');
+  });
+
+  test('quota разбирает остаток озвучек, limit 0 — без ограничения', () async {
+    final env = build(
+      (_) async => jsonResponse(200, {
+        'provider': 'gemini',
+        'day': {'used': 3, 'limit': 14, 'remaining': 11},
+        'minute': {'used': 0, 'limit': 2, 'remaining': 2},
+        'month_chars': {'used': 812, 'limit': 0},
+      }),
+    );
+
+    final quota = await env.remote.quota();
+
+    final request = env.adapter.requests.single;
+    expect(request.method, 'GET');
+    expect(request.path, '/v1/tts/quota');
+    expect(quota.provider, 'gemini');
+    expect(quota.day.remaining, 11);
+    expect(quota.day.isUnlimited, isFalse);
+    expect(quota.minute.limit, 2);
+  });
+
+  test('quota: limit 0 в окне — без ограничения, remaining отсутствует', () async {
+    final env = build(
+      (_) async => jsonResponse(200, {
+        'provider': 'gemini',
+        'day': {'used': 5, 'limit': 0},
+        'minute': {'used': 0, 'limit': 2, 'remaining': 2},
+      }),
+    );
+
+    final quota = await env.remote.quota();
+
+    expect(quota.day.isUnlimited, isTrue);
+    expect(quota.day.remaining, isNull);
   });
 }
