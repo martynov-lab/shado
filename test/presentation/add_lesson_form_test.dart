@@ -1,12 +1,28 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:shado/core/network/api_exception.dart';
+import 'package:shado/features/lessons/domain/entities/audio_upload.dart';
 import 'package:shado/features/lessons/domain/entities/lesson_category.dart';
+import 'package:shado/features/lessons/domain/usecases/synthesize_tts.dart';
 import 'package:shado/features/lessons/presentation/controllers/add_lesson_controller.dart';
 import 'package:shado/features/lessons/presentation/controllers/lesson_providers.dart';
 import 'package:shado/features/lessons/presentation/pages/add_lesson_page.dart';
 import 'package:shado/theme/theme.dart';
 import 'package:shado/widgets/widgets.dart';
+
+/// Озвучка, которая всегда падает заданной ошибкой: проверяем ветвление UX по
+/// коду, не поднимая сеть. Реальный `SynthesizeTts` использует только `call`,
+/// поэтому подменяем именно его.
+class _FailingTts implements SynthesizeTts {
+  const _FailingTts(this.error);
+
+  final Object error;
+
+  @override
+  Future<AudioUpload> call({required String text, Object? cancel}) async =>
+      throw error;
+}
 
 /// Экран создания урока: выбор акцента, уровня и темы.
 ///
@@ -22,6 +38,8 @@ void main() {
     WidgetTester tester, {
     List<Topic> available = topics,
     Object? topicsError,
+    Object? ttsError,
+    String? text,
   }) async {
     final container = ProviderContainer(
       overrides: [
@@ -29,9 +47,15 @@ void main() {
           if (topicsError != null) throw topicsError;
           return available;
         }),
+        if (ttsError != null)
+          synthesizeTtsProvider.overrideWithValue(_FailingTts(ttsError)),
       ],
     );
     addTearDown(container.dispose);
+    // Текст задаём до отрисовки: без него кнопка «Озвучить ИИ» заперта.
+    if (text != null) {
+      container.read(addLessonControllerProvider.notifier).setText(text);
+    }
     await tester.pumpWidget(
       UncontrolledProviderScope(
         container: container,
@@ -164,5 +188,55 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(container.read(addLessonControllerProvider).topicId, isNull);
+  });
+
+  // TTS_CLIENT_SPEC §4: коды озвучки ведут себя по-разному, а не сливаются в
+  // один общий текст.
+  testWidgets('озвучка недоступна (503) — предлагает «Повторить»', (
+    tester,
+  ) async {
+    await pumpForm(
+      tester,
+      ttsError: const ApiException(
+        code: ApiErrorCode.ttsUnavailable,
+        message: 'сервис не настроен',
+        status: 503,
+      ),
+      text: 'Hello there',
+    );
+
+    await tester.tap(find.widgetWithText(AppButton, 'Озвучить ИИ'));
+    await tester.pumpAndSettle();
+
+    expect(
+      find.text('Озвучка временно недоступна. Попробуйте позже.'),
+      findsOneWidget,
+    );
+    expect(find.widgetWithText(AppButton, 'Повторить'), findsOneWidget);
+  });
+
+  testWidgets('исчерпан лимит (429) — предлагает загрузить файл, без ретрая', (
+    tester,
+  ) async {
+    await pumpForm(
+      tester,
+      ttsError: const ApiException(
+        code: ApiErrorCode.ttsQuotaExceeded,
+        message: 'Бесплатный лимит озвучки на этот месяц исчерпан',
+        status: 429,
+      ),
+      text: 'Hello there',
+    );
+
+    await tester.tap(find.widgetWithText(AppButton, 'Озвучить ИИ'));
+    await tester.pumpAndSettle();
+
+    expect(
+      find.text('Бесплатный лимит озвучки на этот месяц исчерпан'),
+      findsOneWidget,
+    );
+    expect(find.widgetWithText(AppButton, 'Загрузить файл'), findsOneWidget);
+    // Авто-ретраем лимит не долбим — «Повторить» здесь быть не должно.
+    expect(find.widgetWithText(AppButton, 'Повторить'), findsNothing);
   });
 }

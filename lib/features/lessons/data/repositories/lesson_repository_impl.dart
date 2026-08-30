@@ -16,6 +16,7 @@ import '../datasources/audio_remote_datasource.dart';
 import '../datasources/lesson_local_datasource.dart';
 import '../datasources/lesson_remote_datasource.dart';
 import '../datasources/topic_remote_datasource.dart';
+import '../datasources/tts_remote_datasource.dart';
 import '../models/audio_dto.dart';
 import '../models/lesson_dto.dart';
 import '../models/lesson_model.dart';
@@ -32,12 +33,14 @@ class LessonRepositoryImpl implements LessonRepository {
     required LessonRemoteDataSource remoteDataSource,
     required AudioRemoteDataSource audioDataSource,
     required TopicRemoteDataSource topicDataSource,
+    required TtsRemoteDataSource ttsDataSource,
     required AudioCache audioCache,
     Uuid uuid = const Uuid(),
   }) : _local = localDataSource,
        _remote = remoteDataSource,
        _audio = audioDataSource,
        _topics = topicDataSource,
+       _tts = ttsDataSource,
        _cache = audioCache,
        _uuid = uuid;
 
@@ -52,6 +55,7 @@ class LessonRepositoryImpl implements LessonRepository {
   final LessonRemoteDataSource _remote;
   final AudioRemoteDataSource _audio;
   final TopicRemoteDataSource _topics;
+  final TtsRemoteDataSource _tts;
   final AudioCache _cache;
   final Uuid _uuid;
 
@@ -155,6 +159,27 @@ class LessonRepositoryImpl implements LessonRepository {
       // Отдаём копию из кеша, а не исходный путь: выбранный файл мог быть
       // временной распаковкой content-URI, которую система вправе стереть.
       localPath: cached,
+    );
+  }
+
+  @override
+  Future<AudioUpload> synthesizeTts({
+    required String text,
+    Object? cancel,
+  }) async {
+    final dto = await _tts.synthesize(
+      text: text,
+      cancelToken: cancel is CancelToken ? cancel : null,
+    );
+    // В отличие от загрузки, файла локально ещё нет — только ссылка. Качаем его
+    // в кеш по `audio_id` тем же путём, что и остальное аудио, чтобы экран
+    // создания играл его с диска и метки можно было ставить на слух.
+    final localPath = await _ensureAudioFile(dto);
+    return AudioUpload(
+      audioId: dto.id,
+      durationMs: dto.durationMs,
+      sizeBytes: dto.sizeBytes,
+      localPath: localPath,
     );
   }
 

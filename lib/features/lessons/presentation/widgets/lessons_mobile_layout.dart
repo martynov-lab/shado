@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import 'package:shado/theme/theme.dart';
 
+import '../../domain/entities/folder.dart';
 import '../../domain/entities/lesson.dart';
 import 'account_menu.dart';
 import 'empty_lessons_view.dart';
@@ -20,17 +21,24 @@ class LessonsMobileLayout extends StatelessWidget {
     required this.onOpen,
     required this.onDelete,
     required this.onRefresh,
+    this.folders = const [],
+    this.onOpenFolder,
+    this.onCreateFolder,
   });
 
   final List<Lesson> lessons;
 
-  /// В библиотеке нет уроков вовсе — вместо поиска и фильтров показываем
+  /// В библиотеке нет ни уроков, ни папок — вместо поиска и фильтров показываем
   /// заглушку.
   final bool emptyLibrary;
 
   final void Function(Lesson) onOpen;
   final void Function(Lesson) onDelete;
   final Future<void> Function() onRefresh;
+
+  final List<Folder> folders;
+  final void Function(Folder)? onOpenFolder;
+  final VoidCallback? onCreateFolder;
 
   @override
   Widget build(BuildContext context) {
@@ -66,13 +74,16 @@ class LessonsMobileLayout extends StatelessWidget {
           Expanded(
             child: emptyLibrary
                 ? const EmptyLessonsView()
-                : lessons.isEmpty
+                : lessons.isEmpty && folders.isEmpty
                 ? const LessonsNoResults()
                 : LessonsListView(
                     lessons: lessons,
+                    folders: folders,
                     onOpen: onOpen,
                     onDelete: onDelete,
                     onRefresh: onRefresh,
+                    onOpenFolder: onOpenFolder,
+                    onCreateFolder: onCreateFolder,
                     padding: const EdgeInsets.fromLTRB(
                       AppSpacing.s4,
                       0,

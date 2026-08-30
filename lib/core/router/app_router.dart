@@ -9,6 +9,7 @@ import '../../features/auth/presentation/pages/login_page.dart';
 import '../../features/home/presentation/pages/home_page.dart';
 import '../../features/lessons/presentation/pages/add_lesson_page.dart';
 import '../../features/lessons/presentation/pages/edit_lesson_page.dart';
+import '../../features/lessons/presentation/pages/folder_page.dart';
 import '../../features/lessons/presentation/pages/lesson_page.dart';
 import '../../features/lessons/presentation/pages/lessons_page.dart';
 import '../../features/lessons/presentation/pages/main_shell.dart';
@@ -167,6 +168,12 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         path: AdminUsersPage.routePath,
         parentNavigatorKey: _rootNavigatorKey,
         builder: (context, state) => const AdminUsersPage(),
+      ),
+      GoRoute(
+        path: FolderPage.routePath,
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) =>
+            FolderPage(folderId: state.pathParameters['id']!),
       ),
       GoRoute(
         path: LessonPage.routePath,

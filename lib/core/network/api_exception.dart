@@ -15,6 +15,10 @@ enum ApiErrorCode {
   payloadTooLarge('payload_too_large'),
   unsupportedMediaType('unsupported_media_type'),
   rateLimited('rate_limited'),
+  // Специфичные коды озвучки через ИИ (TTS_CLIENT_SPEC §4): различаем, чтобы
+  // клиент вёл себя по-разному — 503 предлагает повтор, 429 не ретраит.
+  ttsQuotaExceeded('tts_quota_exceeded'),
+  ttsUnavailable('tts_unavailable'),
   internalError('internal_error'),
   unknown('unknown');
 

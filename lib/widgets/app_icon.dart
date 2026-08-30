@@ -26,6 +26,7 @@ enum AppIcons {
   eye('eye'),
   eyeOff('eye_off'),
   flame('flame'),
+  folder('folder'),
   globe('globe'),
   headphones('headphones'),
   home('home'),

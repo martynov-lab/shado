@@ -1,4 +1,5 @@
 import '../../../auth/domain/entities/auth_user.dart';
+import '../../domain/entities/folder.dart';
 import '../../domain/entities/lesson.dart';
 
 /// Права на действия с уроками по роли — матрица §6.
@@ -18,5 +19,13 @@ bool canCreateLessons(UserRole? role) => role?.canAuthor ?? false;
 bool canModifyLesson(UserRole? role, Lesson lesson) {
   if (role == null) return false;
   if (lesson.isPrivate) return role.canAuthor;
+  return role.isAdmin || role.isOwner;
+}
+
+/// Кто вправе править состав и метаданные папки — по тем же правилам, что и
+/// уроки (§6.2): приватную ведёт любой автор, публичную — admin и owner.
+bool canModifyFolder(UserRole? role, Folder folder) {
+  if (role == null) return false;
+  if (folder.isPrivate) return role.canAuthor;
   return role.isAdmin || role.isOwner;
 }

@@ -83,6 +83,12 @@ class _OneLessonRepository implements LessonRepository {
   }) async => throw UnimplementedError();
 
   @override
+  Future<AudioUpload> synthesizeTts({
+    required String text,
+    Object? cancel,
+  }) async => throw UnimplementedError();
+
+  @override
   Future<Lesson> createLesson({
     required String title,
     required String audioId,

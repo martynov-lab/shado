@@ -31,6 +31,11 @@ abstract interface class LessonRepository {
     Object? cancel,
   });
 
+  /// Озвучивает [text] через ИИ и возвращает результат так же, как загрузка
+  /// файла: аудио уже лежит в кеше, дальше — обычное создание урока по
+  /// `audio_id`. [cancel] прерывает синтез.
+  Future<AudioUpload> synthesizeTts({required String text, Object? cancel});
+
   /// Справочник тем с сервера. Спрашивается при входе на экран создания:
   /// тему могли переименовать или удалить.
   Future<List<Topic>> getTopics();

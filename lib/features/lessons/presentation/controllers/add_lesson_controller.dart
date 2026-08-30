@@ -10,6 +10,7 @@ import '../../domain/entities/lesson.dart';
 import '../../domain/entities/lesson_category.dart';
 import '../../domain/entities/segment_boundaries.dart';
 import '../../domain/usecases/create_lesson.dart';
+import '../../domain/usecases/synthesize_tts.dart';
 import '../widgets/segment_splitter/segment_boundary_math.dart' as marks;
 import 'lesson_providers.dart';
 import 'lessons_controller.dart';
@@ -31,6 +32,7 @@ class AddLessonFormState {
     this.boundaries = const [],
     this.isPublic = true,
     this.isUploading = false,
+    this.isSynthesizing = false,
     this.uploadProgress = 0,
     this.isSubmitting = false,
   });
@@ -73,8 +75,13 @@ class AddLessonFormState {
   /// авторов значение вычисляется по роли в [AddLessonController.submit].
   final bool isPublic;
 
-  /// Идёт отправка файла на сервер.
+  /// Идёт отправка файла на сервер или озвучка через ИИ — оба показывают одну
+  /// плашку прогресса.
   final bool isUploading;
+
+  /// Отправка — это озвучка через ИИ, а не загрузка файла: у неё нет процентов,
+  /// поэтому подпись прогресса другая.
+  final bool isSynthesizing;
 
   /// Доля отправленного, `0..1`.
   final double uploadProgress;
@@ -122,6 +129,7 @@ class AddLessonFormState {
     List<int>? boundaries,
     bool? isPublic,
     bool? isUploading,
+    bool? isSynthesizing,
     double? uploadProgress,
     bool? isSubmitting,
   }) {
@@ -140,6 +148,7 @@ class AddLessonFormState {
       boundaries: boundaries ?? this.boundaries,
       isPublic: isPublic ?? this.isPublic,
       isUploading: isUploading ?? this.isUploading,
+      isSynthesizing: isSynthesizing ?? this.isSynthesizing,
       uploadProgress: uploadProgress ?? this.uploadProgress,
       isSubmitting: isSubmitting ?? this.isSubmitting,
     );
@@ -303,6 +312,7 @@ class AddLessonController extends Notifier<AddLessonFormState> {
       clearPendingTrim: true,
       boundaries: const [],
       isUploading: true,
+      isSynthesizing: false,
       uploadProgress: 0,
     );
 
@@ -343,12 +353,69 @@ class AddLessonController extends Notifier<AddLessonFormState> {
     return true;
   }
 
-  /// Прерывает загрузку: файл остаётся невыбранным.
+  /// Озвучивает текущий текст через ИИ и подставляет результат как аудио урока.
+  ///
+  /// Обрабатывается так же, как загрузка файла: результат уже в кеше, дальше
+  /// урок размечают и создают по `audio_id`. Возвращает `true`, если синтез
+  /// запущен (в тексте есть что озвучивать).
+  Future<bool> synthesizeTts() async {
+    if (SynthesizeTts.prepareText(state.text).isEmpty) return false;
+
+    // Как и загрузка: прежний синтез/загрузку прерываем — их результат уже не наш.
+    _uploadCancel?.cancel();
+    final cancelToken = _uploadCancel = CancelToken();
+    state = state.copyWith(
+      clearAudio: true,
+      audioFileName: 'Озвучка ИИ',
+      durationMs: 0,
+      trim: const AudioTrim.full(0),
+      clearPendingTrim: true,
+      boundaries: const [],
+      isUploading: true,
+      isSynthesizing: true,
+      uploadProgress: 0,
+    );
+
+    try {
+      final upload = await ref.read(synthesizeTtsProvider)(
+        text: state.text,
+        cancel: cancelToken,
+      );
+      if (_uploadCancel != cancelToken) return true;
+      final next = state.copyWith(
+        audioId: upload.audioId,
+        audioPath: upload.localPath.isEmpty ? null : upload.localPath,
+        durationMs: upload.durationMs,
+        trim: AudioTrim.full(upload.durationMs),
+        isUploading: false,
+        isSynthesizing: false,
+        uploadProgress: 1,
+      );
+      state = next.copyWith(boundaries: _fitBoundaries(next));
+    } catch (_) {
+      if (_uploadCancel == cancelToken) {
+        state = state.copyWith(
+          isUploading: false,
+          isSynthesizing: false,
+          uploadProgress: 0,
+          durationMs: 0,
+          clearAudio: true,
+        );
+      }
+      rethrow;
+    } finally {
+      if (_uploadCancel == cancelToken) _uploadCancel = null;
+    }
+    return true;
+  }
+
+  /// Прерывает загрузку или озвучку: файл остаётся невыбранным.
   void cancelUpload() {
     _uploadCancel?.cancel();
     _uploadCancel = null;
     state = state.copyWith(
       isUploading: false,
+      isSynthesizing: false,
       uploadProgress: 0,
       durationMs: 0,
       clearAudio: true,

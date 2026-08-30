@@ -8,6 +8,7 @@ import '../../data/datasources/lesson_local_datasource.dart';
 import '../../data/datasources/lesson_local_datasource_sqflite.dart';
 import '../../data/datasources/lesson_remote_datasource.dart';
 import '../../data/datasources/topic_remote_datasource.dart';
+import '../../data/datasources/tts_remote_datasource.dart';
 import '../../data/datasources/waveform_datasource.dart';
 import '../../data/datasources/waveform_datasource_remote.dart';
 import '../../data/datasources/waveform_datasource_soloud.dart';
@@ -19,6 +20,7 @@ import '../../domain/usecases/delete_lesson.dart';
 import '../../domain/usecases/get_lesson.dart';
 import '../../domain/usecases/get_lessons.dart';
 import '../../domain/usecases/get_topics.dart';
+import '../../domain/usecases/synthesize_tts.dart';
 import '../../domain/usecases/sync_lessons.dart';
 import '../../domain/usecases/update_lesson_content.dart';
 import '../../domain/usecases/upload_audio.dart';
@@ -38,6 +40,10 @@ final audioRemoteDataSourceProvider = Provider<AudioRemoteDataSource>(
 
 final topicRemoteDataSourceProvider = Provider<TopicRemoteDataSource>(
   (ref) => ApiTopicRemoteDataSource(ref.watch(apiClientProvider)),
+);
+
+final ttsRemoteDataSourceProvider = Provider<TtsRemoteDataSource>(
+  (ref) => ApiTtsRemoteDataSource(ref.watch(apiClientProvider)),
 );
 
 final audioCacheProvider = Provider<AudioCache>(
@@ -64,6 +70,7 @@ final lessonRepositoryProvider = Provider<LessonRepository>(
     remoteDataSource: ref.watch(lessonRemoteDataSourceProvider),
     audioDataSource: ref.watch(audioRemoteDataSourceProvider),
     topicDataSource: ref.watch(topicRemoteDataSourceProvider),
+    ttsDataSource: ref.watch(ttsRemoteDataSourceProvider),
     audioCache: ref.watch(audioCacheProvider),
   ),
 );
@@ -94,6 +101,10 @@ final updateLessonContentProvider = Provider<UpdateLessonContent>(
 
 final uploadAudioProvider = Provider<UploadAudio>(
   (ref) => UploadAudio(ref.watch(lessonRepositoryProvider)),
+);
+
+final synthesizeTtsProvider = Provider<SynthesizeTts>(
+  (ref) => SynthesizeTts(ref.watch(lessonRepositoryProvider)),
 );
 
 final getTopicsProvider = Provider<GetTopics>(

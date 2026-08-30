@@ -94,6 +94,12 @@ class FakeLessonRepository implements LessonRepository {
   }) async => const AudioUpload(audioId: 'a', durationMs: 1, sizeBytes: 1);
 
   @override
+  Future<AudioUpload> synthesizeTts({
+    required String text,
+    Object? cancel,
+  }) async => const AudioUpload(audioId: 'a', durationMs: 1, sizeBytes: 1);
+
+  @override
   Future<List<Topic>> getTopics() async => const [];
 
   @override

@@ -11,6 +11,7 @@ import 'package:shado/features/lessons/data/models/segment_model.dart';
 import 'package:shado/features/lessons/data/models/waveform_peaks.dart';
 import 'package:shado/features/lessons/data/repositories/lesson_repository_impl.dart';
 import 'package:shado/features/lessons/data/datasources/topic_remote_datasource.dart';
+import 'package:shado/features/lessons/data/datasources/tts_remote_datasource.dart';
 import 'package:shado/features/lessons/domain/entities/lesson.dart';
 import 'package:shado/features/lessons/domain/entities/lesson_category.dart';
 import 'package:shado/features/lessons/domain/entities/segment.dart';
@@ -239,6 +240,26 @@ class FakeAudioRemote implements AudioRemoteDataSource {
   }
 }
 
+/// Озвучка: отдаёт готовый [AudioDto], словно текст уже синтезирован.
+class FakeTtsRemote implements TtsRemoteDataSource {
+  final List<String> synthesized = [];
+
+  @override
+  Future<AudioDto> synthesize({
+    required String text,
+    Object? cancelToken,
+  }) async {
+    synthesized.add(text);
+    return AudioDto.fromJson({
+      'id': 'tts-1',
+      'content_type': 'audio/mpeg',
+      'size_bytes': 200,
+      'sha256': 'def',
+      'duration_ms': 4200,
+    });
+  }
+}
+
 /// Кеш в памяти: файл считается лежащим на месте, как только его «скачали».
 class FakeAudioCache implements AudioCache {
   final Set<String> files = {};
@@ -292,12 +313,14 @@ void main() {
   late FakeAudioRemote audio;
   late FakeAudioCache cache;
   late FakeTopicRemote topics;
+  late FakeTtsRemote tts;
 
   setUp(() {
     local = FakeLocalDataSource();
     audio = FakeAudioRemote();
     cache = FakeAudioCache();
     topics = FakeTopicRemote();
+    tts = FakeTtsRemote();
   });
 
   LessonRepositoryImpl build(FakeRemoteDataSource remote) =>
@@ -306,6 +329,7 @@ void main() {
         remoteDataSource: remote,
         audioDataSource: audio,
         topicDataSource: topics,
+        ttsDataSource: tts,
         audioCache: cache,
       );
 
@@ -320,6 +344,21 @@ void main() {
       expect(upload.localPath, '/cache/audio-1.mp3');
       expect(upload.audioId, 'audio-1');
       expect(upload.durationMs, 10000);
+    });
+  });
+
+  group('озвучка через ИИ', () {
+    test('качает синтез в кеш и отдаёт локальный путь, как загрузка', () async {
+      final repository = build(FakeRemoteDataSource());
+
+      final upload = await repository.synthesizeTts(text: 'Hello there');
+
+      expect(tts.synthesized.single, 'Hello there');
+      // Файл синтеза докачан один раз и лежит в кеше по своему audio_id.
+      expect(audio.downloads, 1);
+      expect(upload.audioId, 'tts-1');
+      expect(upload.durationMs, 4200);
+      expect(upload.localPath, '/cache/tts-1.mp3');
     });
   });
 

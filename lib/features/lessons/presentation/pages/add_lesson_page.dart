@@ -9,7 +9,9 @@ import 'package:shado/widgets/widgets.dart';
 
 import '../../../../core/config/app_config.dart';
 import '../../../../core/constants/app_constants.dart';
+import '../../../../core/network/api_exception.dart';
 import '../../../auth/presentation/controllers/auth_controller.dart';
+import '../../domain/usecases/synthesize_tts.dart';
 import '../controllers/add_lesson_controller.dart';
 import '../controllers/add_lesson_playback_controller.dart';
 import '../controllers/lesson_providers.dart';
@@ -19,6 +21,7 @@ import '../widgets/lesson_editor_header.dart';
 import '../widgets/lesson_file_chip.dart';
 import '../widgets/lesson_privacy_field.dart';
 import '../widgets/lesson_section_card.dart';
+import '../widgets/synthesize_tts_dialog.dart';
 import '../widgets/segment_splitter/marked_text_controller.dart';
 import '../widgets/segment_splitter/segment_splitter_field.dart';
 import '../../../home/presentation/pages/home_page.dart';
@@ -72,6 +75,52 @@ class _AddLessonPageState extends ConsumerState<AddLessonPage> {
       await ref.read(addLessonControllerProvider.notifier).pickAudio();
     } catch (error) {
       _showMessage('Не удалось выбрать файл: $error');
+    }
+  }
+
+  /// Озвучивает текст через ИИ. Если аудио уже выбрано, синтез заменит его —
+  /// сначала спрашиваем подтверждение.
+  Future<void> _synthesize() async {
+    if (ref.read(addLessonControllerProvider).audioId != null) {
+      final confirmed = await showDialog<bool>(
+        context: context,
+        builder: (_) => const SynthesizeTtsDialog(),
+      );
+      if (confirmed != true) return;
+    }
+    try {
+      await ref.read(addLessonControllerProvider.notifier).synthesizeTts();
+    } on ApiException catch (error) {
+      _showTtsError(error);
+    } catch (error) {
+      _showMessage('Не удалось озвучить: $error');
+    }
+  }
+
+  /// Показывает ошибку озвучки по TTS_CLIENT_SPEC §4. Сервис временно недоступен
+  /// (503) — зовём попробовать позже и даём «Повторить». Исчерпан лимит (429) —
+  /// авто-ретраем не долбим, а предлагаем запасной путь: загрузить свой файл.
+  void _showTtsError(ApiException error) {
+    if (!mounted) return;
+    switch (error.code) {
+      case ApiErrorCode.ttsUnavailable:
+        showAppSnackbar(
+          context,
+          message: 'Озвучка временно недоступна. Попробуйте позже.',
+          variant: AppSnackbarVariant.warning,
+          actionLabel: 'Повторить',
+          onAction: _synthesize,
+        );
+      case ApiErrorCode.ttsQuotaExceeded:
+        showAppSnackbar(
+          context,
+          message: error.message,
+          variant: AppSnackbarVariant.warning,
+          actionLabel: 'Загрузить файл',
+          onAction: _pickAudio,
+        );
+      case _:
+        _showMessage('Не удалось озвучить: ${error.message}');
     }
   }
 
@@ -166,8 +215,15 @@ class _AddLessonPageState extends ConsumerState<AddLessonPage> {
                           : null,
                       isUploading: state.isUploading,
                       uploadProgress: state.uploadProgress,
+                      isSynthesizing: state.isSynthesizing,
                       onPick: isBusy ? null : _pickAudio,
                       onCancelUpload: controller.cancelUpload,
+                      // Озвучивать нечего, пока в тексте нет ни одной фразы.
+                      onSynthesize:
+                          isBusy ||
+                              SynthesizeTts.prepareText(state.text).isEmpty
+                          ? null
+                          : _synthesize,
                       helper:
                           'Поддерживаются ${allowedAudioExtensions.join(', ')}, '
                           'до ${AppConfig.maxUploadBytes ~/ (1024 * 1024)} МБ',

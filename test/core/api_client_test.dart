@@ -37,6 +37,8 @@ void main() {
       (413, 'payload_too_large', ApiErrorCode.payloadTooLarge),
       (415, 'unsupported_media_type', ApiErrorCode.unsupportedMediaType),
       (429, 'rate_limited', ApiErrorCode.rateLimited),
+      (429, 'tts_quota_exceeded', ApiErrorCode.ttsQuotaExceeded),
+      (503, 'tts_unavailable', ApiErrorCode.ttsUnavailable),
       (500, 'internal_error', ApiErrorCode.internalError),
     ];
 

@@ -2,10 +2,13 @@ import 'package:flutter/material.dart';
 
 import 'package:shado/theme/theme.dart';
 
+import '../../domain/entities/folder.dart';
 import '../../domain/entities/lesson.dart';
+import 'folder_grid_card.dart';
 import 'lesson_grid_card.dart';
 
-/// Сетка карточек уроков с pull-to-refresh (планшет).
+/// Сетка карточек с pull-to-refresh (планшет). Папки идут первыми карточками —
+/// с брендовой «крышкой», чтобы отличаться от уроков.
 class LessonsGridView extends StatelessWidget {
   const LessonsGridView({
     super.key,
@@ -13,6 +16,8 @@ class LessonsGridView extends StatelessWidget {
     required this.onOpen,
     required this.onDelete,
     required this.onRefresh,
+    this.folders = const [],
+    this.onOpenFolder,
   });
 
   final List<Lesson> lessons;
@@ -20,8 +25,13 @@ class LessonsGridView extends StatelessWidget {
   final void Function(Lesson) onDelete;
   final Future<void> Function() onRefresh;
 
+  final List<Folder> folders;
+  final void Function(Folder)? onOpenFolder;
+
   @override
   Widget build(BuildContext context) {
+    final total = folders.length + lessons.length;
+
     return RefreshIndicator(
       onRefresh: onRefresh,
       child: GridView.builder(
@@ -32,12 +42,22 @@ class LessonsGridView extends StatelessWidget {
           mainAxisSpacing: AppSpacing.s4,
           mainAxisExtent: 200,
         ),
-        itemCount: lessons.length,
-        itemBuilder: (context, index) => LessonGridCard(
-          lesson: lessons[index],
-          onTap: () => onOpen(lessons[index]),
-          onDelete: () => onDelete(lessons[index]),
-        ),
+        itemCount: total,
+        itemBuilder: (context, index) {
+          if (index < folders.length) {
+            final folder = folders[index];
+            return FolderGridCard(
+              folder: folder,
+              onTap: () => onOpenFolder?.call(folder),
+            );
+          }
+          final lesson = lessons[index - folders.length];
+          return LessonGridCard(
+            lesson: lesson,
+            onTap: () => onOpen(lesson),
+            onDelete: () => onDelete(lesson),
+          );
+        },
       ),
     );
   }

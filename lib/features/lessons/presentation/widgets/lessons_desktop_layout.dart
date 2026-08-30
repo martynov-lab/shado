@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import 'package:shado/theme/theme.dart';
 
+import '../../domain/entities/folder.dart';
 import '../../domain/entities/lesson.dart';
 import 'empty_lessons_view.dart';
 import 'lessons_filter_panel.dart';
@@ -20,6 +21,9 @@ class LessonsDesktopLayout extends StatelessWidget {
     required this.onOpen,
     required this.onDelete,
     required this.onRefresh,
+    this.folders = const [],
+    this.onOpenFolder,
+    this.onCreateFolder,
   });
 
   final List<Lesson> lessons;
@@ -27,6 +31,10 @@ class LessonsDesktopLayout extends StatelessWidget {
   final void Function(Lesson) onOpen;
   final void Function(Lesson) onDelete;
   final Future<void> Function() onRefresh;
+
+  final List<Folder> folders;
+  final void Function(Folder)? onOpenFolder;
+  final VoidCallback? onCreateFolder;
 
   @override
   Widget build(BuildContext context) {
@@ -54,13 +62,16 @@ class LessonsDesktopLayout extends StatelessWidget {
                   Expanded(
                     child: emptyLibrary
                         ? const EmptyLessonsView()
-                        : lessons.isEmpty
+                        : lessons.isEmpty && folders.isEmpty
                         ? const LessonsNoResults()
                         : LessonsListView(
                             lessons: lessons,
+                            folders: folders,
                             onOpen: onOpen,
                             onDelete: onDelete,
                             onRefresh: onRefresh,
+                            onOpenFolder: onOpenFolder,
+                            onCreateFolder: onCreateFolder,
                           ),
                   ),
                 ],

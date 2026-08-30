@@ -17,6 +17,21 @@ String _segmentsWord(int count) {
   };
 }
 
+/// «3 урока» с правильным окончанием — подпись папки.
+String lessonsLabel(int count) {
+  final word = _lessonsWord(count);
+  return '$count $word';
+}
+
+String _lessonsWord(int count) {
+  if (count % 100 >= 11 && count % 100 <= 14) return 'уроков';
+  return switch (count % 10) {
+    1 => 'урок',
+    2 || 3 || 4 => 'урока',
+    _ => 'уроков',
+  };
+}
+
 /// Порядковый номер сегмента с ведущим нулём: `01`, `02`, …
 String segmentNumber(int index) => (index + 1).toString().padLeft(2, '0');
 

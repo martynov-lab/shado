@@ -5,8 +5,8 @@ import 'package:shado/widgets/widgets.dart';
 
 import 'upload_progress.dart';
 
-/// Плашка аудиофайла на экране создания: выбор файла, ход загрузки и — когда
-/// файл принят — его имя с длительностью и кнопкой «Заменить».
+/// Плашка аудиофайла на экране создания: выбор файла или озвучка через ИИ, ход
+/// загрузки и — когда файл принят — его имя с длительностью и кнопкой «Заменить».
 class LessonFileChip extends StatelessWidget {
   const LessonFileChip({
     super.key,
@@ -15,6 +15,8 @@ class LessonFileChip extends StatelessWidget {
     required this.uploadProgress,
     required this.onPick,
     required this.onCancelUpload,
+    this.onSynthesize,
+    this.isSynthesizing = false,
     this.detail,
     this.helper,
   });
@@ -28,9 +30,17 @@ class LessonFileChip extends StatelessWidget {
   final bool isUploading;
   final double uploadProgress;
 
+  /// Идёт озвучка через ИИ, а не загрузка файла: у неё нет процентов, поэтому
+  /// подпись прогресса другая.
+  final bool isSynthesizing;
+
   /// Выбрать или заменить файл. `null` — действие заперто (идёт отправка).
   final VoidCallback? onPick;
   final VoidCallback onCancelUpload;
+
+  /// Озвучить текст через ИИ. `null` — озвучивать нечего (текст пуст) или идёт
+  /// отправка: кнопка показана заперто, подсказывая, что нужен текст.
+  final VoidCallback? onSynthesize;
 
   /// Подсказка про поддерживаемые форматы, когда файл ещё не выбран.
   final String? helper;
@@ -44,6 +54,7 @@ class LessonFileChip extends StatelessWidget {
         child: UploadProgress(
           progress: uploadProgress,
           onCancelPressed: onCancelUpload,
+          label: isSynthesizing ? 'Озвучиваем текст через ИИ…' : null,
         ),
       );
     }
@@ -52,11 +63,26 @@ class LessonFileChip extends StatelessWidget {
       return Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          AppButton(
-            label: 'Выберите аудио',
-            icon: Icons.audiotrack,
-            variant: AppButtonVariant.secondary,
-            onPressed: onPick,
+          Row(
+            children: [
+              Expanded(
+                child: AppButton(
+                  label: 'Выберите аудио',
+                  icon: Icons.audiotrack,
+                  variant: AppButtonVariant.secondary,
+                  onPressed: onPick,
+                ),
+              ),
+              const SizedBox(width: AppSpacing.s3),
+              Expanded(
+                child: AppButton(
+                  label: 'Озвучить ИИ',
+                  icon: Icons.auto_awesome,
+                  variant: AppButtonVariant.secondary,
+                  onPressed: onSynthesize,
+                ),
+              ),
+            ],
           ),
           if (helper != null) ...[
             const SizedBox(height: AppSpacing.s2),
@@ -99,7 +125,16 @@ class LessonFileChip extends StatelessWidget {
               ],
             ),
           ),
-          const SizedBox(width: AppSpacing.s3),
+          const SizedBox(width: AppSpacing.s2),
+          // Озвучка доступна и когда файл уже выбран — заменит его. Предупреждение
+          // о замене показывает экран создания.
+          AppButton(
+            label: 'Озвучить ИИ',
+            variant: AppButtonVariant.ghost,
+            size: AppButtonSize.sm,
+            onPressed: onSynthesize,
+          ),
+          const SizedBox(width: AppSpacing.s2),
           AppButton(
             label: 'Заменить',
             variant: AppButtonVariant.ghost,
