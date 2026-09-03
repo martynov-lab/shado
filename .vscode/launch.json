@@ -2,13 +2,18 @@
   // Базовый URL сервера приложение берёт из `SHADO_API_BASE_URL`
   // (см. lib/core/config/app_config.dart). Без флага это боевой сервер,
   // поэтому конфигурации для локальной разработки передают адрес явно.
+  //
+  // `program` указан у всех конфигураций намеренно: без него расширение Dart
+  // запускает активный файл редактора, и с открытым `*_test.dart` вместо
+  // приложения стартуют тесты.
   "version": "0.2.0",
   "configurations": [
     {
       // Боевой сервер — то же, что даёт сборка без флагов.
       "name": "shado (прод)",
       "request": "launch",
-      "type": "dart"
+      "type": "dart",
+      "program": "lib/main.dart"
     },
     {
       // Изнутри Android-эмулятора хост-машина видна как 10.0.2.2:
@@ -16,6 +21,7 @@
       "name": "shado (локальный сервер, Android-эмулятор)",
       "request": "launch",
       "type": "dart",
+      "program": "lib/main.dart",
       "toolArgs": ["--dart-define=SHADO_API_BASE_URL=http://10.0.2.2:8080"]
     },
     {
@@ -23,12 +29,14 @@
       "name": "shado (локальный сервер, десктоп / iOS-симулятор)",
       "request": "launch",
       "type": "dart",
+      "program": "lib/main.dart",
       "toolArgs": ["--dart-define=SHADO_API_BASE_URL=http://127.0.0.1:8080"]
     },
     {
       "name": "shado (profile mode)",
       "request": "launch",
       "type": "dart",
+      "program": "lib/main.dart",
       "flutterMode": "profile"
     },
     {
@@ -37,6 +45,7 @@
       "name": "shado (release mode)",
       "request": "launch",
       "type": "dart",
+      "program": "lib/main.dart",
       "flutterMode": "release"
     }
   ]
