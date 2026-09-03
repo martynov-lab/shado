@@ -7,9 +7,9 @@ import 'package:shado/widgets/widgets.dart';
 import '../../../auth/presentation/controllers/auth_controller.dart';
 import '../../domain/entities/folder.dart';
 import '../../domain/entities/lesson.dart';
-import '../controllers/folders_controller.dart';
 import '../controllers/lessons_controller.dart';
 import '../controllers/lessons_filter.dart';
+import '../controllers/library_controller.dart';
 import '../widgets/delete_lesson_dialog.dart';
 import '../widgets/folder_editor_dialog.dart';
 import '../widgets/lessons_desktop_layout.dart';
@@ -21,7 +21,11 @@ import 'lesson_page.dart';
 
 /// Список уроков — раздел «Уроки». Данные и фильтрацию держат провайдеры,
 /// раскладку выбирает [AppAdaptiveLayout]. Каркас (Scaffold, фон, навигация) —
-/// у [MainShell]. Над уроками, в том же списке, идут папки (§6.2).
+/// у [MainShell].
+///
+/// Корень — папки и уроки вне папок — приходит одним запросом `/v1/library`
+/// (§6.3); поиск и фильтры работают плоско по всему каталогу из кеша, поэтому
+/// урок, лежащий в папке, фильтр по уровню всё равно находит.
 class LessonsPage extends ConsumerWidget {
   const LessonsPage({super.key});
 
@@ -29,83 +33,59 @@ class LessonsPage extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final lessons = ref.watch(lessonsControllerProvider);
-    final controller = ref.read(lessonsControllerProvider.notifier);
-    final filter = ref.watch(lessonsFilterProvider);
-    final filtered =
-        ref.watch(filteredLessonsProvider).value ?? const <Lesson>[];
+    final library = ref.watch(libraryControllerProvider);
+    final libraryController = ref.read(libraryControllerProvider.notifier);
+    final lessonsController = ref.read(lessonsControllerProvider.notifier);
+    final lessons = ref.watch(visibleLessonsProvider);
+    final folders = ref.watch(visibleFoldersProvider);
     final canAuthor = ref.watch(
       authControllerProvider.select((auth) => auth.canAuthor),
     );
 
-    // Уроки, уже разложенные по папкам, в общем списке не показываем — они
-    // живут внутри своих папок.
-    final folderedIds =
-        ref.watch(folderedLessonIdsProvider).value ?? const <String>{};
-    final visibleLessons = folderedIds.isEmpty
-        ? filtered
-        : [
-            for (final lesson in filtered)
-              if (!folderedIds.contains(lesson.id)) lesson,
-          ];
-
-    // Папки показываем только пока не сужают уроки категориями: у папки нет ни
-    // уровня, ни темы, поэтому при активных фильтрах их скрываем, а по поиску —
-    // отбираем по названию.
-    final foldersAll =
-        ref.watch(foldersControllerProvider).value ?? const <Folder>[];
-    final showFolderSection = filter.activeCount == 0;
-    final folders = !showFolderSection
-        ? const <Folder>[]
-        : filter.query.isEmpty
-        ? foldersAll
-        : [
-            for (final folder in foldersAll)
-              if (folder.title.toLowerCase().contains(
-                filter.query.toLowerCase(),
-              ))
-                folder,
-          ];
-
+    // Корень тянем заново, а заодно догоняем кеш дельтой — на нём держится
+    // поиск по всему каталогу.
     Future<void> refresh() async {
       await Future.wait([
-        controller.refresh(),
-        ref.read(foldersControllerProvider.notifier).refresh(),
+        libraryController.refresh(),
+        lessonsController.refresh(),
       ]);
     }
 
-    return switch (lessons) {
+    return switch (library) {
       AsyncError(:final error) => LessonsErrorView(
         message: '$error',
-        onRetryPressed: controller.refresh,
+        onRetryPressed: libraryController.refresh,
       ),
-      AsyncData(value: final items) => AppAdaptiveLayout(
+      AsyncData(value: final root) => AppAdaptiveLayout(
         mobile: (context) => LessonsMobileLayout(
-          lessons: visibleLessons,
+          lessons: lessons,
           folders: folders,
-          emptyLibrary: items.isEmpty && foldersAll.isEmpty,
+          emptyLibrary: root.isEmpty,
           onOpen: (lesson) => _open(context, lesson),
-          onDelete: (lesson) => _confirmDelete(context, controller, lesson),
+          onDelete: (lesson) =>
+              _confirmDelete(context, lessonsController, lesson),
           onRefresh: refresh,
           onOpenFolder: (folder) => _openFolder(context, folder),
           onCreateFolder: canAuthor ? () => _createFolder(context, ref) : null,
         ),
         tablet: (context) => LessonsTabletLayout(
-          lessons: visibleLessons,
+          lessons: lessons,
           folders: folders,
-          emptyLibrary: items.isEmpty && foldersAll.isEmpty,
+          emptyLibrary: root.isEmpty,
           onOpen: (lesson) => _open(context, lesson),
-          onDelete: (lesson) => _confirmDelete(context, controller, lesson),
+          onDelete: (lesson) =>
+              _confirmDelete(context, lessonsController, lesson),
           onRefresh: refresh,
           onOpenFolder: (folder) => _openFolder(context, folder),
           onCreateFolder: canAuthor ? () => _createFolder(context, ref) : null,
         ),
         desktop: (context) => LessonsDesktopLayout(
-          lessons: visibleLessons,
+          lessons: lessons,
           folders: folders,
-          emptyLibrary: items.isEmpty && foldersAll.isEmpty,
+          emptyLibrary: root.isEmpty,
           onOpen: (lesson) => _open(context, lesson),
-          onDelete: (lesson) => _confirmDelete(context, controller, lesson),
+          onDelete: (lesson) =>
+              _confirmDelete(context, lessonsController, lesson),
           onRefresh: refresh,
           onOpenFolder: (folder) => _openFolder(context, folder),
           onCreateFolder: canAuthor ? () => _createFolder(context, ref) : null,
@@ -133,7 +113,7 @@ class LessonsPage extends ConsumerWidget {
     if (title == null) return;
     try {
       final folder = await ref
-          .read(foldersControllerProvider.notifier)
+          .read(libraryControllerProvider.notifier)
           .create(title);
       if (context.mounted) _openFolder(context, folder);
     } catch (error) {

@@ -14,6 +14,7 @@ import '../../domain/usecases/synthesize_tts.dart';
 import '../widgets/segment_splitter/segment_boundary_math.dart' as marks;
 import 'lesson_providers.dart';
 import 'lessons_controller.dart';
+import 'library_controller.dart';
 
 /// Состояние формы создания урока.
 class AddLessonFormState {
@@ -449,6 +450,8 @@ class AddLessonController extends Notifier<AddLessonFormState> {
         ),
       );
       ref.invalidate(lessonsControllerProvider);
+      // Новый урок ложится в корень библиотеки — перечитываем ленту.
+      ref.invalidate(libraryControllerProvider);
       state = const AddLessonFormState();
       return lesson;
     } catch (_) {

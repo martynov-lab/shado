@@ -1,8 +1,10 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../domain/entities/folder.dart';
 import '../../domain/entities/lesson.dart';
 import '../../domain/entities/lesson_category.dart';
 import 'lessons_controller.dart';
+import 'library_controller.dart';
 
 /// Сколько урок считается «новым» с момента загрузки — для метки «New» и
 /// фильтра по статусу.
@@ -157,4 +159,32 @@ final filteredLessonsProvider = Provider<AsyncValue<List<Lesson>>>((ref) {
   return lessons.whenData(
     (items) => [for (final lesson in items) if (filter.matches(lesson)) lesson],
   );
+});
+
+/// Уроки главного экрана: пока ничего не ищем — корень библиотеки (уроки вне
+/// папок, §6.3); как только заданы поиск или фильтры — плоская выдача по всему
+/// каталогу из кеша, иначе урок, лежащий в папке, фильтр бы не нашёл.
+final visibleLessonsProvider = Provider<List<Lesson>>((ref) {
+  // Кеш держим подписанным всегда, даже когда показываем корень: он
+  // синхронизируется дельтой и должен быть готов к первому же запросу поиска.
+  final catalog = ref.watch(filteredLessonsProvider).value ?? const [];
+  final filter = ref.watch(lessonsFilterProvider);
+  if (!filter.isEmpty) return catalog;
+  return ref.watch(libraryControllerProvider).value?.lessons ?? const [];
+});
+
+/// Папки главного экрана под текущий поиск. У папки нет ни уровня, ни темы,
+/// поэтому при активных фильтрах категорий её не показываем вовсе (так же
+/// поступает и сервер), а по строке поиска отбираем по названию.
+final visibleFoldersProvider = Provider<List<Folder>>((ref) {
+  final filter = ref.watch(lessonsFilterProvider);
+  if (filter.activeCount > 0) return const [];
+  final folders =
+      ref.watch(libraryControllerProvider).value?.folders ?? const [];
+  if (filter.query.isEmpty) return folders;
+  final query = filter.query.toLowerCase();
+  return [
+    for (final folder in folders)
+      if (folder.title.toLowerCase().contains(query)) folder,
+  ];
 });

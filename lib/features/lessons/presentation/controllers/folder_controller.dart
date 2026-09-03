@@ -2,7 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../domain/entities/folder.dart';
 import 'folder_providers.dart';
-import 'folders_controller.dart';
+import 'library_controller.dart';
 
 /// Экран одной папки: её уроки и правка (для автора). Данные тянутся по сети,
 /// а состав меняется точечными вызовами, после которых сервер возвращает
@@ -69,9 +69,9 @@ class FolderDetailController extends AsyncNotifier<Folder> {
     _syncCatalog();
   }
 
-  /// Состав папки изменился — общий список должен пересчитать, какие уроки
-  /// теперь «в папках», а какие снова видны в каталоге.
-  void _syncCatalog() => ref.invalidate(foldersControllerProvider);
+  /// Состав папки изменился — корень библиотеки надо перечитать: какие уроки
+  /// теперь лежат в папках, а какие снова видны в каталоге, решает сервер.
+  void _syncCatalog() => ref.invalidate(libraryControllerProvider);
 }
 
 final folderDetailControllerProvider = AsyncNotifierProvider.autoDispose

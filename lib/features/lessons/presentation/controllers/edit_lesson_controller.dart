@@ -13,6 +13,7 @@ import '../../domain/usecases/create_lesson.dart';
 import '../widgets/segment_splitter/segment_boundary_math.dart' as marks;
 import 'lesson_providers.dart';
 import 'lessons_controller.dart';
+import 'library_controller.dart';
 
 /// Плеер экрана правки: играет файл целиком, а не вырезанный кусок, — так
 /// слышно, попадает ли метка в паузу между фразами.
@@ -374,6 +375,8 @@ class EditLessonController extends AsyncNotifier<EditLessonState> {
         isPublic: _isPublicForRole(current.isPublic),
       );
       ref.invalidate(lessonsControllerProvider);
+      // Правка меняет и карточку в ленте — перечитываем корень.
+      ref.invalidate(libraryControllerProvider);
     } catch (_) {
       state = AsyncValue.data(current.copyWith(isSaving: false));
       rethrow;

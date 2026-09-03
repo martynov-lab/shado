@@ -8,10 +8,10 @@ import 'package:shado/widgets/widgets.dart';
 import '../../../auth/presentation/controllers/auth_controller.dart';
 import '../../domain/entities/folder.dart';
 import '../../domain/entities/lesson.dart';
+import '../../domain/entities/library_root.dart';
 import '../controllers/folder_controller.dart';
-import '../controllers/folders_controller.dart';
 import '../controllers/lesson_permissions.dart';
-import '../controllers/lessons_controller.dart';
+import '../controllers/library_controller.dart';
 import '../widgets/add_lessons_to_folder_sheet.dart';
 import '../widgets/delete_folder_dialog.dart';
 import '../widgets/folder_editor_dialog.dart';
@@ -93,17 +93,14 @@ class FolderPage extends ConsumerWidget {
     FolderDetailController controller,
     Folder folder,
   ) async {
-    final all =
-        ref.read(lessonsControllerProvider).value ?? const <Lesson>[];
-    // Кандидаты — свободные уроки: не в этой папке и не в других (урок живёт в
-    // одном месте).
-    final foldered =
-        ref.read(folderedLessonIdsProvider).value ?? const <String>{};
+    // Кандидаты — свободные уроки: корень библиотеки как раз и есть уроки вне
+    // папок (§6.3). Состав самой папки исключаем на случай, если лента ещё не
+    // успела перечитаться после прошлого добавления.
+    final root = ref.read(libraryControllerProvider).value ?? LibraryRoot.empty;
     final present = {for (final lesson in folder.lessons) lesson.id};
     final candidates = [
-      for (final lesson in all)
-        if (!present.contains(lesson.id) && !foldered.contains(lesson.id))
-          lesson,
+      for (final lesson in root.lessons)
+        if (!present.contains(lesson.id)) lesson,
     ];
 
     final selected = await showModalBottomSheet<List<String>>(

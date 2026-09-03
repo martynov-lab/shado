@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/error/failures.dart';
 import '../../domain/entities/lesson.dart';
 import 'lesson_providers.dart';
+import 'library_controller.dart';
 
 /// Список уроков для главного экрана.
 ///
@@ -41,6 +42,9 @@ class LessonsController extends AsyncNotifier<List<Lesson>> {
   Future<void> delete(String lessonId) async {
     await ref.read(deleteLessonProvider)(lessonId);
     await reloadFromCache();
+    // Урок исчез и из корня библиотеки — его собирает сервер, поэтому просто
+    // перечитываем ленту.
+    ref.invalidate(libraryControllerProvider);
   }
 }
 

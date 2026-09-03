@@ -177,7 +177,8 @@ class _AddLessonPageState extends ConsumerState<AddLessonPage> {
     final topics = ref.watch(topicsProvider);
     final isBusy = state.isSubmitting || state.isUploading;
     // Тумблер приватности показываем только владельцу: остальным авторам
-    // публичность задаёт роль.
+    // публичность задаёт роль. Озвучка через ИИ — тоже только у него
+    // (TTS_CLIENT_SPEC §1), остальным сервер ответит `403`.
     final isOwner = ref.watch(authControllerProvider).isOwner;
 
     // Пока форму заполняли, выбранную тему могли удалить на другом устройстве.
@@ -225,6 +226,7 @@ class _AddLessonPageState extends ConsumerState<AddLessonPage> {
                       isSynthesizing: state.isSynthesizing,
                       onPick: isBusy ? null : _pickAudio,
                       onCancelUpload: controller.cancelUpload,
+                      canSynthesize: isOwner,
                       // Озвучивать нечего, пока в тексте нет ни одной фразы.
                       onSynthesize:
                           isBusy ||
@@ -235,7 +237,9 @@ class _AddLessonPageState extends ConsumerState<AddLessonPage> {
                           'Поддерживаются ${allowedAudioExtensions.join(', ')}, '
                           'до ${AppConfig.maxUploadBytes ~/ (1024 * 1024)} МБ',
                     ),
-                    const TtsQuotaHint(),
+                    // Остаток озвучек спрашиваем только у того, кому озвучка
+                    // доступна: остальным `/v1/tts/quota` ответит `403`.
+                    if (isOwner) const TtsQuotaHint(),
                     const SizedBox(height: AppSpacing.s5),
                     AppTextField(
                       controller: _titleController,

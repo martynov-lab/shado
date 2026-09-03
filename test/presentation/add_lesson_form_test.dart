@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shado/core/network/api_exception.dart';
+import 'package:shado/features/auth/domain/entities/auth_user.dart';
+import 'package:shado/features/auth/presentation/controllers/auth_controller.dart';
 import 'package:shado/features/lessons/domain/entities/audio_upload.dart';
 import 'package:shado/features/lessons/domain/entities/lesson_category.dart';
 import 'package:shado/features/lessons/domain/entities/tts_quota.dart';
@@ -11,6 +13,25 @@ import 'package:shado/features/lessons/presentation/controllers/lesson_providers
 import 'package:shado/features/lessons/presentation/pages/add_lesson_page.dart';
 import 'package:shado/theme/theme.dart';
 import 'package:shado/widgets/widgets.dart';
+
+/// Сессия с заданной ролью: от неё зависит, доступна ли озвучка через ИИ
+/// (TTS_CLIENT_SPEC §1 — только владелец) и тумблер приватности.
+class _FakeAuthController extends AuthController {
+  _FakeAuthController(this.role);
+
+  final UserRole role;
+
+  @override
+  AuthState build() => AuthState(
+    status: AuthStatus.authenticated,
+    user: AuthUser(
+      id: 'user-1',
+      email: 'author@example.com',
+      role: role,
+      createdAt: DateTime.utc(2026),
+    ),
+  );
+}
 
 /// Озвучка, которая всегда падает заданной ошибкой: проверяем ветвление UX по
 /// коду, не поднимая сеть. Реальный `SynthesizeTts` использует только `call`,
@@ -50,9 +71,11 @@ void main() {
     Object? ttsError,
     TtsQuota quota = defaultQuota,
     String? text,
+    UserRole role = UserRole.owner,
   }) async {
     final container = ProviderContainer(
       overrides: [
+        authControllerProvider.overrideWith(() => _FakeAuthController(role)),
         topicsProvider.overrideWith((ref) async {
           if (topicsError != null) throw topicsError;
           return available;
@@ -209,6 +232,17 @@ void main() {
     await pumpForm(tester);
 
     expect(find.text('Осталось озвучек сегодня: 11'), findsOneWidget);
+  });
+
+  // TTS_CLIENT_SPEC §1: озвучка доступна только владельцу — у остальных
+  // авторов ни кнопки, ни подсказки об остатке.
+  testWidgets('у автора не-владельца кнопки озвучки нет', (tester) async {
+    await pumpForm(tester, role: UserRole.admin, text: 'Hello there');
+
+    expect(find.widgetWithText(AppButton, 'Озвучить ИИ'), findsNothing);
+    expect(find.textContaining('Осталось озвучек сегодня'), findsNothing);
+    // Загрузка файла остаётся: её роль автора не теряет.
+    expect(find.widgetWithText(AppButton, 'Выберите аудио'), findsOneWidget);
   });
 
   testWidgets('без ограничения (limit 0) остаток не показывается', (

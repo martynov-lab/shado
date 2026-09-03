@@ -1,10 +1,13 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:shado/features/lessons/domain/entities/folder.dart';
 import 'package:shado/features/lessons/domain/entities/lesson.dart';
 import 'package:shado/features/lessons/domain/entities/lesson_category.dart';
+import 'package:shado/features/lessons/domain/entities/library_root.dart';
 import 'package:shado/features/lessons/domain/entities/segment.dart';
 import 'package:shado/features/lessons/presentation/controllers/lessons_controller.dart';
 import 'package:shado/features/lessons/presentation/controllers/lessons_filter.dart';
+import 'package:shado/features/lessons/presentation/controllers/library_controller.dart';
 
 Lesson _lesson({
   required String id,
@@ -30,6 +33,17 @@ class _FakeLessonsController extends LessonsController {
 
   @override
   Future<List<Lesson>> build() async => items;
+}
+
+/// Корень библиотеки без сети: папки и уроки вне папок, как их отдаёт
+/// `/v1/library`.
+class _FakeLibraryController extends LibraryController {
+  _FakeLibraryController(this.root);
+
+  final LibraryRoot root;
+
+  @override
+  Future<LibraryRoot> build() async => root;
 }
 
 void main() {
@@ -133,6 +147,68 @@ void main() {
       container.read(lessonsFilterProvider.notifier).toggleLevel(LessonLevel.b1);
       final result = container.read(filteredLessonsProvider).value!;
       expect(result.map((lesson) => lesson.id), ['1']);
+    });
+  });
+
+  // §6.3: без поиска экран показывает корень с сервера, а с поиском становится
+  // плоским — по всему каталогу, включая уроки, разложенные по папкам.
+  group('главный экран: корень и поиск', () {
+    final folder = Folder(
+      id: 'f1',
+      title: 'Sleep podcasts',
+      createdAt: DateTime.utc(2026),
+      updatedAt: DateTime.utc(2026),
+      version: 1,
+      lessonCount: 2,
+    );
+
+    // Корень: папка и один свободный урок. Уроки 1 и 3 лежат в папке, поэтому
+    // сервер их сюда не кладёт.
+    final root = LibraryRoot(folders: [folder], lessons: [lessons[1]]);
+
+    Future<ProviderContainer> pump() async {
+      final container = ProviderContainer(
+        overrides: [
+          lessonsControllerProvider.overrideWith(
+            () => _FakeLessonsController(lessons),
+          ),
+          libraryControllerProvider.overrideWith(
+            () => _FakeLibraryController(root),
+          ),
+        ],
+      );
+      addTearDown(container.dispose);
+      await container.read(libraryControllerProvider.future);
+      await container.read(lessonsControllerProvider.future);
+      return container;
+    }
+
+    test('без поиска показываем корень, а не весь кеш', () async {
+      final container = await pump();
+
+      expect(container.read(visibleLessonsProvider).map((l) => l.id), ['2']);
+      expect(container.read(visibleFoldersProvider), [folder]);
+    });
+
+    test('поиск находит и урок внутри папки', () async {
+      final container = await pump();
+      container.read(lessonsFilterProvider.notifier).setQuery('sleep');
+
+      // Урок 1 в корень не приходил, но поиск идёт по каталогу и находит его.
+      expect(container.read(visibleLessonsProvider).map((l) => l.id), [
+        '1',
+        '3',
+      ]);
+      // Папка подходит по названию — её оставляем.
+      expect(container.read(visibleFoldersProvider), [folder]);
+    });
+
+    test('фильтр по категории прячет папки: у них нет уровня', () async {
+      final container = await pump();
+      container.read(lessonsFilterProvider.notifier).toggleLevel(LessonLevel.c1);
+
+      expect(container.read(visibleLessonsProvider).map((l) => l.id), ['3']);
+      expect(container.read(visibleFoldersProvider), isEmpty);
     });
   });
 }
