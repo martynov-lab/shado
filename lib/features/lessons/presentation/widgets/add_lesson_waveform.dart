@@ -6,6 +6,7 @@ import 'package:shado/core/utils/duration_format.dart';
 import '../../domain/entities/audio_trim.dart';
 import '../controllers/add_lesson_controller.dart';
 import '../controllers/add_lesson_playback_controller.dart';
+import 'marker_at_playhead_checkbox.dart';
 import 'waveform_card.dart';
 import 'waveform_placeholder_card.dart';
 
@@ -21,6 +22,7 @@ class AddLessonWaveform extends ConsumerWidget {
     required this.state,
     required this.onBoundariesChanged,
     required this.onBoundaryRemoved,
+    required this.onMarkerAtPlayheadChanged,
     required this.onTrimChanged,
     required this.onTrimStart,
     required this.onTrimApply,
@@ -31,6 +33,8 @@ class AddLessonWaveform extends ConsumerWidget {
 
   final ValueChanged<List<int>> onBoundariesChanged;
   final ValueChanged<int> onBoundaryRemoved;
+
+  final ValueChanged<bool> onMarkerAtPlayheadChanged;
 
   final ValueChanged<AudioTrim> onTrimChanged;
   final VoidCallback onTrimStart;
@@ -115,6 +119,15 @@ class AddLessonWaveform extends ConsumerWidget {
               '${formatPosition(view.durationMs)}',
               style: theme.textTheme.bodyMedium,
             ),
+            Expanded(
+              child: Align(
+                alignment: Alignment.centerRight,
+                child: MarkerAtPlayheadCheckbox(
+                  value: state.markerAtPlayhead,
+                  onChanged: onMarkerAtPlayheadChanged,
+                ),
+              ),
+            ),
           ],
         ),
         const SizedBox(height: 8),
@@ -136,9 +149,11 @@ String _hint(AddLessonFormState state) {
   if (state.segmentCount == 0) {
     return 'Введите текст — метки границ появятся на волне';
   }
-  return 'Границы расставляют на слух: доведите плеер до паузы между фразами, '
-      'поставьте на паузу и добавьте метку в тексте — граница встанет в позицию '
-      'ползунка. Метки берутся за кружок сверху, ползунок — за треугольник '
+  return 'Метка в тексте добавляет границу правее самой правой. Чтобы ставить '
+      'границы на слух, включите «Метка по ползунку»: доведите плеер до паузы '
+      'между фразами, поставьте на паузу и добавьте метку в тексте — граница '
+      'встанет в позицию ползунка, а метки правее останутся на местах. '
+      'Метки берутся за кружок сверху, ползунок — за треугольник '
       'снизу; перетаскивание в стороне от них двигает волну. Двойной тап по '
       'метке убирает её (и парную метку в тексте). Растянуть волну: щипок двумя '
       'пальцами или Ctrl + колесо мыши. Пробел — играть или пауза';

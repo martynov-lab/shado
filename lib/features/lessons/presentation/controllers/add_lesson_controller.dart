@@ -31,6 +31,7 @@ class AddLessonFormState {
     this.trim = const AudioTrim.full(0),
     this.pendingTrim,
     this.boundaries = const [],
+    this.markerAtPlayhead = false,
     this.isPublic = true,
     this.isUploading = false,
     this.isSynthesizing = false,
@@ -71,6 +72,10 @@ class AddLessonFormState {
   /// Разметка кусков на волне, `N + 1` значение. Пуста, пока нет либо текста,
   /// либо аудио.
   final List<int> boundaries;
+
+  /// Флажок у кнопки воспроизведения: новая метка садится в позицию ползунка.
+  /// Снят — метки копятся слева направо, вплотную за предыдущей.
+  final bool markerAtPlayhead;
 
   /// Публичность урока — тумблером управляет только owner. Для остальных
   /// авторов значение вычисляется по роли в [AddLessonController.submit].
@@ -128,6 +133,7 @@ class AddLessonFormState {
     AudioTrim? pendingTrim,
     bool clearPendingTrim = false,
     List<int>? boundaries,
+    bool? markerAtPlayhead,
     bool? isPublic,
     bool? isUploading,
     bool? isSynthesizing,
@@ -147,6 +153,7 @@ class AddLessonFormState {
       trim: trim ?? this.trim,
       pendingTrim: clearPendingTrim ? null : (pendingTrim ?? this.pendingTrim),
       boundaries: boundaries ?? this.boundaries,
+      markerAtPlayhead: markerAtPlayhead ?? this.markerAtPlayhead,
       isPublic: isPublic ?? this.isPublic,
       isUploading: isUploading ?? this.isUploading,
       isSynthesizing: isSynthesizing ?? this.isSynthesizing,
@@ -177,13 +184,19 @@ class AddLessonController extends Notifier<AddLessonFormState> {
   void setBoundaries(List<int> boundaries) =>
       state = state.copyWith(boundaries: boundaries);
 
-  /// Ставит новую метку №[ordinal] (1-based) в тексте, а парную ей границу — в
-  /// текущую позицию плеера [playheadMs].
+  /// Флажок «Метка по ползунку» у кнопки воспроизведения.
+  void setMarkerAtPlayhead(bool value) =>
+      state = state.copyWith(markerAtPlayhead: value);
+
+  /// Ставит новую метку №[ordinal] (1-based) в тексте, а парную ей границу — на
+  /// волну.
   ///
-  /// Так границы расставляют на слух: доводят плеер до паузы между фразами и
-  /// ставят в этом месте метку. Если плеер оказался перед предыдущей меткой
-  /// (аудио ещё не играли — ползунок в самом начале), граница встаёт вплотную к
-  /// ней. Пока нет аудио, разметки ещё нет — фиксируем только текст.
+  /// Куда именно, решает флажок [AddLessonFormState.markerAtPlayhead]. Стоит —
+  /// граница садится в текущую позицию плеера [playheadMs]: так их и
+  /// расставляют на слух, доведя плеер до паузы между фразами. Снят — граница
+  /// встаёт вплотную правее предыдущей, а разносят их потом руками по волне.
+  /// Уже расставленные метки правее в обоих случаях остаются на местах. Пока
+  /// нет аудио, разметки ещё нет — фиксируем только текст.
   void insertMarker(String text, int ordinal, int playheadMs) {
     final boundaries = state.boundaries;
     final inSync = boundaries.length == state.segmentCount + 1;
@@ -195,13 +208,11 @@ class AddLessonController extends Notifier<AddLessonFormState> {
     // Края разметки прибиты к границам оставленного отрезка — внутри них и
     // сажаем метку.
     final span = AudioTrim(startMs: boundaries.first, endMs: boundaries.last);
+    final ms = state.markerAtPlayhead
+        ? playheadMs
+        : SegmentBoundaries.afterPrevious(boundaries, ordinal);
     state = next.copyWith(
-      boundaries: SegmentBoundaries.insertAt(
-        boundaries,
-        ordinal,
-        playheadMs,
-        span,
-      ),
+      boundaries: SegmentBoundaries.insertAt(boundaries, ordinal, ms, span),
     );
   }
 

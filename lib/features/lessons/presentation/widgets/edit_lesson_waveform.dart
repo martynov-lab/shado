@@ -5,6 +5,7 @@ import 'package:shado/core/utils/duration_format.dart';
 
 import '../../domain/entities/audio_trim.dart';
 import '../controllers/edit_lesson_controller.dart';
+import 'marker_at_playhead_checkbox.dart';
 import 'waveform_card.dart';
 
 /// Волна с ползунком и кнопкой воспроизведения: аудио играет с того места,
@@ -21,6 +22,7 @@ class EditLessonWaveform extends ConsumerWidget {
     required this.onSeek,
     required this.onBoundariesChanged,
     required this.onBoundaryRemoved,
+    required this.onMarkerAtPlayheadChanged,
     required this.onTrimChanged,
     required this.onTrimStart,
     required this.onTrimApply,
@@ -36,6 +38,8 @@ class EditLessonWaveform extends ConsumerWidget {
   final ValueChanged<int> onSeek;
   final ValueChanged<List<int>> onBoundariesChanged;
   final ValueChanged<int> onBoundaryRemoved;
+
+  final ValueChanged<bool> onMarkerAtPlayheadChanged;
 
   final ValueChanged<AudioTrim> onTrimChanged;
   final VoidCallback onTrimStart;
@@ -89,6 +93,15 @@ class EditLessonWaveform extends ConsumerWidget {
               '${formatPosition(playheadMs - view.startMs)} / '
               '${formatPosition(view.durationMs)}',
               style: Theme.of(context).textTheme.bodyMedium,
+            ),
+            Expanded(
+              child: Align(
+                alignment: Alignment.centerRight,
+                child: MarkerAtPlayheadCheckbox(
+                  value: state.markerAtPlayhead,
+                  onChanged: onMarkerAtPlayheadChanged,
+                ),
+              ),
             ),
           ],
         ),

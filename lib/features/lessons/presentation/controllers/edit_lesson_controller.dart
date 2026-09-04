@@ -42,6 +42,7 @@ class EditLessonState {
     required this.trim,
     required this.isPublic,
     this.pendingTrim,
+    this.markerAtPlayhead = false,
     this.playheadMs = 0,
     this.isPlaying = false,
     this.isSaving = false,
@@ -62,6 +63,10 @@ class EditLessonState {
   /// Отрезок, который метки обрезки показывают прямо сейчас. `null` — обрезка
   /// не идёт.
   final AudioTrim? pendingTrim;
+
+  /// Флажок у кнопки воспроизведения: новая метка садится в позицию ползунка.
+  /// Снят — метки копятся слева направо, вплотную за предыдущей.
+  final bool markerAtPlayhead;
 
   /// Откуда играть: ползунок на волне, который перетаскивают вручную и на
   /// котором аудио останавливается по паузе. В миллисекундах файла.
@@ -93,6 +98,7 @@ class EditLessonState {
     AudioTrim? pendingTrim,
     bool clearPendingTrim = false,
     bool? isPublic,
+    bool? markerAtPlayhead,
     int? playheadMs,
     bool? isPlaying,
     bool? isSaving,
@@ -105,6 +111,7 @@ class EditLessonState {
       trim: trim ?? this.trim,
       pendingTrim: clearPendingTrim ? null : (pendingTrim ?? this.pendingTrim),
       isPublic: isPublic ?? this.isPublic,
+      markerAtPlayhead: markerAtPlayhead ?? this.markerAtPlayhead,
       playheadMs: playheadMs ?? this.playheadMs,
       isPlaying: isPlaying ?? this.isPlaying,
       isSaving: isSaving ?? this.isSaving,
@@ -196,13 +203,21 @@ class EditLessonController extends AsyncNotifier<EditLessonState> {
     state = AsyncValue.data(current.copyWith(boundaries: boundaries));
   }
 
-  /// Ставит новую метку №[ordinal] (1-based) в тексте, а парную ей границу — в
-  /// текущую позицию плеера [playheadMs].
+  /// Флажок «Метка по ползунку» у кнопки воспроизведения.
+  void setMarkerAtPlayhead(bool value) {
+    final current = state.value;
+    if (current == null) return;
+    state = AsyncValue.data(current.copyWith(markerAtPlayhead: value));
+  }
+
+  /// Ставит новую метку №[ordinal] (1-based) в тексте, а парную ей границу — на
+  /// волну.
   ///
-  /// Так границы расставляют на слух: доводят плеер до паузы между фразами и
-  /// ставят в этом месте метку. Если плеер оказался перед предыдущей меткой
-  /// (аудио ещё не играли — ползунок в самом начале), граница встаёт вплотную к
-  /// ней.
+  /// Куда именно, решает флажок [EditLessonState.markerAtPlayhead]. Стоит —
+  /// граница садится в текущую позицию плеера [playheadMs]: так метку добавляют
+  /// внутрь уже размеченного урока, доведя плеер до нужного места. Снят —
+  /// граница встаёт вплотную правее предыдущей. Уже расставленные метки правее
+  /// в обоих случаях остаются на местах.
   void insertMarker(String text, int ordinal, int playheadMs) {
     final current = state.value;
     if (current == null) return;
@@ -216,14 +231,12 @@ class EditLessonController extends AsyncNotifier<EditLessonState> {
     // Края разметки прибиты к границам оставленного отрезка — внутри них и
     // сажаем метку.
     final span = AudioTrim(startMs: boundaries.first, endMs: boundaries.last);
+    final ms = current.markerAtPlayhead
+        ? playheadMs
+        : SegmentBoundaries.afterPrevious(boundaries, ordinal);
     state = AsyncValue.data(
       next.copyWith(
-        boundaries: SegmentBoundaries.insertAt(
-          boundaries,
-          ordinal,
-          playheadMs,
-          span,
-        ),
+        boundaries: SegmentBoundaries.insertAt(boundaries, ordinal, ms, span),
       ),
     );
   }

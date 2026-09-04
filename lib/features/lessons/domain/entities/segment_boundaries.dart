@@ -100,6 +100,17 @@ class SegmentBoundaries {
     return normalize(grown, trim);
   }
 
+  /// Момент для новой метки [ordinal], когда её не привязывают к ползунку:
+  /// позиция предыдущей метки, от которой [insertAt] отодвинет новую на
+  /// минимальный зазор.
+  ///
+  /// Так метки копятся слева направо — первая встаёт чуть правее начала
+  /// отрезка, каждая следующая вплотную за предыдущей, — а разносят их потом
+  /// руками по волне.
+  static int afterPrevious(List<int> current, int ordinal) => current.isEmpty
+      ? 0
+      : current[(ordinal - 1).clamp(0, current.length - 1)];
+
   /// Дописывает недостающие метки, поровну деля хвост отрезка за [head].
   static List<int> _spreadRest(List<int> head, int count, AudioTrim trim) {
     final result = List<int>.of(head);

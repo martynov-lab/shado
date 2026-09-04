@@ -278,6 +278,8 @@ class _AddLessonPageState extends ConsumerState<AddLessonPage> {
                           state: state,
                           onBoundariesChanged: controller.setBoundaries,
                           onBoundaryRemoved: controller.removeMarker,
+                          onMarkerAtPlayheadChanged:
+                              controller.setMarkerAtPlayhead,
                           onTrimChanged: controller.updateTrim,
                           onTrimStart: controller.startTrim,
                           onTrimApply: controller.applyTrim,
@@ -290,11 +292,11 @@ class _AddLessonPageState extends ConsumerState<AddLessonPage> {
                       label: 'Текст',
                       note: '— разбей на сегменты',
                       hint:
-                          'Доведите плеер до паузы между фразами, затем нажмите '
-                          '«Метка» и кликните в тексте, куда поставить '
+                          'Нажмите «Метка» и кликните в тексте, куда поставить '
                           'разделитель (или перетащите чип) — граница на волне '
-                          'встанет в позицию ползунка. Иглу можно перетащить или '
-                          'убрать тапом. На сервер уходит текст '
+                          'встанет правее самой правой. Включённая «Метка по '
+                          'ползунку» сажает её в позицию ползунка. Иглу можно '
+                          'перетащить или убрать тапом. На сервер уходит текст '
                           'с «$kSegmentDelimiter».',
                       child: SegmentSplitterField(
                         controller: _textController,
