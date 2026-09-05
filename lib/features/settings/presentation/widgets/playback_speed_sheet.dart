@@ -3,8 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:shado/core/constants/app_constants.dart';
 import 'package:shado/widgets/widgets.dart';
 
-/// Лист выбора скорости по умолчанию: варианты из [kPlaybackSpeeds]. Тап по
-/// строке сразу возвращает выбранную скорость через `Navigator.pop`.
+/// Default speed picker sheet; a tap returns the selected value.
 class PlaybackSpeedSheet extends StatelessWidget {
   const PlaybackSpeedSheet({super.key, required this.current});
 

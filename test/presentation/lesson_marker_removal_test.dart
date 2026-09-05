@@ -2,15 +2,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shado/features/lessons/presentation/controllers/add_lesson_controller.dart';
 
-/// Парное удаление метки: убрать №k — значит убрать и k-й разделитель в тексте,
-/// и границу `boundaries[k]` на волне, не трогая остальные границы.
-///
-/// Проверяем на контроллере создания: экран правки использует ровно тот же
-/// алгоритм `removeMarker`, но его контроллер поднимает реальный плеер и в
-/// юнит-тесте без платформы не заводится.
+/// Paired marker removal: the delimiter and its boundary on the waveform.
 void main() {
-  /// Готовит форму с текстом и согласованной с ним разметкой. Аудио не грузим —
-  /// границы ставим напрямую, они и так согласованы с числом сегментов.
+  /// Prepares the form with text and matching markers.
   AddLessonController prime(
     ProviderContainer container, {
     required String text,
@@ -35,7 +29,7 @@ void main() {
 
     final state = container.read(addLessonControllerProvider);
     expect(state.text, 'one two | three');
-    // Убрали границу №1 (3000); 6000 и 9000 остались на местах.
+    // Boundary 1 (3000) was removed; 6000 and 9000 stayed in place.
     expect(state.boundaries, [0, 6000, 9000]);
     expect(state.segmentCount, 2);
   });
@@ -66,7 +60,7 @@ void main() {
       boundaries: const [0, 4500, 9000],
     );
 
-    controller.removeMarker(2); // метка всего одна
+    controller.removeMarker(2); // there is only one marker
     controller.removeMarker(0);
 
     final state = container.read(addLessonControllerProvider);

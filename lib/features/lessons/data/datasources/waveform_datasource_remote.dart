@@ -3,20 +3,12 @@ import '../models/waveform_peaks.dart';
 import 'audio_remote_datasource.dart';
 import 'waveform_datasource.dart';
 
-/// Пики считает сервер: одна огибающая на все платформы.
-///
-/// Побочный эффект, ради которого всё и делалось, — волна выглядит одинаково
-/// на Android, iOS и Windows, и десктопу больше не нужен собственный декодер.
-///
-/// [_fallback] — локальный источник на случай, когда сервера нет, а файл уже
-/// скачан: без сети урок всё равно открывается и играет.
+/// Peaks from the server, falling back to a local source when it is down.
 class RemoteWaveformDataSource implements WaveformDataSource {
   const RemoteWaveformDataSource(this._remote, {WaveformDataSource? fallback})
     : _fallback = fallback;
 
-  /// Разрешение, в котором просим пики, когда показываем не весь файл: вырезать
-  /// отрезок придётся из того, что пришло, поэтому берём с запасом. Потолок
-  /// сервера — 4000 точек на файл, больше он всё равно не отдаст.
+  /// Peaks request resolution when only a file range is shown.
   static const int _slicedResolution = 4000;
 
   final AudioRemoteDataSource _remote;

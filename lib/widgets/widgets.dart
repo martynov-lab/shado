@@ -1,8 +1,4 @@
-/// Библиотека компонентов Shadowing — единая точка импорта.
-///
-/// ```dart
-/// import 'package:shado/widgets/widgets.dart';
-/// ```
+/// Component library: a single import surface.
 library;
 
 export 'package:shado/widgets/app_adaptive_layout.dart';

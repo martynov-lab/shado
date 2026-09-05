@@ -2,14 +2,11 @@ import 'package:flutter/widgets.dart';
 
 import 'package:shado/theme/theme.dart';
 
-/// Диаметр кружка на верхнем конце иглы и толщина её линии — общий язык с
-/// метками границ на аудиодорожке.
+/// Diameter of the dot at the needle top and the line thickness.
 const double kNeedleCircle = 14;
 const double kNeedleLine = 3;
 
-/// Стиль, которым символ-разделитель занимает место в тексте: сам «|» невидим —
-/// метку поверх поля точно по его месту рисует игла [SegmentMarkerNeedle].
-/// Небольшой [letterSpacing] оставляет зазор под линию иглы.
+/// Style of the invisible delimiter: it leaves room for the needle.
 TextStyle markerTextStyle(TextStyle? base) {
   return (base ?? const TextStyle()).copyWith(
     color: const Color(0x00000000),
@@ -17,9 +14,7 @@ TextStyle markerTextStyle(TextStyle? base) {
   );
 }
 
-/// Игла-метка: кружок на верхнем конце вертикальной линии. Тот же силуэт, что у
-/// меток границ на аудиодорожке. Рисуется и как ручка поверх текста, и как
-/// призрак/индикатор при перетаскивании.
+/// Marker needle: a dot at the top of a vertical line.
 class SegmentMarkerNeedle extends StatelessWidget {
   const SegmentMarkerNeedle({
     super.key,
@@ -30,18 +25,17 @@ class SegmentMarkerNeedle extends StatelessWidget {
     this.number,
   });
 
-  /// Высота линии — обычно высота строки текста.
+  /// Line height, usually the height of a text line.
   final double height;
 
   final Color color;
 
-  /// Обводка кружка под цвет поверхности, на которой лежит игла.
+  /// Dot ring painted in the color of the surface under the needle.
   final Color? ringColor;
 
   final double opacity;
 
-  /// Порядковый номер метки в кружке; `null` — кружок без цифры (чип, призрак,
-  /// приглушённые иглы).
+  /// Marker number inside the dot; `null` leaves the dot blank.
   final int? number;
 
   @override
@@ -64,8 +58,7 @@ class SegmentMarkerNeedle extends StatelessWidget {
                 borderRadius: AppRadii.rXs,
               ),
             ),
-            // Кружок сидит на верхнем конце и наполовину выступает над строкой —
-            // за него метку берут.
+            // The dot sticks out above the line and is the grab handle.
             Positioned(
               top: -kNeedleCircle / 2,
               child: Container(
@@ -97,8 +90,7 @@ class SegmentMarkerNeedle extends StatelessWidget {
   }
 }
 
-/// Чип-источник «Метка» в тулбаре: его перетаскивают в текст. Сам по себе
-/// статичен — перетаскивание навешивает `Draggable` снаружи.
+/// Source marker chip dragged into the text.
 class SegmentMarkerChip extends StatelessWidget {
   const SegmentMarkerChip({super.key, this.enabled = true});
 
@@ -142,7 +134,7 @@ class SegmentMarkerChip extends StatelessWidget {
   }
 }
 
-/// Призрак под пальцем во время перетаскивания метки.
+/// Ghost under the finger while a marker is dragged.
 class SegmentMarkerGhost extends StatelessWidget {
   const SegmentMarkerGhost({super.key});
 

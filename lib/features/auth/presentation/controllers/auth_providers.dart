@@ -12,21 +12,18 @@ final authRemoteDataSourceProvider = Provider<AuthRemoteDataSource>(
   (ref) => ApiAuthRemoteDataSource(ref.watch(apiClientProvider)),
 );
 
-/// Сессия. Здесь же сходятся две вещи, которым иначе пришлось бы знать друг о
-/// друге: выход из аккаунта чистит кеш уроков, а сетевой слой сообщает, что
-/// сессия кончилась.
+/// Session repository, wired here to cache cleanup and the network layer.
 final authRepositoryProvider = Provider<AuthRepository>((ref) {
   final repository = AuthRepositoryImpl(
     remote: ref.watch(authRemoteDataSourceProvider),
     tokens: ref.watch(tokenStorageProvider),
-    // Выход чистит и кеш уроков, и локальный прогресс.
+    // Signing out clears the lesson cache and local progress.
     onSignedOut: () async {
       await ref.read(lessonRepositoryProvider).clearCache();
       await ref.read(progressLocalDataSourceProvider).clear();
     },
   );
-  // Интерсептор дёргает это, когда сервер отверг refresh: чужие устройства
-  // остаются со своими сессиями, а это — выходит.
+  // The interceptor calls this when the server rejects a refresh.
   ref.read(apiClientProvider).onSessionExpired =
       repository.handleSessionExpired;
   ref.onDispose(repository.dispose);

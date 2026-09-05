@@ -14,8 +14,7 @@ import 'package:shado/features/lessons/presentation/pages/add_lesson_page.dart';
 import 'package:shado/theme/theme.dart';
 import 'package:shado/widgets/widgets.dart';
 
-/// Сессия с заданной ролью: от неё зависит, доступна ли озвучка через ИИ
-/// (TTS_CLIENT_SPEC §1 — только владелец) и тумблер приватности.
+/// A session with the given role, which drives voice-over and privacy.
 class _FakeAuthController extends AuthController {
   _FakeAuthController(this.role);
 
@@ -33,9 +32,7 @@ class _FakeAuthController extends AuthController {
   );
 }
 
-/// Озвучка, которая всегда падает заданной ошибкой: проверяем ветвление UX по
-/// коду, не поднимая сеть. Реальный `SynthesizeTts` использует только `call`,
-/// поэтому подменяем именно его.
+/// A voice-over that always fails with the given error.
 class _FailingTts implements SynthesizeTts {
   const _FailingTts(this.error);
 
@@ -46,18 +43,14 @@ class _FailingTts implements SynthesizeTts {
       throw error;
 }
 
-/// Экран создания урока: выбор акцента, уровня и темы.
-///
-/// Акцент и уровень сервер требует обязательно (§6), поэтому без них кнопка
-/// создания недоступна; тема необязательна и приходит справочником.
+/// Lesson creation screen: accent, level and topic pickers.
 void main() {
   const topics = [
     Topic(id: 'topic-1', name: 'Education'),
     Topic(id: 'topic-2', name: 'Business'),
   ];
 
-  // Остаток озвучек по умолчанию: 11 из 14 на сегодня. Держит `ttsQuotaProvider`
-  // герметичным — иначе он потянул бы реальный репозиторий и сеть.
+  // Default voice-over balance keeps `ttsQuotaProvider` offline.
   const defaultQuota = TtsQuota(
     provider: 'gemini',
     day: TtsQuotaWindow(used: 3, limit: 14, remaining: 11),
@@ -86,7 +79,7 @@ void main() {
       ],
     );
     addTearDown(container.dispose);
-    // Текст задаём до отрисовки: без него кнопка «Озвучить ИИ» заперта.
+    // The text is set before painting; without it the voice-over is locked.
     if (text != null) {
       container.read(addLessonControllerProvider.notifier).setText(text);
     }
@@ -100,7 +93,7 @@ void main() {
     return container;
   }
 
-  /// Открывает список и выбирает пункт с подписью [label].
+  /// Opens the list and picks the item labeled [label].
   Future<void> choose(
     WidgetTester tester,
     String fieldLabel,
@@ -108,7 +101,7 @@ void main() {
   ) async {
     await tester.tap(find.byKey(ValueKey('dropdown-$fieldLabel')));
     await tester.pumpAndSettle();
-    // Подпись есть и в закрытом поле, и в открытом меню — берём последнюю.
+    // The label shows in the closed field and the open menu; take the last.
     await tester.tap(find.text(label).last);
     await tester.pumpAndSettle();
   }
@@ -145,7 +138,7 @@ void main() {
   });
 
   test('без акцента и уровня урок не отправляется', () {
-    // Всё остальное заполнено: название, кусок текста и загруженное аудио.
+    // Everything else is filled: the title, some text and uploaded audio.
     const filled = AddLessonFormState(
       title: 'Урок',
       text: 'Раз',
@@ -154,7 +147,7 @@ void main() {
     );
 
     expect(filled.canSubmit, isFalse);
-    // Одного акцента мало: уровень сервер требует так же.
+    // An accent alone is not enough: the server demands a level too.
     expect(filled.copyWith(accent: LessonAccent.us).canSubmit, isFalse);
     expect(filled.copyWith(level: LessonLevel.b1).canSubmit, isFalse);
     expect(
@@ -165,9 +158,7 @@ void main() {
     );
   });
 
-  // Какие именно поля запирают кнопку, проверяет тест выше на `canSubmit`;
-  // здесь — что форма с новыми списками по-прежнему целиком отрисовывается и
-  // кнопка приходит запертой. Кнопка теперь в шапке — скроллить не нужно.
+  // The form renders in full and the create button starts locked.
   testWidgets('на пустой форме кнопка создания заперта', (tester) async {
     await pumpForm(tester);
 
@@ -185,7 +176,7 @@ void main() {
       topicsError: StateError('нет связи'),
     );
 
-    // Акцент и уровень от справочника не зависят: они зашиты в клиенте.
+    // Accent and level do not depend on the directory: they are hardcoded.
     await choose(tester, 'accent', 'Американский');
     await choose(tester, 'level', 'A2 — элементарный');
 
@@ -218,7 +209,7 @@ void main() {
     await tester.pumpAndSettle();
     expect(container.read(addLessonControllerProvider).topicId, 'topic-1');
 
-    // Тему удалили на другом устройстве — справочник вернулся без неё.
+    // The topic was deleted elsewhere and the directory came back without it.
     container.read(addLessonControllerProvider.notifier).dropTopicUnless(const [
       'topic-2',
     ]);
@@ -227,21 +218,20 @@ void main() {
     expect(container.read(addLessonControllerProvider).topicId, isNull);
   });
 
-  // TTS_CLIENT_SPEC §4.1: остаток суточных озвучек виден рядом с кнопкой.
+  // TTS_CLIENT_SPEC §4.1: the daily voice-over balance sits by the button.
   testWidgets('остаток суточных озвучек виден у кнопки', (tester) async {
     await pumpForm(tester);
 
     expect(find.text('Осталось озвучек сегодня: 11'), findsOneWidget);
   });
 
-  // TTS_CLIENT_SPEC §1: озвучка доступна только владельцу — у остальных
-  // авторов ни кнопки, ни подсказки об остатке.
+  // Voice-over is owner-only: others get neither the button nor the hint.
   testWidgets('у автора не-владельца кнопки озвучки нет', (tester) async {
     await pumpForm(tester, role: UserRole.admin, text: 'Hello there');
 
     expect(find.widgetWithText(AppButton, 'Озвучить ИИ'), findsNothing);
     expect(find.textContaining('Осталось озвучек сегодня'), findsNothing);
-    // Загрузка файла остаётся: её роль автора не теряет.
+    // File upload stays: the author role does not lose it.
     expect(find.widgetWithText(AppButton, 'Выберите аудио'), findsOneWidget);
   });
 
@@ -260,8 +250,7 @@ void main() {
     expect(find.textContaining('Осталось озвучек сегодня'), findsNothing);
   });
 
-  // TTS_CLIENT_SPEC §4: коды озвучки ведут себя по-разному, а не сливаются в
-  // один общий текст.
+  // Different voice-over error codes give different snackbar actions.
   testWidgets('озвучка недоступна (503) — предлагает «Повторить»', (
     tester,
   ) async {
@@ -306,7 +295,7 @@ void main() {
       findsOneWidget,
     );
     expect(find.widgetWithText(AppButton, 'Загрузить файл'), findsOneWidget);
-    // Авто-ретраем лимит не долбим — «Повторить» здесь быть не должно.
+    // A rate limit is not auto-retried, so no retry button here.
     expect(find.widgetWithText(AppButton, 'Повторить'), findsNothing);
   });
 }

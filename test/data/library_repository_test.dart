@@ -12,7 +12,7 @@ class FakeLibraryRemote implements LibraryRemoteDataSource {
 
   final List<LibraryPage> pages;
 
-  /// Курсоры запросов по порядку — по ним видно, что страницы берутся подряд.
+  /// Request cursors in order; they show pages are taken one after another.
   final List<String?> cursors = [];
 
   int _page = 0;

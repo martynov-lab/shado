@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../auth/domain/entities/auth_user.dart';
 
-/// Пользователь в списке админки: кто он и переключатель роли.
+/// User row in the admin list: who they are and a role picker.
 class UserTile extends StatelessWidget {
   const UserTile({
     super.key,
@@ -13,7 +13,7 @@ class UserTile extends StatelessWidget {
 
   final AuthUser user;
 
-  /// Это сам вошедший: подписываем строку, чтобы он видел, кого понижает.
+  /// This is the signed-in user — the row gets a caption.
   final bool isSelf;
 
   final ValueChanged<UserRole> onRoleChanged;
@@ -33,8 +33,7 @@ class UserTile extends StatelessWidget {
         isSelf ? 'это вы · ${user.role.wire}' : user.role.wire,
         style: theme.textTheme.bodySmall,
       ),
-      // Ролей четыре — в trailing помещается только выпадающий список, а не
-      // сегменты.
+      // With four roles only a dropdown fits into the trailing slot.
       trailing: DropdownButton<UserRole>(
         value: user.role,
         underline: const SizedBox.shrink(),

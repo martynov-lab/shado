@@ -2,8 +2,7 @@ import '../../../../core/network/api_client.dart';
 import '../models/folder_dto.dart';
 import '../models/lesson_dto.dart';
 
-/// Страница корня библиотеки: папки и уроки приходят вперемешку, а курсор у них
-/// общий — на обе половины сразу.
+/// Library root page: folders and lessons sharing one cursor.
 class LibraryPage {
   const LibraryPage({
     this.folders = const [],
@@ -14,17 +13,11 @@ class LibraryPage {
   final List<FolderDto> folders;
   final List<LessonDto> lessons;
 
-  /// `null` — страниц больше нет.
+  /// `null` when there are no more pages.
   final String? nextCursor;
 }
 
-/// Лента главного экрана (§6.3): папки и уроки, которые ни в одной папке не
-/// лежат, одним запросом.
-///
-/// `since` эндпоинт не поддерживает (отвечает `422`) — состав папки живёт
-/// отдельно от урока и его `version` не поднимает, поэтому дельта по ленте была
-/// бы неполной. Кеш наполняет `GET /v1/lessons?since=`, а корень всегда
-/// сетевой.
+/// Library root: folders and unfiled lessons in one request.
 abstract interface class LibraryRemoteDataSource {
   Future<LibraryPage> list({int? limit, String? cursor});
 }
@@ -45,9 +38,7 @@ class ApiLibraryRemoteDataSource implements LibraryRemoteDataSource {
     final lessons = <LessonDto>[];
     for (final raw in (json['items'] as List<dynamic>? ?? const [])) {
       final item = raw as Map<String, dynamic>;
-      // Тело папки — как в `GET /v1/folders`, тело урока — как в
-      // `GET /v1/lessons`; отличает их только `type`. Незнакомый тип пропускаем:
-      // сервер вправе добавить свой, а экран от этого падать не должен.
+      // Only `type` tells a folder from a lesson; unknown types are skipped.
       switch (item['type']) {
         case 'folder':
           folders.add(FolderDto.fromJson(item));

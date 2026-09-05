@@ -5,12 +5,11 @@ import 'package:shado/widgets/widgets.dart';
 
 import '../controllers/studied_language.dart';
 
-/// Лист выбора изучаемого языка. Возвращает выбранный код через
-/// `Navigator.pop`.
+/// Studied language picker sheet; returns the selected code.
 class StudiedLanguageSheet extends StatelessWidget {
   const StudiedLanguageSheet({super.key, required this.selectedCode});
 
-  /// Текущий код — по нему подсвечивается выбранный пункт.
+  /// Current code; the matching item is highlighted.
   final String? selectedCode;
 
   @override

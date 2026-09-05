@@ -5,15 +5,14 @@ import 'package:shado/widgets/widgets.dart';
 
 import 'lesson_gradients.dart';
 
-/// Логотип Shadowing для навигации: градиентный квадрат с иконкой волны и,
-/// по желанию, названием рядом.
+/// Navigation logo: a gradient square with a wave icon and the name.
 class MainShellBrand extends StatelessWidget {
   const MainShellBrand({super.key, this.showLabel = false, this.size = 40});
 
-  /// Показать название «Shadowing» с подписью справа от значка (sidebar).
+  /// Whether to show the app name next to the mark.
   final bool showLabel;
 
-  /// Сторона градиентного квадрата.
+  /// Side of the gradient square.
   final double size;
 
   @override

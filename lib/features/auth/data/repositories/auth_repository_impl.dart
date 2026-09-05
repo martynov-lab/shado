@@ -6,11 +6,8 @@ import '../../domain/entities/auth_user.dart';
 import '../../domain/repositories/auth_repository.dart';
 import '../datasources/auth_remote_datasource.dart';
 
-/// Сессия поверх API и защищённого хранилища.
-///
-/// Всё, что нужно стереть при выходе кроме токенов (кеш уроков и скачанное
-/// аудио), убирает [onSignedOut]: репозиторию авторизации незачем знать про
-/// уроки.
+/// Session on top of the API and secure storage; cache cleanup is done by
+/// [onSignedOut].
 class AuthRepositoryImpl implements AuthRepository {
   AuthRepositoryImpl({
     required AuthRemoteDataSource remote,
@@ -71,8 +68,7 @@ class AuthRepositoryImpl implements AuthRepository {
       await _tokens.save(tokens);
       return _currentUser = await _remote.me();
     } on ApiException {
-      // Сервер отверг токен — сессии больше нет. Сетевой сбой сюда не попадает
-      // и оставляет возможность попробовать позже.
+      // The server rejected the token — the session is gone.
       await _forget();
       return null;
     }
@@ -103,14 +99,13 @@ class AuthRepositoryImpl implements AuthRepository {
       try {
         await _remote.logout(refresh);
       } catch (_) {
-        // Ответ всегда 204, но и его потеря не должна мешать выйти локально.
+        // A server failure does not prevent a local sign-out.
       }
     }
     await _forget();
   }
 
-  /// Вызывается сетевым слоем, когда refresh отвергнут: сессия кончилась не по
-  /// воле пользователя.
+  /// Closes the session when the network layer reports a rejected refresh.
   Future<void> handleSessionExpired() async {
     await _forget();
     if (!_expired.isClosed) _expired.add(null);
@@ -124,8 +119,6 @@ class AuthRepositoryImpl implements AuthRepository {
 
   void dispose() => _expired.close();
 
-  /// Сервер и так приводит почту к нижнему регистру, но делаем это и здесь:
-  /// иначе «Вход» и «Регистрация» поведут себя по-разному при опечатке в
-  /// регистре.
+  /// Lowercases the email and trims surrounding spaces.
   static String normalizeEmail(String email) => email.trim().toLowerCase();
 }

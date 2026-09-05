@@ -1,7 +1,4 @@
-/// Аудио, принятое сервером: с этого начинается создание урока.
-///
-/// Длительность считает сервер, локальный замер через плеер на этом пути
-/// больше не нужен.
+/// Audio accepted by the server; lesson creation starts from it.
 class AudioUpload {
   const AudioUpload({
     required this.audioId,
@@ -14,9 +11,7 @@ class AudioUpload {
   final int durationMs;
   final int sizeBytes;
 
-  /// Файл в кеше приложения — тот же, что только что отправили. Экран создания
-  /// играет его с любого места, чтобы метки можно было ставить на слух ещё до
-  /// сохранения урока. Пусто — копию в кеш положить не удалось.
+  /// Copy of the file in the app cache; empty when it could not be stored.
   final String localPath;
 
   @override

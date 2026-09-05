@@ -19,8 +19,7 @@ void main() {
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.reset);
 
-    // Витрина зовёт `context.canPop()` (go_router) — в приложении она всегда
-    // открыта через роутер, поэтому и в тесте даём минимальный GoRouter.
+    // The gallery calls `context.canPop()`, so it gets a minimal GoRouter.
     final router = GoRouter(
       routes: [
         GoRoute(path: '/', builder: (_, _) => const DesignGalleryScreen()),
@@ -41,7 +40,7 @@ void main() {
     await tester.pumpAndSettle();
   }
 
-  /// Типы, которые обязаны встретиться при прокрутке всей витрины.
+  /// Types that must appear while scrolling the whole gallery.
   const expected = <Type>[
     AppButton,
     AppIcon,
@@ -99,8 +98,7 @@ void main() {
       find.byType(Scrollable).first,
       const Offset(0, -300),
     );
-    // dragUntilVisible останавливается, как только виджет построен, — а внутри
-    // cacheExtent списка он ещё за краем экрана и тап по нему пролетает мимо.
+    // dragUntilVisible stops on a built but still invisible widget.
     await tester.ensureVisible(find.text('Модальный лист'));
     await tester.pumpAndSettle();
 

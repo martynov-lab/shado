@@ -10,8 +10,7 @@ import 'home_lesson_row.dart';
 import 'home_section_header.dart';
 import 'home_stats_row.dart';
 
-/// Главная на телефоне: одна колонка с прокруткой — приветствие, карточка
-/// «Продолжить», лента статистики и превью «Мои уроки».
+/// Home on phone: a single scrollable column.
 class HomeMobileView extends StatelessWidget {
   const HomeMobileView({
     super.key,

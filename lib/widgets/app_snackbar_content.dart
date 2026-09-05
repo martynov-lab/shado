@@ -3,13 +3,10 @@ import 'package:flutter/material.dart';
 import 'package:shado/theme/theme.dart';
 import 'package:shado/widgets/app_button.dart';
 
-/// Тон сообщения.
+/// Message tone.
 enum AppSnackbarVariant { neutral, success, warning, danger }
 
-/// Само сообщение: заливка по тону, иконка, текст и необязательное действие.
-///
-/// Показывают его через `showAppSnackbar`; отдельным виджетом он нужен, чтобы
-/// снек получал нашу тень e3 вместо плоской материаловской.
+/// Snackbar content: tone fill, icon, text and an action.
 class AppSnackbarContent extends StatelessWidget {
   const AppSnackbarContent({
     super.key,

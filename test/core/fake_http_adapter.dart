@@ -4,16 +4,13 @@ import 'dart:typed_data';
 import 'package:dio/dio.dart';
 import 'package:shado/core/storage/token_storage.dart';
 
-/// Подставной транспорт: каждый запрос обслуживает переданная функция.
-///
-/// Свой адаптер, а не готовый мок, потому что проверять надо порядок и число
-/// вызовов — например, что на три параллельных 401 приходится один refresh.
+/// Stub transport: every request is served by the given function.
 class FakeHttpAdapter implements HttpClientAdapter {
   FakeHttpAdapter(this.handler);
 
   final Future<ResponseBody> Function(RequestOptions options) handler;
 
-  /// Все запросы в том порядке, в каком их отдавали.
+  /// Every request in the order it was issued.
   final List<RequestOptions> requests = [];
 
   int countOf(String path) =>
@@ -33,7 +30,7 @@ class FakeHttpAdapter implements HttpClientAdapter {
   void close({bool force = false}) {}
 }
 
-/// Ответ с JSON-телом.
+/// A response with a JSON body.
 ResponseBody jsonResponse(int status, Map<String, dynamic> body) {
   return ResponseBody.fromString(
     jsonEncode(body),
@@ -44,7 +41,7 @@ ResponseBody jsonResponse(int status, Map<String, dynamic> body) {
   );
 }
 
-/// Ошибка в формате API: `{"error": {"code": ..., "message": ...}}`.
+/// An error in the API format: `{"error": {"code": ..., "message": ...}}`.
 ResponseBody errorResponse(
   int status,
   String code, {
@@ -56,7 +53,7 @@ ResponseBody errorResponse(
   });
 }
 
-/// Хранилище токенов в памяти: тесту не нужен keychain.
+/// In-memory token storage: the test does not need the keychain.
 class FakeTokenStorage implements TokenStorage {
   FakeTokenStorage({String? access, String? refresh})
     : _access = access,
@@ -65,7 +62,7 @@ class FakeTokenStorage implements TokenStorage {
   String? _access;
   String? _refresh;
 
-  /// Сколько раз сохраняли пару — по нему видно ротацию refresh-токена.
+  /// How many times the pair was saved; it shows the refresh rotation.
   int saves = 0;
   bool cleared = false;
 

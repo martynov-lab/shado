@@ -6,20 +6,15 @@ import '../../domain/entities/lesson_category.dart';
 import 'lessons_controller.dart';
 import 'library_controller.dart';
 
-/// Сколько урок считается «новым» с момента загрузки — для метки «New» и
-/// фильтра по статусу.
+/// How long a lesson counts as new after being added.
 const Duration kNewLessonWindow = Duration(days: 7);
 
-/// Загружен недавно и ещё не примелькался.
+/// Whether the lesson was added recently.
 bool lessonIsNew(Lesson lesson) =>
     DateTime.now().toUtc().difference(lesson.createdAt) < kNewLessonWindow;
 
-/// Статус урока в фильтре списка.
-///
-/// [fresh] считается по дате загрузки. [inProgress] и [done] опираются на
-/// прогресс разбора, которого пока нет в данных, — поэтому они ничего не
-/// отбирают (см. [LessonsFilter.matches]). Оставлены ради полноты набора из
-/// макета: заработают, когда появится отслеживание прогресса.
+/// Lesson status in the list filter; [inProgress] and [done] do not filter
+/// anything yet.
 enum LessonFilterStatus {
   fresh('Новые'),
   inProgress('В процессе'),
@@ -30,7 +25,7 @@ enum LessonFilterStatus {
   final String label;
 }
 
-/// Что показываем в списке уроков: строка поиска и наборы выбранных фильтров.
+/// Search query and the selected filter sets of the lesson list.
 class LessonsFilter {
   const LessonsFilter({
     this.query = '',
@@ -45,11 +40,10 @@ class LessonsFilter {
   final Set<LessonLevel> levels;
   final Set<LessonFilterStatus> statuses;
 
-  /// Показывать только приватные уроки. Сервер отдаёт приватными лишь свои,
-  /// поэтому это и есть «Мои приватные».
+  /// Show private lessons only.
   final bool onlyPrivate;
 
-  /// Ни поиск, ни фильтры не заданы — список показываем целиком.
+  /// Whether the filter is empty: no query and no selected values.
   bool get isEmpty =>
       query.isEmpty &&
       topicIds.isEmpty &&
@@ -57,13 +51,11 @@ class LessonsFilter {
       statuses.isEmpty &&
       !onlyPrivate;
 
-  /// Сколько фильтров выбрано (без строки поиска) — для бейджа «N» и кнопки
-  /// «Сбросить».
+  /// How many filters are selected, excluding the search query.
   int get activeCount =>
       topicIds.length + levels.length + statuses.length + (onlyPrivate ? 1 : 0);
 
-  /// Проходит ли урок сквозь текущие фильтры. Внутри группы — ИЛИ (любой из
-  /// выбранных), между группами — И.
+  /// Whether a lesson passes the filters: OR inside a group, AND across.
   bool matches(Lesson lesson) {
     if (query.isNotEmpty &&
         !lesson.title.toLowerCase().contains(query.toLowerCase())) {
@@ -88,7 +80,7 @@ class LessonsFilter {
 
   bool _hasStatus(Lesson lesson, LessonFilterStatus status) => switch (status) {
     LessonFilterStatus.fresh => lessonIsNew(lesson),
-    // Прогресс разбора не отслеживается — эти статусы пока пусты.
+    // Study progress is not tracked.
     LessonFilterStatus.inProgress => false,
     LessonFilterStatus.done => false,
   };
@@ -110,8 +102,7 @@ class LessonsFilter {
   }
 }
 
-/// Правит фильтр списка уроков. Живёт отдельно от [LessonsController]: тот
-/// отвечает за данные, а фильтр — за то, что из них показать.
+/// Edits the lesson list filter.
 class LessonsFilterNotifier extends Notifier<LessonsFilter> {
   @override
   LessonsFilter build() => const LessonsFilter();
@@ -130,7 +121,7 @@ class LessonsFilterNotifier extends Notifier<LessonsFilter> {
   void toggleOnlyPrivate() =>
       state = state.copyWith(onlyPrivate: !state.onlyPrivate);
 
-  /// Сбрасывает фильтры, но не строку поиска — крестик у поля чистит её сам.
+  /// Clears the filters without touching the search query.
   void clearFilters() => state = state.copyWith(
     topicIds: const {},
     levels: const {},
@@ -150,8 +141,7 @@ final lessonsFilterProvider =
       LessonsFilterNotifier.new,
     );
 
-/// Список уроков после применения поиска и фильтров. Сохраняет состояние
-/// загрузки/ошибки исходного [lessonsControllerProvider].
+/// Lesson list after search and filters.
 final filteredLessonsProvider = Provider<AsyncValue<List<Lesson>>>((ref) {
   final lessons = ref.watch(lessonsControllerProvider);
   final filter = ref.watch(lessonsFilterProvider);
@@ -161,21 +151,18 @@ final filteredLessonsProvider = Provider<AsyncValue<List<Lesson>>>((ref) {
   );
 });
 
-/// Уроки главного экрана: пока ничего не ищем — корень библиотеки (уроки вне
-/// папок, §6.3); как только заданы поиск или фильтры — плоская выдача по всему
-/// каталогу из кеша, иначе урок, лежащий в папке, фильтр бы не нашёл.
+/// Home screen lessons: the library root without filters, a flat catalog
+/// listing with them.
 final visibleLessonsProvider = Provider<List<Lesson>>((ref) {
-  // Кеш держим подписанным всегда, даже когда показываем корень: он
-  // синхронизируется дельтой и должен быть готов к первому же запросу поиска.
+  // The cache stays subscribed so search works right away.
   final catalog = ref.watch(filteredLessonsProvider).value ?? const [];
   final filter = ref.watch(lessonsFilterProvider);
   if (!filter.isEmpty) return catalog;
   return ref.watch(libraryControllerProvider).value?.lessons ?? const [];
 });
 
-/// Папки главного экрана под текущий поиск. У папки нет ни уровня, ни темы,
-/// поэтому при активных фильтрах категорий её не показываем вовсе (так же
-/// поступает и сервер), а по строке поиска отбираем по названию.
+/// Home screen folders: matched by title and hidden while category filters
+/// are active.
 final visibleFoldersProvider = Provider<List<Folder>>((ref) {
   final filter = ref.watch(lessonsFilterProvider);
   if (filter.activeCount > 0) return const [];

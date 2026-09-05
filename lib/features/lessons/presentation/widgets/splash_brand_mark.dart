@@ -2,13 +2,11 @@ import 'package:flutter/widgets.dart';
 
 import 'package:shado/theme/theme.dart';
 
-/// Знак Shadowing для анимированного сплеша: плитка с фирменным градиентом и
-/// белым знаком-волной по центру. Ниже вордмарка это же свечение задаёт «центр
-/// тяжести» экрана.
+/// App mark on the splash: a gradient tile with a centered wave.
 class SplashBrandMark extends StatelessWidget {
   const SplashBrandMark({super.key, this.size = 104});
 
-  /// Сторона плитки. По умолчанию — размер знака из макета сплеша.
+  /// Tile side; defaults to the splash mark size.
   final double size;
 
   @override
@@ -19,8 +17,7 @@ class SplashBrandMark extends StatelessWidget {
       decoration: BoxDecoration(
         gradient: AppBrand.signGradient,
         borderRadius: AppRadii.rXxl,
-        // Мягкое фирменное свечение под плиткой — не elevation-тень из токенов,
-        // а часть логотипа, поэтому радиус и смещение заданы здесь.
+        // The glow under the tile is part of the logo, not a token shadow.
         boxShadow: [
           BoxShadow(
             color: AppColors.dark.primary.withValues(alpha: 0.5),
@@ -37,13 +34,13 @@ class SplashBrandMark extends StatelessWidget {
   }
 }
 
-/// Знак-волна: ломаная в сетке 24×24 из вектора логотипа, обводка [color].
+/// Wave mark: a polyline on a 24×24 grid stroked with [color].
 class _WaveMarkPainter extends CustomPainter {
   const _WaveMarkPainter(this.color);
 
   final Color color;
 
-  /// Вершины ломаной в сетке 24×24 — геометрия знака, не сеточные токены.
+  /// Polyline vertices on a 24×24 grid — logo geometry, not layout tokens.
   static const List<Offset> _points = [
     Offset(3, 12),
     Offset(5, 12),

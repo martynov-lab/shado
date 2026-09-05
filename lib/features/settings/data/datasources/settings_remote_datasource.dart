@@ -1,12 +1,12 @@
 import '../../../../core/network/api_client.dart';
 
-/// Настройки сервиса (§12.3). Порог пройденности читают все, правит owner.
+/// Service settings; everyone reads the completion threshold, the owner edits.
 abstract interface class SettingsRemoteDataSource {
-  /// `lesson_completion_reps` — сколько раз повторить каждый сегмент, чтобы
-  /// урок считался пройденным.
+  /// `lesson_completion_reps` — how many repeats per segment mark a lesson as
+  /// done.
   Future<int> getCompletionReps();
 
-  /// Правит порог (owner, 1..1000). Возвращает актуальное значение.
+  /// Updates the threshold (1..1000) and returns the current value.
   Future<int> setCompletionReps(int reps);
 }
 

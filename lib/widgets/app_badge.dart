@@ -2,26 +2,22 @@ import 'package:flutter/material.dart';
 
 import 'package:shado/theme/theme.dart';
 
-/// Смысл метки на карточке урока.
+/// Meaning of a badge on a lesson card.
 enum AppBadgeVariant {
-  /// «Новый» — урок ещё не открывали. Зелёный, success.
+  /// Freshly added lesson — green.
   fresh,
 
-  /// «Пора повторить» — подошёл срок. Янтарный, warning.
+  /// Due for a repeat — amber.
   due,
 
-  /// «В ударе» — серия повторов не прервана. Розовый, accent.
+  /// On a streak — pink.
   hot,
 
-  /// Нейтральный статус вроде «Приватный» — серо-сиреневый, без окраски
-  /// смысла, чтобы не спорить с метками прогресса.
+  /// Neutral status — grey-lilac.
   neutral,
 }
 
-/// Небольшая пилюля-метка. Не интерактивна: это статус, а не кнопка.
-///
-/// Цвет берётся парой «мягкий фон + насыщенный текст», поэтому метка читается
-/// на карточке и не спорит с основным содержимым.
+/// Status pill badge; not interactive.
 class AppBadge extends StatelessWidget {
   const AppBadge({
     super.key,

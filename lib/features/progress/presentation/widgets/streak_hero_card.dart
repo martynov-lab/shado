@@ -3,8 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:shado/theme/theme.dart';
 import 'package:shado/widgets/widgets.dart';
 
-/// «Герой» серии занятий: градиентная карточка с иконкой огня, числом дней
-/// подряд и подписью-подсказкой снизу.
+/// Streak hero: a gradient card with a flame icon, the day count and a
+/// caption below.
 class StreakHeroCard extends StatelessWidget {
   const StreakHeroCard({
     super.key,
@@ -14,7 +14,7 @@ class StreakHeroCard extends StatelessWidget {
 
   final int days;
 
-  /// Подпись под числом — «Лучшая серия — 21 день…».
+  /// Caption under the number, e.g. the best streak.
   final String hint;
 
   @override

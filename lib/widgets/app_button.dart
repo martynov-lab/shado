@@ -4,20 +4,19 @@ import 'package:shado/theme/theme.dart';
 import 'package:shado/widgets/app_focus_ring.dart';
 import 'package:shado/widgets/app_tap_target.dart';
 
-/// Роль кнопки на экране: главное действие, второстепенное, третьестепенное.
+/// Button role on screen: primary, secondary, tertiary action.
 enum AppButtonVariant { primary, secondary, ghost }
 
-/// Цвета варианта во всех состояниях. Живут рядом с enum, чтобы кнопка и
-/// иконочная кнопка выглядели одинаково без копирования switch'ей.
+/// Variant colors across all states.
 extension AppButtonVariantStyle on AppButtonVariant {
-  /// Цвет подписи и иконки.
+  /// Label and icon color.
   Color foreground(AppColors colors) => switch (this) {
     AppButtonVariant.primary => colors.primaryOn,
     AppButtonVariant.secondary => colors.primary,
     AppButtonVariant.ghost => colors.text2,
   };
 
-  /// Заливка с учётом наведения и нажатия.
+  /// Fill that accounts for hover and press.
   Color background(
     AppColors colors, {
     bool hovered = false,
@@ -27,8 +26,7 @@ extension AppButtonVariantStyle on AppButtonVariant {
       AppButtonVariant.primary when pressed => colors.primaryPress,
       AppButtonVariant.primary when hovered => colors.primaryHover,
       AppButtonVariant.primary => colors.primary,
-      // Мягкую заливку темним тем же primary, но почти прозрачным — оттенок
-      // остаётся из палитры, а не подбирается на глаз.
+      // The soft fill darkens with a translucent primary from the palette.
       AppButtonVariant.secondary when pressed => Color.alphaBlend(
         colors.primary.withValues(alpha: AppOpacities.press),
         colors.primarySoft,
@@ -48,23 +46,16 @@ extension AppButtonVariantStyle on AppButtonVariant {
     };
   }
 
-  /// Обводка есть только у «призрачного» варианта — остальные держатся заливкой.
+  /// Only the ghost variant has a border.
   BorderSide border(AppColors colors) => this == AppButtonVariant.ghost
       ? BorderSide(color: colors.borderStrong, width: AppSizes.borderThin)
       : BorderSide.none;
 }
 
-/// Размер кнопки. [sm] — для плотных панелей, [lg] — для главного действия
-/// экрана.
+/// Button size: [sm] for dense panels, [lg] for the main action.
 enum AppButtonSize { sm, md, lg }
 
-/// Reference component: a pill button built only from design tokens.
-/// Use it as the template for every other widget in the library — read colors
-/// from `context.colors`, sizes from `AppSpacing`/`AppRadii`, text from `AppText`.
-///
-/// Состояния (default / hover / pressed / focused / disabled) считаются здесь
-/// явно, а не отдаются стоковому Material: цвет нажатия — [AppColors.primaryPress],
-/// наведения — [AppColors.primaryHover].
+/// Design system pill button with its own hover, press and focus states.
 class AppButton extends StatefulWidget {
   const AppButton({
     super.key,
@@ -84,16 +75,16 @@ class AppButton extends StatefulWidget {
   final AppButtonVariant variant;
   final AppButtonSize size;
 
-  /// If true, stretches to the full width of its parent.
+  /// Stretches to the full parent width.
   final bool expand;
 
-  /// Показывает индикатор вместо иконки и блокирует нажатия.
+  /// Shows a spinner instead of the icon and blocks taps.
   final bool loading;
 
-  /// Замена подписи для скринридера, если [label] без контекста непонятен.
+  /// Replacement label for a screen reader.
   final String? semanticLabel;
 
-  /// Кнопка нажимается: есть обработчик и не идёт загрузка.
+  /// Whether the button is tappable: has a handler and is not loading.
   bool get isEnabled => onPressed != null && !loading;
 
   @override
@@ -163,8 +154,7 @@ class _AppButtonState extends State<AppButton> {
               setState(() => _focused = value && AppFocusRing.isKeyboardFocus),
           canRequestFocus: enabled,
           borderRadius: AppRadii.rPill,
-          // Подсветку состояний рисуем сами — стоковый оверлей поверх наших
-          // цветов дал бы двойное затемнение.
+          // We paint state highlights ourselves; the stock overlay is off.
           overlayColor: const WidgetStatePropertyAll(Colors.transparent),
           child: Padding(
             padding: EdgeInsets.symmetric(horizontal: padH),

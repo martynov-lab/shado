@@ -79,7 +79,7 @@ void main() {
       expect(request.path, '/v1/me');
       final body = bodyOf(request);
       expect(body['studied_language'], 'en');
-      // Непереданные поля не отправляем.
+      // Fields that were not passed are not sent.
       expect(body.containsKey('name'), isFalse);
       expect(body.containsKey('daily_goal_minutes'), isFalse);
       expect(user.studiedLanguage, 'en');

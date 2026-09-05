@@ -1,9 +1,6 @@
 import 'waveform_peaks.dart';
 
-/// Аудио на сервере. Приходит из `POST /v1/audio` и внутри урока (`lesson.audio`).
-///
-/// Файл иммутабелен: содержимое под одним [id] не меняется никогда, поэтому
-/// локальный кеш по нему не нуждается в инвалидации.
+/// Server-side audio; the content behind an [id] never changes.
 class AudioDto {
   const AudioDto({
     required this.id,
@@ -32,17 +29,16 @@ class AudioDto {
   final String contentType;
   final int sizeBytes;
 
-  /// Контрольная сумма: по ней проверяется целостность скачанного файла.
+  /// Checksum used to verify a downloaded file.
   final String sha256;
 
-  /// Длительность считает сервер — локальный замер на этом пути не нужен.
+  /// File duration as reported by the server.
   final int durationMs;
 
-  /// Пики приходят сразу после загрузки: волну можно рисовать, не спрашивая
-  /// `/peaks` отдельно.
+  /// Waveform peaks when the server sent them.
   final WaveformPeaks? peaks;
 
-  /// Расширение для имени файла в кеше.
+  /// Extension for the cached file name.
   String get fileExtension => extensionForContentType(contentType);
 
   static String extensionForContentType(String contentType) {

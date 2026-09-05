@@ -1,7 +1,4 @@
-/// Кусок урока: фрагмент текста и его границы на аудио.
-///
-/// Границы кусков общие (встык), поэтому `endMs` одного сегмента равен
-/// `startMs` следующего.
+/// Lesson segment: a text chunk and its audio bounds; segments are adjacent.
 class Segment {
   const Segment({
     required this.index,
@@ -10,7 +7,7 @@ class Segment {
     required this.endMs,
   });
 
-  /// Порядковый номер, 0-based.
+  /// Zero-based ordinal number.
   final int index;
   final String text;
   final int startMs;

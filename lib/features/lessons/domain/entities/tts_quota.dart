@@ -1,9 +1,4 @@
-/// Остаток бесплатного лимита озвучки через ИИ (`GET /v1/tts/quota`,
-/// TTS_CLIENT_SPEC §4.1).
-///
-/// Лимитов у Gemini TTS два — на минуту и на сутки, — поэтому отказ (`429
-/// tts_quota_exceeded`) бывает и временным, и дневным. Клиенту квота нужна лишь
-/// как подсказка у кнопки: сколько озвучек осталось на сегодня.
+/// Remaining free AI voice-over quota.
 class TtsQuota {
   const TtsQuota({
     required this.provider,
@@ -21,17 +16,17 @@ class TtsQuota {
     ),
   );
 
-  /// Кто озвучивает — сейчас `gemini`. На поведение клиента не влияет.
+  /// Which provider does the synthesis.
   final String provider;
 
-  /// Суточное окно — его остаток показываем рядом с кнопкой.
+  /// The daily quota window.
   final TtsQuotaWindow day;
 
-  /// Минутное окно — из-за него отказ бывает временным («подождите минуту»).
+  /// The per-minute quota window.
   final TtsQuotaWindow minute;
 }
 
-/// Одно окно лимита: сколько использовано, каков предел и сколько осталось.
+/// One quota window: used, limit and remaining.
 class TtsQuotaWindow {
   const TtsQuotaWindow({
     required this.used,
@@ -47,10 +42,10 @@ class TtsQuotaWindow {
 
   final int used;
 
-  /// `0` — «без ограничения»; в этом случае [remaining] сервер не присылает.
+  /// Request limit; `0` means unlimited.
   final int limit;
 
-  /// Остаток; `null` при [isUnlimited].
+  /// Remaining count; `null` when [isUnlimited].
   final int? remaining;
 
   bool get isUnlimited => limit == 0;

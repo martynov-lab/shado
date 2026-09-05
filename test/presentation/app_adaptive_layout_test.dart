@@ -3,8 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:shado/widgets/app_adaptive_layout.dart';
 
 void main() {
-  /// Строит [AppAdaptiveLayout] при заданной ширине окна. Каждая раскладка —
-  /// текст-маркер, по которому в тесте видно, какой вариант выбран.
+  /// Builds [AppAdaptiveLayout] at the given window width.
   Future<void> pumpAt(
     WidgetTester tester,
     double width, {

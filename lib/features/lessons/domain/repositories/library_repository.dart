@@ -1,8 +1,7 @@
 import '../entities/library_root.dart';
 
-/// Лента главного экрана (§6.3). Сервер собирает корень сам, поэтому локального
-/// кеша у него нет: где какой урок лежит, знает только он.
+/// Home feed; assembled by the server, there is no local cache.
 abstract interface class LibraryRepository {
-  /// Корень библиотеки: папки и уроки вне папок одним запросом.
+  /// Library root: folders and unfiled lessons in one request.
   Future<LibraryRoot> getRoot();
 }

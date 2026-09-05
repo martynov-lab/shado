@@ -5,13 +5,7 @@ import 'package:shado/theme/theme.dart';
 
 import '../controllers/lesson_providers.dart';
 
-/// Подпись под плашкой аудио: сколько озвучек через ИИ осталось на сегодня
-/// (TTS_CLIENT_SPEC §4.1). Видеть остаток заранее приятнее, чем упереться в
-/// отказ.
-///
-/// Пока квота грузится или запрос упал — не показываем ничего: подсказка
-/// необязательна и не должна мигать ошибкой. При «без ограничения» счётчик тоже
-/// не нужен.
+/// Caption with today remaining voice-overs; hidden on error or no limit.
 class TtsQuotaHint extends ConsumerWidget {
   const TtsQuotaHint({super.key});
 

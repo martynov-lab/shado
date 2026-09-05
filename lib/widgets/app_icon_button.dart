@@ -5,15 +5,10 @@ import 'package:shado/widgets/app_button.dart';
 import 'package:shado/widgets/app_focus_ring.dart';
 import 'package:shado/widgets/app_tap_target.dart';
 
-/// Форма иконочной кнопки: круг для плеера, квадрат со скруглением — для
-/// панелей инструментов.
+/// Icon button shape: a circle or a rounded square.
 enum AppIconButtonShape { circle, square }
 
-/// Кнопка без подписи. Варианты и размеры — те же, что у [AppButton], поэтому
-/// в одном ряду они совпадают по высоте.
-///
-/// [semanticLabel] обязателен: у кнопки нет видимого текста, и без него
-/// скринридер прочитает пустоту.
+/// Button without a label; variants and sizes are shared with [AppButton].
 class AppIconButton extends StatefulWidget {
   const AppIconButton({
     super.key,
@@ -35,7 +30,7 @@ class AppIconButton extends StatefulWidget {
   final AppIconButtonShape shape;
   final bool loading;
 
-  /// Подсказка при наведении. По умолчанию — [semanticLabel].
+  /// Hover tooltip; defaults to [semanticLabel].
   final String? tooltip;
 
   bool get isEnabled => onPressed != null && !loading;

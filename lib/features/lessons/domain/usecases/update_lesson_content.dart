@@ -5,19 +5,13 @@ import '../entities/segment_boundaries.dart';
 import '../repositories/lesson_repository.dart';
 import 'create_lesson.dart';
 
-/// Правка уже созданного урока: название, разбивка текста на куски, границы
-/// этих кусков на аудио и обрезка.
-///
-/// Число кусков может измениться, поэтому урок пересобирается целиком. Сам
-/// аудиофайл не трогаем: он иммутабелен и общий для всех уроков, которые на
-/// него ссылаются.
+/// Lesson editing: title, text split, segment boundaries and trimming.
 class UpdateLessonContent {
   const UpdateLessonContent(this._repository);
 
   final LessonRepository _repository;
 
-  /// [lesson] — то, что правим: экран правки уже держит его у себя, и
-  /// перечитывать урок по сети ради этого незачем.
+  /// Rebuilds [lesson] from the new fields and passes it to the repository.
   Future<Lesson> call({
     required Lesson lesson,
     required String title,
@@ -35,13 +29,12 @@ class UpdateLessonContent {
       throw const ValidationFailure('Текст не содержит ни одного куска');
     }
     final range = (trim ?? lesson.trim).clampedTo(lesson.durationMs);
-    // Разметка могла отстать от текста — тогда куски раскладываются заново.
+    // A layout that lags behind the text is laid out again.
     final source = boundaries.length == segmentTexts.length + 1
         ? boundaries
         : SegmentBoundaries.resize(boundaries, segmentTexts.length, range);
     final updated = lesson
-        // Публичность обновляем только когда её задал автор (owner); иначе
-        // copyWith сохраняет прежнее значение.
+        // Without an explicit value the visibility stays unchanged.
         .copyWith(title: trimmedTitle, isPublic: isPublic)
         .withSegments(
           texts: segmentTexts,

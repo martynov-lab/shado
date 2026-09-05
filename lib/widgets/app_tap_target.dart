@@ -5,11 +5,7 @@ import 'package:flutter/rendering.dart';
 
 import 'package:shado/theme/theme.dart';
 
-/// Расширяет область нажатия ребёнка до [minSize], не меняя его отрисовку.
-///
-/// Чекбокс рисуется 22×22, но попасть по нему пальцем нужно в 48×48. Обычный
-/// `Padding` сдвинул бы картинку, поэтому здесь ребёнок остаётся по центру
-/// своего размера, а хит-тест ловит промахи вокруг него.
+/// Expands the child hit area to [minSize] without changing how it paints.
 class AppTapTarget extends SingleChildRenderObjectWidget {
   const AppTapTarget({
     super.key,
@@ -66,8 +62,7 @@ class _RenderTapTarget extends RenderShiftedBox {
     if (super.hitTest(result, position: position)) return true;
     final child = this.child;
     if (child == null) return false;
-    // Промах мимо ребёнка, но внутри расширенной зоны — сводим удар к его
-    // центру, чтобы сработал тот же обработчик.
+    // A miss inside the expanded area is redirected to the child center.
     final center =
         child.size.center(Offset.zero) +
         (child.parentData! as BoxParentData).offset;

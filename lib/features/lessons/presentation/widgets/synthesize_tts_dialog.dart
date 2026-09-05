@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 
-/// Подтверждение озвучки, когда аудио уже выбрано: синтез заменит его.
-/// Возвращает `true`, если озвучивать.
+/// Confirms replacing the chosen audio with a voice-over; `true` proceeds.
 class SynthesizeTtsDialog extends StatelessWidget {
   const SynthesizeTtsDialog({super.key});
 

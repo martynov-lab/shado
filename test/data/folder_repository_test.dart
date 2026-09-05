@@ -3,7 +3,7 @@ import 'package:shado/features/lessons/data/datasources/folder_remote_datasource
 import 'package:shado/features/lessons/data/models/folder_dto.dart';
 import 'package:shado/features/lessons/data/repositories/folder_repository_impl.dart';
 
-/// Ответ сервера на папку.
+/// The server response for a folder.
 Map<String, dynamic> folderJson({
   String id = 'f1',
   String title = 'Папка',
@@ -84,7 +84,7 @@ void main() {
 
     final put = remote.puts.single;
     expect(put.id, isNotEmpty);
-    // Создание — без версии (папки ещё нет), публичность уходит как задали.
+    // Creation carries no version; visibility is sent exactly as set.
     expect(put.version, isNull);
     expect(put.isPublic, isFalse);
     expect(folder.title, 'Новая');
@@ -134,7 +134,7 @@ void main() {
     final folder = await repository.removeLesson('f1', 'l1');
 
     expect(remote.removed.single, (folderId: 'f1', lessonId: 'l1'));
-    // После удаления папку перечитали, чтобы вернуть свежий состав.
+    // After the deletion the folder is re-read to get a fresh content list.
     expect(remote.fetched.single, 'f1');
     expect(folder.version, 5);
   });

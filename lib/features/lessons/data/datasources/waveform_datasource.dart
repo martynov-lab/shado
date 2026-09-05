@@ -10,11 +10,7 @@ import '../../../../core/error/failures.dart';
 import '../../domain/entities/audio_trim.dart';
 import '../models/waveform_peaks.dart';
 
-/// Что рисуем: аудио на сервере, его локальная копия (если уже скачана) и
-/// отрезок, который должен занять всю ширину волны.
-///
-/// [audioId] нужен серверному источнику, [localPath] — локальным: первому пики
-/// считает сервер, вторым нужен сам файл.
+/// Peaks query: which audio to build and which range to show.
 class WaveformQuery {
   const WaveformQuery({
     required this.audioId,
@@ -27,20 +23,18 @@ class WaveformQuery {
 
   final String audioId;
 
-  /// Путь к скачанному файлу; `null` — файла ещё нет, и остаётся только сервер.
+  /// Path to the downloaded file; `null` when it is missing.
   final String? localPath;
 
-  /// Длительность файла целиком: по ней серверные пики переводятся в
-  /// миллисекунды при вырезании [range].
+  /// Duration of the whole file.
   final int durationMs;
 
   final int resolution;
 
-  /// Отрезок файла, который пойдёт на волну. `null` — файл целиком.
+  /// File range for the waveform; `null` means the whole file.
   final AudioTrim? range;
 
-  /// Локальным источникам: писать ли кеш пиков рядом с файлом. У чужого файла,
-  /// ещё не принадлежащего приложению, кеш не создаём.
+  /// Whether to write the peaks cache next to the file.
   final bool cache;
 
   @override
@@ -59,21 +53,12 @@ class WaveformQuery {
       Object.hash(audioId, localPath, durationMs, resolution, range, cache);
 }
 
-/// Источник пиков волны для отрисовки.
-///
-/// Основная реализация — серверная (`RemoteWaveformDataSource`): волна выходит
-/// одинаковой на Android, iOS и Windows. Локальные остаются запасным путём,
-/// когда сервер недоступен, а файл уже скачан.
+/// Source of waveform peaks for painting.
 abstract interface class WaveformDataSource {
   Future<WaveformPeaks> loadPeaks(WaveformQuery query);
 }
 
-/// Вырезает из готовых пиков отрезок [range] и отдаёт его как самостоятельную
-/// волну.
-///
-/// Серверные пики приходят на файл целиком, а показать иногда нужно кусок:
-/// на десятиминутном файле обрезанной минуте досталась бы пара сотен отсчётов,
-/// и паузы между фразами слились бы в кашу.
+/// Slices [range] out of ready peaks as a standalone waveform.
 WaveformPeaks slicePeaks(
   WaveformPeaks peaks,
   AudioTrim? range,
@@ -91,9 +76,8 @@ WaveformPeaks slicePeaks(
   );
 }
 
-/// Реализация на `just_waveform` для Android/iOS. Результат извлечения
-/// кешируется рядом с аудио в файле `<audioPath>.wave`, чтобы не считать пики
-/// при каждом открытии.
+/// Peaks via `just_waveform` on Android/iOS; the result is cached in
+/// `<audioPath>.wave`.
 class JustWaveformDataSource implements WaveformDataSource {
   const JustWaveformDataSource();
 
@@ -103,15 +87,13 @@ class JustWaveformDataSource implements WaveformDataSource {
     if (audioPath == null) {
       throw const AudioFailure('Файл ещё не скачан — волну строить не из чего');
     }
-    // Извлечение идёт по файлу целиком и кешируется целиком: отрезок вырезаем
-    // уже из готовых пикселей, это дёшево.
+    // Extract and cache the whole file; the range is sliced from ready peaks.
     final waveform = await _obtainWaveform(audioPath, query.cache);
     return _resample(waveform, query.resolution, query.range);
   }
 
   Future<Waveform> _obtainWaveform(String audioPath, bool cache) async {
-    // Извлечению всё равно нужен файл на выходе, поэтому без кеша пишем во
-    // временный каталог и убираем за собой.
+    // Extraction needs an output file — without caching use a temp directory.
     final cacheFile = cache
         ? File('$audioPath.wave')
         : File(
@@ -124,7 +106,7 @@ class JustWaveformDataSource implements WaveformDataSource {
       try {
         return await JustWaveform.parse(cacheFile);
       } catch (_) {
-        // Битый кеш — считаем заново.
+        // A broken cache is recomputed.
         await cacheFile.delete();
       }
     }
@@ -145,14 +127,14 @@ class JustWaveformDataSource implements WaveformDataSource {
         try {
           if (await cacheFile.exists()) await cacheFile.delete();
         } catch (_) {
-          // Временный файл не удалился — не повод рушить показ волны.
+          // The temporary file was not removed — the waveform still works.
         }
       }
     }
   }
 
-  /// Прореживает пики отрезка [range] до [resolution] столбиков и нормализует
-  /// их к `-1..1`.
+  /// Downsamples peaks of [range] to [resolution] bars and normalizes them
+  /// to `-1..1`.
   WaveformPeaks _resample(Waveform waveform, int resolution, AudioTrim? range) {
     final pixels = waveform.length;
     if (pixels <= 0) {

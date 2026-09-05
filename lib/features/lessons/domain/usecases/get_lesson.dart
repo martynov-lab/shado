@@ -2,7 +2,7 @@ import '../../../../core/error/failures.dart';
 import '../entities/lesson.dart';
 import '../repositories/lesson_repository.dart';
 
-/// Один урок по идентификатору.
+/// A single lesson by id.
 class GetLesson {
   const GetLesson(this._repository);
 

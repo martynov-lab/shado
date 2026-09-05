@@ -17,7 +17,7 @@ import 'package:shado/features/lessons/domain/entities/lesson_category.dart';
 import 'package:shado/features/lessons/domain/entities/segment.dart';
 import 'package:shado/features/lessons/domain/entities/tts_quota.dart';
 
-/// Ответ сервера на урок: сегменты сервер возвращает такими, какими принял.
+/// The server response for a lesson; segments come back as they were sent.
 Map<String, dynamic> lessonJson({
   String id = 'lesson-1',
   String title = 'Урок',
@@ -116,21 +116,21 @@ class FakeLocalDataSource implements LessonLocalDataSource {
 class FakeRemoteDataSource implements LessonRemoteDataSource {
   FakeRemoteDataSource({this.pages = const [], this.onPut});
 
-  /// Страницы, которые отдаёт `list` по порядку.
+  /// Pages returned by `list` in order.
   final List<LessonPage> pages;
 
-  /// Чем отвечать на `PUT`; получает версию из `If-Match`.
+  /// What to answer a `PUT` with; it gets the version from `If-Match`.
   final LessonDto Function(int? version)? onPut;
 
   final List<String?> sinceCalls = [];
   final List<int?> putVersions = [];
   final List<List<SegmentModel>> putSegments = [];
 
-  /// Категории, с которыми ушёл каждый `PUT`.
+  /// Categories sent with each `PUT`.
   final List<({LessonAccent? accent, LessonLevel? level, String? topicId})>
   putCategories = [];
 
-  /// Значение `is_public`, с которым ушёл каждый `PUT` (`null` — не отправляли).
+  /// The `is_public` sent with each `PUT`; `null` means it was omitted.
   final List<bool?> putIsPublic = [];
 
   final List<String> deleted = [];
@@ -241,7 +241,7 @@ class FakeAudioRemote implements AudioRemoteDataSource {
   }
 }
 
-/// Озвучка: отдаёт готовый [AudioDto], словно текст уже синтезирован.
+/// Voice-over returning a ready [AudioDto] as if the text was synthesized.
 class FakeTtsRemote implements TtsRemoteDataSource {
   final List<String> synthesized = [];
 
@@ -267,7 +267,7 @@ class FakeTtsRemote implements TtsRemoteDataSource {
 
 const _window = TtsQuotaWindow(used: 0, limit: 14, remaining: 14);
 
-/// Кеш в памяти: файл считается лежащим на месте, как только его «скачали».
+/// In-memory cache: a file counts as present once it was downloaded.
 class FakeAudioCache implements AudioCache {
   final Set<String> files = {};
   final List<Set<String>> retained = [];
@@ -346,8 +346,7 @@ void main() {
 
       final upload = await repository.uploadAudio(filePath: '/tmp/tone.mp3');
 
-      // Именно путь кеша, а не выбранный файл: тот мог быть временной
-      // распаковкой content-URI, которую система вправе стереть.
+      // The cache path, not the source file.
       expect(upload.localPath, '/cache/audio-1.mp3');
       expect(upload.audioId, 'audio-1');
       expect(upload.durationMs, 10000);
@@ -361,11 +360,11 @@ void main() {
       final upload = await repository.synthesizeTts(text: 'Hello there');
 
       expect(tts.synthesized.single, 'Hello there');
-      // Файл синтеза докачан один раз и лежит в кеше по своему audio_id.
+      // The synthesized file is fetched once and cached under its audio_id.
       expect(audio.downloads, 1);
       expect(upload.audioId, 'tts-1');
       expect(upload.durationMs, 4200);
-      // Gemini TTS отдаёт wav — файл ложится в кеш под .wav.
+      // Gemini TTS returns wav, so the file lands in the cache as .wav.
       expect(upload.localPath, '/cache/tts-1.wav');
     });
   });
@@ -373,7 +372,7 @@ void main() {
   group('создание', () {
     test('сегменты покрывают файл целиком, обрезка на сервер не уезжает', () async {
       final remote = FakeRemoteDataSource();
-      // Урок размечен внутри обрезки 2000..8000, а сервер требует 0..10000.
+      // The lesson is marked inside the trim, but the server wants 0..10000.
       await build(remote).createLesson(
         title: 'Урок',
         audioId: 'audio-1',
@@ -387,7 +386,7 @@ void main() {
       final segments = remote.putSegments.single;
       expect(segments.first.startMs, 0);
       expect(segments.last.endMs, 10000);
-      // Внутренняя метка остаётся там, где её поставили.
+      // An inner marker stays where it was placed.
       expect(segments.first.endMs, 5000);
       expect(segments.map((segment) => segment.index), [0, 1]);
     });
@@ -451,7 +450,7 @@ void main() {
       );
 
       expect(lesson.audioPath, isNotEmpty);
-      // Идентификатор генерит клиент, поэтому смотрим на то, что вернулось.
+      // The client generates the id, so we look at what came back.
       expect(local.lessons[lesson.id]?.version, 1);
       expect(local.lessons[lesson.id]?.audioId, 'audio-1');
     });
@@ -474,7 +473,7 @@ void main() {
       expect(remote.putCategories.single.topicId, 'topic-7');
       expect(lesson.accent, LessonAccent.uk);
       expect(lesson.topic?.id, 'topic-7');
-      // Категории живут и в кеше: без них правка потеряла бы их при `PUT`.
+      // Categories live in the cache: a `PUT` without them would drop them.
       expect(local.lessons[lesson.id]?.level, 'c1');
     });
 
@@ -490,14 +489,13 @@ void main() {
         level: LessonLevel.a2,
       );
 
-      // Сервер сам поставит тему по умолчанию; прислать `null` значило бы
-      // попросить его стереть тему.
+      // With no topic the key is not sent and the server picks its own.
       expect(remote.putCategories.single.topicId, isNull);
     });
   });
 
   group('правка', () {
-    /// Урок в кеше, поверх которого идёт правка.
+    /// The cached lesson the edit is applied on top of.
     void seedCache({int version = 3}) {
       local.lessons['lesson-1'] = LessonModel.fromDto(
         LessonDto.fromJson(lessonJson(version: version)),
@@ -532,8 +530,7 @@ void main() {
       seedCache();
       final remote = FakeRemoteDataSource();
 
-      // Экран правки категории не трогает, поэтому в урок они не попали, —
-      // но не отправить их значило бы попросить сервер их потерять.
+      // `PUT` replaces the whole lesson, so categories are resent as is.
       await build(remote).updateLesson(lessonToSave());
 
       expect(remote.putCategories.single.accent, LessonAccent.us);
@@ -567,8 +564,7 @@ void main() {
         ),
       );
 
-      // Молча перезаписывать чужую версию нельзя, но переписать правку поверх
-      // свежей пользователь должен с актуальными данными.
+      // On a conflict the fresh version must end up in the cache.
       final cached = local.lessons['lesson-1']!;
       expect(cached.version, 4);
       expect(cached.title, 'С другого устройства');
@@ -635,13 +631,12 @@ void main() {
 
       expect(local.lessons, isEmpty);
       expect(remote.sinceCalls.single, '2026-07-28T09:00:00.000Z');
-      // Осиротевшее аудио уходит следом.
+      // Orphaned audio is removed right after.
       expect(cache.files, isEmpty);
     });
 
     test('аудио, нужное другому уроку, при чистке остаётся', () async {
-      // Сервер дедуплицирует загрузки по sha256, поэтому один и тот же файл
-      // может быть у нескольких уроков.
+      // One `audio_id` may belong to several lessons.
       for (final id in ['a', 'b']) {
         local.lessons[id] = LessonModel.fromDto(
           LessonDto.fromJson(lessonJson(id: id)),

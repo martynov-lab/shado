@@ -6,7 +6,7 @@ import 'auth_desktop_layout.dart';
 import 'auth_mobile_layout.dart';
 import 'auth_tablet_layout.dart';
 
-/// Тело экрана входа: одна и та же форма в трёх раскладках макета.
+/// Login screen body: the same form in three layouts.
 class AuthView extends StatelessWidget {
   const AuthView({super.key, required this.form, required this.isRegistration});
 

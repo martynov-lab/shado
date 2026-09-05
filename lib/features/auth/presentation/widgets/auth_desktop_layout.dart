@@ -4,7 +4,7 @@ import 'package:shado/theme/theme.dart';
 
 import 'auth_brand_panel.dart';
 
-/// Десктоп: брендовая панель слева, форма справа.
+/// Desktop: brand panel on the left, form on the right.
 class AuthDesktopLayout extends StatelessWidget {
   const AuthDesktopLayout({
     super.key,
@@ -15,7 +15,7 @@ class AuthDesktopLayout extends StatelessWidget {
   final Widget form;
   final bool isRegistration;
 
-  /// Пропорция колонок из макета — 44% под панель.
+  /// Column ratio from the design — 44% for the panel.
   static const int _brandFlex = 44;
   static const int _formFlex = 56;
 

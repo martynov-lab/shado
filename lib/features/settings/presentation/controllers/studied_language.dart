@@ -1,8 +1,4 @@
-/// Изучаемый язык — короткий код (`studied_language`, §6) с подписью для UI.
-///
-/// Список закрытый на клиенте: сервер хранит произвольный код, а мы показываем
-/// знакомые названия. Незнакомый код не теряем — [studiedLanguageLabel]
-/// возвращает его как есть.
+/// Studied language: the protocol code and a UI label.
 enum StudiedLanguage {
   en('en', 'Английский'),
   es('es', 'Испанский'),
@@ -17,13 +13,13 @@ enum StudiedLanguage {
 
   const StudiedLanguage(this.code, this.label);
 
-  /// Код в протоколе сервера.
+  /// Code in the server protocol.
   final String code;
 
-  /// Название на русском для списка и строки настроек.
+  /// Language name for the UI.
   final String label;
 
-  /// Язык по коду; `null` — код незнакомый (или пустой).
+  /// Language by code; `null` when the code is unknown or empty.
   static StudiedLanguage? parse(String? code) {
     if (code == null || code.isEmpty) return null;
     for (final language in StudiedLanguage.values) {
@@ -33,8 +29,7 @@ enum StudiedLanguage {
   }
 }
 
-/// Подпись изучаемого языка для UI: название знакомого кода или сам код, если
-/// он незнаком. `null`/пустой — «Не выбран».
+/// Studied language label; an unknown code is returned as is.
 String studiedLanguageLabel(String? code) {
   if (code == null || code.isEmpty) return 'Не выбран';
   return StudiedLanguage.parse(code)?.label ?? code;

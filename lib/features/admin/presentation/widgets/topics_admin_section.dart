@@ -12,8 +12,7 @@ import 'admin_error_view.dart';
 import 'delete_topic_dialog.dart';
 import 'topic_tile.dart';
 
-/// Справочник тем во вкладке «Управление» (owner): добавление, переименование и
-/// удаление (§8.2). Без собственного каркаса — встраивается в [ManagementPage].
+/// Topic directory: create, rename and delete.
 class TopicsAdminSection extends ConsumerWidget {
   const TopicsAdminSection({super.key});
 
@@ -63,7 +62,7 @@ class TopicsAdminSection extends ConsumerWidget {
                 return TopicTile(
                   topic: topic,
                   onRename: () => _rename(context, ref, topic),
-                  // Тему по умолчанию удалять нельзя — переименовать можно.
+                  // The default topic cannot be deleted, only renamed.
                   onDelete: topic.isDefault
                       ? null
                       : () => _delete(context, ref, topic),
@@ -114,8 +113,7 @@ class TopicsAdminSection extends ConsumerWidget {
     );
   }
 
-  /// Лист ввода названия. Возвращает непустое имя без пробелов по краям или
-  /// `null`, если отменили либо оставили пустым.
+  /// Name input sheet; `null` when cancelled or left empty.
   Future<String?> _promptName(
     BuildContext context, {
     required String title,
@@ -134,8 +132,7 @@ class TopicsAdminSection extends ConsumerWidget {
     return (name == null || name.isEmpty) ? null : name;
   }
 
-  /// Выполняет правку и показывает результат. Текст ошибки берём у сервера:
-  /// пустое имя и повтор приходят `422` с готовым сообщением (§8.2).
+  /// Runs the edit and reports the result.
   Future<void> _run(
     BuildContext context,
     Future<void> Function() action, {

@@ -3,28 +3,25 @@ import 'package:dio/dio.dart';
 import '../../../../core/network/api_client.dart';
 import '../models/folder_dto.dart';
 
-/// Страница списка папок.
+/// A page of the folder list.
 class FolderPage {
   const FolderPage({required this.items, this.nextCursor});
 
   final List<FolderDto> items;
 
-  /// `null` — страниц больше нет.
+  /// `null` when there are no more pages.
   final String? nextCursor;
 }
 
-/// Папки на сервере — источник истины (§6.2). UUID папки генерит клиент,
-/// создание идёт `PUT`-ом (идемпотентно, как у уроков).
+/// Server-side folders; the client generates the UUID and creates via `PUT`.
 abstract interface class FolderRemoteDataSource {
-  /// Список папок. Без [since] — только живые, с [since] — дельта с удалёнными.
-  /// В списке у папки лишь `lesson_count`, без самих уроков.
+  /// Folder list; with [since] a delta arrives, deleted ones included.
   Future<FolderPage> list({String? since, int? limit, String? cursor});
 
-  /// Папка целиком, с её уроками.
+  /// The whole folder with its lessons.
   Future<FolderDto> getFolder(String id);
 
-  /// Создаёт ([version] == null) или правит папку. Правка требует `If-Match`
-  /// с [version]; при устаревшей версии сервер отвечает `409`.
+  /// Creates or updates a folder; a `null` [version] means creation.
   Future<FolderDto> putFolder({
     required String id,
     required String title,
@@ -35,11 +32,10 @@ abstract interface class FolderRemoteDataSource {
 
   Future<void> deleteFolder(String id);
 
-  /// Добавляет уроки в папку. Аддитивно и идемпотентно — `If-Match` не нужен.
-  /// Возвращает обновлённую папку.
+  /// Adds lessons to a folder and returns the updated folder.
   Future<FolderDto> addLessons(String id, List<String> lessonIds);
 
-  /// Убирает урок из папки (саму папку и урок не трогает).
+  /// Removes a lesson from a folder without touching the lesson.
   Future<void> removeLesson(String folderId, String lessonId);
 }
 
@@ -82,12 +78,10 @@ class ApiFolderRemoteDataSource implements FolderRemoteDataSource {
       data: {
         'title': title,
         'created_at': createdAt.toUtc().toIso8601String(),
-        // Публичность шлём только когда автор ей управляет (owner); иначе
-        // ключ не отправляем и решает сервер.
+        // Visibility is sent only when the author controls it.
         'is_public': ?isPublic,
       },
-      // Создание идёт без `If-Match` — папки ещё нет; правка без него была бы
-      // конфликтом.
+      // Edits carry `If-Match`, creation does not.
       options: version == null
           ? null
           : Options(headers: {'If-Match': '"$version"'}),

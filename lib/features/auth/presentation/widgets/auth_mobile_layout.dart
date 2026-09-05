@@ -5,7 +5,7 @@ import 'package:shado/theme/theme.dart';
 import 'auth_brand_row.dart';
 import 'auth_brand_surface.dart';
 
-/// Телефон: брендовая полоса на градиенте во всю ширину, под ней — форма.
+/// Phone: a full-width brand strip on a gradient with the form below.
 class AuthMobileLayout extends StatelessWidget {
   const AuthMobileLayout({super.key, required this.form});
 
@@ -16,8 +16,7 @@ class AuthMobileLayout extends StatelessWidget {
     child: Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        // Градиент во всю ширину экрана — брендовая полоса вместо маленького
-        // квадрата с логотипом, который «висел» с воздухом по бокам.
+        // Full-width brand strip on a gradient.
         const AuthBrandSurface(
           padding: EdgeInsets.fromLTRB(
             AppSpacing.s5,

@@ -4,10 +4,7 @@ import 'package:shado/theme/theme.dart';
 import 'package:shado/widgets/app_focus_ring.dart';
 import 'package:shado/widgets/app_tap_target.dart';
 
-/// Флажок: скруглённый квадрат, при выборе заливается primary.
-///
-/// [value] равный `null` — промежуточное состояние (часть вложенных пунктов
-/// выбрана). Нажатие на него включает флажок целиком.
+/// Checkbox with an indeterminate state when `value == null`.
 class AppCheckbox extends StatefulWidget {
   const AppCheckbox({
     super.key,
@@ -17,13 +14,13 @@ class AppCheckbox extends StatefulWidget {
     this.semanticLabel,
   });
 
-  /// `true` — выбран, `false` — снят, `null` — промежуточное состояние.
+  /// `true` checked, `false` unchecked, `null` indeterminate.
   final bool? value;
 
-  /// `null` выключает флажок.
+  /// `null` disables the checkbox.
   final ValueChanged<bool>? onChanged;
 
-  /// Подпись справа. Нажатие по ней тоже переключает флажок.
+  /// Label on the right; tapping it toggles the checkbox too.
   final String? label;
   final String? semanticLabel;
 

@@ -14,8 +14,7 @@ import 'home_section_header.dart';
 import 'home_stat.dart';
 import 'home_week_dots.dart';
 
-/// Главная на десктопе: основная колонка с дашбордом и боковая панель справа
-/// (неделя, цель, минуты). Левое меню приложения рисует каркас [MainShell].
+/// Home on desktop: a dashboard column and a side panel on the right.
 class HomeDesktopView extends StatelessWidget {
   const HomeDesktopView({
     super.key,

@@ -11,11 +11,7 @@ import 'settings_section.dart';
 import 'settings_value.dart';
 import 'studied_language_sheet.dart';
 
-/// Раздел «Язык»: изучаемый язык (редактируется) плюс язык интерфейса и
-/// перевода.
-///
-/// Интерфейс и перевод пока заглушки из макета — их привязку добавим отдельной
-/// задачей.
+/// Language section: studied, interface and translation languages.
 class LanguageSettingsSection extends ConsumerWidget {
   const LanguageSettingsSection({super.key});
 

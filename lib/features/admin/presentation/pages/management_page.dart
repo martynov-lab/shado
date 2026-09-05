@@ -5,9 +5,7 @@ import 'package:shado/theme/theme.dart';
 import '../widgets/completion_threshold_section.dart';
 import '../widgets/topics_admin_section.dart';
 
-/// Экран «Управление» — раздел владельца: порог пройденности и справочник тем
-/// (§8.2, §12.3). Открывается из меню аккаунта; пользователи вынесены на
-/// отдельный экран ([AdminUsersPage]).
+/// Management screen: completion threshold and the topic directory.
 class ManagementPage extends StatelessWidget {
   const ManagementPage({super.key});
 

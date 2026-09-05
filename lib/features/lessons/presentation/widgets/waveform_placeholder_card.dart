@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-/// Место волны, пока её нет: ждём загрузку файла или ещё не выбрали аудио.
+/// Waveform placeholder while the file uploads or no audio is chosen.
 class WaveformPlaceholderCard extends StatelessWidget {
   const WaveformPlaceholderCard({
     super.key,

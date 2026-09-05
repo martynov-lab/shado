@@ -16,7 +16,7 @@ import 'lesson_providers.dart';
 import 'lessons_controller.dart';
 import 'library_controller.dart';
 
-/// Состояние формы создания урока.
+/// State of the lesson creation form.
 class AddLessonFormState {
   const AddLessonFormState({
     this.title = '',
@@ -42,78 +42,69 @@ class AddLessonFormState {
   final String title;
   final String text;
 
-  /// Акцент и уровень — обязательный выбор (§6). `null` — ещё не выбрали, и
-  /// урок отправлять нельзя.
+  /// Accent and level are required; `null` means not chosen yet.
   final LessonAccent? accent;
   final LessonLevel? level;
 
-  /// Тема из справочника; `null` — «без темы», сервер поставит свою.
+  /// Topic from the directory; `null` lets the server pick the default.
   final String? topicId;
 
-  /// Аудио, принятое сервером; `null` — файл ещё не выбран или не загружен.
+  /// Audio accepted by the server; `null` when nothing is uploaded yet.
   final String? audioId;
 
-  /// Копия файла в кеше приложения: её играет плеер экрана, чтобы метки можно
-  /// было расставлять на слух до сохранения урока.
+  /// Copy of the file in the app cache — the screen player uses it.
   final String? audioPath;
 
   final String? audioFileName;
 
-  /// Длительность выбранного файла по версии сервера; `0` — файла ещё нет.
+  /// File duration; `0` when there is no file yet.
   final int durationMs;
 
-  /// Отрезок файла, оставленный обрезкой. Пока не обрезали — файл целиком.
+  /// File range left by trimming.
   final AudioTrim trim;
 
-  /// Отрезок, который метки обрезки показывают прямо сейчас. `null` — обрезка
-  /// не идёт.
+  /// Range under the trim handles; `null` when trimming is off.
   final AudioTrim? pendingTrim;
 
-  /// Разметка кусков на волне, `N + 1` значение. Пуста, пока нет либо текста,
-  /// либо аудио.
+  /// Segment layout on the waveform, `N + 1` values.
   final List<int> boundaries;
 
-  /// Флажок у кнопки воспроизведения: новая метка садится в позицию ползунка.
-  /// Снят — метки копятся слева направо, вплотную за предыдущей.
+  /// Whether a new marker lands at the playhead position.
   final bool markerAtPlayhead;
 
-  /// Публичность урока — тумблером управляет только owner. Для остальных
-  /// авторов значение вычисляется по роли в [AddLessonController.submit].
+  /// Lesson visibility; only the owner controls the switch.
   final bool isPublic;
 
-  /// Идёт отправка файла на сервер или озвучка через ИИ — оба показывают одну
-  /// плашку прогресса.
+  /// A file upload or an AI voice-over is running.
   final bool isUploading;
 
-  /// Отправка — это озвучка через ИИ, а не загрузка файла: у неё нет процентов,
-  /// поэтому подпись прогресса другая.
+  /// An AI voice-over is running — it reports no percentage.
   final bool isSynthesizing;
 
-  /// Доля отправленного, `0..1`.
+  /// Uploaded share, `0..1`.
   final double uploadProgress;
 
   final bool isSubmitting;
 
   int get segmentCount => CreateLesson.splitIntoSegments(text).length;
 
-  /// Волну показываем, когда есть что показывать: файл загружен и разобран.
+  /// Whether there is anything to show on the waveform.
   bool get hasWaveform => audioId != null && durationMs > 0;
 
   bool get isTrimming => pendingTrim != null;
 
-  /// Что сейчас в окне волны: во время обрезки — файл целиком, чтобы обрезанное
-  /// можно было вернуть обратно.
+  /// What the waveform window shows: the whole file when trimming, else [trim].
   AudioTrim get view => isTrimming ? AudioTrim.full(durationMs) : trim;
 
   bool get canSubmit =>
       !isSubmitting &&
       !isUploading &&
-      // Незавершённая обрезка — сначала «Применить» или «Отменить».
+      // An unfinished trim must be applied or cancelled first.
       !isTrimming &&
       title.trim().isNotEmpty &&
       segmentCount > 0 &&
       audioId != null &&
-      // Без акцента и уровня сервер ответит `422` — не даём и пробовать.
+      // Without an accent and a level the server answers `422`.
       accent != null &&
       level != null;
 
@@ -164,7 +155,7 @@ class AddLessonFormState {
 }
 
 class AddLessonController extends Notifier<AddLessonFormState> {
-  /// Позволяет прервать долгую загрузку — на 50 МБ это не мгновение.
+  /// Cancel token of the running upload or voice-over.
   CancelToken? _uploadCancel;
 
   @override
@@ -175,7 +166,7 @@ class AddLessonController extends Notifier<AddLessonFormState> {
 
   void setTitle(String title) => state = state.copyWith(title: title);
 
-  /// Текст задаёт число кусков, поэтому разметка подстраивается под него.
+  /// Changes the text and refits the layout.
   void setText(String text) {
     final next = state.copyWith(text: text);
     state = next.copyWith(boundaries: _fitBoundaries(next));
@@ -184,19 +175,11 @@ class AddLessonController extends Notifier<AddLessonFormState> {
   void setBoundaries(List<int> boundaries) =>
       state = state.copyWith(boundaries: boundaries);
 
-  /// Флажок «Метка по ползунку» у кнопки воспроизведения.
+  /// The marker-at-playhead checkbox next to the play button.
   void setMarkerAtPlayhead(bool value) =>
       state = state.copyWith(markerAtPlayhead: value);
 
-  /// Ставит новую метку №[ordinal] (1-based) в тексте, а парную ей границу — на
-  /// волну.
-  ///
-  /// Куда именно, решает флажок [AddLessonFormState.markerAtPlayhead]. Стоит —
-  /// граница садится в текущую позицию плеера [playheadMs]: так их и
-  /// расставляют на слух, доведя плеер до паузы между фразами. Снят — граница
-  /// встаёт вплотную правее предыдущей, а разносят их потом руками по волне.
-  /// Уже расставленные метки правее в обоих случаях остаются на местах. Пока
-  /// нет аудио, разметки ещё нет — фиксируем только текст.
+  /// Puts marker [ordinal] into the text and its boundary on the waveform.
   void insertMarker(String text, int ordinal, int playheadMs) {
     final boundaries = state.boundaries;
     final inSync = boundaries.length == state.segmentCount + 1;
@@ -205,8 +188,7 @@ class AddLessonController extends Notifier<AddLessonFormState> {
       state = next.copyWith(boundaries: _fitBoundaries(next));
       return;
     }
-    // Края разметки прибиты к границам оставленного отрезка — внутри них и
-    // сажаем метку.
+    // The marker is placed inside the range that is kept.
     final span = AudioTrim(startMs: boundaries.first, endMs: boundaries.last);
     final ms = state.markerAtPlayhead
         ? playheadMs
@@ -216,9 +198,7 @@ class AddLessonController extends Notifier<AddLessonFormState> {
     );
   }
 
-  /// Убирает метку №[ordinal] (1-based) сразу из текста и с волны: исчезает и
-  /// разделитель, и парная ему граница `boundaries[ordinal]`. Остальные границы
-  /// остаются на местах — в отличие от [setText], который переразбил бы хвост.
+  /// Removes marker [ordinal] from the text and its boundary from the wave.
   void removeMarker(int ordinal) {
     final indices = marks.markerIndices(state.text);
     if (ordinal < 1 || ordinal > indices.length) return;
@@ -238,17 +218,16 @@ class AddLessonController extends Notifier<AddLessonFormState> {
 
   void setLevel(LessonLevel? level) => state = state.copyWith(level: level);
 
-  /// Тумблер «Приватный урок» (только для owner): `true` — урок приватный.
+  /// The private lesson switch; available to the owner only.
   void setPrivate(bool isPrivate) =>
       state = state.copyWith(isPublic: !isPrivate);
 
-  /// `null` — «без темы»: сервер поставит уроку тему по умолчанию.
+  /// Picks a topic; `null` means no topic.
   void setTopic(String? topicId) => state = topicId == null
       ? state.copyWith(clearTopic: true)
       : state.copyWith(topicId: topicId);
 
-  /// Убирает выбранную тему, если её больше нет в справочнике: пока форму
-  /// заполняли, тему могли удалить на другом устройстве.
+  /// Drops the chosen topic when it is gone from the directory.
   void dropTopicUnless(Iterable<String> availableIds) {
     final selected = state.topicId;
     if (selected == null || availableIds.contains(selected)) return;
@@ -257,10 +236,9 @@ class AddLessonController extends Notifier<AddLessonFormState> {
 
   void reset() => state = const AddLessonFormState();
 
-  // --- Обрезка ---------------------------------------------------------------
+  // --- Trimming --------------------------------------------------------------
 
-  /// Включает режим обрезки: метки встают по краям того, что оставлено сейчас,
-  /// а в окно возвращается файл целиком — отрезанное можно вернуть.
+  /// Enters trim mode and brings the whole file back into the window.
   void startTrim() {
     if (!state.hasWaveform || state.isTrimming) return;
     state = state.copyWith(pendingTrim: state.trim);
@@ -273,22 +251,20 @@ class AddLessonController extends Notifier<AddLessonFormState> {
 
   void cancelTrim() => state = state.copyWith(clearPendingTrim: true);
 
-  /// Применяет обрезку: метки кусков переезжают внутрь нового отрезка, дальше
-  /// урок размечают уже по нему.
+  /// Applies the trim, moving segment markers inside the new range.
   void applyTrim() {
     final pending = state.pendingTrim;
     if (pending == null) return;
     final next = state.copyWith(trim: pending, clearPendingTrim: true);
     state = next.copyWith(
-      // Число кусков обрезка не меняет — двигаются только сами метки. Разметка,
-      // отставшая от текста, всё равно разложится заново.
+      // Trimming keeps the segment count; only the markers move.
       boundaries: next.boundaries.length == next.segmentCount + 1
           ? SegmentBoundaries.refit(next.boundaries, next.trim)
           : _fitBoundaries(next),
     );
   }
 
-  /// Подгоняет разметку под текущие текст и обрезку.
+  /// Refits the layout to the current text and trim.
   List<int> _fitBoundaries(AddLessonFormState form) {
     if (form.durationMs <= 0 || form.segmentCount == 0) return const [];
     return SegmentBoundaries.resize(
@@ -298,13 +274,9 @@ class AddLessonController extends Notifier<AddLessonFormState> {
     );
   }
 
-  // --- Аудио -----------------------------------------------------------------
+  // --- Audio -----------------------------------------------------------------
 
-  /// Выбирает файл и сразу отправляет его на сервер.
-  ///
-  /// Длительность и пики считает сервер, поэтому до ответа волны нет — зато
-  /// после него не нужен ни локальный замер, ни собственный декодер.
-  /// Возвращает `true`, если файл выбран.
+  /// Picks a file and uploads it; `true` when a file was chosen.
   Future<bool> pickAudio() async {
     final result = await FilePicker.pickFiles(
       type: FileType.custom,
@@ -333,7 +305,7 @@ class AddLessonController extends Notifier<AddLessonFormState> {
         filePath: path,
         cancel: cancelToken,
         onProgress: (sent, total) {
-          // Пока файл летел, могли выбрать другой — тот прогресс уже не наш.
+          // Progress of a cancelled upload is no longer ours.
           if (_uploadCancel != cancelToken || total <= 0) return;
           state = state.copyWith(uploadProgress: sent / total);
         },
@@ -343,7 +315,7 @@ class AddLessonController extends Notifier<AddLessonFormState> {
         audioId: upload.audioId,
         audioPath: upload.localPath.isEmpty ? null : upload.localPath,
         durationMs: upload.durationMs,
-        // Новый файл приходит необрезанным.
+        // A new file arrives untrimmed.
         trim: AudioTrim.full(upload.durationMs),
         isUploading: false,
         uploadProgress: 1,
@@ -365,15 +337,12 @@ class AddLessonController extends Notifier<AddLessonFormState> {
     return true;
   }
 
-  /// Озвучивает текущий текст через ИИ и подставляет результат как аудио урока.
-  ///
-  /// Обрабатывается так же, как загрузка файла: результат уже в кеше, дальше
-  /// урок размечают и создают по `audio_id`. Возвращает `true`, если синтез
-  /// запущен (в тексте есть что озвучивать).
+  /// Runs an AI voice-over and uses the result as the lesson audio;
+  /// `true` when synthesis has started.
   Future<bool> synthesizeTts() async {
     if (SynthesizeTts.prepareText(state.text).isEmpty) return false;
 
-    // Как и загрузка: прежний синтез/загрузку прерываем — их результат уже не наш.
+    // Abort the previous upload or synthesis.
     _uploadCancel?.cancel();
     final cancelToken = _uploadCancel = CancelToken();
     state = state.copyWith(
@@ -421,7 +390,7 @@ class AddLessonController extends Notifier<AddLessonFormState> {
     return true;
   }
 
-  /// Прерывает загрузку или озвучку: файл остаётся невыбранным.
+  /// Aborts the upload or voice-over and clears the chosen file.
   void cancelUpload() {
     _uploadCancel?.cancel();
     _uploadCancel = null;
@@ -434,7 +403,7 @@ class AddLessonController extends Notifier<AddLessonFormState> {
     );
   }
 
-  /// Создаёт урок и обновляет список на главной.
+  /// Creates a lesson and refreshes the home list.
   Future<Lesson> submit() async {
     final audioId = state.audioId;
     if (audioId == null) {
@@ -461,7 +430,7 @@ class AddLessonController extends Notifier<AddLessonFormState> {
         ),
       );
       ref.invalidate(lessonsControllerProvider);
-      // Новый урок ложится в корень библиотеки — перечитываем ленту.
+      // A new lesson lands in the library root.
       ref.invalidate(libraryControllerProvider);
       state = const AddLessonFormState();
       return lesson;
@@ -471,9 +440,7 @@ class AddLessonController extends Notifier<AddLessonFormState> {
     }
   }
 
-  /// Публичность урока для отправки, по роли автора:
-  /// owner управляет тумблером, user-pro всегда приватен, для остальных
-  /// (admin) решает сервер — ключ не шлём.
+  /// Lesson visibility based on the author role; `null` lets the server pick.
   bool? _isPublicForRole() {
     final role = ref.read(authControllerProvider).user?.role;
     return switch (role) {

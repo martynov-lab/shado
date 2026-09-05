@@ -11,7 +11,7 @@ import 'package:shado/features/lessons/presentation/controllers/lessons_controll
 import 'package:shado/features/progress/domain/entities/progress_summary.dart';
 import 'package:shado/features/progress/presentation/controllers/progress_providers.dart';
 
-/// Сессия уже поднята — интересует только прогрев после входа.
+/// The session is already up; only the warm-up after sign-in matters.
 class _FakeAuthController extends AuthController {
   @override
   AuthState build() => AuthState(
@@ -25,14 +25,13 @@ class _FakeAuthController extends AuthController {
   );
 }
 
-/// Список уроков нас здесь не занимает.
+/// The lesson list is of no interest here.
 class _FakeLessons extends LessonsController {
   @override
   Future<List<Lesson>> build() async => const <Lesson>[];
 }
 
-/// Сводка, приход которой контролирует тест: пока future не завершён — прогрев
-/// висит в загрузке, и роутер обязан держать заставку.
+/// A summary whose arrival moment the test controls.
 class _HeldProgressSummary extends ProgressSummaryController {
   _HeldProgressSummary(this.pending);
 
@@ -87,11 +86,11 @@ void main() {
     );
     await tester.pump();
 
-    // Сводка ещё в пути — на экране заставка, а не главный.
+    // The summary is still in flight, so the splash shows, not the home.
     expect(find.text('Shadowing'), findsOneWidget);
     expect(find.byIcon(Icons.account_circle_outlined), findsNothing);
 
-    // Сводка пришла — прогрев завершился, роутер уводит на главный.
+    // The summary arrived, warm-up ended and the router goes home.
     completer.complete(_summary);
     await tester.pumpAndSettle();
 

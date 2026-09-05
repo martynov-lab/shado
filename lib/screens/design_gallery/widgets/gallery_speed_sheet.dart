@@ -4,10 +4,7 @@ import 'package:shado/screens/design_gallery/gallery_speed.dart';
 import 'package:shado/theme/theme.dart';
 import 'package:shado/widgets/widgets.dart';
 
-/// Содержимое модального листа витрины: выбор скорости и кнопка «Готово».
-///
-/// Выбор держит у себя — пока лист открыт, он живёт своей жизнью, а наружу
-/// уходит уже выбранное значение.
+/// Gallery sheet content: speed picker and the confirm button.
 class GallerySpeedSheet extends StatefulWidget {
   const GallerySpeedSheet({
     super.key,

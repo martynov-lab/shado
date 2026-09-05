@@ -12,11 +12,7 @@ import 'lesson_gradients.dart';
 import 'lesson_labels.dart';
 import 'lesson_player_waveform.dart';
 
-/// Тёмная панель плеера: текущий сегмент, волна, тайминг и транспорт
-/// (назад / играть / вперёд, скорость, повтор).
-///
-/// Фон — «обратная» поверхность [AppColors.surfaceInv], текст и кнопки на ней —
-/// [AppColors.textInv], поэтому панель контрастно выделяется в обеих темах.
+/// Dark player panel: segment, waveform, timing and transport buttons.
 class LessonPlayerPanel extends ConsumerWidget {
   const LessonPlayerPanel({super.key, required this.lessonId});
 
@@ -31,7 +27,7 @@ class LessonPlayerPanel extends ConsumerWidget {
 
     final fg = lessonPlayerForeground;
     final range = state.playerRange;
-    // Для одного куска — «Сегмент 03», для отрезка — «Сегменты 03–05».
+    // One segment gets a singular caption, a range gets a plural one.
     final rangeLabel = range.isSingle
         ? 'Сегмент ${segmentNumber(range.start)}'
         : 'Сегменты ${segmentNumber(range.start)}–${segmentNumber(range.end)}';
@@ -133,9 +129,7 @@ class LessonPlayerPanel extends ConsumerWidget {
     );
   }
 
-  /// Открывает тот же список скоростей, что и в настройках, и применяет выбор к
-  /// текущему уроку. Скорость здесь действует на сессию (в отличие от скорости
-  /// по умолчанию из настроек), поэтому идёт через контроллер урока, а не в prefs.
+  /// Opens the speed list and applies the choice to the current lesson.
   Future<void> _pickSpeed(
     BuildContext context,
     WidgetRef ref,

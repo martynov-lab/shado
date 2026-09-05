@@ -2,20 +2,7 @@ import 'package:flutter/material.dart';
 
 import 'package:shado/widgets/app_chip.dart';
 
-/// Чип-фильтр: то же, что [AppChip], но переключается сам и показывает галочку
-/// в выбранном состоянии.
-///
-/// Отдельный виджет, а не флаг у [AppChip], потому что у него другая роль в
-/// разметке: набор фильтров — это множественный выбор, и скринридер должен
-/// объявлять элементы как переключаемые.
-///
-/// ```dart
-/// AppFilterChip(
-///   label: 'Идиомы',
-///   selected: tags.contains(tag),
-///   onSelected: (value) => setState(() => value ? tags.add(tag) : tags.remove(tag)),
-/// )
-/// ```
+/// Toggleable filter chip; shows a check mark when selected.
 class AppFilterChip extends StatelessWidget {
   const AppFilterChip({
     super.key,
@@ -30,10 +17,10 @@ class AppFilterChip extends StatelessWidget {
   final String label;
   final bool selected;
 
-  /// `null` выключает фильтр.
+  /// `null` disables the filter.
   final ValueChanged<bool>? onSelected;
 
-  /// Иконка для невыбранного состояния; выбранное показывает галочку.
+  /// Icon for the unselected state.
   final IconData? icon;
 
   final AppChipStyle style;

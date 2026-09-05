@@ -1,4 +1,4 @@
-/// Неотправленная дневная дельта активности.
+/// Pending daily activity delta.
 class PendingEvents {
   const PendingEvents({required this.listenedMs, required this.segmentRepeats});
 
@@ -10,33 +10,33 @@ class PendingEvents {
   final int listenedMs;
   final int segmentRepeats;
 
-  /// Нечего слать — не дёргаем сеть.
+  /// Nothing to send — skip the network call.
   bool get isEmpty => listenedMs <= 0 && segmentRepeats <= 0;
 }
 
-/// Локальные счётчики прогресса. Живут в отдельной БД: минуты и повторы терять
-/// нельзя, поэтому миграции здесь только аддитивные (в отличие от кеша уроков).
+/// Local progress counters in a separate database; minutes and repeats must
+/// not be lost, so migrations here are additive only.
 abstract interface class ProgressLocalDataSource {
-  /// +1 повтор сегмента: и в счётчик по сегменту (для «пройдено» и прогресс-бара
-  /// карточки), и в неотправленную дневную дельту.
+  /// Adds one segment repeat: to the per-segment counter used for completion
+  /// and to the pending daily delta.
   Future<void> bumpSegment(String lessonId, int segmentIndex);
 
-  /// Копит прослушанные миллисекунды в неотправленной дельте.
+  /// Accumulates listened milliseconds in the pending delta.
   Future<void> addListened(int ms);
 
-  /// Повторы по сегментам урока: `segmentIndex → reps`.
+  /// Lesson segment repeats: `segmentIndex → reps`.
   Future<Map<int, int>> readReps(String lessonId);
 
   Future<PendingEvents> readPending();
 
-  /// Вычитает уже отправленное (а не обнуляет) — активность, накопившаяся во
-  /// время запроса, не теряется.
+  /// Subtracts what was sent instead of resetting, so activity collected
+  /// during the request is kept.
   Future<void> subtractPending(int listenedMs, int segmentRepeats);
 
   Future<bool> isCompletedSent(String lessonId);
 
   Future<void> markCompletedSent(String lessonId);
 
-  /// Стирает весь прогресс: выход из аккаунта.
+  /// Wipes all progress on sign-out.
   Future<void> clear();
 }

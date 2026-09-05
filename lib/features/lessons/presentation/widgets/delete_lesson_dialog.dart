@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-/// Подтверждение удаления урока. Возвращает `true`, если удалять.
+/// Lesson deletion confirmation; `true` means delete.
 class DeleteLessonDialog extends StatelessWidget {
   const DeleteLessonDialog({super.key, required this.lessonTitle});
 

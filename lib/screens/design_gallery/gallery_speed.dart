@@ -1,5 +1,4 @@
-/// Скорость воспроизведения — демонстрационные данные витрины: на ней
-/// показываются переключатели, сегменты и модальный лист.
+/// Playback speed — demo data for the gallery.
 enum GallerySpeed {
   slow,
   normal,

@@ -1,10 +1,5 @@
-// Границы воспроизведения на живом плеере: цикл должен начинать новый круг с
-// начала отрезка, а кусок без цикла — доигрывать себя и останавливаться на
-// своей границе.
-//
-// Тест именно интеграционный: до `LoopMode.one` на `ClippingAudioSource` всё это
-// ломалось внутри media_kit, а не в нашем коде — мимо реального плеера такую
-// поломку не увидеть.
+// Playback boundaries on a live player: a loop restarts at the range start
+// and a segment without a loop stops at its own boundary.
 import 'dart:io';
 import 'dart:math' as math;
 import 'dart:typed_data';
@@ -26,7 +21,7 @@ import 'package:shado/features/lessons/presentation/controllers/lesson_providers
 import 'package:shado/features/settings/domain/entities/playback_settings.dart';
 import 'package:shado/features/settings/presentation/controllers/playback_settings_controller.dart';
 
-/// Ровный тон на [seconds] секунд: слушать его некому, важны только позиции.
+/// A flat tone of [seconds] seconds; only the positions matter.
 File _writeTestWav(String path, {int seconds = 4}) {
   const sampleRate = 44100;
   final frames = sampleRate * seconds;
@@ -43,7 +38,7 @@ File _writeTestWav(String path, {int seconds = 4}) {
   ascii(12, 'fmt ');
   data.setUint32(16, 16, Endian.little);
   data.setUint16(20, 1, Endian.little); // PCM
-  data.setUint16(22, 1, Endian.little); // моно
+  data.setUint16(22, 1, Endian.little); // mono
   data.setUint32(24, sampleRate, Endian.little);
   data.setUint32(28, sampleRate * 2, Endian.little);
   data.setUint16(32, 2, Endian.little);
@@ -57,7 +52,7 @@ File _writeTestWav(String path, {int seconds = 4}) {
   return File(path)..writeAsBytesSync(data.buffer.asUint8List());
 }
 
-/// Отдаёт единственный урок: до сети и кеша этот тест не касается.
+/// Returns a single lesson; this test touches neither network nor cache.
 class _OneLessonRepository implements LessonRepository {
   _OneLessonRepository(this.lesson);
 
@@ -114,9 +109,7 @@ class _OneLessonRepository implements LessonRepository {
   Future<void> clearCache() async {}
 }
 
-/// Фиксированные настройки воспроизведения: проверяем механику границ цикла, а не
-/// поведение по умолчанию. Большой лимит повторов держит цикл «бесконечным», а
-/// выключенные пауза и отсчёт не сдвигают позиции по времени.
+/// Fixed settings: an endless loop with no pause and no countdown.
 class _FixedPlaybackSettings extends PlaybackSettingsController {
   @override
   Future<PlaybackSettings> build() async => const PlaybackSettings(
@@ -132,7 +125,7 @@ void main() {
 
   const lessonId = 'playback-test';
 
-  /// Насколько позиция может отойти от границы: тик сторожа плюс точность seek.
+  /// How far the position may drift: the watcher tick plus seek accuracy.
   const toleranceMs = 80;
 
   late Directory tempDir;
@@ -146,8 +139,7 @@ void main() {
 
   tearDownAll(() => tempDir.deleteSync(recursive: true));
 
-  /// Четыре куска по секунде — границы кусков совпадают с круглыми позициями,
-  /// поэтому по позиции сразу видно, в каком куске звук.
+  /// A lesson of four one-second segments.
   Lesson buildLesson() => Lesson(
     id: lessonId,
     title: 'Проверка границ',
@@ -162,10 +154,10 @@ void main() {
     ],
   );
 
-  /// Готовый к работе контроллер урока с живым плеером.
+  /// A ready lesson controller with a live player.
   Future<LessonController> openLesson(ProviderContainer container) async {
     final provider = lessonControllerProvider(lessonId);
-    // autoDispose: без подписчика контроллер и его плеер закроются сразу.
+    // autoDispose: with no listener the controller and player close at once.
     container.listen(provider, (_, _) {});
     await container.read(provider.future);
     return container.read(provider.notifier);
@@ -186,7 +178,7 @@ void main() {
     return container;
   }
 
-  /// Лента позиций плеера за [ms] реального времени.
+  /// A stream of player positions over [ms] of real time.
   Future<List<int>> tracePositions(AudioPlayer player, int ms) async {
     final watch = Stopwatch()..start();
     final trace = <int>[];
@@ -204,7 +196,7 @@ void main() {
       final controller = await openLesson(container);
       final provider = lessonControllerProvider(lessonId);
 
-      // Тот самый сценарий: выбраны второй и третий куски (1000..3000 мс).
+      // The very case: the second and third segments (1000..3000 ms).
       controller.toggleSelection(1);
       controller.toggleSelection(2);
       expect(
@@ -212,19 +204,17 @@ void main() {
         const SegmentRange(1, 2),
       );
 
-      // Включаем повтор, выходим из режима выбора (отрезок остаётся заряжен в
-      // плеер) и запускаем его кнопкой плеера: он крутится по кругу как единый
-      // фрагмент.
+      // The loaded range loops as a single fragment.
       controller.toggleLoop();
       controller.finishSelecting();
       await controller.togglePlayCurrent();
       final player = container.read(lessonAudioPlayerProvider(lessonId));
 
-      // Два круга по 2000 мс с запасом на разгон.
+      // Two 2000 ms loops with room for the start-up.
       final trace = await tracePositions(player, 5200);
       await controller.togglePlayCurrent();
 
-      // Отбрасываем разгон: до первого seek позиция ещё стоит в нуле.
+      // Drop the start-up: before the first seek the position is still zero.
       final started = trace.indexWhere((ms) => ms >= 1000);
       expect(started, isNonNegative, reason: 'выделение так и не заиграло');
       final playing = trace.skip(started).toList();
@@ -240,7 +230,7 @@ void main() {
         reason: 'выделение заехало в четвёртый кусок: $playing',
       );
 
-      // Круг длиной 2000 мс: за 5 секунд их должно случиться не меньше двух.
+      // A 2000 ms loop: five seconds must fit at least two of them.
       var wraps = 0;
       for (var i = 1; i < playing.length; i++) {
         if (playing[i] < playing[i - 1] - toleranceMs) wraps++;
@@ -258,7 +248,7 @@ void main() {
       final provider = lessonControllerProvider(lessonId);
       final player = container.read(lessonAudioPlayerProvider(lessonId));
 
-      // Второй кусок: 1000..2000 мс.
+      // The second segment: 1000..2000 ms.
       await controller.togglePlay(1);
       final trace = await tracePositions(player, 2500);
 
@@ -285,12 +275,11 @@ void main() {
       final controller = await openLesson(container);
       final player = container.read(lessonAudioPlayerProvider(lessonId));
 
-      // Играем первый кусок (0..1000) и даём ему немного проиграться.
+      // Play the first segment (0..1000) and let it run for a bit.
       await controller.togglePlay(0);
       await Future<void>.delayed(const Duration(milliseconds: 300));
 
-      // Переключаемся на второй кусок (1000..2000) — он должен зазвучать сразу,
-      // а не после того, как первый доиграет себя целиком.
+      // The second segment plays at once without waiting for the first.
       await controller.next();
       final trace = await tracePositions(player, 1500);
 

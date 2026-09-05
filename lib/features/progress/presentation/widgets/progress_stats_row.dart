@@ -4,8 +4,8 @@ import 'package:shado/theme/theme.dart';
 
 import 'progress_stat.dart';
 
-/// Ряд плиток статистики. Каждый кортеж — подпись, число, единица (или `null`),
-/// дельта. Плитки делят ширину поровну.
+/// Row of stat tiles; each record holds a label, value, optional unit and a
+/// delta. Tiles split the width evenly.
 class ProgressStatsRow extends StatelessWidget {
   const ProgressStatsRow({super.key, required this.stats});
 
@@ -13,8 +13,7 @@ class ProgressStatsRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // IntrinsicHeight задаёт ряду конечную высоту, поэтому `stretch` выравнивает
-    // плитки по самой высокой, а не требует бесконечную высоту в прокрутке.
+    // IntrinsicHeight aligns the tiles to the tallest one.
     return IntrinsicHeight(
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.stretch,

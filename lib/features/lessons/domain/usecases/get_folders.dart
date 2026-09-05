@@ -1,7 +1,7 @@
 import '../entities/folder.dart';
 import '../repositories/folder_repository.dart';
 
-/// Список папок для главного экрана.
+/// Folder list for the home screen.
 class GetFolders {
   const GetFolders(this._repository);
 

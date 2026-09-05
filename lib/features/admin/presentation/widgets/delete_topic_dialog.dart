@@ -1,9 +1,6 @@
 import 'package:flutter/material.dart';
 
-/// Подтверждение удаления темы. Возвращает `true`, если удалять.
-///
-/// Уроки удаляемой темы не пропадают — сервер переносит их на «Other», но об
-/// этом стоит предупредить: разметка части каталога изменится (§8.2).
+/// Topic deletion confirmation; `true` means delete.
 class DeleteTopicDialog extends StatelessWidget {
   const DeleteTopicDialog({super.key, required this.topicName});
 

@@ -2,8 +2,7 @@ import 'package:flutter/material.dart';
 
 import 'package:shado/theme/theme.dart';
 
-/// Прогресс уровня: от текущего уровня к следующему, полоса заполнения и
-/// подпись-подсказка снизу.
+/// Level progress: a fill bar with a caption below.
 class LevelProgressBar extends StatelessWidget {
   const LevelProgressBar({
     super.key,
@@ -16,7 +15,7 @@ class LevelProgressBar extends StatelessWidget {
   final String fromLevel;
   final String toLevel;
 
-  /// Доля пройденного до следующего уровня, 0–1.
+  /// Progress towards the next level, 0–1.
   final double ratio;
 
   final String hint;

@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:shado/screens/design_gallery/widgets/gallery_section.dart';
 import 'package:shado/theme/theme.dart';
 
-/// Раздел витрины: шкала типографики.
+/// Gallery section: the type scale.
 class GalleryTypographySection extends StatelessWidget {
   const GalleryTypographySection({super.key});
 

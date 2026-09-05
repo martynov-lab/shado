@@ -1,6 +1,6 @@
 import '../repositories/lesson_repository.dart';
 
-/// Удаление урока вместе с его локальным аудио.
+/// Deletes a lesson together with its local audio.
 class DeleteLesson {
   const DeleteLesson(this._repository);
 

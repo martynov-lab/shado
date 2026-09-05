@@ -8,17 +8,17 @@
 ```
 lib/
   theme/
-    theme.dart              // баррел — импортируй только его
+    theme.dart              // barrel — import only this
     app_theme.dart          // AppTheme.light() / AppTheme.dark()
     context_ext.dart        // context.colors / context.shadows / responsive
     tokens/
-      app_colors.dart       // ThemeExtension: все цвета, light + dark
+      app_colors.dart       // ThemeExtension: every color, light and dark
       app_shadows.dart      // ThemeExtension: e1/e2/e3
-      app_typography.dart   // AppText: шкала стилей
+      app_typography.dart   // AppText: the style scale
       app_dimens.dart       // AppSpacing / AppRadii / AppBreakpoints
       app_motion.dart       // AppDurations / AppCurves
   widgets/
-    app_button.dart         // эталонный компонент — образец для остальных
+    app_button.dart         // the reference component, a model for the rest
 ```
 
 ## Шаги внедрения
@@ -75,7 +75,7 @@ import 'theme/theme.dart';
 MaterialApp(
   theme: AppTheme.light(),
   darkTheme: AppTheme.dark(),
-  themeMode: ThemeMode.system, // или свой стейт для ручного переключения
+  themeMode: ThemeMode.system, // or your own state for manual switching
   home: const HomeScreen(),
 );
 ```
@@ -104,7 +104,7 @@ Container(
   ]),
 );
 
-// адаптивность
+// adaptive layout
 final columns = context.responsive(mobile: 1, tablet: 2, desktop: 3);
 ```
 

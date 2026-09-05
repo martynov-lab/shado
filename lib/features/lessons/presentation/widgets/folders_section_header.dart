@@ -3,12 +3,11 @@ import 'package:flutter/material.dart';
 import 'package:shado/theme/theme.dart';
 import 'package:shado/widgets/widgets.dart';
 
-/// Заголовок секции папок в списке уроков: подпись «Папки» и — у авторов —
-/// кнопка создания новой папки.
+/// Folder section header: a caption and the create-folder button.
 class FoldersSectionHeader extends StatelessWidget {
   const FoldersSectionHeader({super.key, this.onCreate});
 
-  /// Создать папку. `null` — у зрителя без прав автора кнопки нет.
+  /// Creates a folder; `null` hides the button from non-authors.
   final VoidCallback? onCreate;
 
   @override

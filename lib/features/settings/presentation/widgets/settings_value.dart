@@ -3,9 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:shado/theme/theme.dart';
 import 'package:shado/widgets/widgets.dart';
 
-/// Значение справа в строке настройки: текст и шеврон — «1.0× ›».
-///
-/// Пока только показывает выбор; экран выбора подключим отдельной задачей.
+/// Value on the right of a settings row: text and a chevron.
 class SettingsValue extends StatelessWidget {
   const SettingsValue({super.key, required this.label});
 

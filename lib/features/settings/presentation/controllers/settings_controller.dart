@@ -3,18 +3,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/error/failures.dart';
 import '../../../auth/presentation/controllers/auth_controller.dart';
 
-/// Правка профиля с экрана настроек. Держит только флаг «идёт сохранение»;
-/// сам профиль живёт в [AuthController], туда же уходит обновление.
-///
-/// Клиентскую валидацию (имя ≤ 100, цель 0..1440) делает use case
-/// `UpdateProfile`, серверную — сервер (`422`). Обе приходят сюда как [Failure]
-/// с готовым сообщением, поэтому экрану остаётся только показать его.
+/// Profile editing from the settings screen; the state is a saving flag.
 class SettingsController extends Notifier<bool> {
   @override
   bool build() => false;
 
-  /// Сохраняет переданные поля профиля. Возвращает текст ошибки или `null` при
-  /// успехе.
+  /// Saves the given profile fields; `null` means success.
   Future<String?> save({
     String? name,
     String? studiedLanguage,
@@ -41,7 +35,7 @@ class SettingsController extends Notifier<bool> {
   }
 }
 
-/// `true` — идёт сохранение профиля.
+/// `true` while the profile is being saved.
 final settingsControllerProvider = NotifierProvider<SettingsController, bool>(
   SettingsController.new,
 );

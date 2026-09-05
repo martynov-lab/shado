@@ -10,13 +10,9 @@ import '../../../../core/network/api_exception.dart';
 import '../models/audio_dto.dart';
 import '../models/waveform_peaks.dart';
 
-/// Аудио на сервере: загрузка, пики и файл.
+/// Server-side audio: upload, peaks and the file.
 abstract interface class AudioRemoteDataSource {
-  /// Загружает файл и получает обратно всё, что нужно для разметки:
-  /// длительность, контрольную сумму и пики.
-  ///
-  /// Ответ `200` вместо `201` означает, что такой файл уже загружался и был
-  /// найден по sha256; для клиента разницы нет.
+  /// Uploads a file and receives its duration, checksum and peaks.
   Future<AudioDto> upload({
     required String filePath,
     void Function(int sent, int total)? onProgress,
@@ -25,7 +21,7 @@ abstract interface class AudioRemoteDataSource {
 
   Future<WaveformPeaks> peaks(String audioId, {int resolution});
 
-  /// Скачивает файл в [targetPath], докачивая оборванную загрузку.
+  /// Downloads a file into [targetPath], resuming an interrupted transfer.
   Future<void> download({
     required String audioId,
     required String targetPath,
@@ -37,8 +33,7 @@ abstract interface class AudioRemoteDataSource {
 class ApiAudioRemoteDataSource implements AudioRemoteDataSource {
   const ApiAudioRemoteDataSource(this._client);
 
-  /// Суффикс недокачанного файла: готовое имя занимает только целый файл, и
-  /// плеер никогда не наткнётся на половину.
+  /// Suffix of a partially downloaded file.
   static const String _partialSuffix = '.part';
 
   final ApiClient _client;
@@ -54,7 +49,7 @@ class ApiAudioRemoteDataSource implements AudioRemoteDataSource {
       throw AudioFailure('Файл $filePath не найден');
     }
     final size = await file.length();
-    // Проверяем размер до отправки: гонять 50 МБ ради ответа 413 незачем.
+    // The size is checked before uploading.
     if (size > AppConfig.maxUploadBytes) {
       throw ApiException(
         code: ApiErrorCode.payloadTooLarge,
@@ -76,8 +71,7 @@ class ApiAudioRemoteDataSource implements AudioRemoteDataSource {
       data: form,
       onSendProgress: onProgress,
       cancelToken: cancelToken,
-      // Отдав последний байт, ждём дольше обычного: сервер ещё декодирует
-      // файл и считает пики, и только потом отвечает.
+      // Wait longer than usual: the server computes peaks after the upload.
       options: Options(
         sendTimeout: AppConfig.audioTimeout,
         receiveTimeout: AppConfig.audioTimeout,
@@ -105,8 +99,7 @@ class ApiAudioRemoteDataSource implements AudioRemoteDataSource {
     final partial = File('$targetPath$_partialSuffix');
     final alreadyHave = await partial.exists() ? await partial.length() : 0;
 
-    // Обрыв докачиваем с того места, где остановились: сервер поддерживает
-    // `Range` и отвечает `206`.
+    // An interrupted download is resumed with `Range`.
     final response = await _client.download(
       '/v1/audio/$audioId/file',
       partial.path,
@@ -119,8 +112,7 @@ class ApiAudioRemoteDataSource implements AudioRemoteDataSource {
       ),
     );
 
-    // Сервер проигнорировал `Range` и прислал файл целиком — тогда и наш
-    // «хвост» был лишним, но dio уже перезаписал файл с нуля.
+    // The server ignored `Range` and sent the whole file.
     if (alreadyHave > 0 && response.statusCode == 200) {
       await _redownloadWhole(audioId, partial, onProgress, cancelToken);
     }

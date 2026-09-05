@@ -7,9 +7,9 @@ import '../../../../core/network/api_exception.dart';
 import '../../domain/entities/auth_user.dart';
 import 'auth_providers.dart';
 
-/// Что известно о сессии прямо сейчас.
+/// What is known about the session right now.
 enum AuthStatus {
-  /// Ещё выясняем: на старте пробуем поднять сессию по refresh-токену.
+  /// The session is still being checked against the refresh token.
   unknown,
   authenticated,
   unauthenticated,
@@ -27,27 +27,26 @@ class AuthState {
   final AuthStatus status;
   final AuthUser? user;
 
-  /// Идёт запрос: форма заблокирована.
+  /// A request is running — the form is blocked.
   final bool isBusy;
 
-  /// Что показать пользователю; `null` — показывать нечего.
+  /// Error message for the form.
   final String? error;
 
-  /// До какого момента `/v1/auth/*` отвечает `429`. Форма до него заперта.
+  /// Until when the form stays locked after a `429`.
   final DateTime? retryAt;
 
   bool get isAuthenticated => status == AuthStatus.authenticated;
 
   bool get isOwner => user?.isOwner ?? false;
 
-  /// Кто вправе создавать уроки (user-pro/admin/owner) — по нему показываем
-  /// «Добавить».
+  /// Whether the user may create lessons.
   bool get canAuthor => user?.role.canAuthor ?? false;
 
-  /// Кто видит вкладку «Управление» (owner).
+  /// Whether the user sees the management tab.
   bool get canManage => user?.role.canManage ?? false;
 
-  /// Сколько ещё ждать после превышения лимита попыток.
+  /// How long to wait after the attempt limit is hit.
   Duration get retryIn {
     final until = retryAt;
     if (until == null) return Duration.zero;
@@ -77,10 +76,9 @@ class AuthState {
   }
 }
 
-/// Вход, регистрация, выход и восстановление сессии на старте.
+/// Sign-in, sign-up, sign-out and session restore at startup.
 class AuthController extends Notifier<AuthState> {
-  /// Сколько держать форму запертой после `429`. Сервер считает попытки
-  /// поминутно, поэтому минуты и хватает.
+  /// How long the form stays locked after a `429`.
   static const Duration _rateLimitCooldown = Duration(minutes: 1);
 
   @override
@@ -92,8 +90,7 @@ class AuthController extends Notifier<AuthState> {
           state = const AuthState(status: AuthStatus.unauthenticated);
         });
     ref.onDispose(subscription.cancel);
-    // Состояние на старте — `unknown`: пока refresh не проверен, роутер держит
-    // заставку и не бросает пользователя на экран входа.
+    // Start as `unknown`: the router keeps the splash until refresh is checked.
     unawaited(_restore());
     return const AuthState();
   }
@@ -105,8 +102,7 @@ class AuthController extends Notifier<AuthState> {
           ? const AuthState(status: AuthStatus.unauthenticated)
           : AuthState(status: AuthStatus.authenticated, user: user);
     } on NetworkFailure {
-      // Сервер недоступен — это не повод стирать сессию: refresh на месте, и
-      // следующая попытка может пройти.
+      // The server is down — keep the session, the refresh token stays.
       state = const AuthState(
         status: AuthStatus.unauthenticated,
         error: 'Нет связи с сервером — войдите, когда сеть появится',
@@ -136,8 +132,8 @@ class AuthController extends Notifier<AuthState> {
     );
   }
 
-  /// Общая обвязка входа и регистрации: блокировка формы, разбор ошибок,
-  /// таймер после превышения лимита попыток.
+  /// Sign-in and sign-up plumbing: form locking, error parsing, attempt
+  /// limits.
   Future<bool> _submit(Future<AuthUser> Function() action) async {
     if (state.isBusy || state.isRateLimited) return false;
     state = state.copyWith(isBusy: true, clearError: true);
@@ -160,19 +156,17 @@ class AuthController extends Notifier<AuthState> {
     }
   }
 
-  /// Перечитывает `/v1/me`: роль могли изменить в админке, и она меняется
-  /// раньше, чем истечёт access-токен.
+  /// Re-reads `/v1/me` — the role could have changed in the admin panel.
   Future<void> reloadUser() async {
     try {
       final user = await ref.read(getCurrentUserProvider)();
       state = state.copyWith(user: user);
     } catch (_) {
-      // Не выходить же из-за неудачной проверки роли.
+      // A failed role check does not break the session.
     }
   }
 
-  /// Правит профиль и обновляет закешированного пользователя. Ошибки
-  /// (валидация, `422`) уходят наверх — их разбирает экран настроек.
+  /// Updates the profile; errors bubble up to the settings screen.
   Future<void> updateProfile({
     String? name,
     String? studiedLanguage,
@@ -197,8 +191,7 @@ class AuthController extends Notifier<AuthState> {
 
   void clearError() => state = state.copyWith(clearError: true);
 
-  /// Сообщение для формы. «Нет такого email» и «неверный пароль» намеренно
-  /// неразличимы: подсказывать, какие адреса зарегистрированы, незачем.
+  /// Error message for the form.
   String _messageFor(ApiException error) => switch (error.code) {
     ApiErrorCode.invalidCredentials => 'Неверный email или пароль',
     ApiErrorCode.emailTaken =>

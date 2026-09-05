@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:shado/theme/theme.dart';
 import 'package:shado/widgets/widgets.dart';
 
-/// Шапка витрины: название, подзаголовок и переключатель темы.
+/// Gallery header: title, subtitle and the theme switch.
 class GalleryHeader extends StatelessWidget {
   const GalleryHeader({super.key});
 

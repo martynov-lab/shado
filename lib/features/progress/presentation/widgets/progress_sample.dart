@@ -1,16 +1,12 @@
 import 'package:shado/widgets/widgets.dart';
 
-/// Демонстрационные данные экрана прогресса.
-///
-/// Экран пока показывает статичный макет — реальные метрики подключим отдельной
-/// задачей. Держим цифры одним местом, чтобы мобильная, планшетная и десктопная
-/// раскладки не расходились.
+/// Demo data for the progress screen.
 abstract final class ProgressSample {
   static const int streakDays = 12;
   static const String streakHint = 'Лучшая серия — 21 день. Не пропускай сегодня!';
   static const String streakHintShort = 'Лучшая серия — 21 день';
 
-  /// Минуты по дням недели в процентах от максимума — под высоту столбца.
+  /// Daily minutes as a percentage of the maximum.
   static const List<int> weekMinutes = [40, 65, 52, 88, 30, 58, 72];
   static const List<String> weekDays = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'];
   static const int todayIndex = 6;
@@ -25,8 +21,7 @@ abstract final class ProgressSample {
   static const String weekGoalValue = '126 / 180 мин';
   static const String weekGoalRemaining = 'осталось 54 мин';
 
-  /// Наборы статистики: три плитки в узких раскладках и четыре — на десктопе.
-  /// Кортеж: подпись, число, единица (или `null`), дельта.
+  /// Stat tile sets.
   static const List<(String, String, String?, String)> weekStats = [
     ('За неделю', '126', 'мин', '+18%'),
     ('Повторов', '240', null, '+32'),
@@ -40,7 +35,7 @@ abstract final class ProgressSample {
     ('Ср. в день', '18', 'мин', 'цель 15'),
   ];
 
-  /// Достижения: иконка, подпись, закрыто ли. Закрытым иконку рисует замок.
+  /// Achievements: icon, label and a locked flag.
   static const List<(AppIcons, String, bool)> achievements = [
     (AppIcons.flame, 'Серия 7', false),
     (AppIcons.check, '100 повторов', false),
@@ -48,8 +43,7 @@ abstract final class ProgressSample {
     (AppIcons.lock, '10 уроков', true),
   ];
 
-  /// Активность за 10 недель: 70 ячеек (7 строк × 10 недель), минуты за день.
-  /// Нули — дни без занятий. Значения детерминированы, чтобы макет не «дышал».
+  /// Ten weeks of activity: 70 cells with minutes per day.
   static final List<int> activity = List<int>.generate(70, (i) {
     final value = (i * 17 + 5) % 41;
     return (i * 3) % 7 == 0 ? 0 : value;

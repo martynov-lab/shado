@@ -16,16 +16,14 @@ void main() {
   const height = 160.0;
   const full = AudioTrim.full(durationMs);
 
-  /// Ручка границы — кружок под шкалой времени, ручка ползунка — треугольник у
-  /// нижнего края. Тесты берут метки ровно за них.
+  /// Handle grab points: the boundary dot and the playhead triangle.
   const handleY = 22.0;
   const playheadHandleY = height - 7;
 
-  /// Середина волны: здесь ручек нет, поэтому перетаскивание двигает волну.
-  /// Там же лежат язычки меток обрезки — но только когда она включена.
+  /// Mid-waveform: with no trim there are no handles and a drag pans it.
   const bodyY = 80.0;
 
-  /// Ровная волна: для проверки жестов форма пиков не важна.
+  /// A flat waveform: the peak shape does not matter for gesture tests.
   final peaks = WaveformPeaks(
     minima: List<double>.filled(100, -0.5),
     maxima: List<double>.filled(100, 0.5),
@@ -68,8 +66,7 @@ void main() {
     );
   }
 
-  /// Ctrl + колесо мыши: масштаб меняется в `exp(-dy / 300)` раз, момент под
-  /// курсором остаётся на месте.
+  /// Ctrl and the mouse wheel zoom by `exp(-dy / 300)` around the cursor.
   Future<void> ctrlWheel(WidgetTester tester, Offset at, double dy) async {
     await tester.sendKeyDownEvent(LogicalKeyboardKey.controlLeft);
     final pointer = TestPointer(1, PointerDeviceKind.mouse);
@@ -88,7 +85,7 @@ void main() {
         onBoundariesChanged: (value) => reported = value,
       );
 
-      // Метка 3000 мс стоит на x = 3000 / 9000 * 400.
+      // The 3000 ms marker sits at x = 3000 / 9000 * 400.
       await tester.dragFrom(const Offset(133, handleY), const Offset(100, 0));
       await tester.pumpAndSettle();
 
@@ -108,7 +105,7 @@ void main() {
         onBoundariesChanged: (value) => reported = value,
       );
 
-      // Тот же x, но ниже кружка — это перетаскивание волны, не метки.
+      // Same x but below the dot: this pans the waveform, not the marker.
       await tester.dragFrom(const Offset(133, bodyY), const Offset(100, 0));
       await tester.pumpAndSettle();
 
@@ -123,7 +120,7 @@ void main() {
         onBoundariesChanged: (value) => reported = value,
       );
 
-      // Тянем от самого края: там только неподвижная граница 0.
+      // Dragging from the very edge: only the fixed boundary 0 is there.
       await tester.dragFrom(const Offset(2, handleY), const Offset(80, 0));
       await tester.pumpAndSettle();
 
@@ -140,7 +137,7 @@ void main() {
         onBoundaryRemoved: (index) => removed = index,
       );
 
-      // Кружок метки 3000 мс стоит на x = 133, у верхнего края волны.
+      // The 3000 ms marker dot sits at x = 133, near the waveform top.
       const at = Offset(133, handleY);
       await tester.tapAt(at);
       await tester.pump(const Duration(milliseconds: 50));
@@ -158,7 +155,7 @@ void main() {
         onBoundaryRemoved: (index) => removed = index,
       );
 
-      // Тот же x, но по центру волны — ниже полосы захвата метки.
+      // Same x but mid-waveform, below the marker grab strip.
       const at = Offset(133, bodyY);
       await tester.tapAt(at);
       await tester.pump(const Duration(milliseconds: 50));
@@ -180,7 +177,7 @@ void main() {
         onSeek: (value) => seeked = value,
       );
 
-      // Курсор в середине окна — под ним 4500 мс, там же и останется.
+      // The cursor is mid-window over 4500 ms and stays there.
       await ctrlWheel(tester, const Offset(200, bodyY), -300);
       await tester.pumpAndSettle();
 
@@ -188,7 +185,7 @@ void main() {
       await tester.pumpAndSettle();
       expect(seeked, closeTo(4500, 60));
 
-      // Правее курсора время теперь идёт вчетверо (e ≈ 2.72) медленнее.
+      // Right of the cursor time now runs four times slower.
       final zoom = math.exp(1);
       await tester.tapAt(const Offset(300, bodyY));
       await tester.pumpAndSettle();
@@ -206,16 +203,14 @@ void main() {
       await ctrlWheel(tester, const Offset(200, bodyY), -300);
       await tester.pumpAndSettle();
 
-      // Тянем волну влево: под точкой x = 200 оказывается более позднее время.
+      // Dragging the wave left puts a later time under x = 200.
       await tester.dragFrom(const Offset(200, bodyY), const Offset(-100, 0));
       await tester.pumpAndSettle();
 
       await tester.tapAt(const Offset(200, bodyY));
       await tester.pumpAndSettle();
 
-      // Волна поехала не на все 100 пикселей: первые kDragSlopDefault уходят
-      // на распознавание жеста — до него ещё не известно, перетаскивание это
-      // или тап.
+      // The first kDragSlopDefault pixels are spent recognizing the gesture.
       final zoom = math.exp(1);
       const pannedPixels = 100 - kDragSlopDefault;
       expect(
@@ -232,8 +227,7 @@ void main() {
         onSeek: (value) => seeked = value,
       );
 
-      // Пальцы разъезжаются симметрично: центр (x = 200, он же 4500 мс) стоит
-      // на месте, расстояние между ними растёт втрое.
+      // The fingers spread symmetrically, so the pinch center stays put.
       final first = await tester.startGesture(const Offset(150, bodyY));
       final second = await tester.startGesture(const Offset(250, bodyY));
       await first.moveTo(const Offset(50, bodyY));
@@ -255,7 +249,7 @@ void main() {
         onBoundariesChanged: (value) => reported = value,
       );
 
-      // Растягиваем вокруг середины — метка 4500 мс остаётся на x = 200.
+      // Zooming around the middle keeps the 4500 ms marker at x = 200.
       await ctrlWheel(tester, const Offset(200, bodyY), -300);
       await tester.pumpAndSettle();
 
@@ -263,8 +257,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(reported, isNotNull);
-      // Те же 40 пикселей стоят во столько же раз меньше времени, во сколько
-      // растянута волна: ~330 мс вместо 900.
+      // On a zoomed waveform the same 40 pixels cover less time.
       final zoom = math.exp(1);
       expect(
         reported![1] - 4500,
@@ -298,7 +291,7 @@ void main() {
         onSeek: (value) => seeked = value,
       );
 
-      // Ползунок 2250 мс стоит на x = 100.
+      // The 2250 ms playhead sits at x = 100.
       await tester.dragFrom(
         const Offset(100, playheadHandleY),
         const Offset(80, 0),
@@ -347,13 +340,13 @@ void main() {
         onSeek: (value) => seeked = value,
       );
 
-      // Обе ручки на x = 133, но по вертикали разведены: сверху — граница.
+      // Both handles sit at x = 133 but differ vertically: boundary on top.
       await tester.dragFrom(const Offset(133, handleY), const Offset(60, 0));
       await tester.pumpAndSettle();
       expect(seeked, isNull);
       expect(reported?[1], greaterThan(3000));
 
-      // Снизу — ползунок.
+      // The playhead is at the bottom.
       await tester.dragFrom(
         const Offset(133, playheadHandleY),
         const Offset(60, 0),
@@ -364,8 +357,7 @@ void main() {
   });
 
   group('обрезка', () {
-    /// Язычок левой метки стоит справа от неё, правой — слева; оба на середине
-    /// волны, поэтому берут их около [bodyY].
+    /// Grab point of the trim handle tab.
     const leftHandleX = 7.5;
     const rightHandleX = width - 7.5;
 
@@ -420,7 +412,7 @@ void main() {
         onTrimChanged: (value) => reported = value,
       );
 
-      // Тянем левую метку через всю волну — она упрётся в правую.
+      // Dragging the left handle across the wave stops it at the right one.
       await tester.dragFrom(
         const Offset(leftHandleX, bodyY),
         const Offset(width, 0),
@@ -443,7 +435,7 @@ void main() {
         onTrimChanged: (_) {},
       );
 
-      // Тот же жест, что двигает метку в обычном режиме.
+      // The same gesture that moves a marker in the normal mode.
       await tester.dragFrom(const Offset(133, handleY), const Offset(100, 0));
       await tester.pumpAndSettle();
 
@@ -459,7 +451,7 @@ void main() {
         onSeek: (value) => seeked = value,
       );
 
-      // Левый край окна — начало обрезки, правый — её конец.
+      // The left window edge is the trim start, the right one its end.
       await tester.tapAt(const Offset(0, bodyY));
       await tester.pumpAndSettle();
       expect(seeked, closeTo(1000, 40));

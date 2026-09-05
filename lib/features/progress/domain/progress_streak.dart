@@ -1,6 +1,6 @@
 import 'entities/progress_summary.dart';
 
-// Серия занятий: подряд идущие активные дни, оканчивающиеся последним активным.
+// Practice streak — consecutive active days.
 
 bool _isActive(ProgressDay day) => day.listenedMs > 0 || day.segmentRepeats > 0;
 
@@ -10,8 +10,7 @@ DateTime? _parseDay(String raw) {
   return DateTime(parsed.year, parsed.month, parsed.day);
 }
 
-/// Текущая серия: сколько активных дней подряд, начиная с самого свежего
-/// активного дня в [history]. Разрыв в календаре обрывает серию.
+/// Current streak: consecutive active days from the newest in [history].
 int currentStreak(List<ProgressDay> history) {
   final active = <DateTime>{};
   for (final day in history) {

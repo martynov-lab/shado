@@ -1,23 +1,19 @@
-/// Акцент диктора и уровень английского — закрытые списки из §6 спецификации.
-///
-/// Сервер меняет их только релизом, поэтому значения живут в клиенте и за ними
-/// не нужно ходить по сети. Тема, наоборот, справочник — см. [Topic].
+/// Speaker accent, English level and lesson topic.
 library;
 
-/// Акцент диктора. На сервер уезжает [wire], пользователю показывается [label].
+/// Speaker accent; [wire] goes to the server, [label] is shown in the UI.
 enum LessonAccent {
   us('US', 'Американский'),
   uk('UK', 'Британский');
 
   const LessonAccent(this.wire, this.label);
 
-  /// Значение в JSON: сервер ждёт заглавные `US` / `UK`.
+  /// JSON value — uppercase `US` / `UK`.
   final String wire;
 
   final String label;
 
-  /// `null` — значения нет или оно незнакомое. Подставлять на его место
-  /// что-то по умолчанию нельзя: это соврало бы про содержимое урока.
+  /// Parses an accent; `null` when it is missing or unknown.
   static LessonAccent? parse(String? raw) {
     if (raw == null) return null;
     for (final accent in values) {
@@ -27,7 +23,7 @@ enum LessonAccent {
   }
 }
 
-/// Уровень английского по CEFR.
+/// English level on the CEFR scale.
 enum LessonLevel {
   a1('a1', 'A1 — начальный'),
   a2('a2', 'A2 — элементарный'),
@@ -38,7 +34,7 @@ enum LessonLevel {
 
   const LessonLevel(this.wire, this.label);
 
-  /// Значение в JSON: сервер ждёт строчные `a1`…`c2`.
+  /// JSON value — lowercase `a1`…`c2`.
   final String wire;
 
   final String label;
@@ -52,11 +48,7 @@ enum LessonLevel {
   }
 }
 
-/// Тема урока из справочника сервера (`GET /v1/topics`).
-///
-/// В отличие от акцента и уровня темы правит владелец, поэтому список
-/// запрашивается, а не зашит в клиент. Название может измениться, [id] — нет:
-/// в кеше и фильтрах опираемся на него.
+/// Lesson topic from the server directory.
 class Topic {
   const Topic({required this.id, required this.name, this.isDefault = false});
 
@@ -69,7 +61,7 @@ class Topic {
   final String id;
   final String name;
 
-  /// Тема, которую сервер ставит уроку сам, когда тему не выбрали («Other»).
+  /// The default topic the server assigns itself.
   final bool isDefault;
 
   @override

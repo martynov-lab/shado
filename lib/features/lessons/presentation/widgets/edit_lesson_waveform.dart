@@ -8,11 +8,7 @@ import '../controllers/edit_lesson_controller.dart';
 import 'marker_at_playhead_checkbox.dart';
 import 'waveform_card.dart';
 
-/// Волна с ползунком и кнопкой воспроизведения: аудио играет с того места,
-/// куда поставили ползунок, повторное нажатие ставит на паузу.
-///
-/// Позицию плеера читает сам — иначе её тиканье перестраивало бы всю форму
-/// правки. Остальное приходит данными и колбэками.
+/// Waveform with a playhead and a play button on the editor screen.
 class EditLessonWaveform extends ConsumerWidget {
   const EditLessonWaveform({
     super.key,
@@ -29,7 +25,7 @@ class EditLessonWaveform extends ConsumerWidget {
     required this.onTrimCancel,
   });
 
-  /// Нужен только чтобы подписаться на позицию своего плеера.
+  /// Needed only to subscribe to the position of its own player.
   final String lessonId;
 
   final EditLessonState state;
@@ -48,15 +44,13 @@ class EditLessonWaveform extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    // Пока играет, ползунок ведёт сам плеер; на паузе он стоит там, где его
-    // оставили.
+    // While playing, the player drives the playhead.
     final position = ref.watch(editPlaybackPositionProvider(lessonId)).value;
     final playheadMs = state.isPlaying
         ? (position?.inMilliseconds ?? state.playheadMs)
         : state.playheadMs;
 
-    // Время показываем от левого края того, что сейчас в окне: после обрезки
-    // урок начинается с нуля, а во время обрезки — начало файла.
+    // Time is shown from the left edge of what is currently in the window.
     final view = state.view;
 
     return Column(

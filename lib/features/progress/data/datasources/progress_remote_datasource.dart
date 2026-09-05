@@ -1,10 +1,10 @@
 import '../../../../core/network/api_client.dart';
 import '../../domain/entities/progress_summary.dart';
 
-/// Прогресс на сервере (§12.2). Клиент батчит активность и шлёт её событиями.
+/// Server-side progress; the client batches activity and sends it as events.
 abstract interface class ProgressRemoteDataSource {
-  /// Шлёт накопленную активность; возвращает свежую сводку. Все поля
-  /// необязательны — отправляем только заданные.
+  /// Sends pending activity and returns a fresh summary; every field is
+  /// optional and only the given ones are sent.
   Future<ProgressSummary> reportEvents({
     int? listenedMs,
     int? segmentRepeats,
@@ -14,7 +14,7 @@ abstract interface class ProgressRemoteDataSource {
 
   Future<ProgressSummary> getSummary();
 
-  /// История по дням за окно `days` (1..365) — для длинных графиков.
+  /// Daily history over a `days` window (1..365) for long charts.
   Future<List<ProgressDay>> getHistory({int days});
 }
 

@@ -9,13 +9,8 @@ import 'playback_settings_section.dart';
 import 'settings_profile_card.dart';
 import 'storage_settings_section.dart';
 
-/// Настройки на планшете и десктопе: профиль во всю ширину и разделы в две
-/// колонки. Ширина ограничена [AppBreakpoints.maxContent], чтобы на широком
-/// экране строки не растягивались.
-///
-/// Когда доступной ширины на две колонки не хватает (узкое окно, планшет с
-/// рельсом), разделы идут одной колонкой — иначе контролы не помещаются в
-/// узкую карточку.
+/// Settings on tablet and desktop: profile on top and sections in two
+/// columns, or one column in a narrow window.
 class SettingsTabletView extends StatelessWidget {
   const SettingsTabletView({
     super.key,
@@ -29,7 +24,7 @@ class SettingsTabletView extends StatelessWidget {
   final String email;
   final VoidCallback onEditName;
 
-  /// Подпись изучаемого языка; `null` — бейдж скрыт.
+  /// Studied language label; `null` hides the badge.
   final String? languageLabel;
 
   static const double _twoColumnMinWidth = 720;
@@ -75,8 +70,7 @@ class SettingsTabletView extends StatelessWidget {
   }
 }
 
-/// Разделы в две колонки: слева — оформление и воспроизведение, справа —
-/// обучение, язык и хранилище.
+/// Settings sections in two columns.
 class _TwoColumnSections extends StatelessWidget {
   const _TwoColumnSections();
 
@@ -111,7 +105,7 @@ class _TwoColumnSections extends StatelessWidget {
   }
 }
 
-/// Те же разделы одной колонкой — для узких окон.
+/// The same sections in a single column.
 class _SingleColumnSections extends StatelessWidget {
   const _SingleColumnSections();
 

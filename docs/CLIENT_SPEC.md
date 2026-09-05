@@ -118,7 +118,7 @@ class AuthInterceptor extends Interceptor {
 
   final Dio _dio;
   final TokenStorage _tokens;
-  Future<String?>? _refreshing; // один refresh на все параллельные запросы
+  Future<String?>? _refreshing; // one refresh for all parallel requests
 
   @override
   void onRequest(RequestOptions options, RequestInterceptorHandler handler) {
@@ -135,7 +135,7 @@ class AuthInterceptor extends Interceptor {
     if (err.response?.statusCode != 401 || isAuthCall) return handler.next(err);
 
     final access = await (_refreshing ??= _refresh().whenComplete(() => _refreshing = null));
-    if (access == null) return handler.next(err); // выход инициирует AuthRepository
+    if (access == null) return handler.next(err); // AuthRepository initiates the sign-out
 
     final options = err.requestOptions..headers['Authorization'] = 'Bearer $access';
     try {
@@ -154,7 +154,7 @@ class AuthInterceptor extends Interceptor {
         data: {'refresh_token': refresh},
         options: Options(extra: {'skipAuth': true}),
       );
-      await _tokens.save(response.data); // пишет новый refresh, обновляет access
+      await _tokens.save(response.data); // stores the new refresh, updates access
       return response.data['access_token'] as String;
     } on DioException {
       await _tokens.clear();

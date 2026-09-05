@@ -10,7 +10,7 @@ import '../widgets/main_shell_bottom_nav.dart';
 import '../widgets/main_shell_rail.dart';
 import '../widgets/main_shell_sidebar.dart';
 
-/// Один пункт навигации: он же ветка [StatefulNavigationShell].
+/// A navigation destination, also a [StatefulNavigationShell] branch.
 class MainShellDestination {
   const MainShellDestination({required this.icon, required this.label});
 
@@ -18,16 +18,13 @@ class MainShellDestination {
   final String label;
 }
 
-/// Каркас приложения: нижняя навигация на телефоне, вертикальный rail на
-/// планшете и sidebar на десктопе. Пункты ведут по веткам go_router — реальным
-/// разделам приложения (Главная, Уроки, Добавить, Прогресс, Настройки).
-/// Разделы владельца («Управление», «Пользователи») живут в меню аккаунта.
+/// App shell: bottom navigation, a rail or a sidebar depending on width.
 class MainShell extends ConsumerStatefulWidget {
   const MainShell({super.key, required this.navigationShell});
 
   final StatefulNavigationShell navigationShell;
 
-  /// Порядок совпадает с ветками [StatefulShellRoute] в роутере.
+  /// The order matches the [StatefulShellRoute] branches in the router.
   static const List<MainShellDestination> destinations = [
     MainShellDestination(icon: AppIcons.home, label: 'Главная'),
     MainShellDestination(icon: AppIcons.list, label: 'Уроки'),
@@ -36,13 +33,10 @@ class MainShell extends ConsumerStatefulWidget {
     MainShellDestination(icon: AppIcons.settings, label: 'Настройки'),
   ];
 
-  /// Индекс ветки «Добавить»: её пункт виден только тем, кто вправе создавать
-  /// уроки, и в rail/sidebar он оформлен кнопкой, а не обычным разделом. В
-  /// нижней навигации телефона он по центру приподнятой кнопкой (FAB).
+  /// Index of the add branch; its item is styled as a separate button.
   static const int addIndex = 2;
 
-  /// Индексы обычных разделов — всё, кроме «Добавить». По ним rail и sidebar
-  /// рисуют пункты меню.
+  /// Indexes of the regular sections — everything but add.
   static Iterable<int> get sectionIndexes =>
       [for (var i = 0; i < destinations.length; i++) i]
           .where((i) => i != addIndex);
@@ -55,8 +49,7 @@ class _MainShellState extends ConsumerState<MainShell> {
   @override
   void initState() {
     super.initState();
-    // Роль могли изменить в админке (в т.ч. с другого устройства) — перечитываем
-    // её при входе в оболочку, чтобы навигация подстроилась под свежие права.
+    // The role could change in the admin panel — re-read it on entry.
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ref.read(authControllerProvider.notifier).reloadUser();
     });
@@ -64,15 +57,14 @@ class _MainShellState extends ConsumerState<MainShell> {
 
   void _select(int index) => widget.navigationShell.goBranch(
     index,
-    // Повторный тап по активной вкладке возвращает её к началу.
+    // Tapping the active tab again returns it to the start.
     initialLocation: index == widget.navigationShell.currentIndex,
   );
 
   @override
   Widget build(BuildContext context) {
     final index = widget.navigationShell.currentIndex;
-    // «Добавить» — авторам (user-pro/admin/owner). Разделы владельца ушли в меню
-    // аккаунта, поэтому навигации о ролях больше знать нечего.
+    // The add tab is shown to authors only.
     final canAdd = ref.watch(
       authControllerProvider.select((state) => state.canAuthor),
     );

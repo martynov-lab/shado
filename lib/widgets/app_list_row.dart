@@ -3,11 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:shado/theme/theme.dart';
 import 'package:shado/widgets/app_focus_ring.dart';
 
-/// Строка списка уроков: моноширинный индекс, обложка, заголовок с
-/// подзаголовком и длительность справа.
-///
-/// Индекс и время набраны моноширинным [AppText.monoTime] — цифры стоят в
-/// колонку и не пляшут при прокрутке.
+/// List row: index, cover, title with subtitle and time on the right.
 class AppListRow extends StatefulWidget {
   const AppListRow({
     super.key,
@@ -24,23 +20,23 @@ class AppListRow extends StatefulWidget {
 
   final String title;
 
-  /// Порядковый номер. Показывается с ведущим нулём: `01`, `02`, …
+  /// Ordinal number; shown with a leading zero.
   final int? index;
 
-  /// Обложка 48×48. Если не задана, рисуется заглушка с иконкой.
+  /// A 48×48 cover; without it a placeholder icon is drawn.
   final Widget? cover;
 
   final String? subtitle;
 
-  /// Длительность справа, например `04:12`.
+  /// Duration on the right, e.g. `04:12`.
   final String? trailingTime;
 
-  /// Произвольный элемент справа вместо [trailingTime] — кнопка, бейдж.
+  /// Arbitrary widget on the right instead of [trailingTime].
   final Widget? trailing;
 
   final VoidCallback? onTap;
 
-  /// Строка играет сейчас: подсветка primarySoft и заголовок primary.
+  /// Row is selected — highlighted by background and title color.
   final bool selected;
 
   final String? semanticLabel;

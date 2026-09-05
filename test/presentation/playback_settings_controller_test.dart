@@ -39,7 +39,7 @@ void main() {
       1.25,
     );
 
-    // «Перезапуск»: свежий контейнер читает уже сохранённое значение.
+    // A restart: a fresh container reads the already stored value.
     final restarted = makeContainer();
     final restored = await restarted.read(
       playbackSettingsControllerProvider.future,

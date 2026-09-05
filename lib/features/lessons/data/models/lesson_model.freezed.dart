@@ -15,15 +15,10 @@ T _$identity<T>(T value) => value;
 /// @nodoc
 mixin _$LessonModel {
 
- String get id; String get title;@JsonKey(name: 'audio_id') String get audioId;/// Путь к скачанному файлу; пустая строка — файла ещё нет, урок докачает
-/// его при открытии.
-@JsonKey(name: 'audio_path') String get audioPath;@JsonKey(name: 'duration_ms') int get durationMs;@JsonKey(name: 'created_at') DateTime get createdAt;@JsonKey(name: 'updated_at') DateTime get updatedAt; int get version; List<SegmentModel> get segments;/// Публичность урока (§6). По умолчанию `true`: приватность добавилась
-/// позже, старые записи кеша считаем публичными.
-@JsonKey(name: 'is_public') bool get isPublic;@JsonKey(name: 'audio_sha256') String get audioSha256;@JsonKey(name: 'audio_content_type') String get audioContentType;/// Категории урока (§6) — как их отдал сервер: `US`/`UK` и `a1`…`c2`.
-/// Здесь это строки, а не enum'ы: кеш только хранит их между запусками, а
-/// разбор с проверкой живёт в [toEntity]. Пустая строка — значения нет.
- String get accent; String get level;/// Тема: id и название рядом, чтобы список уроков не ждал справочника.
-/// Название может измениться, id — нет.
+ String get id; String get title;@JsonKey(name: 'audio_id') String get audioId;/// Path to the downloaded file; an empty string means it is missing.
+@JsonKey(name: 'audio_path') String get audioPath;@JsonKey(name: 'duration_ms') int get durationMs;@JsonKey(name: 'created_at') DateTime get createdAt;@JsonKey(name: 'updated_at') DateTime get updatedAt; int get version; List<SegmentModel> get segments;/// Lesson visibility; records without the field count as public.
+@JsonKey(name: 'is_public') bool get isPublic;@JsonKey(name: 'audio_sha256') String get audioSha256;@JsonKey(name: 'audio_content_type') String get audioContentType;/// Lesson categories as strings from the server; empty means unset.
+ String get accent; String get level;/// Lesson topic: id and name side by side.
 @JsonKey(name: 'topic_id') String get topicId;@JsonKey(name: 'topic_name') String get topicName;
 /// Create a copy of LessonModel
 /// with the given fields replaced by the non-null parameter values.
@@ -239,8 +234,7 @@ class _LessonModel extends LessonModel {
 @override final  String id;
 @override final  String title;
 @override@JsonKey(name: 'audio_id') final  String audioId;
-/// Путь к скачанному файлу; пустая строка — файла ещё нет, урок докачает
-/// его при открытии.
+/// Path to the downloaded file; an empty string means it is missing.
 @override@JsonKey(name: 'audio_path') final  String audioPath;
 @override@JsonKey(name: 'duration_ms') final  int durationMs;
 @override@JsonKey(name: 'created_at') final  DateTime createdAt;
@@ -253,18 +247,14 @@ class _LessonModel extends LessonModel {
   return EqualUnmodifiableListView(_segments);
 }
 
-/// Публичность урока (§6). По умолчанию `true`: приватность добавилась
-/// позже, старые записи кеша считаем публичными.
+/// Lesson visibility; records without the field count as public.
 @override@JsonKey(name: 'is_public') final  bool isPublic;
 @override@JsonKey(name: 'audio_sha256') final  String audioSha256;
 @override@JsonKey(name: 'audio_content_type') final  String audioContentType;
-/// Категории урока (§6) — как их отдал сервер: `US`/`UK` и `a1`…`c2`.
-/// Здесь это строки, а не enum'ы: кеш только хранит их между запусками, а
-/// разбор с проверкой живёт в [toEntity]. Пустая строка — значения нет.
+/// Lesson categories as strings from the server; empty means unset.
 @override@JsonKey() final  String accent;
 @override@JsonKey() final  String level;
-/// Тема: id и название рядом, чтобы список уроков не ждал справочника.
-/// Название может измениться, id — нет.
+/// Lesson topic: id and name side by side.
 @override@JsonKey(name: 'topic_id') final  String topicId;
 @override@JsonKey(name: 'topic_name') final  String topicName;
 

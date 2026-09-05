@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-/// Подтверждение удаления папки. Возвращает `true`, если удалять.
+/// Folder deletion confirmation; `true` means delete.
 class DeleteFolderDialog extends StatelessWidget {
   const DeleteFolderDialog({super.key, required this.folderTitle});
 

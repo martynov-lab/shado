@@ -36,7 +36,7 @@ void main() {
     final folder = dto.toEntity();
     expect(folder.lessons, hasLength(1));
     expect(folder.lessons.single.id, 'l1');
-    // Уроки в папке — для открытия; файл докачает экран урока.
+    // Lessons in the folder are for opening; the screen fetches the file.
     expect(folder.lessons.single.audioPath, isEmpty);
   });
 

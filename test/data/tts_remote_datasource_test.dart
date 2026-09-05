@@ -24,7 +24,7 @@ void main() {
     final env = build(
       (_) async => jsonResponse(200, {
         'id': 'b21e',
-        // Gemini TTS отдаёт wav — сервер его не перекодирует.
+        // Gemini TTS returns wav and the server does not re-encode it.
         'content_type': 'audio/wav',
         'size_bytes': 204844,
         'sha256': '3f2a',
@@ -41,9 +41,9 @@ void main() {
     expect((request.data as Map)['text'], 'Nice to meet you.');
     expect(audio.id, 'b21e');
     expect(audio.durationMs, 4200);
-    // Поле cached клиент не читает — на разбор оно не влияет.
+    // The client does not read the cached field; it does not affect parsing.
     expect(audio.contentType, 'audio/wav');
-    // wav кладётся в кеш под расширением .wav.
+    // The wav lands in the cache with a .wav extension.
     expect(audio.fileExtension, 'wav');
   });
 

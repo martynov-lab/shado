@@ -1,8 +1,4 @@
-// Сквозная проверка контракта против запущенного сервера (`shado_server` на
-// :8080): регистрация, загрузка аудио, пики, уроки, версии, удаление, ошибки.
-//
-// Имя без суффикса `_test` — намеренно: обычный `flutter test` такой файл не
-// подхватывает, а проверке нужен поднятый сервер. Запуск вручную:
+// End-to-end contract check against a live server; run by hand with
 // `flutter test test/live/live_contract.dart`.
 import 'dart:io';
 import 'dart:math' as math;
@@ -21,7 +17,7 @@ import 'package:shado/features/lessons/data/models/segment_model.dart';
 import 'package:shado/features/lessons/domain/entities/lesson_category.dart';
 import 'package:uuid/uuid.dart';
 
-/// Токены в памяти: keychain для проверки контракта ни при чём.
+/// In-memory tokens: the keychain is irrelevant to the contract check.
 class MemoryTokenStorage implements TokenStorage {
   String? _access;
   String? _refresh;
@@ -166,7 +162,7 @@ void main() {
       expect(created.audio.id, audioId);
       expect(created.accent, LessonAccent.us);
       expect(created.level, LessonLevel.b1);
-      // Тему не передавали — сервер обязан подставить свою.
+      // No topic was passed, so the server must supply its own.
       expect(created.topic, isNotNull);
     });
 
@@ -182,8 +178,7 @@ void main() {
           title: 'Без версии',
           audioId: audioId,
           createdAt: DateTime.now().toUtc(),
-          // Категории на месте: проверяем именно отсутствие `If-Match`, а не
-          // отказ по неполному телу.
+          // Checks the rejection caused by a missing `If-Match`.
           accent: LessonAccent.us,
           level: LessonLevel.b1,
           segments: [
@@ -203,7 +198,7 @@ void main() {
         title: 'Правленый урок',
         audioId: audioId,
         createdAt: DateTime.now().toUtc(),
-        // `PUT` заменяет урок целиком: категории надо переслать и при правке.
+        // `PUT` replaces the whole lesson: categories are resent on edits too.
         accent: LessonAccent.uk,
         level: LessonLevel.c1,
         segments: [
@@ -243,11 +238,11 @@ void main() {
       final before = await lessonApi.getLesson(lessonId);
       await lessonApi.deleteLesson(lessonId);
 
-      // Без since удалённого урока в списке нет.
+      // Without since a deleted lesson is absent from the list.
       final live = await lessonApi.list();
       expect(live.items.where((item) => item.id == lessonId), isEmpty);
 
-      // С since он приходит с непустым deleted_at — чтобы исчезнуть и здесь.
+      // With since it arrives with a non-empty deleted_at so it vanishes here.
       final delta = await lessonApi.list(
         since: before.updatedAt.toIso8601String(),
       );

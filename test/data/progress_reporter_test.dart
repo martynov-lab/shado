@@ -4,7 +4,7 @@ import 'package:shado/features/progress/data/datasources/progress_remote_datasou
 import 'package:shado/features/progress/data/progress_reporter.dart';
 import 'package:shado/features/progress/domain/entities/progress_summary.dart';
 
-/// Локальное хранилище в памяти: тесту не нужен sqflite.
+/// In-memory local storage: the test does not need sqflite.
 class _FakeLocal implements ProgressLocalDataSource {
   final Map<String, Map<int, int>> reps = {};
   final Set<String> completed = {};
@@ -100,7 +100,7 @@ void main() {
       expect(remote.events.single.listenedMs, 5000);
       expect(remote.events.single.segmentRepeats, 1);
       expect(remote.events.single.lessonId, 'l1');
-      // Дельта обнулена после успешной отправки.
+      // The delta is cleared after a successful upload.
       final pending = await local.readPending();
       expect(pending.isEmpty, isTrue);
     });
@@ -133,7 +133,7 @@ void main() {
       final local = _FakeLocal();
       final remote = _FakeRemote();
       final reporter = ProgressReporter(local: local, remote: remote);
-      // Два сегмента, порог 2 — оба добиты.
+      // Two segments with threshold 2: both are completed.
       await local.bumpSegment('l1', 0);
       await local.bumpSegment('l1', 0);
       await local.bumpSegment('l1', 1);

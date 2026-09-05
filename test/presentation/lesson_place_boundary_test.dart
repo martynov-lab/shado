@@ -2,17 +2,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shado/features/lessons/presentation/controllers/add_lesson_controller.dart';
 
-/// Куда садится парная граница, когда метку добавили в тексте, решает флажок
-/// «Метка по ползунку». Стоит — в позицию плеера, и метки правее остаются на
-/// местах. Снят — вплотную правее предыдущей, чтобы метки копились слева
-/// направо.
-///
-/// Проверяем на контроллере создания: экран правки использует тот же
-/// `insertMarker`, но его контроллер поднимает реальный плеер и в юнит-тесте без
-/// платформы не заводится.
+/// Where the paired boundary lands, per the marker-at-playhead flag.
 void main() {
-  /// Готовит форму с текстом и согласованной с ним разметкой. Аудио не грузим —
-  /// границы ставим напрямую, они и так согласованы с числом сегментов.
+  /// Prepares the form with text and matching markers.
   AddLessonController prime(
     ProviderContainer container, {
     required String text,
@@ -72,7 +64,7 @@ void main() {
         markerAtPlayhead: true,
       );
 
-      // Метку поставили в первом куске — соседи справа остались где были.
+      // The marker went into the first segment; the ones on the right stayed.
       controller.insertMarker('one | two | three | four', 1, 1500);
 
       final state = container.read(addLessonControllerProvider);
@@ -89,8 +81,7 @@ void main() {
         markerAtPlayhead: true,
       );
 
-      // Метку №1 поставили в 5000, ползунок вернулся в начало (0) — метка №2 не
-      // перескочила через №1, а прижалась к ней с зазором.
+      // The second marker keeps a gap after the first instead of jumping it.
       controller.insertMarker('one two | three four', 1, 5000);
       controller.insertMarker('one two | three | four', 2, 0);
 

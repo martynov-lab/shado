@@ -1,9 +1,6 @@
 import 'package:flutter/material.dart';
 
-/// All color tokens for Shadowing, exposed as a [ThemeExtension] so they
-/// switch automatically between light and dark themes.
-///
-/// Access in widgets via `context.colors` (see `context_ext.dart`).
+/// App color tokens; widgets read them through `context.colors`.
 @immutable
 class AppColors extends ThemeExtension<AppColors> {
   const AppColors({
@@ -34,7 +31,7 @@ class AppColors extends ThemeExtension<AppColors> {
     required this.waveOff,
   });
 
-  // Brand & accent
+  // Brand and accent
   final Color primary;
   final Color primaryHover;
   final Color primaryPress;
@@ -55,7 +52,7 @@ class AppColors extends ThemeExtension<AppColors> {
   final Color bg;
   final Color surface;
   final Color surface2;
-  final Color surfaceInv; // dark "focus" surface used by the player
+  final Color surfaceInv; // dark player surface
 
   // Borders
   final Color border;

@@ -9,12 +9,7 @@ import '../controllers/lesson_controller.dart';
 import 'lesson_labels.dart';
 import 'lesson_segment_row.dart';
 
-/// Панель со списком сегментов: заголовок с инструментами, прокручиваемый
-/// список строк и — в режиме выбора — панель проигрывания выбранного отрезка.
-///
-/// Один виджет для боковой панели на планшете/десктопе и для модального листа на
-/// телефоне: [shrinkWrap] переключает список между «занять всю высоту» и
-/// «по содержимому».
+/// Segment list panel; [shrinkWrap] fits it into a modal sheet.
 class LessonSegmentsPanel extends ConsumerWidget {
   const LessonSegmentsPanel({
     super.key,
@@ -26,9 +21,7 @@ class LessonSegmentsPanel extends ConsumerWidget {
   final String lessonId;
   final bool shrinkWrap;
 
-  /// Закрыть панель, когда она сделала своё дело: тап по одному сегменту или
-  /// «Готово» с закреплённым отрезком. Есть только у мобильного листа —
-  /// постоянная боковая панель не закрывается.
+  /// Closes the panel; present on the mobile sheet only.
   final VoidCallback? onClose;
 
   @override
@@ -50,7 +43,7 @@ class LessonSegmentsPanel extends ConsumerWidget {
         isPlaying: state.isSegmentPlaying(index),
         isSelecting: state.isSelecting,
         isSelected: state.isSegmentSelected(index),
-        // Тап по одному сегменту заряжает его и закрывает лист (на мобиле).
+        // Tapping one segment loads it and closes the sheet on mobile.
         onPressed: () {
           controller.goToSegment(index);
           onClose?.call();
@@ -81,8 +74,7 @@ class LessonSegmentsPanel extends ConsumerWidget {
               const SizedBox(width: AppSpacing.s4),
               _ToolLink(
                 label: 'Готово',
-                // Отрезок уже заряжен в плеер — выходим из режима и закрываем
-                // лист, играть будет кнопка плеера.
+                // The range is loaded: leave the mode and close the sheet.
                 onTap: () {
                   if (controller.finishSelecting()) onClose?.call();
                 },

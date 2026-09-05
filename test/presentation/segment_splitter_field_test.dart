@@ -6,9 +6,7 @@ import 'package:shado/features/lessons/presentation/widgets/segment_splitter/seg
 import 'package:shado/theme/theme.dart';
 import 'package:shado/widgets/widgets.dart';
 
-/// Поле-сплиттер: слова живут в обычном поле, разделители ставятся кликом в
-/// режиме «Метка» или перетаскиванием. Точную математику проверяет
-/// `segment_boundary_math_test`, здесь — проводка виджета.
+/// Splitter field: placing and removing markers through the widget.
 void main() {
   Widget wrap({
     required MarkedTextController controller,
@@ -102,13 +100,13 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    // Включаем режим тапом по чипу, затем ставим метку кликом в тексте.
+    // A tap on the chip enables the mode, then a click in the text places it.
     await tester.tap(find.byType(SegmentMarkerChip));
     await tester.pumpAndSettle();
     await tester.tapAt(tester.getCenter(find.byType(TextField)));
     await tester.pumpAndSettle();
 
-    // Вставка метки идёт отдельным колбэком — парную границу поставит контроллер.
+    // Insertion is a separate callback; the controller adds the boundary.
     expect(controller.text, contains('|'));
     expect(inserted, contains('|'));
     expect(insertedOrdinal, 1);
@@ -124,7 +122,7 @@ void main() {
     await tester.tap(find.byType(SegmentMarkerChip));
     await tester.pumpAndSettle();
 
-    // Игла чипа в тулбаре плюс приглушённая игла уже поставленной метки.
+    // The toolbar chip needle plus the dimmed needle of the placed marker.
     expect(find.byType(SegmentMarkerNeedle), findsNWidgets(2));
   });
 
@@ -164,12 +162,11 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    // Иглы рисуются после чипа в тулбаре, поэтому первая игла метки — вторая с
-    // начала списка (первый — чип), а её номер — 1.
+    // The first needle is the source chip; markers follow it.
     await tester.tap(find.byType(SegmentMarkerNeedle).at(1));
     await tester.pumpAndSettle();
 
-    // Текст правит контроллер снаружи — само поле его не трогает.
+    // The controller edits the text from outside; the field does not.
     expect(removed, 1);
     expect(controller.text, 'alpha | beta | gamma');
   });
@@ -181,7 +178,7 @@ void main() {
     await tester.pumpWidget(wrap(controller: controller, segmentCount: 3));
     await tester.pumpAndSettle();
 
-    // Две метки — номера 1 и 2 в кружках игл.
+    // Two markers: numbers 1 and 2 inside the needle dots.
     expect(find.text('1'), findsOneWidget);
     expect(find.text('2'), findsOneWidget);
   });
@@ -204,7 +201,7 @@ void main() {
     await gesture.up();
     await tester.pumpAndSettle();
 
-    // Метка осталась одна, но переехала правее исходного места.
+    // One marker is left but it moved right of its original place.
     expect(controller.text, contains('|'));
     expect(controller.text, isNot('alpha | beta gamma'));
   });

@@ -41,7 +41,7 @@ void main() {
       expect(summary.week, isEmpty);
       expect(summary.recentLessonIds, isEmpty);
       expect(summary.dailyGoalMinutes, isNull);
-      // Порог по умолчанию не ноль, чтобы прогресс-бар не делил на ноль.
+      // The default threshold is non-zero so the bar never divides by zero.
       expect(summary.completionReps, greaterThan(0));
     });
   });

@@ -4,8 +4,7 @@ import 'package:shado/theme/theme.dart';
 import 'package:shado/widgets/app_focus_ring.dart';
 import 'package:shado/widgets/app_segmented_control.dart';
 
-/// Один сегмент внутри [AppSegmentedControl]: выбранный приподнят на surface
-/// и тени e1, остальные лежат на дорожке.
+/// A single segment inside [AppSegmentedControl].
 class AppSegmentTile<T> extends StatefulWidget {
   const AppSegmentTile({
     super.key,
@@ -17,7 +16,7 @@ class AppSegmentTile<T> extends StatefulWidget {
   final AppSegment<T> segment;
   final bool isSelected;
 
-  /// `null` — переключатель выключен целиком.
+  /// `null` means the whole control is disabled.
   final VoidCallback? onPressed;
 
   @override
@@ -61,8 +60,7 @@ class _AppSegmentTileState<T> extends State<AppSegmentTile<T>> {
             child: AnimatedContainer(
               duration: context.motion(AppDurations.base),
               curve: AppCurves.standard,
-              // Сегмент сам по себе — тач-цель, поэтому не меньше 48×48;
-              // дорожка получается на s1 выше с каждой стороны.
+              // A segment is a touch target on its own — at least 48×48.
               height: AppSizes.minTouchTarget,
               constraints: const BoxConstraints(
                 minWidth: AppSizes.minTouchTarget,
@@ -83,8 +81,7 @@ class _AppSegmentTileState<T> extends State<AppSegmentTile<T>> {
                       size: AppSizes.iconSm,
                       color: foreground,
                     ),
-                  // Пустая подпись — законный случай: на узком экране сегмент
-                  // остаётся одной иконкой, и лишний отступ там не нужен.
+                  // Without a label the segment is an icon with no gap.
                   if (widget.segment.icon != null && hasLabel)
                     const SizedBox(width: AppSpacing.s2),
                   if (hasLabel)

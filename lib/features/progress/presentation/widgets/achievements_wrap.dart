@@ -5,8 +5,7 @@ import 'package:shado/widgets/widgets.dart';
 
 import 'achievement_badge.dart';
 
-/// Набор значков достижений с переносом на новую строку. Каждый кортеж —
-/// иконка, подпись и признак «закрыто».
+/// Wrapping set of achievement badges.
 class AchievementsWrap extends StatelessWidget {
   const AchievementsWrap({super.key, required this.items});
 

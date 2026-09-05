@@ -1,40 +1,21 @@
-/// Настройки сборки, задаваемые через `--dart-define`.
-///
-/// По умолчанию приложение смотрит на боевой сервер: так собранный без флагов
-/// релиз всегда рабочий, а промахнуться можно только в отладке — и заметно
-/// сразу. Локальный `shado_server` подставляется флагом:
-///
-/// ```bash
-/// flutter run --dart-define=SHADO_API_BASE_URL=http://10.0.2.2:8080
-/// ```
-///
-/// `10.0.2.2`, а не `127.0.0.1`: изнутри Android-эмулятора loopback ведёт в сам
-/// эмулятор. На iOS-симуляторе и десктопе годится `127.0.0.1`, на живом
-/// телефоне — адрес машины в локальной сети.
+/// Build settings supplied through `--dart-define`.
 class AppConfig {
   const AppConfig._();
 
-  /// Корень API без завершающего слэша. Версия живёт в путях (`/v1/...`),
-  /// поэтому в базовый URL она не входит.
+  /// API root without a trailing slash; the version lives in paths (`/v1/...`).
   static const String apiBaseUrl = String.fromEnvironment(
     'SHADO_API_BASE_URL',
     defaultValue: 'https://shado-martin.duckdns.org',
   );
 
-  /// Предел размера аудио на сервере. Проверяем до отправки, чтобы не гонять
-  /// зря трафик и не ловить `payload_too_large` после минуты загрузки.
+  /// Maximum audio size the server accepts.
   static const int maxUploadBytes = 50 * 1024 * 1024;
 
-  /// Сколько ждём ответа на обычный запрос — с запасом на холодный сервер и
-  /// мобильную сеть. Передача аудио живёт по [audioTimeout].
+  /// Response timeout for a regular request.
   static const Duration requestTimeout = Duration(seconds: 60);
 
   static const Duration connectTimeout = Duration(seconds: 15);
 
-  /// Предел на передачу аудиофайла: 50 МБ по слабому каналу идут минутами.
-  ///
-  /// Именно он, а не [requestTimeout], решает судьбу загрузки. Ограничение
-  /// всё же ставим, а не снимаем совсем: на мёртвом соединении запрос без
-  /// предела не оборвётся никогда и загрузка просто зависнет.
+  /// Audio file transfer timeout.
   static const Duration audioTimeout = Duration(minutes: 10);
 }

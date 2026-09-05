@@ -2,11 +2,8 @@ import 'package:flutter/material.dart';
 
 import 'package:shado/theme/theme.dart';
 
-/// Фирменная поверхность из макета: градиент от нажатого primary к accent.
-/// На ней живут логотип, шапка карточки и брендовая панель десктопа.
-///
-/// [decorated] добавляет полупрозрачный круг в правом нижнем углу — то самое
-/// пятно, которое в макете рисует `::after`.
+/// Brand surface on a gradient; [decorated] adds a decorative bubble.
+
 class AuthBrandSurface extends StatelessWidget {
   const AuthBrandSurface({
     super.key,
@@ -21,7 +18,7 @@ class AuthBrandSurface extends StatelessWidget {
   final EdgeInsetsGeometry padding;
   final bool decorated;
 
-  /// Диаметр декоративного пятна и то, насколько оно уходит за край.
+  /// Diameter of the decorative bubble and how far it overflows.
   static const double _bubbleSize = 220;
   static const double _bubbleOverflow = 60;
 

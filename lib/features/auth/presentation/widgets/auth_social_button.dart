@@ -3,10 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:shado/theme/theme.dart';
 import 'package:shado/widgets/widgets.dart';
 
-/// Кнопка входа через сервис.
-///
-/// Без [onPressed] кнопка выглядит обычно, но ничего не делает: входа через
-/// Google и Apple в приложении пока нет.
+/// Social sign-in button; inactive without [onPressed].
 class AuthSocialButton extends StatelessWidget {
   const AuthSocialButton({
     super.key,

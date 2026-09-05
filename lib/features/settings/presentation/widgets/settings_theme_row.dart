@@ -4,11 +4,7 @@ import 'package:shado/widgets/widgets.dart';
 
 import 'settings_row.dart';
 
-/// Строка выбора темы: переключатель светлая / тёмная / системная.
-///
-/// В отличие от остальных настроек здесь уже есть логика — [ThemeToggle]
-/// читает и пишет тему приложения, поэтому выбор сразу применяется и
-/// сохраняется.
+/// Theme row: light / dark / system.
 class SettingsThemeRow extends StatelessWidget {
   const SettingsThemeRow({super.key});
 
@@ -17,8 +13,7 @@ class SettingsThemeRow extends StatelessWidget {
     return const SettingsRow(
       icon: Icons.light_mode_outlined,
       title: 'Тема',
-      // Только иконки: пилюля с тремя подписями не помещается в строку рядом с
-      // заголовком в узкой колонке настроек.
+      // Icons only: labels do not fit into a settings row.
       trailing: ThemeToggle(labels: false),
     );
   }

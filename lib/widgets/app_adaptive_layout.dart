@@ -2,25 +2,8 @@ import 'package:flutter/widgets.dart';
 
 import 'package:shado/theme/theme.dart';
 
-/// Раскладка под платформу: телефон, планшет, десктоп. Вариант выбирается по
-/// ширине окна ([AppBreakpoints]) и строится только он — соседние раскладки не
-/// собираются, поэтому тяжёлую разметку десктопа не платим на телефоне.
-///
-/// [tablet] и [desktop] необязательны: если вариант не задан, берётся ближайший
-/// меньший (десктоп → планшет → телефон). Экрану, которому хватает одной широкой
-/// раскладки, задаём её в [tablet] и оставляем [desktop] пустым.
-///
-/// ```dart
-/// AppAdaptiveLayout(
-///   mobile: (context) => LessonMobileView(state: state),
-///   tablet: (context) => LessonTabletView(state: state),
-///   desktop: (context) => LessonDesktopView(state: state),
-/// );
-/// ```
-///
-/// Раскладки отличаются только компоновкой (колонки, панели, отступы). Данные и
-/// колбэки одни и те же — их раздаёт экран выше [AppAdaptiveLayout]. Мелкие
-/// отличия без отдельного виджета берём через [AppThemeContext.responsive].
+/// Builds a layout by window width; a missing variant falls back to a
+/// smaller one.
 class AppAdaptiveLayout extends StatelessWidget {
   const AppAdaptiveLayout({
     super.key,
@@ -29,13 +12,13 @@ class AppAdaptiveLayout extends StatelessWidget {
     this.desktop,
   });
 
-  /// Телефон (ширина < [AppBreakpoints.tablet]) — обязательная базовая раскладка.
+  /// Phone (width < [AppBreakpoints.tablet]) — the base layout.
   final WidgetBuilder mobile;
 
-  /// Планшет ([AppBreakpoints.tablet]..[AppBreakpoints.desktop)).
+  /// Tablet ([AppBreakpoints.tablet]..[AppBreakpoints.desktop)).
   final WidgetBuilder? tablet;
 
-  /// Десктоп и веб (ширина ≥ [AppBreakpoints.desktop]).
+  /// Desktop and web (width ≥ [AppBreakpoints.desktop]).
   final WidgetBuilder? desktop;
 
   @override

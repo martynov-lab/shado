@@ -10,12 +10,7 @@ import 'marker_at_playhead_checkbox.dart';
 import 'waveform_card.dart';
 import 'waveform_placeholder_card.dart';
 
-/// Волна выбранного файла с метками границ и ползунком воспроизведения —
-/// разметка, обрезка и прослушивание идут ещё до создания урока, чтобы куски
-/// сразу попали на свои места.
-///
-/// Плеером предпросмотра распоряжается сам: он живёт ровно столько, сколько
-/// открыт этот экран, и экрану о нём знать незачем.
+/// Waveform of the chosen file with markers, trimming and a playhead.
 class AddLessonWaveform extends ConsumerWidget {
   const AddLessonWaveform({
     super.key,
@@ -67,15 +62,13 @@ class AddLessonWaveform extends ConsumerWidget {
 
     final playback = ref.watch(addLessonPlaybackProvider);
     final player = ref.read(addLessonPlaybackProvider.notifier);
-    // Пока играет, ползунок ведёт сам плеер; на паузе он стоит там, где его
-    // оставили.
+    // While playing, the player drives the playhead.
     final position = ref.watch(addPlaybackPositionProvider).value;
     final playheadMs = playback.isPlaying
         ? (position?.inMilliseconds ?? playback.playheadMs)
         : playback.playheadMs;
 
-    // Время показываем от левого края того, что сейчас в окне: после обрезки
-    // урок начинается с нуля, а во время обрезки — начало файла.
+    // Time is shown from the left edge of what is currently in the window.
     final view = state.view;
 
     return Column(
@@ -83,8 +76,7 @@ class AddLessonWaveform extends ConsumerWidget {
       children: [
         WaveformCard(
           audioId: state.audioId!,
-          // Файл уже лежит в кеше приложения — запасной локальный построитель
-          // волны дотянется до него, если сервер вдруг не ответит.
+          // The fallback waveform builder needs the file path.
           audioPath: state.audioPath,
           durationMs: state.durationMs,
           view: view,
@@ -94,8 +86,7 @@ class AddLessonWaveform extends ConsumerWidget {
           onSeek: player.seek,
           positionMs: playheadMs,
           showCursor: true,
-          // Пики считает сервер, а кеш рядом с файлом заведёт уже сам урок:
-          // здесь разметку ещё могут бросить, не сохранив.
+          // The lesson itself will create the peaks cache next to the file.
           cachePeaks: false,
           margin: EdgeInsets.zero,
           trim: state.pendingTrim,
@@ -109,7 +100,7 @@ class AddLessonWaveform extends ConsumerWidget {
           children: [
             IconButton.filled(
               tooltip: playback.isPlaying ? 'Пауза' : 'Играть с ползунка',
-              // Файла на диске нет — играть нечего, хотя волна уже пришла.
+              // No file on disk: nothing to play even with peaks ready.
               onPressed: state.audioPath == null ? null : player.togglePlay,
               icon: Icon(playback.isPlaying ? Icons.pause : Icons.play_arrow),
             ),
@@ -137,7 +128,7 @@ class AddLessonWaveform extends ConsumerWidget {
   }
 }
 
-/// Подсказка под волной: что сейчас можно сделать жестами и клавишами.
+/// Hint under the waveform about available gestures and keys.
 String _hint(AddLessonFormState state) {
   if (state.isTrimming) {
     return 'Тяните метки со стрелочками: затемнённые края отрежутся. '

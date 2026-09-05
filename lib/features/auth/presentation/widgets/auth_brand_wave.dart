@@ -4,19 +4,18 @@ import 'package:flutter/material.dart';
 
 import 'package:shado/theme/theme.dart';
 
-/// Волна на брендовой панели: полоски, у которых начало «пройдено».
-/// Украшение, а не данные, — форма считается по индексу полоски.
+/// Decorative wave on the brand panel.
 class AuthBrandWave extends StatelessWidget {
   const AuthBrandWave({super.key});
 
-  /// Ширина полоски и промежуток между ними — из макета.
+  /// Bar width and the gap between bars, taken from the design.
   static const double _barWidth = 3;
   static const double _barGap = 2;
 
-  /// Какая часть волны показана пройденной.
+  /// Which part of the wave is drawn as played.
   static const double _playedFraction = 0.42;
 
-  /// Насколько низкой бывает самая короткая полоска.
+  /// How short the smallest bar can be.
   static const double _minBarFraction = 0.24;
 
   @override
@@ -57,7 +56,7 @@ class AuthBrandWave extends StatelessWidget {
     );
   }
 
-  /// Две несовпадающие волны дают рисунок, который не читается как узор.
+  /// Two mismatched waves make a shape that reads as noise, not a pattern.
   double _barHeightFraction(int index) {
     final shape = (math.sin(index * 0.6) * math.cos(index * 0.33)).abs();
     return _minBarFraction + shape * (1 - _minBarFraction);

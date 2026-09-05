@@ -2,12 +2,11 @@ import 'package:flutter/material.dart';
 
 import 'package:shado/theme/theme.dart';
 
-/// Шапка экрана прогресса: заголовок «Прогресс» и, по желанию, аватар справа.
+/// Progress header: the title and an optional avatar on the right.
 class ProgressHeader extends StatelessWidget {
   const ProgressHeader({super.key, this.showAvatar = true});
 
-  /// Показать аватар пользователя справа (в узких раскладках; на десктопе
-  /// профиль живёт в sidebar каркаса).
+  /// Whether to show the user avatar on the right.
   final bool showAvatar;
 
   @override

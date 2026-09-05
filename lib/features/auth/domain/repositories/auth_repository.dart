@@ -1,15 +1,11 @@
 import '../entities/auth_user.dart';
 
-/// Вход, регистрация и текущая сессия.
-///
-/// За интерфейсом стоит удалённый источник; контроллеры и роутер тестируются
-/// на подделке без сети.
+/// Sign-in, sign-up and the current session.
 abstract interface class AuthRepository {
-  /// Кто вошёл прямо сейчас; `null` — сессии нет.
+  /// Who is signed in right now; `null` when there is no session.
   AuthUser? get currentUser;
 
-  /// Сессия закончилась не по воле пользователя: refresh отвергнут сервером.
-  /// Роутер слушает это, чтобы увести на `/login`.
+  /// Signals that the server rejected a refresh and the session ended.
   Stream<void> get sessionExpired;
 
   Future<AuthUser> register({
@@ -20,23 +16,19 @@ abstract interface class AuthRepository {
 
   Future<AuthUser> login({required String email, required String password});
 
-  /// Поднимает сессию по refresh-токену из защищённого хранилища.
-  /// `null` — токена нет или сервер его отверг, нужен экран входа.
+  /// Restores a session from the refresh token; `null` needs the login screen.
   Future<AuthUser?> restoreSession();
 
-  /// Перечитывает `/v1/me`: роль могли поменять в админке, и она не ждёт
-  /// нового access-токена.
+  /// Re-reads the current user from the server.
   Future<AuthUser> refreshCurrentUser();
 
-  /// Правит профиль (`PATCH /v1/me`) и обновляет закешированного пользователя.
-  /// Передаём только меняемые поля; `null` — поле не трогаем.
+  /// Updates the profile; a `null` field is left untouched.
   Future<AuthUser> updateProfile({
     String? name,
     String? studiedLanguage,
     int? dailyGoalMinutes,
   });
 
-  /// Гасит сессию на сервере и локально. Ошибки сети игнорируются: локально
-  /// выход должен состояться в любом случае.
+  /// Ends the session on the server and locally; network errors are ignored.
   Future<void> logout();
 }

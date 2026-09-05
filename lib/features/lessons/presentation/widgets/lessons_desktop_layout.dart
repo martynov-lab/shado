@@ -11,8 +11,7 @@ import 'lessons_list_view.dart';
 import 'lessons_no_results.dart';
 import 'lesson_search_field.dart';
 
-/// Раскладка списка уроков на десктопе: основная колонка со списком строк и
-/// боковая панель фильтров справа.
+/// Desktop lesson list: a row column and a filter panel on the right.
 class LessonsDesktopLayout extends StatelessWidget {
   const LessonsDesktopLayout({
     super.key,

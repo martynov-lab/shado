@@ -5,7 +5,7 @@ import 'package:shado/theme/theme.dart';
 import 'auth_brand_row.dart';
 import 'auth_brand_surface.dart';
 
-/// Шапка карточки входа на планшете: логотип и слоган на градиенте.
+/// Login card header on tablets: logo and tagline on a gradient.
 class AuthBrandHeader extends StatelessWidget {
   const AuthBrandHeader({super.key, required this.isRegistration});
 

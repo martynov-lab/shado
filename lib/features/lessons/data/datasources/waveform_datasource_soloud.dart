@@ -10,15 +10,8 @@ import '../../domain/entities/audio_trim.dart';
 import '../models/waveform_peaks.dart';
 import 'waveform_datasource.dart';
 
-/// Пики волны для Windows/Linux, где `just_waveform` не работает.
-///
-/// `flutter_soloud` отдаёт RMS-огибающую прямо из декодера (miniaudio) в
-/// отдельном изоляте, движок воспроизведения при этом не поднимается. Форма
-/// получается односторонней — RMS всегда неотрицателен, — поэтому волна
-/// рисуется симметрично относительно центра.
-///
-/// Декодер понимает mp3, wav, flac и ogg; m4a/aac он не умеет, для них волна
-/// на десктопе недоступна.
+/// Waveform peaks via `flutter_soloud` on Windows/Linux; reads mp3, wav,
+/// flac and ogg.
 class SoLoudWaveformDataSource implements WaveformDataSource {
   const SoLoudWaveformDataSource();
 
@@ -52,8 +45,7 @@ class SoLoudWaveformDataSource implements WaveformDataSource {
       envelope = await SoLoud.instance.readSamplesFromFile(
         audioPath,
         resolution,
-        // Декодер сам раскладывает нужное число отсчётов по заданному отрезку;
-        // -1 у endTime означает «до конца файла».
+        // endTime of -1 means the end of the file.
         startTime: range == null ? 0 : range.startMs / 1000,
         endTime: range == null ? -1 : range.endMs / 1000,
         average: true,
@@ -67,8 +59,7 @@ class SoLoudWaveformDataSource implements WaveformDataSource {
     return _toPeaks(normalized);
   }
 
-  /// Тянет огибающую к `0..1` по громкости самого громкого места: RMS сам по
-  /// себе даёт низкую волну, на которой не видно границ фраз.
+  /// Normalizes the envelope to `0..1` against the loudest point.
   Float32List _normalize(Float32List envelope) {
     var peak = 0.0;
     for (final value in envelope) {
@@ -93,14 +84,11 @@ class SoLoudWaveformDataSource implements WaveformDataSource {
     return WaveformPeaks(minima: minima, maxima: maxima);
   }
 
-  // --- Кеш -----------------------------------------------------------------
-  // Декодирование целого файла занимает секунды, а урок открывают часто.
+  // --- Cache ---------------------------------------------------------------
 
   static const int _cacheMagic = 0x53485044; // 'SHPD'
 
-  /// У файла целиком кеш один, у каждого обрезанного отрезка — свой: волна
-  /// отрезка считается по нему, поэтому и складывать её надо отдельно.
-  /// Все они убираются вместе с аудио в [AudioFileDataSource.deleteAudio].
+  /// Cache file: one for the whole file and one per trimmed range.
   File _cacheFile(String audioPath, AudioTrim? range) => File(
     range == null
         ? '$audioPath.peaks'
@@ -120,13 +108,13 @@ class SoLoudWaveformDataSource implements WaveformDataSource {
       final header = bytes.buffer.asByteData(bytes.offsetInBytes, 8);
       if (header.getUint32(0) != _cacheMagic) return null;
       final length = header.getUint32(4);
-      // Кеш от другого разрешения или обрезанный — считаем заново.
+      // A cache with a different resolution or a broken one is recomputed.
       if (length != resolution || bytes.lengthInBytes != 8 + length * 4) {
         return null;
       }
       return Float32List.sublistView(bytes, 8);
     } catch (_) {
-      // Битый кеш не повод падать: пересчитаем.
+      // A broken cache is recomputed.
       return null;
     }
   }
@@ -144,7 +132,7 @@ class SoLoudWaveformDataSource implements WaveformDataSource {
       bytes.setRange(8, bytes.length, envelope.buffer.asUint8List());
       await _cacheFile(audioPath, range).writeAsBytes(bytes, flush: true);
     } catch (_) {
-      // Кеш — оптимизация, его отсутствие ничего не ломает.
+      // The cache is an optimization; the waveform builds without it.
     }
   }
 }

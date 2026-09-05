@@ -2,10 +2,7 @@ import 'package:flutter/material.dart';
 
 import 'package:shado/theme/theme.dart';
 
-/// Компактный счётчик «− N +» для числовых настроек (например, повторов в цикле).
-///
-/// Управляемый: значение приходит извне через [value], изменение уходит в
-/// [onChanged]. Сохранение — на стороне контроллера настроек.
+/// A minus/plus stepper for numeric settings.
 class SettingsStepper extends StatelessWidget {
   const SettingsStepper({
     super.key,
@@ -21,8 +18,7 @@ class SettingsStepper extends StatelessWidget {
   final int min;
   final int max;
 
-  /// Как показать значение в центре: по умолчанию само число, но, например,
-  /// «бесконечный» повтор рисуется знаком ∞.
+  /// How to render the centered value; defaults to the number itself.
   final String Function(int value)? formatValue;
 
   void _change(int delta) {

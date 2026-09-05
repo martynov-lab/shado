@@ -6,9 +6,7 @@ import 'package:shado/widgets/widgets.dart';
 import '../../domain/entities/folder.dart';
 import 'lesson_labels.dart';
 
-/// Строка папки в общем списке. Отличается от урока квадратной иконкой-папкой
-/// с брендовой заливкой и стрелкой справа — чтобы папку было видно с первого
-/// взгляда. Тап проваливается в её уроки.
+/// Folder row in the shared list; a tap opens its lessons.
 class FolderListRow extends StatefulWidget {
   const FolderListRow({super.key, required this.folder, required this.onTap});
 

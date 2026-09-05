@@ -15,7 +15,7 @@ import 'edit_lesson_page.dart';
 class LessonPage extends ConsumerStatefulWidget {
   const LessonPage({super.key, required this.lessonId});
 
-  /// Шаблон маршрута для роутера; путь к конкретному уроку — [routeTo].
+  /// Route template; [routeTo] builds a path to a specific lesson.
   static const String routePath = '/lesson/:id';
 
   static String routeTo(String lessonId) => '/lesson/$lessonId';
@@ -27,7 +27,7 @@ class LessonPage extends ConsumerStatefulWidget {
 }
 
 class _LessonPageState extends ConsumerState<LessonPage> {
-  /// Фокус экрана: пока он здесь, работают стрелки и пробел.
+  /// Screen focus; while it is here arrows and space work.
   final _pageFocus = FocusNode(debugLabel: 'lesson-page');
 
   @override
@@ -39,8 +39,8 @@ class _LessonPageState extends ConsumerState<LessonPage> {
   LessonController get _controller =>
       ref.read(lessonControllerProvider(widget.lessonId).notifier);
 
-  /// Клавиатура для десктопа: стрелки ходят по кускам, Shift + стрелки
-  /// набирают соседние куски, пробел играет и останавливает.
+  /// Keyboard: arrows walk the segments, Shift grows the selection, space
+  /// plays.
   KeyEventResult _onKeyEvent(FocusNode node, KeyEvent event) {
     if (event is! KeyDownEvent && event is! KeyRepeatEvent) {
       return KeyEventResult.ignored;
@@ -52,13 +52,11 @@ class _LessonPageState extends ConsumerState<LessonPage> {
       case LogicalKeyboardKey.arrowUp:
         _controller.moveFocus(-1, extend: shift);
       case LogicalKeyboardKey.space:
-        // Повтор автоповтором клавиши здесь только мешает.
+        // Key auto-repeat is ignored.
         if (event is KeyRepeatEvent) return KeyEventResult.handled;
         _controller.togglePlayFocused();
       case LogicalKeyboardKey.escape:
-        // Escape отступает по одному шагу: сначала снимает выделение, потом
-        // выходит из режима выбора. Нечего снимать — пусть достанется тому, кто
-        // им пользуется.
+        // Escape first clears the selection, then leaves selection mode.
         final state = ref.read(lessonControllerProvider(widget.lessonId)).value;
         if (state == null) return KeyEventResult.ignored;
         if (state.selection != null) {
@@ -80,8 +78,7 @@ class _LessonPageState extends ConsumerState<LessonPage> {
     return KeyEventResult.handled;
   }
 
-  /// Возврат с экрана правки: разбивка могла измениться целиком, поэтому урок
-  /// перечитывается, а плеер сбрасывается.
+  /// Opens the editor and re-reads the lesson on return.
   Future<void> _edit() async {
     final saved = await context.push<bool>(
       EditLessonPage.routeTo(widget.lessonId),

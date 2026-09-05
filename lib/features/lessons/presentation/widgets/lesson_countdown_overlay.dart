@@ -5,11 +5,7 @@ import 'package:shado/theme/theme.dart';
 
 import '../controllers/lesson_controller.dart';
 
-/// Полноэкранный отсчёт «3-2-1» перед стартом воспроизведения.
-///
-/// Накладывается поверх экрана урока и не перехватывает нажатия ([IgnorePointer]):
-/// тап по кнопке плеера под ним отменяет отсчёт как обычное новое действие.
-/// Показывается, только когда включён обратный отсчёт и идёт запуск.
+/// Full-screen countdown before the start; it does not absorb taps.
 class LessonCountdownOverlay extends ConsumerWidget {
   const LessonCountdownOverlay({super.key, required this.lessonId});
 
@@ -42,8 +38,7 @@ class LessonCountdownOverlay extends ConsumerWidget {
                   child: Text(
                     '$countdown',
                     key: ValueKey(countdown),
-                    // Отсчёт крупнее любого текста в приложении — свой размер
-                    // поверх характера дисплейного стиля.
+                    // A custom size on top of the display style.
                     style: AppText.displayLg.copyWith(
                       fontSize: 96,
                       color: colors.textInv,

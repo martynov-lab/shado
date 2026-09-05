@@ -3,12 +3,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 
 import 'package:shado/theme/theme.dart';
 
-/// Иконки набора Shadowing. Значение — имя SVG-файла в `assets/app_icons/`,
-/// поэтому новая иконка добавляется двумя шагами: положить файл в папку и
-/// дописать сюда строку.
-///
-/// Набор — слепок макетов: иконки линейные, нарисованы в сетке 24×24 и
-/// красятся через `currentColor`, отсюда единый тинт в [AppIcon].
+/// Icon set; the value is an SVG file name in `assets/app_icons/`.
 enum AppIcons {
   bell('bell'),
   brandApple('brand_apple'),
@@ -57,30 +52,18 @@ enum AppIcons {
 
   const AppIcons(this.fileName, {this.multicolor = false});
 
-  /// Имя файла без расширения — оно же имя иконки в макетах.
+  /// File name without an extension.
   final String fileName;
 
-  /// Иконка нарисована фирменными цветами (логотип) и не перекрашивается.
+  /// Icon in brand colors — never tinted.
   final bool multicolor;
 
-  /// Путь к ассету для [AppIcon].
+  /// Asset path for [AppIcon].
   String get asset => 'assets/app_icons/$fileName.svg';
 }
 
-/// Иконка дизайн-системы: SVG-ассет из набора Shadowing.
-///
-/// Ведёт себя как [Icon]: размер и цвет берутся из [IconTheme], если не заданы
-/// явно, — поэтому иконку можно класть внутрь кнопок, полей и списков, не
-/// подбирая цвет руками.
-///
-/// ```dart
-/// const AppIcon(AppIcons.play);
-/// AppIcon(AppIcons.home, size: AppSizes.iconLg, color: context.colors.primary);
-/// ```
-///
-/// Без [semanticLabel] иконка считается декоративной и скрыта от скринридера:
-/// подпись задаёт тот, кто вставляет иконку, — рядом с ней обычно уже есть
-/// текст или `Semantics` кнопки.
+/// Set SVG icon; size and color come from [IconTheme] unless given.
+/// Without [semanticLabel] it is decorative and hidden from screen readers.
 class AppIcon extends StatelessWidget {
   const AppIcon(
     this.icon, {

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-/// Цвета, к которым обращается отрисовка волны.
+/// Colors used by waveform painting.
 class WaveformColors extends ThemeExtension<WaveformColors> {
   const WaveformColors({
     required this.wave,
@@ -18,10 +18,10 @@ class WaveformColors extends ThemeExtension<WaveformColors> {
   final Color cursor;
   final Color background;
 
-  /// Метки обрезки со стрелочками.
+  /// Trim handles with arrows.
   final Color trimHandle;
 
-  /// Затемнение по краям волны — то, что обрезка отрежет.
+  /// Scrim over the trimmed-away edges of the waveform.
   final Color trimmedAway;
 
   @override
@@ -88,8 +88,6 @@ class AppTheme {
           cursor: scheme.error,
           background: scheme.surfaceContainerHighest,
           trimHandle: scheme.secondary,
-          // Затемнение поверх волны: обрезаемые края видно, но они не спорят с
-          // остающейся серединой.
           trimmedAway: scheme.scrim.withValues(alpha: 0.45),
         ),
       ],

@@ -8,8 +8,8 @@ import '../storage/token_storage.dart';
 import 'api_exception.dart';
 import 'auth_interceptor.dart';
 
-/// Единственная дверь в API. Наружу отдаёт разобранный JSON, а всякий сбой —
-/// [ApiException] или [NetworkFailure]: `DioException` дальше не уходит.
+/// API client: returns parsed JSON and reports failures as [ApiException] or
+/// [NetworkFailure].
 class ApiClient {
   ApiClient({
     required TokenStorage tokens,
@@ -22,13 +22,10 @@ class ApiClient {
                baseUrl: baseUrl,
                connectTimeout: AppConfig.connectTimeout,
                receiveTimeout: AppConfig.requestTimeout,
-               // Отправка — единственный шаг, где тело бывает на 50 МБ,
-               // поэтому предел общий и щедрый: JSON-запросы всё равно
-               // упираются в connect- и receiveTimeout раньше.
+               // Shared limit sized for the heaviest request — an audio upload.
                sendTimeout: AppConfig.audioTimeout,
                contentType: Headers.jsonContentType,
-               // Разбираем статусы сами: ошибочный ответ несёт тело с кодом,
-               // который нужен целиком.
+               // We parse statuses ourselves: the error body carries a code.
                responseType: ResponseType.json,
              ),
            ) {
@@ -42,8 +39,7 @@ class ApiClient {
     );
   }
 
-  /// Сколько раз повторяем запрос, не дошедший до сервера. Повторяем только
-  /// идемпотентное: у `PUT` идентификатор задаёт клиент, поэтому дубля не будет.
+  /// Retry count for a request that never reached the server.
   static const int _retries = 2;
   static const Duration _retryDelay = Duration(milliseconds: 400);
   static const Set<String> _idempotent = {'GET', 'PUT', 'DELETE', 'HEAD'};
@@ -52,8 +48,7 @@ class ApiClient {
 
   Future<void> Function()? _onSessionExpired;
 
-  /// Кто уводит на `/login`, когда сессия кончилась. Ставится один раз при
-  /// сборке зависимостей.
+  /// Expired session handler — navigates to `/login`.
   set onSessionExpired(Future<void> Function() handler) =>
       _onSessionExpired = handler;
 
@@ -68,7 +63,7 @@ class ApiClient {
     return response.data ?? const {};
   }
 
-  /// Как [get], но с заголовками ответа: `ETag` урока приходит именно там.
+  /// Like [get] but keeps response headers — `ETag` arrives there.
   Future<Response<Map<String, dynamic>>> getRaw(
     String path, {
     Map<String, dynamic>? query,
@@ -129,7 +124,7 @@ class ApiClient {
     CancelToken? cancelToken,
     bool append = false,
   }) {
-    // Докачку не повторяем автоматически: у неё своя логика с `Range`.
+    // Downloads are not retried here: they have their own `Range` logic.
     return _guard(
       () => dio.download(
         path,
@@ -142,10 +137,7 @@ class ApiClient {
     );
   }
 
-  /// Запрос с повтором на сетевых сбоях.
-  ///
-  /// Повторяем только то, что можно повторить безопасно: ответ на `POST`
-  /// мог потеряться уже после того, как сервер его выполнил.
+  /// Request retried on network failures — idempotent methods only.
   Future<Response<T>> _send<T>(Future<Response<T>> Function() request) async {
     var attempt = 0;
     while (true) {
@@ -160,7 +152,7 @@ class ApiClient {
     }
   }
 
-  /// HTTP-метод запроса, породившего сбой: он лежит в исходном `DioException`.
+  /// HTTP method of the request that failed.
   static String _methodOf(NetworkFailure failure) {
     final cause = failure.cause;
     if (cause is DioException) {
@@ -169,7 +161,7 @@ class ApiClient {
     return '';
   }
 
-  /// Превращает `DioException` в ошибку приложения.
+  /// Converts a `DioException` into an application failure.
   Future<R> _guard<R>(Future<R> Function() request) async {
     try {
       return await request();
@@ -178,10 +170,8 @@ class ApiClient {
     }
   }
 
-  /// Разбор ответа в [ApiException] по §1 спецификации.
-  ///
-  /// Неизвестный код — не повод считать, что всё хорошо: он превращается в
-  /// [ApiErrorCode.unknown] с сообщением по HTTP-статусу.
+  /// Parses a response into [ApiException]; unknown codes map to
+  /// [ApiErrorCode.unknown].
   static Failure mapError(DioException error) {
     final response = error.response;
     if (response == null) {
@@ -205,8 +195,7 @@ class ApiClient {
     );
   }
 
-  /// Тело ошибки приходит как `{"error": {...}}`; всё остальное — не наш
-  /// формат, и разбирать там нечего.
+  /// Error body from `{"error": {...}}`; `null` for a foreign format.
   static Map<String, dynamic>? _errorBody(Object? data) {
     if (data is Map && data['error'] is Map) {
       return Map<String, dynamic>.from(data['error'] as Map);

@@ -11,11 +11,7 @@ import '../widgets/progress_desktop_view.dart';
 import '../widgets/progress_mobile_view.dart';
 import '../widgets/progress_tablet_view.dart';
 
-/// Экран прогресса: серия, статистика, график минут, тепловая карта и цель.
-///
-/// Каркас (Scaffold, навигация) даёт [MainShell]; раскладку выбирает
-/// [AppAdaptiveLayout]. Метрики — реальные (сводка `GET /v1/progress` и история);
-/// «Уровень» и «Достижения» пока демонстрационные — под них нет серверных данных.
+/// Progress screen: streak, stats, minutes chart, heatmap and the goal.
 class ProgressPage extends ConsumerWidget {
   const ProgressPage({super.key});
 
@@ -24,7 +20,7 @@ class ProgressPage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final summaryAsync = ref.watch(progressSummaryProvider);
-    // История — вторична: график и серия рисуются и без неё.
+    // The chart and the streak render without the history too.
     final history =
         ref.watch(progressHistoryProvider).value ?? const <ProgressDay>[];
 

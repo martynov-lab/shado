@@ -2,8 +2,7 @@ import 'package:flutter/material.dart';
 
 import 'package:shado/theme/theme.dart';
 
-/// Строка превью урока на главном экране: по желанию порядковый номер, обложка,
-/// заголовок с подзаголовком и длительность. Нажатие ведёт к списку уроков.
+/// Lesson preview row: index, cover, title and duration.
 class HomeLessonRow extends StatelessWidget {
   const HomeLessonRow({
     super.key,
@@ -19,7 +18,7 @@ class HomeLessonRow extends StatelessWidget {
   final String time;
   final VoidCallback onTap;
 
-  /// Порядковый номер «01», «02» слева (в широких раскладках).
+  /// Ordinal number on the left.
   final String? index;
 
   @override
@@ -90,8 +89,7 @@ class HomeLessonRow extends StatelessWidget {
   }
 }
 
-/// Квадратная обложка урока: брендовый градиент с тонкой полосой прогресса
-/// снизу — как в макете.
+/// Square lesson cover: a gradient with a progress bar at the bottom.
 class _Cover extends StatelessWidget {
   const _Cover();
 

@@ -41,7 +41,7 @@ class _AddLessonPageState extends ConsumerState<AddLessonPage> {
   final _titleController = TextEditingController();
   final _textController = MarkedTextController();
 
-  /// Фокус самого экрана: пока он здесь, пробел работает как play/pause.
+  /// Focus of the screen itself; while it is here space acts as play/pause.
   final _pageFocus = FocusNode(debugLabel: 'add-lesson-page');
 
   @override
@@ -52,18 +52,14 @@ class _AddLessonPageState extends ConsumerState<AddLessonPage> {
     super.dispose();
   }
 
-  /// Пробел как play/pause — привычка из любого редактора аудио.
-  ///
-  /// Срабатывает только когда фокус на самом экране: в текстовом поле пробел
-  /// остаётся пробелом, а на кнопке ▶ его обрабатывает сама кнопка.
+  /// Space acts as play/pause while the screen itself holds focus.
   KeyEventResult _onKeyEvent(FocusNode node, KeyEvent event) {
     if (event is! KeyDownEvent ||
         event.logicalKey != LogicalKeyboardKey.space ||
         !node.hasPrimaryFocus) {
       return KeyEventResult.ignored;
     }
-    // Файла ещё нет — не поднимаем плеер вхолостую: под `autoDispose` он тут же
-    // и закрылся бы.
+    // There is no file yet — do not spin up the player for nothing.
     if (ref.read(addLessonControllerProvider).audioPath == null) {
       return KeyEventResult.ignored;
     }
@@ -79,8 +75,7 @@ class _AddLessonPageState extends ConsumerState<AddLessonPage> {
     }
   }
 
-  /// Озвучивает текст через ИИ. Если аудио уже выбрано, синтез заменит его —
-  /// сначала спрашиваем подтверждение.
+  /// Runs an AI voice-over, confirming a replacement of the chosen audio.
   Future<void> _synthesize() async {
     if (ref.read(addLessonControllerProvider).audioId != null) {
       final confirmed = await showDialog<bool>(
@@ -91,10 +86,10 @@ class _AddLessonPageState extends ConsumerState<AddLessonPage> {
     }
     try {
       await ref.read(addLessonControllerProvider.notifier).synthesizeTts();
-      // Озвучка списала суточный лимит — перечитываем остаток у кнопки.
+      // The voice-over spent daily quota — re-read what is left.
       ref.invalidate(ttsQuotaProvider);
     } on ApiException catch (error) {
-      // Исчерпан лимит — счётчик наверняка обнулился, обновим и его.
+      // The quota is spent — refresh the counter too.
       if (error.code == ApiErrorCode.ttsQuotaExceeded) {
         ref.invalidate(ttsQuotaProvider);
       }
@@ -104,9 +99,8 @@ class _AddLessonPageState extends ConsumerState<AddLessonPage> {
     }
   }
 
-  /// Показывает ошибку озвучки по TTS_CLIENT_SPEC §4. Сервис временно недоступен
-  /// (503) — зовём попробовать позже и даём «Повторить». Исчерпан лимит (429) —
-  /// авто-ретраем не долбим, а предлагаем запасной путь: загрузить свой файл.
+  /// Shows a voice-over error with a matching action — retry or upload a
+  /// file.
   void _showTtsError(ApiException error) {
     if (!mounted) return;
     switch (error.code) {
@@ -131,13 +125,10 @@ class _AddLessonPageState extends ConsumerState<AddLessonPage> {
     }
   }
 
-  /// Метку поставили в тексте — сажаем парную границу под ползунок. Позицию
-  /// берём ту же, что показывает волна: пока играет — живую, на паузе — где
-  /// оставили.
+  /// Places the paired boundary of a new marker under the playhead.
   void _insertMarker(String text, int ordinal) {
     final controller = ref.read(addLessonControllerProvider.notifier);
-    // Без волны разметки ещё нет — позиция плеера не нужна, и поднимать его ради
-    // неё незачем.
+    // Without a waveform there is no layout yet, so no playhead is needed.
     if (!ref.read(addLessonControllerProvider).hasWaveform) {
       controller.insertMarker(text, ordinal, 0);
       return;
@@ -176,13 +167,10 @@ class _AddLessonPageState extends ConsumerState<AddLessonPage> {
     final controller = ref.read(addLessonControllerProvider.notifier);
     final topics = ref.watch(topicsProvider);
     final isBusy = state.isSubmitting || state.isUploading;
-    // Тумблер приватности показываем только владельцу: остальным авторам
-    // публичность задаёт роль. Озвучка через ИИ — тоже только у него
-    // (TTS_CLIENT_SPEC §1), остальным сервер ответит `403`.
+    // The privacy switch and AI voice-over are owner-only.
     final isOwner = ref.watch(authControllerProvider).isOwner;
 
-    // Пока форму заполняли, выбранную тему могли удалить на другом устройстве.
-    // Убираем её из состояния, чтобы на сервер не уехал мёртвый id.
+    // The topic could be deleted elsewhere — drop the dead id.
     ref.listen(topicsProvider, (_, next) {
       final list = next.value;
       if (list != null) {
@@ -190,8 +178,7 @@ class _AddLessonPageState extends ConsumerState<AddLessonPage> {
       }
     });
 
-    // Метку могли удалить с волны — тогда текст правит контроллер, и его нужно
-    // вернуть в поле. При обычном вводе текст уже совпадает, синк — no-op.
+    // Text edited by the controller is pushed back into the field.
     ref.listen(addLessonControllerProvider.select((s) => s.text), (_, next) {
       if (next != _textController.text) _textController.text = next;
     });
@@ -227,7 +214,7 @@ class _AddLessonPageState extends ConsumerState<AddLessonPage> {
                       onPick: isBusy ? null : _pickAudio,
                       onCancelUpload: controller.cancelUpload,
                       canSynthesize: isOwner,
-                      // Озвучивать нечего, пока в тексте нет ни одной фразы.
+                      // There is nothing to voice over for empty text.
                       onSynthesize:
                           isBusy ||
                               SynthesizeTts.prepareText(state.text).isEmpty
@@ -237,8 +224,7 @@ class _AddLessonPageState extends ConsumerState<AddLessonPage> {
                           'Поддерживаются ${allowedAudioExtensions.join(', ')}, '
                           'до ${AppConfig.maxUploadBytes ~/ (1024 * 1024)} МБ',
                     ),
-                    // Остаток озвучек спрашиваем только у того, кому озвучка
-                    // доступна: остальным `/v1/tts/quota` ответит `403`.
+                    // The voice-over quota is requested for the owner only.
                     if (isOwner) const TtsQuotaHint(),
                     const SizedBox(height: AppSpacing.s5),
                     AppTextField(
@@ -270,8 +256,7 @@ class _AddLessonPageState extends ConsumerState<AddLessonPage> {
                     LessonSectionCard(
                       label: 'Аудио',
                       note: '— расставь границы сегментов',
-                      // Тронули волну — забираем фокус из текстового поля, иначе
-                      // пробел так и останется пробелом.
+                      // Touching the waveform takes focus off the text field.
                       child: Listener(
                         onPointerDown: (_) => _pageFocus.requestFocus(),
                         child: AddLessonWaveform(

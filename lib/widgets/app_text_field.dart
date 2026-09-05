@@ -4,14 +4,7 @@ import 'package:shado/theme/theme.dart';
 import 'package:shado/widgets/app_field_suffix_button.dart';
 import 'package:shado/widgets/app_icon.dart';
 
-/// Однострочное или многострочное поле ввода.
-///
-/// Рамка и фон рисуются вручную, а внутри стоит «раздетый» [TextField] со
-/// снятыми бордерами — так поле не тянет за собой стоковый Material-декор
-/// (в том числе `focusedBorder` из темы) и полностью подчиняется токенам.
-///
-/// В фокусе вокруг поля появляется мягкое кольцо primarySoft; при [errorText]
-/// рамка и подпись краснеют.
+/// Text field with a token-based border, focus ring and error state.
 class AppTextField extends StatefulWidget {
   const AppTextField({
     super.key,
@@ -39,20 +32,20 @@ class AppTextField extends StatefulWidget {
 
   final TextEditingController? controller;
 
-  /// Подпись над полем.
+  /// Label above the field.
   final String? label;
   final String? hint;
 
-  /// Пояснение под полем. Скрывается, когда есть [errorText].
+  /// Helper text below the field; hidden when [errorText] is set.
   final String? helperText;
 
-  /// Непустой текст переводит поле в состояние ошибки.
+  /// A non-empty value puts the field into the error state.
   final String? errorText;
 
   final AppIcons? prefixIcon;
   final AppIcons? suffixIcon;
 
-  /// Делает [suffixIcon] нажимаемой (показать пароль, очистить поле).
+  /// Makes [suffixIcon] tappable.
   final VoidCallback? onSuffixPressed;
   final String? suffixSemanticLabel;
 
@@ -135,8 +128,7 @@ class _AppTextFieldState extends State<AppTextField> {
               ? AppSizes.borderThick
               : AppSizes.borderThin,
         ),
-        // Мягкое кольцо вместо жёсткой обводки: фокус видно, но поле не
-        // «прыгает» — тень не занимает места в раскладке.
+        // The focus ring is a shadow, so it takes no layout space.
         boxShadow: _focused && !hasError
             ? [
                 BoxShadow(
@@ -172,9 +164,7 @@ class _AppTextFieldState extends State<AppTextField> {
               onSubmitted: widget.onSubmitted,
               cursorColor: colors.primary,
               style: AppText.body.copyWith(color: colors.text),
-              // Рамку и фон рисует наш контейнер. Поле — «раздетое»: не только
-              // collapsed, но и все бордеры сняты явно, иначе focusedBorder из
-              // inputDecorationTheme протекает и рисует вторую рамку у курсора.
+              // The container above paints the border, so all borders are off.
               decoration: InputDecoration(
                 isCollapsed: true,
                 filled: false,

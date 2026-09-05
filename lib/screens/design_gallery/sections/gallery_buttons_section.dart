@@ -6,7 +6,7 @@ import 'package:shado/screens/design_gallery/widgets/gallery_wrap.dart';
 import 'package:shado/theme/theme.dart';
 import 'package:shado/widgets/widgets.dart';
 
-/// Раздел витрины: кнопки во всех вариантах, размерах и состояниях.
+/// Gallery section: buttons in every variant, size and state.
 class GalleryButtonsSection extends StatefulWidget {
   const GalleryButtonsSection({super.key});
 
@@ -17,8 +17,7 @@ class GalleryButtonsSection extends StatefulWidget {
 class _GalleryButtonsSectionState extends State<GalleryButtonsSection> {
   bool _loading = false;
 
-  /// Показывает индикатор на кнопке: витрине нужно живое состояние загрузки,
-  /// а не картинка.
+  /// Shows the loading spinner on the button.
   void _fakeLoad() {
     setState(() => _loading = true);
     Future.delayed(AppDurations.slow * 4, () {

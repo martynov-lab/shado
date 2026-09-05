@@ -3,8 +3,7 @@ import 'package:flutter/widgets.dart';
 import 'package:shado/theme/theme.dart';
 import 'package:shado/widgets/widgets.dart';
 
-/// Карточка-секция редактора: заголовок с приглушённым уточнением, необязательная
-/// строка-подсказка и содержимое. Одинаково оформляет блоки «Аудио» и «Текст».
+/// Editor section card: a title, a hint and the content.
 class LessonSectionCard extends StatelessWidget {
   const LessonSectionCard({
     super.key,
@@ -16,10 +15,10 @@ class LessonSectionCard extends StatelessWidget {
 
   final String label;
 
-  /// Приглушённое уточнение рядом с заголовком, например «— разбей на сегменты».
+  /// Muted note next to the title.
   final String? note;
 
-  /// Пояснение под заголовком мелким шрифтом.
+  /// Small-print description under the title.
   final String? hint;
 
   final Widget child;

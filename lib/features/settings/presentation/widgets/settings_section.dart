@@ -3,8 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:shado/theme/theme.dart';
 import 'package:shado/widgets/widgets.dart';
 
-/// Раздел настроек: подпись-заголовок и карточка со строками, разделёнными
-/// тонкими линиями.
+/// Settings section: a title and a card with rows.
 class SettingsSection extends StatelessWidget {
   const SettingsSection({super.key, required this.title, required this.rows});
 

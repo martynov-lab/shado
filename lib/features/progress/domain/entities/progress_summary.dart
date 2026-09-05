@@ -1,4 +1,4 @@
-/// День активности: минуты и повторы за календарный день (UTC) сервера.
+/// Activity day: minutes and repeats for one server UTC day.
 class ProgressDay {
   const ProgressDay({
     required this.day,
@@ -12,7 +12,7 @@ class ProgressDay {
     segmentRepeats: (json['segment_repeats'] as num?)?.toInt() ?? 0,
   );
 
-  /// Дата в формате `YYYY-MM-DD`.
+  /// Date in `YYYY-MM-DD` format.
   final String day;
   final int listenedMs;
   final int segmentRepeats;
@@ -20,7 +20,7 @@ class ProgressDay {
   int get listenedMinutes => listenedMs ~/ 60000;
 }
 
-/// Итоги за всё время.
+/// All-time totals.
 class ProgressTotals {
   const ProgressTotals({
     required this.listenedMs,
@@ -41,7 +41,7 @@ class ProgressTotals {
   int get listenedMinutes => listenedMs ~/ 60000;
 }
 
-/// Сводка прогресса (`GET /v1/progress` и ответ `POST /v1/progress/events`).
+/// Progress summary from `GET /v1/progress` and event responses.
 class ProgressSummary {
   const ProgressSummary({
     required this.today,
@@ -80,25 +80,25 @@ class ProgressSummary {
             id as String,
         ],
         dailyGoalMinutes: (json['daily_goal_minutes'] as num?)?.toInt(),
-        // Порог пройденности (§12.3); дублирует `GET /v1/settings`.
+        // Completion threshold; mirrors `GET /v1/settings`.
         completionReps: (json['completion_reps'] as num?)?.toInt() ?? 1,
       );
 
   final ProgressDay today;
   final ProgressTotals totals;
 
-  /// Сумма минут за `week` — сервер считает её сам.
+  /// Total minutes for `week`, computed by the server.
   final int weekMinutes;
 
-  /// Последние 7 дней для графика динамики.
+  /// The last seven days for the trend chart.
   final List<ProgressDay> week;
 
-  /// «Последние 5» уроков (`recent_lesson_ids`) для блока «Продолжить».
+  /// The five most recent lessons for the continue block.
   final List<String> recentLessonIds;
 
-  /// Сколько раз повторить каждый сегмент, чтобы урок считался пройденным.
+  /// How many repeats per segment mark a lesson as done.
   final int completionReps;
 
-  /// Дневная цель из профиля; `null` — не задана.
+  /// Daily goal from the profile; `null` when unset.
   final int? dailyGoalMinutes;
 }

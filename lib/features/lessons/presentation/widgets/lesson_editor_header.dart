@@ -3,9 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:shado/theme/theme.dart';
 import 'package:shado/widgets/widgets.dart';
 
-/// Шапка редактора урока: назад, заголовок и основное действие. На планшете и
-/// десктопе рядом появляется «Отмена». Одна на экраны создания и правки —
-/// меняются только подписи и обработчики.
+/// Lesson editor header: back, title and the main action.
 class LessonEditorHeader extends StatelessWidget {
   const LessonEditorHeader({
     super.key,
@@ -22,10 +20,10 @@ class LessonEditorHeader extends StatelessWidget {
 
   final String primaryLabel;
 
-  /// `null` — действие пока недоступно (кнопка заперта).
+  /// `null` means the action is unavailable and the button is locked.
   final VoidCallback? onPrimary;
 
-  /// Показывается только на планшете/десктопе, если задан.
+  /// Shown on tablet and desktop only when provided.
   final VoidCallback? onCancel;
 
   final bool primaryLoading;

@@ -2,9 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../lessons/domain/entities/lesson_category.dart';
 
-/// Тема в списке админки: название и действия — переименовать и удалить.
-///
-/// В стиле соседних плиток раздела ([UserTile]) собрана из Material-виджетов.
+/// Topic row in the admin list: name and actions.
 class TopicTile extends StatelessWidget {
   const TopicTile({
     super.key,
@@ -16,8 +14,7 @@ class TopicTile extends StatelessWidget {
   final Topic topic;
   final VoidCallback onRename;
 
-  /// `null` — тему нельзя удалить (тема по умолчанию «Other»): сервер ответит
-  /// `422`, поэтому кнопку не показываем вовсе (§8.2).
+  /// `null` means the topic cannot be deleted and the button is hidden.
   final VoidCallback? onDelete;
 
   @override

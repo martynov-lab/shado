@@ -6,8 +6,7 @@ import '../../data/repositories/library_repository_impl.dart';
 import '../../domain/repositories/library_repository.dart';
 import '../../domain/usecases/get_library.dart';
 
-/// Сборка зависимостей ленты главного экрана. Presentation дальше видит только
-/// use case.
+/// Dependency wiring for the home feed.
 final libraryRemoteDataSourceProvider = Provider<LibraryRemoteDataSource>(
   (ref) => ApiLibraryRemoteDataSource(ref.watch(apiClientProvider)),
 );

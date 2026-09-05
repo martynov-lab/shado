@@ -25,7 +25,7 @@ Lesson _lesson({
   level: level,
 );
 
-/// Подменяет источник данных списка, не ходя в сеть и БД.
+/// Replaces the list data source without the network or the database.
 class _FakeLessonsController extends LessonsController {
   _FakeLessonsController(this.items);
 
@@ -35,8 +35,7 @@ class _FakeLessonsController extends LessonsController {
   Future<List<Lesson>> build() async => items;
 }
 
-/// Корень библиотеки без сети: папки и уроки вне папок, как их отдаёт
-/// `/v1/library`.
+/// Library root without the network: folders and unfiled lessons.
 class _FakeLibraryController extends LibraryController {
   _FakeLibraryController(this.root);
 
@@ -150,8 +149,7 @@ void main() {
     });
   });
 
-  // §6.3: без поиска экран показывает корень с сервера, а с поиском становится
-  // плоским — по всему каталогу, включая уроки, разложенные по папкам.
+  // Without a query the screen shows the root, with one the whole catalog.
   group('главный экран: корень и поиск', () {
     final folder = Folder(
       id: 'f1',
@@ -162,8 +160,7 @@ void main() {
       lessonCount: 2,
     );
 
-    // Корень: папка и один свободный урок. Уроки 1 и 3 лежат в папке, поэтому
-    // сервер их сюда не кладёт.
+    // The root holds a folder and one unfiled lesson; the rest are inside.
     final root = LibraryRoot(folders: [folder], lessons: [lessons[1]]);
 
     Future<ProviderContainer> pump() async {
@@ -194,12 +191,12 @@ void main() {
       final container = await pump();
       container.read(lessonsFilterProvider.notifier).setQuery('sleep');
 
-      // Урок 1 в корень не приходил, но поиск идёт по каталогу и находит его.
+      // Lesson 1 is missing from the root, but search scans the whole catalog.
       expect(container.read(visibleLessonsProvider).map((l) => l.id), [
         '1',
         '3',
       ]);
-      // Папка подходит по названию — её оставляем.
+      // The folder matches by title and is kept.
       expect(container.read(visibleFoldersProvider), [folder]);
     });
 

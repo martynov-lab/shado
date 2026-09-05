@@ -3,10 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:shado/theme/theme.dart';
 import 'package:shado/widgets/app_focus_ring.dart';
 
-/// Карточка: поверхность surface, скругление rXl, мягкая тень e1 и отступ s6.
-///
-/// Если задан [onTap], карточка становится кнопкой: на наведении поднимается
-/// до тени e2, получает кольцо фокуса и объявляется скринридеру как нажимаемая.
+/// Design system card; with [onTap] it behaves like a button.
 class AppCard extends StatefulWidget {
   const AppCard({
     super.key,
@@ -21,7 +18,7 @@ class AppCard extends StatefulWidget {
   final VoidCallback? onTap;
   final EdgeInsetsGeometry padding;
 
-  /// Выделяет карточку рамкой primary — например, текущий урок в списке.
+  /// Marks the card with a primary border.
   final bool selected;
 
   final String? semanticLabel;

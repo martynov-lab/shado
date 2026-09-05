@@ -3,8 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:shado/theme/theme.dart';
 import 'package:shado/widgets/widgets.dart';
 
-/// Карточка профиля: аватар, имя, почта, изучаемый язык и кнопка «Изменить»,
-/// открывающая правку имени.
+/// Profile card: avatar, name, email, language and an edit button.
 class SettingsProfileCard extends StatelessWidget {
   const SettingsProfileCard({
     super.key,
@@ -18,10 +17,10 @@ class SettingsProfileCard extends StatelessWidget {
   final String name;
   final String email;
 
-  /// Открывает правку имени.
+  /// Opens the name editor.
   final VoidCallback onEdit;
 
-  /// Подпись изучаемого языка, например «Английский». `null` — бейдж скрыт.
+  /// Studied language label; `null` hides the badge.
   final String? languageLabel;
 
   final String editLabel;

@@ -6,9 +6,7 @@ import 'package:shado/core/network/api_exception.dart';
 import 'fake_http_adapter.dart';
 
 void main() {
-  /// Сервер, который отдаёт 401 на защищённые пути, пока не выдан новый access.
-  ///
-  /// [refreshStatus] — чем отвечает сам `/v1/auth/refresh`.
+  /// A server returning 401 on protected paths until a new access token.
   ({ApiClient client, FakeHttpAdapter adapter, FakeTokenStorage tokens})
   buildExpiredSession({
     int refreshStatus = 200,
@@ -32,7 +30,7 @@ void main() {
           'expires_in': 900,
         });
       }
-      // Пока токен не обновлён, любой защищённый путь отвечает 401.
+      // Until the token is refreshed every protected path answers 401.
       final authorization = options.headers['Authorization'];
       if (authorization != 'Bearer fresh') {
         return errorResponse(401, 'unauthorized', message: 'токен истёк');
@@ -58,7 +56,7 @@ void main() {
 
     expect(result['path'], '/v1/me');
     expect(env.adapter.countOf('/v1/auth/refresh'), 1);
-    // Исходный запрос: первый раз с протухшим токеном, второй — с новым.
+    // The original request: first with a stale token, then with a fresh one.
     expect(env.adapter.countOf('/v1/me'), 2);
   });
 
@@ -73,8 +71,7 @@ void main() {
   });
 
   test('несколько параллельных 401 обходятся одним refresh', () async {
-    // Обновление держим искусственно медленным: без общей очереди каждый из
-    // трёх запросов успел бы запустить своё.
+    // The refresh is kept slow so the requests overlap.
     final env = buildExpiredSession(
       refreshDelay: const Duration(milliseconds: 50),
     );
@@ -107,8 +104,7 @@ void main() {
         ),
       ),
     );
-    // Сервер гасит всю цепочку refresh-токенов, если пришёл уже
-    // использованный, — ретраить бессмысленно, сессии больше нет.
+    // A server refusal on refresh closes the whole session.
     expect(env.tokens.cleared, isTrue);
     expect(signedOut, isTrue);
     expect(env.adapter.countOf('/v1/auth/refresh'), 1);

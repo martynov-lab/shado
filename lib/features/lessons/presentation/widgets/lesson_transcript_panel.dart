@@ -6,11 +6,7 @@ import 'package:shado/widgets/widgets.dart';
 
 import '../controllers/lesson_controller.dart';
 
-/// Панель текста текущего сегмента и его перевода.
-///
-/// Перевод — ЗАГЛУШКА: в данных сегмента его пока нет, поэтому вместо текста
-/// показываем подпись-заполнитель. Появится, когда сервер начнёт присылать
-/// перевод.
+/// Panel with the current segment text and its translation.
 class LessonTranscriptPanel extends ConsumerWidget {
   const LessonTranscriptPanel({super.key, required this.lessonId});
 

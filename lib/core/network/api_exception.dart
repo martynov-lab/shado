@@ -1,9 +1,6 @@
 import '../error/failures.dart';
 
-/// Коды ошибок API. Один список на весь сервер, см. §1 спецификации клиента.
-///
-/// [unknown] — не «всё хорошо», а «сервер прислал код, которого мы не знаем»:
-/// такую ошибку разбираем по HTTP-статусу и показываем как общую.
+/// API error codes; [unknown] is a code the client does not know.
 enum ApiErrorCode {
   validationError('validation_error'),
   invalidCredentials('invalid_credentials'),
@@ -15,8 +12,7 @@ enum ApiErrorCode {
   payloadTooLarge('payload_too_large'),
   unsupportedMediaType('unsupported_media_type'),
   rateLimited('rate_limited'),
-  // Специфичные коды озвучки через ИИ (TTS_CLIENT_SPEC §4): различаем, чтобы
-  // клиент вёл себя по-разному — 503 предлагает повтор, 429 не ретраит.
+  // AI voice-over codes.
   ttsQuotaExceeded('tts_quota_exceeded'),
   ttsUnavailable('tts_unavailable'),
   internalError('internal_error'),
@@ -24,7 +20,7 @@ enum ApiErrorCode {
 
   const ApiErrorCode(this.wire);
 
-  /// Значение, которое приходит в `error.code`.
+  /// Value that arrives in `error.code`.
   final String wire;
 
   static ApiErrorCode parse(String? raw) {
@@ -35,8 +31,7 @@ enum ApiErrorCode {
   }
 }
 
-/// Ошибка, пришедшая от API. Дальше сетевого слоя `DioException` не уходит:
-/// репозитории и контроллеры видят только её.
+/// Failure returned by the API.
 class ApiException extends Failure {
   const ApiException({
     required this.code,
@@ -48,13 +43,13 @@ class ApiException extends Failure {
 
   final ApiErrorCode code;
 
-  /// HTTP-статус ответа; `null`, если ответа не было вовсе.
+  /// HTTP status of the response; `null` when there was none.
   final int? status;
 
-  /// Тело `error` целиком — там же лежит `current` при [ApiErrorCode.versionConflict].
+  /// The whole `error` body.
   final Map<String, dynamic>? details;
 
-  /// Актуальное состояние ресурса при конфликте версий (§6).
+  /// Current resource state on a version conflict.
   Map<String, dynamic>? get current =>
       details?['current'] as Map<String, dynamic>?;
 

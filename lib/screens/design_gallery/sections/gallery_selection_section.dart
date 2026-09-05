@@ -5,7 +5,7 @@ import 'package:shado/screens/design_gallery/widgets/gallery_label.dart';
 import 'package:shado/screens/design_gallery/widgets/gallery_section.dart';
 import 'package:shado/widgets/widgets.dart';
 
-/// Раздел витрины: флажки, переключатели, тумблеры и сегменты.
+/// Gallery section: checkboxes, radios, switches and segments.
 class GallerySelectionSection extends StatefulWidget {
   const GallerySelectionSection({super.key});
 

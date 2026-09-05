@@ -2,7 +2,7 @@ import '../../../../core/error/failures.dart';
 import '../entities/folder.dart';
 import '../repositories/folder_repository.dart';
 
-/// Правка названия и видимости папки поверх её версии (`If-Match`).
+/// Updates a folder title and visibility on top of its version.
 class UpdateFolder {
   const UpdateFolder(this._repository);
 

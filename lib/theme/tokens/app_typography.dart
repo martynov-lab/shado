@@ -1,12 +1,6 @@
 import 'package:flutter/widgets.dart';
 
-/// Type scale for Shadowing.
-///
-/// Styles are intentionally color-agnostic: color comes from the theme's
-/// text theme or from `context.colors` at the call site, so the same style
-/// works in both light and dark.
-///
-/// Families must match the `family:` names declared in pubspec.yaml.
+/// Type scale; color is set at the call site.
 abstract final class AppText {
   static const String display = 'Sora';
   static const String textFamily = 'PlusJakartaSans';
@@ -64,7 +58,7 @@ abstract final class AppText {
     fontWeight: FontWeight.w500,
   );
 
-  /// Timecodes, durations, playback speed — anything numeric in the editor.
+  /// Monospaced style for timecodes, durations and speed.
   static const TextStyle monoTime = TextStyle(
     fontFamily: mono,
     fontSize: 13,

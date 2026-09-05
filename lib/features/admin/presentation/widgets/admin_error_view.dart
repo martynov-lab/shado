@@ -2,10 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../../core/network/api_exception.dart';
 
-/// Список пользователей не пришёл.
-///
-/// Отказ по роли — не ошибка, а нормальный ход событий: роль сняли только что,
-/// раздел закроется по возврату на главную, и повторять здесь нечего.
+/// Message shown when the user list failed to load.
 class AdminErrorView extends StatelessWidget {
   const AdminErrorView({
     super.key,

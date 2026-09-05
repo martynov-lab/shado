@@ -18,11 +18,11 @@ import 'package:shado/features/lessons/presentation/controllers/lesson_providers
 import 'package:shado/theme/theme.dart';
 import 'package:shado/widgets/widgets.dart';
 
-/// Сессия без сети: тест управляет тем, что вернёт восстановление.
+/// Session without the network: the test drives what restore returns.
 class FakeAuthRepository implements AuthRepository {
   FakeAuthRepository({this.restored});
 
-  /// Кого «вспомнит» приложение на старте; `null` — сессии нет.
+  /// Who the app remembers on start; `null` means no session.
   final AuthUser? restored;
 
   final _expired = StreamController<void>.broadcast();
@@ -76,7 +76,7 @@ class FakeAuthRepository implements AuthRepository {
   Future<void> logout() async => _current = null;
 }
 
-/// Уроков нет: экраны списка нас здесь не интересуют.
+/// No lessons: the list screens do not matter here.
 class FakeLessonRepository implements LessonRepository {
   @override
   Future<List<Lesson>> getLessons() async => const [];
@@ -134,8 +134,7 @@ const _quotaWindow = TtsQuotaWindow(used: 0, limit: 14, remaining: 14);
 
 void main() {
   Future<void> pumpApp(WidgetTester tester, FakeAuthRepository auth) async {
-    // Телефон: у экрана входа три раскладки, и проверяем ту, что видит
-    // большинство.
+    // Checks the phone layout of the sign-in screen.
     tester.view.physicalSize = const Size(390, 900);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.reset);
@@ -145,20 +144,18 @@ void main() {
         overrides: [
           authRepositoryProvider.overrideWithValue(auth),
           lessonRepositoryProvider.overrideWithValue(FakeLessonRepository()),
-          // Прогрев прогресса не предмет этих тестов: без сервера он бы держал
-          // заставку — здесь считаем его сразу готовым.
+          // Warm-up counts as done at once, otherwise it would hold the splash.
           appBootstrapProvider.overrideWith((ref) async {}),
         ],
         child: const ShadoApp(),
       ),
     );
-    // Первый кадр — заставка, пока проверяется refresh-токен.
+    // The first frame is the splash while the refresh token is checked.
     await tester.pump();
     await tester.pumpAndSettle();
   }
 
-  /// Экран входа сам по себе, без роутера: так его можно померить на любой
-  /// ширине и в любой теме.
+  /// The sign-in screen without a router, for width and theme checks.
   Future<void> pumpLoginPage(
     WidgetTester tester, {
     required Size size,
@@ -239,9 +236,9 @@ void main() {
 
     await pumpApp(tester, auth);
 
-    // Экрана входа пользователь даже не увидел.
+    // The user never even saw the sign-in screen.
     expect(find.text('С возвращением'), findsNothing);
-    // На экране уроков — меню аккаунта в шапке.
+    // The lessons screen has the account menu in the header.
     expect(find.byIcon(Icons.account_circle_outlined), findsOneWidget);
   });
 
@@ -318,7 +315,7 @@ void main() {
     await tester.tap(find.byIcon(Icons.account_circle_outlined));
     await tester.pumpAndSettle();
 
-    // «Управление» и «Пользователи» — разделы владельца, их видит только owner.
+    // The management and users sections are visible to the owner only.
     expect(find.text('Управление'), findsNothing);
     expect(find.text('Пользователи'), findsNothing);
   });

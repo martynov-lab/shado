@@ -8,8 +8,7 @@ import '../../../auth/presentation/controllers/auth_controller.dart';
 import '../controllers/lesson_controller.dart';
 import '../controllers/lesson_permissions.dart';
 
-/// Шапка экрана урока: назад, название с подзаголовком «тема · сегмент N из M ·
-/// уровень» и кнопка правки разбивки.
+/// Lesson screen header: back, the title with a subtitle and the edit button.
 class LessonHeader extends ConsumerWidget {
   const LessonHeader({
     super.key,
@@ -30,8 +29,7 @@ class LessonHeader extends ConsumerWidget {
     final role = ref.watch(
       authControllerProvider.select((auth) => auth.user?.role),
     );
-    // Кнопку правки показываем только тому, кто вправе править этот урок;
-    // окончательно решает сервер (403).
+    // The edit button follows permissions; the server still decides.
     final canEdit = lesson != null && canModifyLesson(role, lesson);
 
     return Row(

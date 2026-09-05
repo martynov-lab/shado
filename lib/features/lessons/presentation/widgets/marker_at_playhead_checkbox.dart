@@ -2,11 +2,7 @@ import 'package:flutter/material.dart';
 
 import 'package:shado/widgets/widgets.dart';
 
-/// Флажок у кнопки воспроизведения: куда садится новая метка на волне.
-///
-/// Стоит — в позицию ползунка: доводят плеер до нужного места и ставят метку в
-/// тексте. Снят — вплотную правее самой правой метки, а разносят их потом
-/// руками по волне.
+/// The marker-at-playhead checkbox: where a new marker lands.
 class MarkerAtPlayheadCheckbox extends StatelessWidget {
   const MarkerAtPlayheadCheckbox({
     super.key,
@@ -16,7 +12,7 @@ class MarkerAtPlayheadCheckbox extends StatelessWidget {
 
   final bool value;
 
-  /// `null` выключает флажок — например, пока идёт обрезка.
+  /// `null` disables the checkbox, for example while trimming.
   final ValueChanged<bool>? onChanged;
 
   @override

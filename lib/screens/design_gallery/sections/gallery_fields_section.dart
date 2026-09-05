@@ -4,7 +4,7 @@ import 'package:shado/screens/design_gallery/widgets/gallery_section.dart';
 import 'package:shado/theme/theme.dart';
 import 'package:shado/widgets/widgets.dart';
 
-/// Раздел витрины: поля ввода, выпадающий список и ползунки.
+/// Gallery section: text fields, dropdown and sliders.
 class GalleryFieldsSection extends StatefulWidget {
   const GalleryFieldsSection({super.key});
 

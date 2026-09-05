@@ -4,17 +4,12 @@ import '../../../../core/constants/app_constants.dart';
 import '../../../../core/error/failures.dart';
 import 'audio_trim.dart';
 
-/// Работа с набором границ кусков.
-///
-/// Границы общие: для `N` кусков это `N + 1` значение, где `b[0]` и `b[N]`
-/// прибиты к краям обрезанного отрезка [AudioTrim], а между ними — внутренние
-/// стыки, которые пользователь двигает на волне. Значения — абсолютные
-/// миллисекунды файла, поэтому обрезка головы не сдвигает уже расставленные
-/// метки.
+/// Segment boundary math: `N` segments give `N + 1` values in absolute file
+/// milliseconds.
 class SegmentBoundaries {
   const SegmentBoundaries._();
 
-  /// Равномерная раскладка на [count] кусков внутри [trim].
+  /// Even layout of [count] segments inside [trim].
   static List<int> even(int count, AudioTrim trim) {
     if (count <= 0 || trim.isEmpty) return const [];
     return [
@@ -23,11 +18,7 @@ class SegmentBoundaries {
     ];
   }
 
-  /// Подгоняет уже расставленные границы под новое число кусков и под [trim].
-  ///
-  /// Разметка обычно правится с начала текста, поэтому уцелевшие внутренние
-  /// стыки переносятся как есть, а хвост аудио делится поровну между
-  /// оставшимися кусками.
+  /// Fits existing boundaries to a new segment count and to [trim].
   static List<int> resize(List<int> current, int count, AudioTrim trim) {
     if (count <= 0 || trim.isEmpty) return const [];
     if (current.length < 2) return even(count, trim);
@@ -42,13 +33,8 @@ class SegmentBoundaries {
     );
   }
 
-  /// Переносит разметку на новую обрезку, не меняя числа кусков.
-  ///
-  /// Метки внутри нового отрезка остаются на своих местах: они привязаны к
-  /// речи, и обрезка тишины по краям их не касается. А вот метки, оказавшиеся
-  /// снаружи, размечали как раз то, что отрезали, — прижимать их к краю значит
-  /// наделать кусков по 200 мс, поэтому они делят поровну освободившееся место
-  /// с той же стороны.
+  /// Refits the layout to a new trim without changing the segment count:
+  /// inner markers stay, outer ones split the freed room evenly.
   static List<int> refit(List<int> current, AudioTrim trim) {
     if (current.length < 2 || trim.isEmpty) return current;
     final count = current.length - 1;
@@ -61,8 +47,7 @@ class SegmentBoundaries {
     final orphanedAfter = inner.length - kept.length - orphanedBefore;
 
     final result = <int>[trim.startMs];
-    // Слева от первой уцелевшей метки — столько кусков, сколько осталось без
-    // места в отрезанной голове.
+    // On the left, split the room among markers cut off by the trimmed head.
     final firstKept = kept.isEmpty ? trim.endMs : kept.first;
     for (var i = 1; i <= orphanedBefore; i++) {
       result.add(
@@ -70,7 +55,7 @@ class SegmentBoundaries {
       );
     }
     result.addAll(kept);
-    // Так же и с хвостом: делим то, что осталось после последней уцелевшей.
+    // The tail is handled the same way.
     final lastKept = kept.isEmpty ? result.last : kept.last;
     for (var i = 1; i <= orphanedAfter; i++) {
       result.add(lastKept + (trim.endMs - lastKept) * i ~/ (orphanedAfter + 1));
@@ -79,14 +64,8 @@ class SegmentBoundaries {
     return normalize(result, trim);
   }
 
-  /// Вставляет новую внутреннюю метку [ordinal] (`1..count`) в момент [ms],
-  /// удлиняя разметку на один кусок. Уже расставленные метки остаются на местах.
-  ///
-  /// Так границы растят по мере разбивки текста: услышал паузу между фразами —
-  /// поставил в этом месте метку. Если [ms] не оставляет минимального зазора от
-  /// предыдущей метки (плеер оказался перед ней — например, аудио ещё не играли
-  /// и ползунок в самом начале), новая метка встаёт вплотную к предыдущей, а не
-  /// перескакивает через неё.
+  /// Inserts inner marker [ordinal] at [ms], growing the layout by one
+  /// segment; the other markers stay in place.
   static List<int> insertAt(
     List<int> current,
     int ordinal,
@@ -96,22 +75,17 @@ class SegmentBoundaries {
     if (current.length < 2 || trim.isEmpty) return current;
     if (ordinal < 1 || ordinal > current.length - 1) return current;
     final grown = [...current.sublist(0, ordinal), ms, ...current.sublist(ordinal)];
-    // normalize и прижмёт метку к предыдущей, если [ms] залез в её зазор.
+    // normalize snaps the marker to the previous one when [ms] breaks the gap.
     return normalize(grown, trim);
   }
 
-  /// Момент для новой метки [ordinal], когда её не привязывают к ползунку:
-  /// позиция предыдущей метки, от которой [insertAt] отодвинет новую на
-  /// минимальный зазор.
-  ///
-  /// Так метки копятся слева направо — первая встаёт чуть правее начала
-  /// отрезка, каждая следующая вплотную за предыдущей, — а разносят их потом
-  /// руками по волне.
+  /// Position of the previous marker — where marker [ordinal] goes when it is
+  /// not pinned to the playhead.
   static int afterPrevious(List<int> current, int ordinal) => current.isEmpty
       ? 0
       : current[(ordinal - 1).clamp(0, current.length - 1)];
 
-  /// Дописывает недостающие метки, поровну деля хвост отрезка за [head].
+  /// Appends the missing markers, splitting the tail after [head] evenly.
   static List<int> _spreadRest(List<int> head, int count, AudioTrim trim) {
     final result = List<int>.of(head);
     final rest = count - (result.length - 1);
@@ -123,18 +97,14 @@ class SegmentBoundaries {
     return normalize(result, trim);
   }
 
-  /// Прижимает крайние границы к краям [trim] и разводит соседние минимум на
+  /// Snaps the outer boundaries to [trim] and keeps neighbours at least
   /// [kMinSegmentGapMs].
-  ///
-  /// Через неё же разметка переезжает на новую обрезку: метки, оказавшиеся за
-  /// её пределами, подтягиваются внутрь.
   static List<int> normalize(List<int> boundaries, AudioTrim trim) {
     if (boundaries.length < 2) {
       throw const ValidationFailure('Границ должно быть не меньше двух');
     }
     final count = boundaries.length - 1;
-    // На очень коротком отрезке минимальный зазор не помещается — тогда куски
-    // просто делят его поровну.
+    // On a short range the gap does not fit — split it evenly.
     if (trim.durationMs <= count) return even(count, trim);
 
     final gap = _gapMs(count, trim.durationMs);
@@ -149,8 +119,7 @@ class SegmentBoundaries {
     return result;
   }
 
-  /// Зазор, который гарантированно помещается [count] раз: на коротком отрезке
-  /// минимальный уступает место, иначе куски не разложить.
+  /// A gap that fits between boundaries [count] times.
   static int _gapMs(int count, int durationMs) =>
       math.min(kMinSegmentGapMs, math.max(1, durationMs ~/ count));
 }

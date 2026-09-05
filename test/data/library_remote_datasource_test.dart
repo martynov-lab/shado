@@ -66,7 +66,7 @@ void main() {
     final request = env.adapter.requests.single;
     expect(request.queryParameters['limit'], 100);
     expect(request.queryParameters['cursor'], 'c1');
-    // `since` у ленты отдаёт 422 — параметра нет и в запросе (§6.3).
+    // `since` on the feed returns 422; the request carries no such param.
     expect(request.queryParameters.containsKey('since'), isFalse);
   });
 }

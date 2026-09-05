@@ -7,11 +7,7 @@ import '../../../admin/presentation/pages/management_page.dart';
 import '../../../admin/presentation/pages/users_page.dart';
 import '../../../auth/presentation/controllers/auth_controller.dart';
 
-/// Кто вошёл, выход и — владельцу — разделы «Управление», «Пользователи» и
-/// витрина дизайн-системы.
-///
-/// Сессию читает сам: меню аккаунта отвечает за неё целиком, и экрану знать о
-/// ней незачем.
+/// Account menu: who is signed in, sign-out and the owner sections.
 class AccountMenu extends ConsumerWidget {
   const AccountMenu({super.key});
 
@@ -41,8 +37,7 @@ class AccountMenu extends ConsumerWidget {
             enabled: false,
             child: Text(email, overflow: TextOverflow.ellipsis),
           ),
-        // Разделы владельца. Прячем их не ради защиты — роль проверяет сервер, —
-        // а чтобы не показывать то, что всё равно недоступно.
+        // Owner sections; the server checks the rights anyway.
         if (auth.isOwner) ...[
           const PopupMenuItem(
             value: 'manage',

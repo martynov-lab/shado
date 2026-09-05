@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 
-/// Ход отправки файла на сервер. Полсотни мегабайт летят не мгновенно, поэтому
-/// показываем прогресс и даём прервать загрузку.
+/// Upload progress with a way to abort the transfer.
 class UploadProgress extends StatelessWidget {
   const UploadProgress({
     super.key,
@@ -10,13 +9,12 @@ class UploadProgress extends StatelessWidget {
     this.label,
   });
 
-  /// Доля от нуля до единицы; ноль — размер ещё неизвестен.
+  /// A share from zero to one; zero means the size is unknown yet.
   final double progress;
 
   final VoidCallback onCancelPressed;
 
-  /// Подпись под полосой. `null` — обычная загрузка файла с процентами; для
-  /// озвучки прогресса нет, поэтому задаётся своя надпись.
+  /// Caption under the bar; `null` shows upload percentage.
   final String? label;
 
   @override

@@ -12,16 +12,11 @@ import 'package:shado/screens/design_gallery/sections/gallery_selection_section.
 import 'package:shado/screens/design_gallery/sections/gallery_typography_section.dart';
 import 'package:shado/theme/theme.dart';
 
-/// Витрина дизайн-системы: все компоненты на одном экране, разбитые по
-/// разделам, с переключателем темы наверху.
-///
-/// Экран приёмочный, а не продуктовый — держите его в проекте, пока
-/// библиотека растёт: он показывает, что компонент жив в обеих темах и на
-/// любой ширине. Каждый раздел живёт своим файлом и своим состоянием.
+/// Design gallery: every component grouped by section on a single screen.
 class DesignGalleryScreen extends StatelessWidget {
   const DesignGalleryScreen({super.key});
 
-  /// Маршрут витрины. Открыт без входа в аккаунт.
+  /// Gallery route; open without signing in.
   static const String routePath = '/design';
 
   @override
@@ -34,8 +29,7 @@ class DesignGalleryScreen extends StatelessWidget {
 
     return Scaffold(
       backgroundColor: context.colors.bg,
-      // Шапку показываем только когда есть куда вернуться: витрину открывают и
-      // как стартовый экран, там пустой бар со стрелкой был бы лишним.
+      // The app bar is only needed when there is somewhere to go back to.
       appBar: context.canPop()
           ? AppBar(
               backgroundColor: context.colors.bg,

@@ -9,9 +9,7 @@ import 'admin_error_view.dart';
 import 'user_tile.dart';
 import 'users_list_footer.dart';
 
-/// Список пользователей сервиса и их роли: поиск, подгрузка страниц и смена
-/// роли. Без собственного каркаса — встраивается и в отдельную страницу, и во
-/// вкладку «Управление».
+/// User list with search, paging and role changes.
 class UsersAdminSection extends ConsumerStatefulWidget {
   const UsersAdminSection({super.key});
 
@@ -27,8 +25,7 @@ class _UsersAdminSectionState extends ConsumerState<UsersAdminSection> {
   void initState() {
     super.initState();
     _scrollController.addListener(_onScroll);
-    // Свою роль могли снять с другого устройства: перечитываем её при входе в
-    // раздел, чтобы он закрылся сам.
+    // The role could be revoked from another device — re-read it.
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ref.read(authControllerProvider.notifier).reloadUser();
     });
@@ -57,8 +54,7 @@ class _UsersAdminSectionState extends ConsumerState<UsersAdminSection> {
       if (!mounted) return;
       _showMessage('${user.email}: роль ${role.wire}');
     } on ApiException catch (error) {
-      // Понизить владельца, заданного в конфигурации сервера, нельзя — сервер
-      // отвечает 422 с объяснением.
+      // The server explains the refusal — show its message.
       _showMessage(error.message);
     } catch (error) {
       _showMessage('Не удалось изменить роль: $error');
@@ -105,7 +101,7 @@ class _UsersAdminSectionState extends ConsumerState<UsersAdminSection> {
               onRefresh: controller.refresh,
               child: ListView.builder(
                 controller: _scrollController,
-                // Лишний элемент в конце — хвост с «показано N из M».
+                // One extra item at the end is the list footer.
                 itemCount: data.users.length + 1,
                 itemBuilder: (context, index) => index == data.users.length
                     ? UsersListFooter(

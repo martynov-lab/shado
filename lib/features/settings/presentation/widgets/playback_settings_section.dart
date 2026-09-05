@@ -13,15 +13,13 @@ import 'settings_stepper.dart';
 import 'settings_switch_row.dart';
 import 'settings_value.dart';
 
-/// Раздел «Воспроизведение»: скорость по умолчанию, число повторов, пауза и
-/// обратный отсчёт. Всё сохраняется локально и применяется плеером урока.
+/// Playback section: speed, repeats, pause and the countdown.
 class PlaybackSettingsSection extends ConsumerWidget {
   const PlaybackSettingsSection({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    // Пока настройки грузятся — показываем значения по умолчанию, а не спиннер:
-    // раздел не должен «мигать» на первом кадре.
+    // While settings load, show the default values.
     final settings =
         ref.watch(playbackSettingsControllerProvider).value ??
         const PlaybackSettings();

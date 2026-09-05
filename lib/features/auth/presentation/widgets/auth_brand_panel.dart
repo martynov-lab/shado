@@ -8,7 +8,7 @@ import 'auth_brand_row.dart';
 import 'auth_brand_surface.dart';
 import 'auth_brand_wave.dart';
 
-/// Левая половина десктопного экрана: рассказ о продукте на градиенте.
+/// Left half of the desktop screen: the product pitch on a gradient.
 class AuthBrandPanel extends StatelessWidget {
   const AuthBrandPanel({super.key, required this.isRegistration});
 

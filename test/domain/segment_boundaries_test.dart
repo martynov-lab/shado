@@ -6,7 +6,7 @@ import 'package:shado/features/lessons/domain/entities/segment_boundaries.dart';
 void main() {
   const full = AudioTrim.full(9000);
 
-  /// Обрезанная дорожка: у файла отрезаны первая и последняя секунды.
+  /// A trimmed track: the first and last seconds are cut off.
   const trimmed = AudioTrim(startMs: 1000, endMs: 8000);
 
   group('SegmentBoundaries.even', () {
@@ -66,8 +66,7 @@ void main() {
     });
 
     test('переносит разметку целого файла на обрезанную дорожку', () {
-      // Метки 500 и 8500 остались за краями обрезки — их подтягивает внутрь,
-      // а попавшая в отрезок 4000 стоит на месте.
+      // Markers outside the trim are pulled inside; the one inside stays.
       final result = SegmentBoundaries.resize(
         [0, 500, 4000, 8500, 9000],
         4,
@@ -91,8 +90,7 @@ void main() {
     });
 
     test('обрезка хвоста не схлопывает потерявшие место метки', () {
-      // 6000 и 7500 остались за новым концом: они делят пополам то, что
-      // осталось после 3000, а не липнут к правому краю.
+      // Markers past the new end split the remaining space evenly.
       final result = SegmentBoundaries.refit(
         [0, 3000, 6000, 7500, 9000],
         const AudioTrim(startMs: 0, endMs: 5000),
@@ -111,7 +109,7 @@ void main() {
       expect(result.length, 5);
       expect(result.first, 4000);
       expect(result.last, 9000);
-      // 7000 уцелела, а 1000 и 2000 поделили голову до неё.
+      // 7000 survived while 1000 and 2000 split the head before it.
       expect(result[3], 7000);
       expect(result, [4000, 5000, 6000, 7000, 9000]);
     });
@@ -173,7 +171,7 @@ void main() {
     });
 
     test('на коротком отрезке ужимает зазор, но держит порядок', () {
-      // Пять кусков по 200 мс в 600 мс не помещаются — зазор уступает место.
+      // Five 200 ms segments do not fit in 600 ms, so the gap gives way.
       final result = SegmentBoundaries.normalize(
         [0, 0, 0, 0, 0, 600],
         const AudioTrim.full(600),
@@ -201,8 +199,7 @@ void main() {
     });
 
     test('прижимает метку к предыдущей, если плеер раньше неё', () {
-      // Плеер в самом начале (0), а слева уже метка 4000 — новая липнет к ней
-      // с зазором, а не перескакивает через неё.
+      // A new marker goes after the previous one with a gap, not before it.
       final result = SegmentBoundaries.insertAt([0, 4000, 9000], 2, 0, full);
 
       expect(result, [0, 4000, 4200, 9000]);
@@ -223,7 +220,7 @@ void main() {
     });
 
     test('на обрезанной дорожке не выходит за оставленный отрезок', () {
-      // Плеер (500) левее отрезка — метка встала у левого края с зазором.
+      // The player at 500 is left of the range, so the marker keeps a gap.
       final result = SegmentBoundaries.insertAt([1000, 8000], 1, 500, trimmed);
 
       expect(result.first, 1000);

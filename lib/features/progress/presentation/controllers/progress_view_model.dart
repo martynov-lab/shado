@@ -2,8 +2,7 @@ import '../../domain/entities/progress_summary.dart';
 import '../../domain/progress_streak.dart';
 import '../../domain/progress_week.dart';
 
-/// Готовые к отрисовке данные экрана прогресса: сводка сервера и история,
-/// приведённые к входам виджетов из макета.
+/// Progress screen data mapped onto widget inputs.
 class ProgressViewModel {
   const ProgressViewModel({
     required this.stats,
@@ -27,10 +26,10 @@ class ProgressViewModel {
   ) {
     final today = summary.today;
     final totals = summary.totals;
-    // Полная неделя: дни без занятий сервер опускает, дополняем их нулями.
+    // A full week: the server omits idle days, so pad them with zeros.
     final week = weekWithGaps(summary.week, today.day);
 
-    // Столбцы графика — минуты по дням, в процентах от максимума за неделю.
+    // Chart bars are daily minutes as a percentage of the maximum.
     final weekMinutes = [for (final day in week) day.listenedMinutes];
     final maxMinutes = weekMinutes.fold<int>(0, (a, b) => b > a ? b : a);
     final bars = [
@@ -41,7 +40,7 @@ class ProgressViewModel {
     var todayIndex = week.indexWhere((day) => day.day == today.day);
     if (todayIndex < 0) todayIndex = week.isEmpty ? 0 : week.length - 1;
 
-    // Дневная цель × 7 — недельная. Показываем «сделано / цель».
+    // The weekly goal is the daily one times seven.
     final dailyGoal = summary.dailyGoalMinutes ?? 0;
     final weekGoal = dailyGoal * 7;
     final double goalRatio = weekGoal <= 0
@@ -92,12 +91,12 @@ class ProgressViewModel {
   final List<(String, String, String?, String)> stats;
   final List<(String, String, String?, String)> statsWide;
 
-  /// Высоты столбцов графика в процентах и подписи дней.
+  /// Bar heights in percent and the day labels.
   final List<int> weekBars;
   final List<String> weekLabels;
   final int weekTodayIndex;
 
-  /// Минуты по дням для тепловой карты (70 ячеек, старые → свежие).
+  /// Daily minutes for the heatmap, oldest to newest.
   final List<int> heatmapCells;
 
   final int streakDays;
@@ -126,8 +125,7 @@ class ProgressViewModel {
     return _weekdays[(date.weekday - 1).clamp(0, 6)];
   }
 
-  /// 70 ячеек тепловой карты: минуты за последние 70 дней в хронологическом
-  /// порядке, недостающие дни — нули.
+  /// The 70 heatmap cells; missing days are zeros.
   static List<int> _heatmapCells(List<ProgressDay> history) {
     const size = 70;
     final sorted = [...history]..sort((a, b) => a.day.compareTo(b.day));
@@ -135,7 +133,7 @@ class ProgressViewModel {
         ? sorted.sublist(sorted.length - size)
         : sorted;
     final minutes = [for (final day in recent) day.listenedMinutes];
-    // Дополняем спереди нулями, чтобы свежие дни оказались в конце сетки.
+    // Pad with zeros at the front so recent days land at the end.
     return [
       ...List<int>.filled(size - minutes.length, 0),
       ...minutes,

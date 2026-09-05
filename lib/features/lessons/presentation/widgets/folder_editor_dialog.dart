@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 
-/// Ввод названия папки — для создания и переименования. Возвращает введённое
-/// название или `null`, если отменили.
+/// Folder name input; returns the name or `null` when cancelled.
 class FolderEditorDialog extends StatefulWidget {
   const FolderEditorDialog({
     super.key,
@@ -10,10 +9,10 @@ class FolderEditorDialog extends StatefulWidget {
     this.initialValue = '',
   });
 
-  /// Заголовок диалога, например «Новая папка».
+  /// Dialog title.
   final String title;
 
-  /// Подпись кнопки подтверждения, например «Создать».
+  /// Confirm button label.
   final String confirmLabel;
 
   final String initialValue;

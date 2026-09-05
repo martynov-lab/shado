@@ -7,14 +7,8 @@ import '../controllers/waveform_controller.dart';
 import 'trim_bar.dart';
 import 'waveform_editor.dart';
 
-/// Карточка с волной аудио: сама тянет пики и показывает состояние загрузки.
-///
-/// Используется и на экране урока, и на экранах создания/правки — разметка
-/// границ везде одна и та же.
-///
-/// Под карточкой при заданном [onTrimStart] появляется полоска обрезки: пока
-/// [trim] пуст — одна кнопка «Обрезать», а в режиме обрезки — «Применить» и
-/// «Отменить» рядом с длительностью того, что останется.
+/// Waveform card: it fetches peaks itself and shows the loading state.
+/// With [onTrimStart] a trim bar appears underneath.
 class WaveformCard extends ConsumerWidget {
   const WaveformCard({
     super.key,
@@ -39,32 +33,28 @@ class WaveformCard extends ConsumerWidget {
     this.onTrimCancel,
   });
 
-  /// Аудио на сервере: по нему приходят пики.
+  /// Server-side audio the peaks are fetched for.
   final String audioId;
 
-  /// Локальная копия файла, если она уже есть. Нужна только запасному пути,
-  /// когда сервер недоступен.
+  /// Local file copy for the fallback waveform builder.
   final String? audioPath;
 
-  /// Длительность файла целиком: по ней разложены пики.
+  /// Duration of the whole file.
   final int durationMs;
 
-  /// Отрезок файла, который показываем. В режиме обрезки — файл целиком,
-  /// чтобы обрезанное можно было вернуть.
+  /// File range being shown.
   final AudioTrim view;
 
   final List<int> boundaries;
   final ValueChanged<List<int>> onBoundariesChanged;
 
-  /// Удаление внутренней метки по её индексу — двойным тапом. `null` — метки
-  /// удалять нельзя.
+  /// Removes an inner marker on a double tap; `null` forbids removal.
   final ValueChanged<int>? onBoundaryRemoved;
 
-  /// Задан — на волне появляется перетаскиваемый ползунок воспроизведения.
+  /// When set, a playhead appears on the waveform.
   final ValueChanged<int>? onSeek;
 
-  /// Кеш пиков рядом с файлом уместен только для аудио, которое уже
-  /// принадлежит приложению.
+  /// Whether to write the peaks cache next to the file.
   final bool cachePeaks;
 
   final int positionMs;
@@ -73,12 +63,12 @@ class WaveformCard extends ConsumerWidget {
   final double height;
   final EdgeInsets margin;
 
-  /// Отрезок, который останется после обрезки. `null` — обрезка не идёт.
+  /// Range that survives trimming; `null` when trimming is off.
   final AudioTrim? trim;
 
   final ValueChanged<AudioTrim>? onTrimChanged;
 
-  /// Задан — под волной появляется кнопка «Обрезать».
+  /// When set, a trim button appears under the waveform.
   final VoidCallback? onTrimStart;
 
   final VoidCallback? onTrimApply;
@@ -86,9 +76,7 @@ class WaveformCard extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    // Для необрезанного файла отрезок не задаём: волна на весь файл — это тот
-    // же ответ сервера, и переспрашивать её при каждом входе в режим обрезки
-    // незачем.
+    // For an untrimmed file no range is set, so the wave is not refetched.
     final peaksAsync = ref.watch(
       waveformPeaksProvider(
         WaveformQuery(
@@ -102,8 +90,7 @@ class WaveformCard extends ConsumerWidget {
     );
     final card = Card(
       margin: margin,
-      // Клип не ставим: волну со скруглением рисует сам painter, зато кружки
-      // ручек границ могут выступать за верхний край карточки, как в макете.
+      // No clip here: the painter clips the wave and handles overflow the edge.
       clipBehavior: Clip.none,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.all(Radius.circular(kWaveCornerRadius)),

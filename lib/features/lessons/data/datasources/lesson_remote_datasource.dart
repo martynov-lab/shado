@@ -5,39 +5,24 @@ import '../../domain/entities/lesson_category.dart';
 import '../models/lesson_dto.dart';
 import '../models/segment_model.dart';
 
-/// Страница списка уроков.
+/// A page of the lesson list.
 class LessonPage {
   const LessonPage({required this.items, this.nextCursor});
 
   final List<LessonDto> items;
 
-  /// `null` — страниц больше нет.
+  /// `null` when there are no more pages.
   final String? nextCursor;
 }
 
-/// Уроки на сервере — источник истины.
+/// Server-side lessons.
 abstract interface class LessonRemoteDataSource {
-  /// Список уроков.
-  ///
-  /// Без [since] приходят только живые уроки — так делается первый запуск.
-  /// С [since] приходит дельта, включая мягко удалённые: по ним из кеша
-  /// убираются записи, удалённые на другом устройстве.
+  /// Lesson list; with [since] a delta arrives, deleted ones included.
   Future<LessonPage> list({String? since, int? limit, String? cursor});
 
   Future<LessonDto> getLesson(String id);
 
-  /// Создаёт или обновляет урок.
-  ///
-  /// `PUT`, а не `POST`, потому что UUID генерит клиент: повтор после потери
-  /// сети не создаёт дубль. [version] — версия, поверх которой правим; `null`
-  /// означает создание.
-  ///
-  /// `PUT` заменяет урок целиком, поэтому [accent], [level] и [topicId] нужно
-  /// передавать и при правке: без них сервер потерял бы категории урока.
-  ///
-  /// [isPublic] шлём, только если он задан; `null` — ключ не отправляем и
-  /// публичность определяет сервер (admin — публичен). Значение решает
-  /// контроллер по роли автора.
+  /// Creates or replaces a whole lesson; a `null` [version] means creation.
   Future<LessonDto> putLesson({
     required String id,
     required String title,
@@ -101,16 +86,13 @@ class ApiLessonRemoteDataSource implements LessonRemoteDataSource {
         'created_at': createdAt.toUtc().toIso8601String(),
         'accent': ?accent?.wire,
         'level': ?level?.wire,
-        // Тему не выбрали — ключ не отправляем вовсе: сервер сам поставит
-        // «Other». Отправить `null` значило бы попросить его стереть тему.
+        // Without a topic the key is omitted and the server picks the default.
         'topic_id': ?topicId,
-        // Публичность шлём только когда автор ей управляет (owner); иначе
-        // ключ не отправляем и решает сервер.
+        // Visibility is sent only when the author controls it.
         'is_public': ?isPublic,
         'segments': [for (final segment in segments) segment.toJson()],
       },
-      // Правка без `If-Match` — всегда конфликт: сервер не даст перезаписать
-      // урок вслепую. При создании заголовка нет, урока ещё не существует.
+      // Edits carry `If-Match`, creation does not.
       options: version == null
           ? null
           : Options(headers: {'If-Match': '"$version"'}),

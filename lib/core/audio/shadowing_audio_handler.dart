@@ -2,35 +2,23 @@ import 'package:audio_service/audio_service.dart';
 
 import 'lesson_remote_control.dart';
 
-/// Мост между системной медиа-сессией и активным экраном урока.
-///
-/// Живёт всё время работы приложения (audio_service требует единственный
-/// handler-синглтон), но своей логики не содержит: команды системы — кнопки
-/// гарнитуры, экран блокировки, уведомление — он перенаправляет в
-/// [LessonRemoteControl] открытого урока, а обратно публикует, звучит ли плеер и
-/// что именно.
-///
-/// Двойной и тройной клик гарнитуры отдельно считать не нужно: пока в сессии
-/// объявлены `skipToNext`/`skipToPrevious`, платформа сама трактует двойной клик
-/// как «вперёд», тройной — как «назад» и зовёт [skipToNext]/[skipToPrevious].
+/// Bridge between the system media session and the open lesson's
+/// [LessonRemoteControl].
 class ShadowingAudioHandler extends BaseAudioHandler {
-  /// Урок, который сейчас держит сессию. `null` — вне экрана урока.
+  /// Lesson currently holding the session; `null` outside a lesson screen.
   LessonRemoteControl? _control;
 
-  /// Открытый урок берёт управление сессией на себя.
+  /// Hands session control to the opened lesson.
   void attach(LessonRemoteControl control) => _control = control;
 
-  /// Урок ушёл с экрана. Снимаем управление только за собой: autoDispose нового
-  /// плеера может опередить dispose старого, и тот не должен погасить чужую
-  /// сессию.
+  /// Releases control when the session is held by [control].
   void detach(LessonRemoteControl control) {
     if (!identical(_control, control)) return;
     _control = null;
     _publishStopped();
   }
 
-  /// Публикует, что звучит: текст сегмента и флаг `playing`. Флаг важен вдвойне —
-  /// по нему система решает, что прислать одиночным кликом (play или pause).
+  /// Publishes the current segment and playback state to the session.
   void setNowPlaying({
     required String id,
     required String title,
@@ -69,9 +57,7 @@ class ShadowingAudioHandler extends BaseAudioHandler {
     );
   }
 
-  // Система вызывает эти методы по кнопкам сессии. Одиночный клик приходит как
-  // play или pause в зависимости от опубликованного `playing` — оба сводим к
-  // одному тумблеру, как большая кнопка плеера.
+  // Session buttons: play and pause both map to a single toggle.
   @override
   Future<void> play() async => _control?.remoteToggle();
 

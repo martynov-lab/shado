@@ -1,8 +1,4 @@
-/// Shadowing design system — single import surface.
-///
-/// ```dart
-/// import 'package:shado/theme/theme.dart';
-/// ```
+/// Design system: a single import surface for the theme and tokens.
 library;
 
 export 'package:shado/theme/app_theme.dart';

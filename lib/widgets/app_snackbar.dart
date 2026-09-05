@@ -6,15 +6,7 @@ import 'package:shado/widgets/app_snackbar_content.dart';
 export 'package:shado/widgets/app_snackbar_content.dart'
     show AppSnackbarVariant;
 
-/// Показывает всплывающее сообщение в оформлении Shadowing.
-///
-/// Фон берётся из «мягкой» пары семантического цвета, а текст — из [AppColors.text]:
-/// насыщенный success на светло-зелёном не дотягивал бы по контрасту, поэтому
-/// смысл несут иконка и заливка, а читаемость — обычный цвет текста.
-///
-/// ```dart
-/// showAppSnackbar(context, message: 'Урок сохранён', variant: AppSnackbarVariant.success);
-/// ```
+/// Shows a snackbar styled by the design system.
 void showAppSnackbar(
   BuildContext context, {
   required String message,
@@ -29,8 +21,7 @@ void showAppSnackbar(
     ..showSnackBar(
       SnackBar(
         duration: duration,
-        // Всё оформление внутри контента: так снек получает нашу тень e3,
-        // а не плоскую материаловскую.
+        // All styling lives inside the content widget.
         backgroundColor: Colors.transparent,
         elevation: 0,
         padding: EdgeInsets.zero,

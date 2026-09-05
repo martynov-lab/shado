@@ -1,8 +1,6 @@
-// Чистая логика прогресса урока по локальным счётчикам повторов.
+// Lesson progress math based on local repeat counters.
 
-/// Урок пройден, когда каждый сегмент повторён не меньше [target] раз.
-///
-/// [reps] — `segmentIndex → количество повторов`; отсутствующий индекс = 0.
+/// Whether the lesson is done: every segment repeated at least [target] times.
 bool progressIsComplete(Map<int, int> reps, int segmentCount, int target) {
   if (segmentCount <= 0 || target <= 0) return false;
   for (var i = 0; i < segmentCount; i++) {
@@ -11,8 +9,7 @@ bool progressIsComplete(Map<int, int> reps, int segmentCount, int target) {
   return true;
 }
 
-/// Доля пройденности `0..1` для прогресс-бара карточки: усреднённая
-/// готовность сегментов (каждый вносит не больше [target]).
+/// Completion share `0..1` — the averaged readiness of the segments.
 double lessonProgressFraction(
   Map<int, int> reps,
   int segmentCount,

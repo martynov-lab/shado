@@ -15,8 +15,7 @@ import 'lesson_providers.dart';
 import 'lessons_controller.dart';
 import 'library_controller.dart';
 
-/// Плеер экрана правки: играет файл целиком, а не вырезанный кусок, — так
-/// слышно, попадает ли метка в паузу между фразами.
+/// Editor screen player; it plays the whole file, not a cut range.
 final editLessonPlayerProvider = Provider.autoDispose
     .family<AudioPlayer, String>((ref, lessonId) {
       final player = AudioPlayer();
@@ -24,15 +23,13 @@ final editLessonPlayerProvider = Provider.autoDispose
       return player;
     });
 
-/// Позиция воспроизведения — отдельным провайдером, чтобы частые тики
-/// перерисовывали только ползунок на волне.
+/// Playback position on the editor screen.
 final editPlaybackPositionProvider = StreamProvider.autoDispose
     .family<Duration, String>((ref, lessonId) {
       return ref.watch(editLessonPlayerProvider(lessonId)).positionStream;
     });
 
-/// Состояние экрана правки урока: та же разметка, что и при создании, но
-/// поверх уже импортированного аудио.
+/// State of the lesson editor screen.
 class EditLessonState {
   const EditLessonState({
     required this.lesson,
@@ -53,23 +50,19 @@ class EditLessonState {
   final String text;
   final List<int> boundaries;
 
-  /// Публичность урока — тумблером управляет только owner. Начальное значение
-  /// берётся из урока.
+  /// Lesson visibility; only the owner controls the switch.
   final bool isPublic;
 
-  /// Отрезок файла, оставленный обрезкой.
+  /// File range left by trimming.
   final AudioTrim trim;
 
-  /// Отрезок, который метки обрезки показывают прямо сейчас. `null` — обрезка
-  /// не идёт.
+  /// Range under the trim handles; `null` when trimming is off.
   final AudioTrim? pendingTrim;
 
-  /// Флажок у кнопки воспроизведения: новая метка садится в позицию ползунка.
-  /// Снят — метки копятся слева направо, вплотную за предыдущей.
+  /// Whether a new marker lands at the playhead position.
   final bool markerAtPlayhead;
 
-  /// Откуда играть: ползунок на волне, который перетаскивают вручную и на
-  /// котором аудио останавливается по паузе. В миллисекундах файла.
+  /// Playhead position in file milliseconds.
   final int playheadMs;
 
   final bool isPlaying;
@@ -79,13 +72,12 @@ class EditLessonState {
 
   bool get isTrimming => pendingTrim != null;
 
-  /// Что сейчас в окне волны: во время обрезки — файл целиком, чтобы обрезанное
-  /// можно было вернуть обратно.
+  /// What the waveform window shows: the whole file when trimming, else [trim].
   AudioTrim get view => isTrimming ? AudioTrim.full(lesson.durationMs) : trim;
 
   bool get canSave =>
       !isSaving &&
-      // Незавершённая обрезка — сначала «Применить» или «Отменить».
+      // An unfinished trim must be applied or cancelled first.
       !isTrimming &&
       title.trim().isNotEmpty &&
       segmentCount > 0;
@@ -119,8 +111,7 @@ class EditLessonState {
   }
 }
 
-/// Правка урока: разбивка текста, границы кусков на волне и прослушивание
-/// аудио с любого места.
+/// Lesson editing: text split, segment boundaries and audio preview.
 class EditLessonController extends AsyncNotifier<EditLessonState> {
   EditLessonController(this.lessonId);
 
@@ -131,7 +122,7 @@ class EditLessonController extends AsyncNotifier<EditLessonState> {
   @override
   Future<EditLessonState> build() async {
     final lesson = await ref.watch(getLessonProvider)(lessonId);
-    // Именно watch: плеер под autoDispose и должен жить, пока жив контроллер.
+    // watch: the player is autoDispose and lives with the notifier.
     final player = ref.watch(editLessonPlayerProvider(lessonId));
     final stateSubscription = player.playerStateStream.listen(_onPlayerState);
     ref.onDispose(stateSubscription.cancel);
@@ -144,13 +135,12 @@ class EditLessonController extends AsyncNotifier<EditLessonState> {
       boundaries: lesson.boundaries,
       trim: lesson.trim,
       isPublic: lesson.isPublic,
-      // Урок начинается там, где кончается обрезанная голова.
+      // The lesson starts where the trimmed head ends.
       playheadMs: lesson.trim.startMs,
     );
   }
 
-  /// Файл заряжен в плеер целиком, поэтому конец обрезанной дорожки стережём
-  /// сами: дальше него аудио к уроку уже не относится.
+  /// Stops playback at the end of the trimmed range.
   void _onPosition(Duration position) {
     final current = state.value;
     if (current == null || !current.isPlaying || current.isTrimming) return;
@@ -164,19 +154,15 @@ class EditLessonController extends AsyncNotifier<EditLessonState> {
     if (current == null) return;
     final finished = playerState.processingState == ProcessingState.completed;
     if (finished && playerState.playing) {
-      // Доиграв до конца, плеер остаётся «играющим». Снимаем это сами: иначе
-      // перетаскивание ползунка внезапно запустит звук, ведь seek у играющего
-      // плеера продолжает воспроизведение.
+      // A finished player stays "playing" — clear that ourselves.
       unawaited(_player.pause());
     }
-    // Ползунок остаётся там, откуда включали, — кусок легко переслушать той же
-    // кнопкой.
     final isPlaying = playerState.playing && !finished;
     if (isPlaying == current.isPlaying) return;
     state = AsyncValue.data(current.copyWith(isPlaying: isPlaying));
   }
 
-  /// Текст урока обратно одной строкой — в том виде, в каком его вводили.
+  /// Lesson text as one string with segment delimiters.
   static String initialText(Lesson lesson) => lesson.segments
       .map((segment) => segment.text)
       .join(' $kSegmentDelimiter ');
@@ -187,7 +173,7 @@ class EditLessonController extends AsyncNotifier<EditLessonState> {
     state = AsyncValue.data(current.copyWith(title: title));
   }
 
-  /// Число кусков задаёт текст, поэтому метки подстраиваются под него.
+  /// Changes the text and refits the markers.
   void setText(String text) {
     final current = state.value;
     if (current == null) return;
@@ -203,33 +189,25 @@ class EditLessonController extends AsyncNotifier<EditLessonState> {
     state = AsyncValue.data(current.copyWith(boundaries: boundaries));
   }
 
-  /// Флажок «Метка по ползунку» у кнопки воспроизведения.
+  /// The marker-at-playhead checkbox next to the play button.
   void setMarkerAtPlayhead(bool value) {
     final current = state.value;
     if (current == null) return;
     state = AsyncValue.data(current.copyWith(markerAtPlayhead: value));
   }
 
-  /// Ставит новую метку №[ordinal] (1-based) в тексте, а парную ей границу — на
-  /// волну.
-  ///
-  /// Куда именно, решает флажок [EditLessonState.markerAtPlayhead]. Стоит —
-  /// граница садится в текущую позицию плеера [playheadMs]: так метку добавляют
-  /// внутрь уже размеченного урока, доведя плеер до нужного места. Снят —
-  /// граница встаёт вплотную правее предыдущей. Уже расставленные метки правее
-  /// в обоих случаях остаются на местах.
+  /// Puts marker [ordinal] into the text and its boundary on the waveform.
   void insertMarker(String text, int ordinal, int playheadMs) {
     final current = state.value;
     if (current == null) return;
     final boundaries = current.boundaries;
     final next = current.copyWith(text: text);
-    // Разметка отстала от текста — раскладываем её заново, как при обычном вводе.
+    // The layout lags behind the text — lay it out again.
     if (boundaries.length != current.segmentCount + 1) {
       state = AsyncValue.data(next.copyWith(boundaries: _resizeBoundaries(next)));
       return;
     }
-    // Края разметки прибиты к границам оставленного отрезка — внутри них и
-    // сажаем метку.
+    // The marker is placed inside the range that is kept.
     final span = AudioTrim(startMs: boundaries.first, endMs: boundaries.last);
     final ms = current.markerAtPlayhead
         ? playheadMs
@@ -241,14 +219,12 @@ class EditLessonController extends AsyncNotifier<EditLessonState> {
     );
   }
 
-  /// Подгоняет разметку под текст и обрезку: пустой текст разметку не трогает.
+  /// Refits the layout to the text and the trim.
   List<int> _resizeBoundaries(EditLessonState form) => form.segmentCount == 0
       ? form.boundaries
       : SegmentBoundaries.resize(form.boundaries, form.segmentCount, form.trim);
 
-  /// Убирает метку №[ordinal] (1-based) сразу из текста и с волны: исчезает и
-  /// разделитель, и парная ему граница `boundaries[ordinal]`. Остальные границы
-  /// остаются на местах — в отличие от [setText], который переразбил бы хвост.
+  /// Removes marker [ordinal] from the text and its boundary from the wave.
   void removeMarker(int ordinal) {
     final current = state.value;
     if (current == null) return;
@@ -269,17 +245,16 @@ class EditLessonController extends AsyncNotifier<EditLessonState> {
     );
   }
 
-  /// Тумблер «Приватный урок» (только для owner): `true` — урок приватный.
+  /// The private lesson switch; available to the owner only.
   void setPrivate(bool isPrivate) {
     final current = state.value;
     if (current == null) return;
     state = AsyncValue.data(current.copyWith(isPublic: !isPrivate));
   }
 
-  // --- Обрезка ---------------------------------------------------------------
+  // --- Trimming --------------------------------------------------------------
 
-  /// Включает режим обрезки: метки встают по краям того, что оставлено сейчас,
-  /// а в окно возвращается файл целиком — отрезанное можно вернуть.
+  /// Enters trim mode and brings the whole file back into the window.
   void startTrim() {
     final current = state.value;
     if (current == null || current.isTrimming) return;
@@ -296,12 +271,11 @@ class EditLessonController extends AsyncNotifier<EditLessonState> {
     final current = state.value;
     if (current == null || !current.isTrimming) return;
     state = AsyncValue.data(current.copyWith(clearPendingTrim: true));
-    // Ползунок мог уехать в ту часть файла, которой в уроке нет.
+    // The playhead could have moved outside the lesson.
     await seek(current.trim.clampMs(current.playheadMs));
   }
 
-  /// Применяет обрезку: метки кусков переезжают внутрь нового отрезка, дальше
-  /// урок размечают уже по нему.
+  /// Applies the trim, moving segment markers inside the new range.
   Future<void> applyTrim() async {
     final current = state.value;
     final pending = current?.pendingTrim;
@@ -310,8 +284,7 @@ class EditLessonController extends AsyncNotifier<EditLessonState> {
       current.copyWith(
         trim: pending,
         clearPendingTrim: true,
-        // Число кусков обрезка не меняет — двигаются только сами метки.
-        // Разметка, отставшая от текста, всё равно разложится заново.
+        // Trimming keeps the segment count; only the markers move.
         boundaries: current.boundaries.length == current.segmentCount + 1
             ? SegmentBoundaries.refit(current.boundaries, pending)
             : SegmentBoundaries.resize(
@@ -324,11 +297,7 @@ class EditLessonController extends AsyncNotifier<EditLessonState> {
     await seek(pending.clampMs(current.playheadMs));
   }
 
-  /// Ставит ползунок в заданное место аудио. Если оно играет, продолжает с
-  /// новой точки, не прерываясь.
-  ///
-  /// Во время обрезки ползунок ходит по файлу целиком — иначе не послушать то,
-  /// что собираются отрезать.
+  /// Moves the playhead without interrupting playback.
   Future<void> seek(int positionMs) async {
     final current = state.value;
     if (current == null) return;
@@ -341,39 +310,32 @@ class EditLessonController extends AsyncNotifier<EditLessonState> {
     }
   }
 
-  /// Тумблер play/pause: играет с ползунка, а по паузе оставляет ползунок
-  /// там, где аудио остановилось.
+  /// Play/pause toggle; starts from the playhead.
   Future<void> togglePlay() async {
     final current = state.value;
     if (current == null) return;
     final player = _player;
-    // Сверяемся со своим состоянием, а не с `player.playing`: у доигравшего до
-    // конца плеера тот остаётся поднятым.
+    // Trust our own state: a finished player keeps `playing` set.
     if (current.isPlaying) {
       await player.pause();
       await seek(player.position.inMilliseconds);
       return;
     }
-    // Источник ставим один раз: файл на весь экран один и тот же.
+    // The source is set once for the whole screen.
     if (player.audioSource == null) {
       await player.setFilePath(current.lesson.audioPath);
     }
-    // С самого конца играть нечего — начинаем дорожку заново.
+    // There is nothing to play at the very end — restart the track.
     await seek(
       !current.isTrimming && current.playheadMs >= current.trim.endMs
           ? current.trim.startMs
           : current.playheadMs,
     );
-    // play() завершается только по окончании воспроизведения — не ждём его.
+    // play() completes only at the end of the track — do not await it.
     unawaited(player.play());
   }
 
-  /// Сохраняет правки и обновляет список уроков.
-  ///
-  /// Урок мог измениться на другом устройстве — тогда сервер отвечает
-  /// конфликтом версий, а репозиторий кладёт свежую версию в кеш. Молча
-  /// перезаписывать её нельзя, поэтому ошибка уходит наверх: экран покажет её
-  /// и предложит переоткрыть урок.
+  /// Saves edits and refreshes the lesson list; version conflicts bubble up.
   Future<void> save() async {
     final current = state.value;
     if (current == null || !current.canSave) return;
@@ -388,7 +350,7 @@ class EditLessonController extends AsyncNotifier<EditLessonState> {
         isPublic: _isPublicForRole(current.isPublic),
       );
       ref.invalidate(lessonsControllerProvider);
-      // Правка меняет и карточку в ленте — перечитываем корень.
+      // The lesson card in the feed changed too.
       ref.invalidate(libraryControllerProvider);
     } catch (_) {
       state = AsyncValue.data(current.copyWith(isSaving: false));
@@ -396,8 +358,7 @@ class EditLessonController extends AsyncNotifier<EditLessonState> {
     }
   }
 
-  /// Публичность для отправки, по роли автора: owner управляет тумблером,
-  /// user-pro всегда приватен, для остальных (admin) решает сервер.
+  /// Visibility to send based on the author role; `null` lets the server pick.
   bool? _isPublicForRole(bool toggled) {
     final role = ref.read(authControllerProvider).user?.role;
     return switch (role) {

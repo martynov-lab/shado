@@ -10,8 +10,7 @@ import 'lesson_player_panel.dart';
 import 'lesson_segments_panel.dart';
 import 'lesson_transcript_panel.dart';
 
-/// Экран урока на телефоне: шапка, текст сегмента, кнопка списка сегментов и
-/// панель плеера. Список сегментов открывается модальным листом.
+/// Lesson screen on phone; the segment list opens as a modal sheet.
 class LessonMobileLayout extends StatelessWidget {
   const LessonMobileLayout({
     super.key,
@@ -64,7 +63,7 @@ class LessonMobileLayout extends StatelessWidget {
   }
 }
 
-/// Кнопка «Список сегментов N / M», открывающая модальный лист со списком.
+/// Segment list button that opens the modal list sheet.
 class _SegmentsSheetButton extends ConsumerWidget {
   const _SegmentsSheetButton({required this.lessonId});
 

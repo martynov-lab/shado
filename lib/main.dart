@@ -9,12 +9,9 @@ import 'package:shado/theme/theme.dart';
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   setUpPlatform();
-  // Сохранённую тему читаем до первого кадра — иначе при старте мелькнёт
-  // системная вместо выбранной.
+  // Read the stored theme before the first frame.
   final themeController = await ThemeController.restored();
-  // Медиа-сессию (кнопки гарнитуры, экран блокировки) поднимаем до runApp —
-  // audio_service требует единственный handler и инициализацию на старте. На
-  // десктопе вернётся null, и провайдер останется с дефолтом.
+  // Start the media session before runApp; desktop returns `null`.
   final audioHandler = await setUpAudioHandler();
   runApp(
     ProviderScope(

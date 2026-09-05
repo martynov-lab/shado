@@ -27,7 +27,7 @@ import '../../domain/usecases/sync_lessons.dart';
 import '../../domain/usecases/update_lesson_content.dart';
 import '../../domain/usecases/upload_audio.dart';
 
-/// Сборка зависимостей фичи. Presentation дальше видит только use case'ы.
+/// Dependency wiring for the lessons feature.
 final lessonLocalDataSourceProvider = Provider<LessonLocalDataSource>(
   (ref) => SqfliteLessonLocalDataSource(),
 );
@@ -52,11 +52,7 @@ final audioCacheProvider = Provider<AudioCache>(
   (ref) => const FileAudioCache(),
 );
 
-/// Пики считает сервер — волна выходит одинаковой на всех платформах.
-///
-/// Локальный источник остаётся запасным путём для офлайна: без сети урок с уже
-/// скачанным аудио всё равно открывается. На Windows/Linux этим запасным
-/// путём работает `flutter_soloud`, на мобильных — `just_waveform`.
+/// Waveform peaks source: the server, with a local fallback when offline.
 final waveformDataSourceProvider = Provider<WaveformDataSource>(
   (ref) => RemoteWaveformDataSource(
     ref.watch(audioRemoteDataSourceProvider),
@@ -113,10 +109,7 @@ final getTtsQuotaProvider = Provider<GetTtsQuota>(
   (ref) => GetTtsQuota(ref.watch(lessonRepositoryProvider)),
 );
 
-/// Остаток бесплатных озвучек для подписи у кнопки «Озвучить ИИ» (§4.1).
-///
-/// `autoDispose`: перечитывается при входе на экран создания и после каждого
-/// синтеза — озвучка тратит суточный лимит.
+/// Remaining free voice-overs shown next to the AI voice-over button.
 final ttsQuotaProvider = FutureProvider.autoDispose<TtsQuota>(
   (ref) => ref.watch(getTtsQuotaProvider)(),
 );
@@ -125,10 +118,7 @@ final getTopicsProvider = Provider<GetTopics>(
   (ref) => GetTopics(ref.watch(lessonRepositoryProvider)),
 );
 
-/// Справочник тем для выпадающего списка.
-///
-/// `autoDispose`: список перезапрашивается при каждом входе на экран создания —
-/// тему могли переименовать или удалить (§6).
+/// Topic directory for the dropdown.
 final topicsProvider = FutureProvider.autoDispose<List<Topic>>(
   (ref) => ref.watch(getTopicsProvider)(),
 );

@@ -2,15 +2,11 @@ import 'package:flutter/widgets.dart';
 
 import 'package:shado/theme/theme.dart';
 
-/// Тонкая полоса прогресса разбора урока.
-///
-/// ЗАГЛУШКА: прогресс разбора пока не отслеживается в данных, поэтому [value]
-/// по умолчанию `0` (полоса пустая). Оставлена ради вида из макета — заполнится,
-/// когда появится подсчёт разобранных сегментов.
+/// Thin lesson study progress bar.
 class LessonProgressBar extends StatelessWidget {
   const LessonProgressBar({super.key, this.value = 0});
 
-  /// Доля разобранного, `0..1`.
+  /// Studied share, `0..1`.
   final double value;
 
   @override

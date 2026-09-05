@@ -42,12 +42,11 @@ class AdminUsersState {
   }
 }
 
-/// Список пользователей и смена ролей. Доступен только владельцу — и это
-/// проверяет сервер, а не экран.
+/// User list and role changes.
 class AdminUsersController extends AsyncNotifier<AdminUsersState> {
   static const int _pageSize = 50;
 
-  /// Поиск не дёргает сервер на каждую букву.
+  /// Debounce before a search request.
   static const Duration _searchDebounce = Duration(milliseconds: 350);
 
   Timer? _debounce;
@@ -109,7 +108,7 @@ class AdminUsersController extends AsyncNotifier<AdminUsersState> {
     }
   }
 
-  /// Меняет роль и заменяет пользователя в списке ответом сервера.
+  /// Changes a role and replaces the user in the list with the response.
   Future<void> setRole(String userId, UserRole role) async {
     final current = state.value;
     if (current == null) return;

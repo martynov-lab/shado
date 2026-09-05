@@ -4,8 +4,7 @@ import '../../domain/entities/folder.dart';
 import '../../domain/repositories/folder_repository.dart';
 import '../datasources/folder_remote_datasource.dart';
 
-/// Папки: сервер — источник истины, локального кеша нет. Группировка лёгкая и
-/// сетевая — офлайн для неё не так важен, как для аудио уроков.
+/// Folders; network only, there is no local cache.
 class FolderRepositoryImpl implements FolderRepository {
   FolderRepositoryImpl({
     required FolderRemoteDataSource remoteDataSource,
@@ -13,7 +12,7 @@ class FolderRepositoryImpl implements FolderRepository {
   }) : _remote = remoteDataSource,
        _uuid = uuid;
 
-  /// Размер страницы списка. Сервер отдаёт максимум 200 за раз.
+  /// Folder list page size.
   static const int _pageLimit = 100;
 
   final FolderRemoteDataSource _remote;
@@ -24,8 +23,7 @@ class FolderRepositoryImpl implements FolderRepository {
     final folders = <Folder>[];
     String? cursor;
     do {
-      // Без `since` сервер отдаёт только живые папки — этого для списка и
-      // достаточно.
+      // Without `since` the server returns live folders only.
       final page = await _remote.list(limit: _pageLimit, cursor: cursor);
       for (final dto in page.items) {
         folders.add(dto.toEntity());
@@ -65,9 +63,7 @@ class FolderRepositoryImpl implements FolderRepository {
     final dto = await _remote.putFolder(
       id: id,
       title: title,
-      // Сервер меняет только присланные метаданные; дата создания у него уже
-      // есть, но `PUT` требует поле — отдаём текущее время, оно не перезапишет
-      // существующую папку.
+      // `PUT` needs the field, but the server keeps the original date.
       createdAt: DateTime.now().toUtc(),
       version: version,
       isPublic: isPublic,
@@ -87,8 +83,7 @@ class FolderRepositoryImpl implements FolderRepository {
   @override
   Future<Folder> removeLesson(String folderId, String lessonId) async {
     await _remote.removeLesson(folderId, lessonId);
-    // Удаление отдаёт `204` без тела — перечитываем папку, чтобы вернуть её
-    // обновлённой (состав и `version` изменились).
+    // Deletion answers `204` with no body — re-read the folder.
     final dto = await _remote.getFolder(folderId);
     return dto.toEntity();
   }

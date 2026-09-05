@@ -1,10 +1,4 @@
-/// Непрерывный набор кусков урока: отрезок `[start, end]`, оба конца
-/// включительно.
-///
-/// Выбрать можно только соседние куски (или все сразу) — иначе непонятно, что
-/// значит «проиграть выбранное». Зато у отрезка есть приятное свойство: соседние
-/// куски идут встык, поэтому любой отрезок — это один непрерывный фрагмент
-/// аудио, который плеер играет и зацикливает как обычный кусок.
+/// A contiguous lesson segment range `[start, end]`, both ends inclusive.
 class SegmentRange {
   const SegmentRange(this.start, this.end) : assert(start <= end);
 
@@ -19,17 +13,12 @@ class SegmentRange {
 
   bool contains(int index) => index >= start && index <= end;
 
-  /// Отрезок между куском, с которого начали выделять, и текущим: выделение
-  /// растёт и убывает в обе стороны от [anchor].
+  /// Range between [anchor] and [index] in either order.
   static SegmentRange between(int anchor, int index) => anchor <= index
       ? SegmentRange(anchor, index)
       : SegmentRange(index, anchor);
 
-  /// Каким станет выделение [selection] после тапа по куску [index].
-  ///
-  /// Разорвать отрезок нельзя, поэтому ходов немного: сосед расширяет
-  /// выделение, край — снимает, а кусок из середины или вдалеке начинает
-  /// выделение заново.
+  /// What [selection] becomes after tapping segment [index].
   static SegmentRange? toggled(SegmentRange? selection, int index) {
     if (selection == null) return SegmentRange.single(index);
     if (selection.contains(index)) {

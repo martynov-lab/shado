@@ -4,19 +4,7 @@ import 'package:shado/theme/theme.dart';
 import 'package:shado/widgets/app_focus_ring.dart';
 import 'package:shado/widgets/app_tap_target.dart';
 
-/// Переключатель одного варианта из группы.
-///
-/// Группа задаётся общим [groupValue]: у выбранного элемента `value ==
-/// groupValue`. Тип [T] — что угодно сравнимое (обычно enum).
-///
-/// ```dart
-/// AppRadio<Speed>(
-///   value: Speed.slow,
-///   groupValue: speed,
-///   label: '0.75×',
-///   onChanged: (value) => setState(() => speed = value),
-/// )
-/// ```
+/// Radio button for one option in a group sharing [groupValue].
 class AppRadio<T> extends StatefulWidget {
   const AppRadio({
     super.key,
@@ -30,7 +18,7 @@ class AppRadio<T> extends StatefulWidget {
   final T value;
   final T? groupValue;
 
-  /// `null` выключает переключатель.
+  /// `null` disables the radio button.
   final ValueChanged<T>? onChanged;
 
   final String? label;

@@ -3,8 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:shado/theme/theme.dart';
 import 'package:shado/widgets/widgets.dart';
 
-/// Согласие с условиями при регистрации. Названия документов выделены цветом,
-/// но не открываются: самих страниц в приложении ещё нет.
+/// Terms consent checkbox on sign-up.
 class AuthTermsCheckbox extends StatelessWidget {
   const AuthTermsCheckbox({
     super.key,

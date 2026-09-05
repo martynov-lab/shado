@@ -5,7 +5,7 @@ import '../../../../core/network/auth_interceptor.dart';
 import '../../../../core/storage/token_storage.dart';
 import '../../domain/entities/auth_user.dart';
 
-/// Ответ `/v1/auth/register` и `/v1/auth/login`: пользователь плюс пара токенов.
+/// Sign-in and sign-up response: the user and a token pair.
 class AuthSession {
   const AuthSession({required this.user, required this.tokens});
 
@@ -18,9 +18,9 @@ class AuthSession {
   final AuthTokens tokens;
 }
 
-/// `/v1/auth/*` и `/v1/me`.
+/// `/v1/auth/*` and `/v1/me`.
 abstract interface class AuthRemoteDataSource {
-  /// [name] необязательно: пустое имя не отправляем.
+  /// [name] is optional: an empty name is not sent.
   Future<AuthSession> register({
     required String email,
     required String password,
@@ -33,8 +33,7 @@ abstract interface class AuthRemoteDataSource {
 
   Future<AuthUser> me();
 
-  /// Правит профиль (`PATCH /v1/me`). Шлём только переданные поля: `null` —
-  /// поле не трогаем.
+  /// Updates the profile; a `null` field is left untouched.
   Future<AuthUser> updateProfile({
     String? name,
     String? studiedLanguage,
@@ -47,7 +46,7 @@ abstract interface class AuthRemoteDataSource {
 class ApiAuthRemoteDataSource implements AuthRemoteDataSource {
   const ApiAuthRemoteDataSource(this._client);
 
-  /// Запросам авторизации `Authorization` не нужен, а на старте его ещё и нет.
+  /// Request options without the `Authorization` header.
   static final Options _anonymous = Options(
     extra: {AuthInterceptor.skipAuthKey: true},
   );
@@ -66,7 +65,7 @@ class ApiAuthRemoteDataSource implements AuthRemoteDataSource {
       data: {
         'email': email,
         'password': password,
-        // Пустое имя не отправляем — необязательное поле.
+        // An empty name is not sent — the field is optional.
         'name': ?(trimmedName == null || trimmedName.isEmpty
             ? null
             : trimmedName),

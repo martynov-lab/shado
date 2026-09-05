@@ -4,7 +4,7 @@ import 'package:shado/theme/theme.dart';
 
 import 'auth_brand_header.dart';
 
-/// Планшет: карточка по центру — брендовая шапка и форма под ней.
+/// Tablet: a centered card with a brand header and the form below.
 class AuthTabletLayout extends StatelessWidget {
   const AuthTabletLayout({
     super.key,
@@ -21,8 +21,7 @@ class AuthTabletLayout extends StatelessWidget {
 
     return CustomScrollView(
       slivers: [
-        // Карточка стоит по центру экрана, но на коротком окне сама уезжает
-        // в прокрутку, а не обрезается.
+        // The card is centered and scrolls away in a short window.
         SliverFillRemaining(
           hasScrollBody: false,
           child: Padding(
@@ -45,9 +44,7 @@ class AuthTabletLayout extends StatelessWidget {
                   ),
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
-                    // Тянем шапку и форму на всю ширину карточки: иначе
-                    // градиентная шапка сжимается по своему тексту и висит
-                    // по центру с тёмными полями по бокам.
+                    // The header and the form stretch to the full card width.
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
                       AuthBrandHeader(isRegistration: isRegistration),

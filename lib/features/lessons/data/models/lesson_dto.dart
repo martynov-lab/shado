@@ -3,14 +3,7 @@ import '../../domain/entities/lesson_category.dart';
 import 'audio_dto.dart';
 import 'segment_model.dart';
 
-/// Урок в том виде, в каком его отдаёт сервер.
-///
-/// От [LessonModel] отличается тем, чего в кеше нет и быть не может: здесь
-/// аудио — это `audio_id` и его метаданные, а в кеше — путь к скачанному файлу.
-/// Смешивать их в одной модели не стоит, поэтому DTO живёт отдельно.
-///
-/// Сегменты переиспользуют `SegmentModel`: их JSON-форма на сервере и в кеше
-/// совпадает до ключей (`index`, `text`, `start_ms`, `end_ms`).
+/// Lesson exactly as the server returns it.
 class LessonDto {
   const LessonDto({
     required this.id,
@@ -38,13 +31,11 @@ class LessonDto {
         ? null
         : _parseTime(json['deleted_at']),
     version: (json['version'] as num?)?.toInt() ?? 1,
-    // Отсутствие поля держим за публичный урок: старый сервер не знал о
-    // приватности.
+    // Without the field the lesson counts as public.
     isPublic: json['is_public'] as bool? ?? true,
     accent: LessonAccent.parse(json['accent'] as String?),
     level: LessonLevel.parse(json['level'] as String?),
-    // Тема приходит объектом `{id, name}` — второй запрос ради названия не
-    // нужен.
+    // The topic arrives as a `{id, name}` object.
     topic: json['topic'] is Map
         ? Topic.fromJson(Map<String, dynamic>.from(json['topic'] as Map))
         : null,
@@ -61,19 +52,16 @@ class LessonDto {
   final DateTime createdAt;
   final DateTime updatedAt;
 
-  /// Непустое время — урок удалён на другом устройстве и должен исчезнуть из
-  /// кеша. Приходит только в дельте (`GET /v1/lessons?since=`).
+  /// Deletion time; only present in a delta.
   final DateTime? deletedAt;
 
-  /// Версия агрегата. Уезжает обратно в `If-Match` при правке.
+  /// Aggregate version; sent back in `If-Match` on edits.
   final int version;
 
-  /// Публичность урока (§6). Приватный виден только автору; в общем списке его
-  /// не отдают, поэтому увидели ⇒ он свой.
+  /// Lesson visibility; a private one is visible to its author only.
   final bool isPublic;
 
-  /// Категории урока (§6). `null` — сервер прислал пустое или незнакомое
-  /// значение; подставлять своё на его место нельзя.
+  /// Lesson categories; `null` when the server sent an empty or unknown value.
   final LessonAccent? accent;
   final LessonLevel? level;
   final Topic? topic;
@@ -83,8 +71,7 @@ class LessonDto {
 
   bool get isDeleted => deletedAt != null;
 
-  /// Урок для домена. Путь к аудио подставляет репозиторий: он один знает, где
-  /// лежит скачанный файл.
+  /// Domain lesson; the repository fills in the downloaded audio path.
   Lesson toEntity({required String audioPath}) => Lesson(
     id: id,
     title: title,

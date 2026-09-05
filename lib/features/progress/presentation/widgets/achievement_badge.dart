@@ -3,9 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:shado/theme/theme.dart';
 import 'package:shado/widgets/widgets.dart';
 
-/// Значок достижения: иконка в скруглённом квадрате и подпись под ним.
-///
-/// Закрытое достижение приглушено и рисуется замком независимо от [icon].
+/// Achievement badge: icon and label; a locked one shows a padlock.
 class AchievementBadge extends StatelessWidget {
   const AchievementBadge({
     super.key,

@@ -11,34 +11,24 @@ import 'marked_text_controller.dart';
 import 'segment_boundary_math.dart';
 import 'segment_marker.dart';
 
-/// Данные перетаскивания метки. [fromMarkerIndex] — индекс символа метки,
-/// которую взяли; `null` — тащат новую из чипа-источника.
+/// Marker drag payload; a `null` [fromMarkerIndex] means a new marker.
 class _MarkerDrag {
   const _MarkerDrag(this.fromMarkerIndex);
 
   final int? fromMarkerIndex;
 }
 
-/// Метка в тексте и её точное место в поле.
+/// A marker in the text and its exact place in the field.
 typedef _MarkerHit = ({int index, Rect rect});
 
-/// Ширина области, которой ловится тап/перетаскивание иглы поверх текста.
+/// Width of the area that catches taps and drags on a needle.
 const double _pinHitWidth = 24;
 
-/// Высота иглы-курсора в режиме постановки — примерно строка текста.
+/// Height of the cursor needle in placement mode.
 const double _cursorNeedleHeight = 30;
 
-/// Текст урока с разбивкой на сегменты иглами-метками вместо ручного «|».
-///
-/// Слова печатаются как в обычном поле. Разделитель ставится двумя способами:
-/// на десктопе — кнопкой «Метка» (курсор в поле становится иглой, клик ставит
-/// метку ровно в позицию каретки и режим выключается); на любой платформе —
-/// перетаскиванием чипа «Метка» в нужное место. Уже поставленную иглу можно
-/// перетащить в другое место, убрать тапом или вытащив за пределы поля.
-///
-/// Место каждой метки берётся из самого поля ([RenderEditable]), поэтому игла
-/// стоит ровно там, где символ «|» — который невидим и уходит на сервер как
-/// есть.
+/// Lesson text field split into segments by marker needles; a marker is
+/// placed by the button or a chip drag and removed by tapping the needle.
 class SegmentSplitterField extends StatefulWidget {
   const SegmentSplitterField({
     super.key,
@@ -54,14 +44,10 @@ class SegmentSplitterField extends StatefulWidget {
   final MarkedTextController controller;
   final ValueChanged<String> onChanged;
 
-  /// Постановка новой метки №[ordinal] (1-based) с уже готовым текстом. В отличие
-  /// от [onChanged] контроллер не раскладывает границы заново, а ставит парную
-  /// границу в текущую позицию плеера.
+  /// Marker [ordinal] was placed; the text arrives ready.
   final void Function(String text, int ordinal) onMarkerInserted;
 
-  /// Удаление метки №[ordinal] (1-based). Текст правит не поле, а контроллер:
-  /// парная граница на аудио убирается там же, а новый текст возвращается в
-  /// поле извне.
+  /// Marker [ordinal] was removed; the controller edits the text.
   final ValueChanged<int> onMarkerRemoved;
 
   final int segmentCount;
@@ -73,19 +59,20 @@ class SegmentSplitterField extends StatefulWidget {
 }
 
 class _SegmentSplitterFieldState extends State<SegmentSplitterField> {
-  /// Контейнер текста: и точка отсчёта координат, и корень поиска [RenderEditable].
+  /// Text container — the coordinate origin and the search root for
+  /// [RenderEditable].
   final _fieldKey = GlobalKey();
 
-  /// Иглы с их местами, пересчитанные после раскладки поля.
+  /// Needles with their positions, recomputed after the field lays out.
   List<_MarkerHit> _markers = const [];
 
-  /// Идёт режим постановки метки кликом (десктоп).
+  /// Click-to-place marker mode is on.
   bool _placing = false;
 
-  /// Позиция мыши в поле, пока держим режим постановки; `null` — курсора нет.
+  /// Mouse position in the field during placement mode; `null` when outside.
   Offset? _cursorPos;
 
-  /// Куда встанет метка при отпускании перетаскивания; `null` — не тащим.
+  /// Where the marker lands on drop; `null` when nothing is dragged.
   Rect? _indicatorRect;
 
   static const double _padH = AppSpacing.s4;
@@ -104,8 +91,7 @@ class _SegmentSplitterFieldState extends State<SegmentSplitterField> {
     final strutStyle = StrutStyle.fromTextStyle(baseStyle, forceStrutHeight: true);
     final hasMarkers = _controller.text.contains(kSegmentDelimiter);
 
-    // Места игл берём из поля уже после его раскладки — иначе координаты
-    // относятся к прошлому тексту.
+    // Needle positions are read from the field after it has laid out.
     WidgetsBinding.instance.addPostFrameCallback((_) => _syncMarkers());
 
     return Column(
@@ -186,9 +172,8 @@ class _SegmentSplitterFieldState extends State<SegmentSplitterField> {
                       ),
                     ),
                   ),
-                  // Вне режима метки — интерактивные иглы; в режиме постановки
-                  // те же метки видны, но приглушены, чтобы не спорить с яркой
-                  // иглой-курсором новой метки.
+                  // Needles are interactive outside placement mode and dimmed
+                  // inside it.
                   if (widget.enabled && !_placing) ..._buildPins(colors),
                   if (widget.enabled && _placing)
                     for (final marker in _markers)
@@ -209,8 +194,7 @@ class _SegmentSplitterFieldState extends State<SegmentSplitterField> {
                         ),
                       ),
                     ),
-                  // В режиме постановки клик по тексту ловим сами — им ставим
-                  // метку, а не двигаем каретку.
+                  // In placement mode a tap on the text drops a marker.
                   if (_placing)
                     Positioned.fill(
                       child: GestureDetector(
@@ -227,8 +211,7 @@ class _SegmentSplitterFieldState extends State<SegmentSplitterField> {
     );
   }
 
-  /// Чип-источник: тап включает режим постановки, перетаскивание переносит метку
-  /// в текст на любой платформе.
+  /// Source chip: a tap enters placement mode, a drag drops a marker.
   Widget _buildSource() {
     if (!widget.enabled) return const SegmentMarkerChip(enabled: false);
     return GestureDetector(
@@ -245,8 +228,7 @@ class _SegmentSplitterFieldState extends State<SegmentSplitterField> {
 
   List<Widget> _buildPins(AppColors colors) {
     return [
-      // Метки идут по порядку (_markers отсортирован по позиции), поэтому номер
-      // метки — её место в списке.
+      // Markers come in order, so a marker number is its index in the list.
       for (final (position, marker) in _markers.indexed)
         _needleAt(
           marker.rect,
@@ -264,7 +246,7 @@ class _SegmentSplitterFieldState extends State<SegmentSplitterField> {
     ];
   }
 
-  /// Позиционирует иглу (или её ручку) по прямоугольнику каретки метки.
+  /// Positions a needle or its handle by the marker caret rectangle.
   Widget _needleAt(
     Rect rect,
     Color color, {
@@ -289,7 +271,7 @@ class _SegmentSplitterFieldState extends State<SegmentSplitterField> {
     );
   }
 
-  // --- Геометрия из самого поля ---------------------------------------------
+  // --- Geometry taken from the field -----------------------------------------
 
   RenderEditable? _renderEditable() {
     final object = _fieldKey.currentContext?.findRenderObject();
@@ -303,7 +285,7 @@ class _SegmentSplitterFieldState extends State<SegmentSplitterField> {
     return found;
   }
 
-  /// Прямоугольник каретки для позиции [offset] в координатах поля.
+  /// Caret rectangle for [offset] in field coordinates.
   Rect? _caretRect(int offset) {
     final editable = _renderEditable();
     final box = _fieldKey.currentContext?.findRenderObject() as RenderBox?;
@@ -313,7 +295,7 @@ class _SegmentSplitterFieldState extends State<SegmentSplitterField> {
     return box.globalToLocal(global) & Size(local.width, local.height);
   }
 
-  /// Позиция каретки под точкой [globalPosition].
+  /// Caret position under [globalPosition].
   int? _offsetForPoint(Offset globalPosition) =>
       _renderEditable()?.getPositionForPoint(globalPosition).offset;
 
@@ -329,7 +311,7 @@ class _SegmentSplitterFieldState extends State<SegmentSplitterField> {
     setState(() => _markers = next);
   }
 
-  // --- Постановка, перенос, удаление ----------------------------------------
+  // --- Placing, moving, removing ---------------------------------------------
 
   void _startPlacing() {
     if (!widget.enabled) return;
@@ -343,8 +325,7 @@ class _SegmentSplitterFieldState extends State<SegmentSplitterField> {
     _insertAt(offset);
   }
 
-  /// Ставит метку в позицию каретки [offset] и, если она добавилась, отдаёт её
-  /// порядковый номер контроллеру — тот посадит парную границу под ползунок.
+  /// Places a marker at caret [offset].
   void _insertAt(int offset) {
     final text = _controller.text;
     final next = insertMarkerAt(text, offset);
@@ -391,10 +372,7 @@ class _SegmentSplitterFieldState extends State<SegmentSplitterField> {
     _apply(next, next.length);
   }
 
-  /// Программная правка текста: обновляет поле и, поскольку `TextField.onChanged`
-  /// на такие правки не срабатывает, сам зовёт колбэк. При вставке метки
-  /// ([insertedOrdinal] задан) зовёт [onMarkerInserted] — граница ляжет под
-  /// ползунок, а не разложится заново.
+  /// Programmatic text edit: updates the field and calls the right callback.
   void _apply(String text, int caret, {int? insertedOrdinal}) {
     _controller.value = TextEditingValue(
       text: text,
@@ -408,8 +386,7 @@ class _SegmentSplitterFieldState extends State<SegmentSplitterField> {
   }
 }
 
-/// Игла-ручка поверх текста: тащат — переносят метку, тап или перенос за
-/// пределы поля — убирают.
+/// Needle handle over the text: a drag moves the marker, a tap removes it.
 class _MarkerPin extends StatelessWidget {
   const _MarkerPin({
     required this.markerIndex,
@@ -420,10 +397,10 @@ class _MarkerPin extends StatelessWidget {
     required this.onDelete,
   });
 
-  /// Индекс символа метки в тексте — по нему её переносят при перетаскивании.
+  /// Index of the marker character in the text.
   final int markerIndex;
 
-  /// Порядковый номер метки — его показывают в кружке и им же метку удаляют.
+  /// Marker number shown inside the dot.
   final int number;
   final double height;
   final Color color;

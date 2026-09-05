@@ -4,7 +4,7 @@ import 'package:shado/features/auth/domain/entities/auth_user.dart';
 import 'package:shado/features/auth/domain/repositories/auth_repository.dart';
 import 'package:shado/features/auth/domain/usecases/sign_in.dart';
 
-/// Репозиторий, который лишь записывает аргументы `updateProfile`.
+/// A repository that only records the `updateProfile` arguments.
 class _FakeAuthRepository implements AuthRepository {
   ({String? name, String? studiedLanguage, int? dailyGoalMinutes})? lastCall;
 
@@ -41,7 +41,7 @@ void main() {
       final repo = _FakeAuthRepository();
       final usecase = UpdateProfile(repo);
 
-      // Валидация бросает синхронно — до обращения к репозиторию.
+      // Validation throws synchronously, before the repository is touched.
       expect(
         () => usecase(name: 'a' * (kMaxNameLength + 1)),
         throwsA(isA<ValidationFailure>()),

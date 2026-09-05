@@ -2,12 +2,7 @@ import 'package:flutter/material.dart';
 
 import 'package:shado/theme/theme.dart';
 
-/// Ползунок: скорость воспроизведения, перемотка, громкость.
-///
-/// Внутри — материаловский [Slider], но целиком перекрашенный через
-/// [SliderTheme]: он даёт бесплатно перетаскивание, шаги и управление
-/// стрелками с клавиатуры, а вид всё равно наш. Неактивная часть трека
-/// красится в waveOff — тот же цвет, что у «непройденной» волны.
+/// Design system slider: speed, seeking, volume.
 class AppSlider extends StatelessWidget {
   const AppSlider({
     super.key,
@@ -25,29 +20,27 @@ class AppSlider extends StatelessWidget {
 
   final double value;
 
-  /// `null` выключает ползунок.
+  /// `null` disables the slider.
   final ValueChanged<double>? onChanged;
 
-  /// Вызывается по окончании перетаскивания — удобно, чтобы не дёргать
-  /// перемотку на каждый кадр.
+  /// Called when dragging ends.
   final ValueChanged<double>? onChangeEnd;
 
   final double min;
   final double max;
 
-  /// Число шагов. `null` — плавное движение.
+  /// Number of divisions; `null` means continuous movement.
   final int? divisions;
 
-  /// Подпись слева над ползунком.
+  /// Label above the slider on the left.
   final String? label;
 
-  /// Текущее значение справа над ползунком — моноширинным, чтобы цифры не
-  /// прыгали при изменении.
+  /// Current value above the slider on the right.
   final String? valueLabel;
 
   final String? semanticLabel;
 
-  /// Как озвучить значение скринридеру.
+  /// How to announce the value to a screen reader.
   final SemanticFormatterCallback? semanticFormatter;
 
   bool get isEnabled => onChanged != null;

@@ -6,45 +6,33 @@ import 'package:path_provider/path_provider.dart';
 
 import '../../../../core/error/failures.dart';
 
-/// Локальные копии аудио, разложенные по `audio_id`.
-///
-/// Плеер работает с файлом, а не с сетевым источником: в shadowing куски
-/// зацикливаются по две-три секунды, и каждый повтор поверх сети дёргался бы.
-/// Поэтому файл скачивается один раз и дальше живёт здесь.
-///
-/// Имя файла — `<audio_id>.<расширение>`. Содержимое под одним `audio_id` не
-/// меняется никогда, так что инвалидация кешу не нужна — только чистка.
+/// Local audio copies named `<audio_id>.<extension>`.
 abstract interface class AudioCache {
-  /// Путь к готовому файлу; `null` — его ещё нет.
+  /// Path to the ready file; `null` when it does not exist yet.
   Future<String?> find(String audioId);
 
-  /// Куда класть файл этого аудио. Каталог создаётся, сам файл — нет.
+  /// Path for this audio file; the directory is created, the file is not.
   Future<String> pathFor(String audioId, String extension);
 
-  /// Кладёт в кеш уже имеющийся локальный файл (только что отправленный на
-  /// сервер): качать его обратно незачем.
+  /// Puts an already local file into the cache.
   Future<String> put({
     required String audioId,
     required String extension,
     required String sourcePath,
   });
 
-  /// Совпадает ли контрольная сумма файла с серверной.
+  /// Whether the file checksum matches the server one.
   Future<bool> verify(String path, String sha256);
 
   Future<void> remove(String audioId);
 
-  /// Убирает из кеша всё, на что не ссылается ни один живой урок.
-  ///
-  /// Один `audio_id` может принадлежать нескольким урокам сразу (сервер
-  /// дедуплицирует загрузки по sha256), поэтому удаляем не «аудио удалённого
-  /// урока», а то, что не нужно никому.
+  /// Removes everything not listed in [audioIds] from the cache.
   Future<void> retainOnly(Set<String> audioIds);
 
-  /// Ужимает кеш до [maxBytes], выбрасывая давно не открывавшиеся файлы.
+  /// Shrinks the cache to [maxBytes], evicting least recently used files.
   Future<void> trimToSize(int maxBytes);
 
-  /// Стирает кеш целиком — при выходе из аккаунта.
+  /// Wipes the whole cache.
   Future<void> clear();
 }
 
@@ -53,8 +41,7 @@ class FileAudioCache implements AudioCache {
 
   static const String _dirName = 'audio';
 
-  /// Каталог кеша: `ApplicationDocumentsDirectory/audio` — тот же, где аудио
-  /// лежало и до появления сервера.
+  /// Cache directory — `ApplicationDocumentsDirectory/audio`.
   static Future<Directory> directory() async {
     final documents = await getApplicationDocumentsDirectory();
     final dir = Directory(p.join(documents.path, _dirName));
@@ -107,7 +94,7 @@ class FileAudioCache implements AudioCache {
     try {
       final file = File(path);
       if (!await file.exists()) return false;
-      // Файл может весить десятки мегабайт — считаем сумму потоком.
+      // Files can be tens of megabytes — hash them as a stream.
       final digest = await sha256Stream(file);
       return digest == sha256.toLowerCase();
     } catch (_) {
@@ -159,8 +146,7 @@ class FileAudioCache implements AudioCache {
         files.add((file: entity, accessed: stat.accessed, size: stat.size));
       }
       if (total <= maxBytes) return;
-      // Давно не открывавшееся уходит первым: урок, к которому вернутся,
-      // докачается при следующем открытии.
+      // The least recently used files go first.
       files.sort((a, b) => a.accessed.compareTo(b.accessed));
       for (final entry in files) {
         if (total <= maxBytes) break;
@@ -175,8 +161,7 @@ class FileAudioCache implements AudioCache {
   @override
   Future<void> clear() => retainOnly(const {});
 
-  /// `<audio_id>.mp3` → `audio_id`. Мусор рядом (кеш волны от локальных
-  /// источников) под это имя не подходит и остаётся нетронутым.
+  /// `<audio_id>.mp3` → `audio_id`.
   static String? _audioIdOf(String path) {
     final name = p.basenameWithoutExtension(path);
     return name.isEmpty ? null : name;

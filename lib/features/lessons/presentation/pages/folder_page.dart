@@ -20,11 +20,11 @@ import '../widgets/lesson_labels.dart';
 import '../../../home/presentation/pages/home_page.dart';
 import 'lesson_page.dart';
 
-/// Экран одной папки: её уроки и, для автора, правка состава и метаданных.
+/// A single folder screen: its lessons, contents and metadata.
 class FolderPage extends ConsumerWidget {
   const FolderPage({super.key, required this.folderId});
 
-  /// Шаблон маршрута; путь к конкретной папке — [routeTo].
+  /// Route template; [routeTo] builds a path to a specific folder.
   static const String routePath = '/folders/:id';
 
   static String routeTo(String folderId) => '/folders/$folderId';
@@ -93,9 +93,7 @@ class FolderPage extends ConsumerWidget {
     FolderDetailController controller,
     Folder folder,
   ) async {
-    // Кандидаты — свободные уроки: корень библиотеки как раз и есть уроки вне
-    // папок (§6.3). Состав самой папки исключаем на случай, если лента ещё не
-    // успела перечитаться после прошлого добавления.
+    // Candidates are unfiled lessons minus the ones already added.
     final root = ref.read(libraryControllerProvider).value ?? LibraryRoot.empty;
     final present = {for (final lesson in folder.lessons) lesson.id};
     final candidates = [
@@ -166,7 +164,7 @@ class FolderPage extends ConsumerWidget {
   }
 }
 
-/// Ошибка загрузки папки: чаще всего `404` (удалена или чужая приватная).
+/// Message shown when a folder fails to load.
 class _FolderError extends StatelessWidget {
   const _FolderError({required this.message, required this.onBack});
 
@@ -197,7 +195,7 @@ class _FolderError extends StatelessWidget {
   }
 }
 
-/// Содержимое открытой папки: шапка, кнопка «Добавить уроки» и список уроков.
+/// Open folder body: header, the add-lessons button and the lesson list.
 class _FolderContent extends StatelessWidget {
   const _FolderContent({
     required this.folder,
@@ -296,7 +294,7 @@ class _FolderContent extends StatelessWidget {
   }
 }
 
-/// Шапка экрана папки: назад, заголовок и меню действий автора.
+/// Folder screen header: back, title and the author action menu.
 class _FolderTopBar extends StatelessWidget {
   const _FolderTopBar({
     required this.title,

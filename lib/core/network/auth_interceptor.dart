@@ -2,11 +2,8 @@ import 'package:dio/dio.dart';
 
 import '../storage/token_storage.dart';
 
-/// Подставляет `Authorization` и обновляет протухший access.
-///
-/// Обновление идёт одно на все параллельные запросы: пять экранов, одновременно
-/// получившие 401, ждут один `POST /v1/auth/refresh` и повторяются с новым
-/// токеном.
+/// Adds `Authorization` and refreshes a stale access token with a single
+/// request shared by all concurrent 401s.
 class AuthInterceptor extends Interceptor {
   AuthInterceptor({
     required Dio dio,
@@ -16,14 +13,13 @@ class AuthInterceptor extends Interceptor {
        _tokens = tokens,
        _onSessionExpired = onSessionExpired;
 
-  /// Запросы, которым `Authorization` не нужен: `/v1/auth/*` и сам refresh.
+  /// `extra` key for requests that need no `Authorization`.
   static const String skipAuthKey = 'skipAuth';
 
   final Dio _dio;
   final TokenStorage _tokens;
 
-  /// Полный выход: чистка токенов, кеша уроков и аудио, возврат на `/login`.
-  /// Сетевой слой сам этого не умеет — дёргает того, кто умеет.
+  /// Full sign-out: clears tokens and caches, returns to `/login`.
   final Future<void> Function() _onSessionExpired;
 
   Future<String?>? _refreshing;
@@ -64,11 +60,7 @@ class AuthInterceptor extends Interceptor {
     }
   }
 
-  /// Меняет refresh на новую пару. `null` — обновиться не удалось.
-  ///
-  /// 401 здесь означает, что цепочка refresh-токенов погашена целиком (сервер
-  /// так реагирует на повторно предъявленный токен — признак кражи), поэтому
-  /// молча ретраить бессмысленно: это полный выход.
+  /// Exchanges the refresh token for a new pair; `null` when it failed.
   Future<String?> _refresh() async {
     final refresh = await _tokens.readRefreshToken();
     if (refresh == null) return null;
@@ -82,8 +74,7 @@ class AuthInterceptor extends Interceptor {
       await _tokens.save(tokens);
       return tokens.accessToken;
     } on DioException catch (error) {
-      // Сеть отвалилась — сессия цела, вернём ошибку исходному запросу и дадим
-      // повторить позже. А вот отказ сервера означает конец сессии.
+      // A server rejection ends the session; a network drop does not.
       if (error.response != null) {
         await _tokens.clear();
         await _onSessionExpired();

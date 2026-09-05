@@ -2,13 +2,7 @@ import 'package:flutter/material.dart';
 
 import 'package:shado/theme/theme.dart';
 
-/// Строка настройки: иконка в квадрате, заголовок с необязательным пояснением
-/// и произвольный элемент справа (значение, тумблер, степпер).
-///
-/// Разделители между строками рисует [SettingsSection]. Интерактивность живёт в
-/// [trailing]; сама строка — только разметка. Иконка — из набора Material
-/// ([IconData]), как у [AppBadge]: набор Shadowing не покрывает все значки
-/// настроек.
+/// Settings row: an icon, a title with a hint and a trailing widget.
 class SettingsRow extends StatelessWidget {
   const SettingsRow({
     super.key,
@@ -25,11 +19,10 @@ class SettingsRow extends StatelessWidget {
   final String? subtitle;
   final Widget? trailing;
 
-  /// Делает всю строку нажимаемой (открыть редактор значения). `null` — строка
-  /// только показывает.
+  /// Makes the whole row tappable.
   final VoidCallback? onTap;
 
-  /// Опасное действие — заголовок и иконка красятся в danger.
+  /// Destructive action — the title and icon are painted in danger.
   final bool danger;
 
   @override

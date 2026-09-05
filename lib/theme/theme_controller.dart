@@ -4,16 +4,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-/// Выбранная тема: светлая, тёмная или «как в системе».
-///
-/// Хранится локально — приложение работает офлайн, и выбор обязан пережить
-/// перезапуск. Значение отдаётся как [ValueListenable], поэтому подписчику
-/// (обычно `MaterialApp`) не нужен ни стрим, ни кодогенерация.
+/// Selected theme (light, dark, system) persisted to disk.
 class ThemeController extends ValueNotifier<ThemeMode> {
   ThemeController({ThemeMode initial = ThemeMode.system}) : super(initial);
 
-  /// Создаёт контроллер и дожидается чтения сохранённого выбора — так на
-  /// первом кадре не мелькает не та тема.
+  /// Creates the controller and waits for the stored choice to be read.
   static Future<ThemeController> restored() async {
     final controller = ThemeController();
     await controller.restore();
@@ -25,8 +20,7 @@ class ThemeController extends ValueNotifier<ThemeMode> {
 
   bool _disposed = false;
 
-  /// Читает сохранённый режим. Ошибку хранилища гасим: не суметь прочитать
-  /// настройку оформления — не повод не запустить приложение.
+  /// Reads the stored mode; a storage error leaves the system one.
   Future<void> restore() async {
     try {
       final prefs = await SharedPreferences.getInstance();
@@ -37,11 +31,11 @@ class ThemeController extends ValueNotifier<ThemeMode> {
         orElse: () => ThemeMode.system,
       );
     } on Exception {
-      // Остаёмся на ThemeMode.system.
+      // Stay on ThemeMode.system.
     }
   }
 
-  /// Меняет тему и сохраняет выбор.
+  /// Changes the theme and stores the choice.
   Future<void> setMode(ThemeMode mode) async {
     if (value == mode) return;
     value = mode;
@@ -49,7 +43,7 @@ class ThemeController extends ValueNotifier<ThemeMode> {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString(storageKey, mode.name);
     } on Exception {
-      // Тема уже переключена — запись просто не переживёт перезапуск.
+      // The theme is applied, but the choice will not survive a restart.
     }
   }
 
@@ -60,11 +54,7 @@ class ThemeController extends ValueNotifier<ThemeMode> {
   }
 }
 
-/// Контроллер темы приложения.
-///
-/// В `main()` его подменяют уже восстановленным экземпляром
-/// ([ThemeController.restored]); значение по умолчанию восстанавливается само,
-/// чтобы виджет-тесты работали без подмены.
+/// Theme controller; `main()` overrides it with a restored instance.
 final themeControllerProvider = Provider<ThemeController>((ref) {
   final controller = ThemeController();
   unawaited(controller.restore());

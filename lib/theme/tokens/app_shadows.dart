@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 
-/// Elevation tokens as box-shadow lists. Three levels:
-/// e1 = cards, e2 = hover / raised, e3 = player & bottom sheets.
+/// Elevation levels: e1 cards, e2 hover, e3 player and sheets.
 @immutable
 class AppShadows extends ThemeExtension<AppShadows> {
   const AppShadows({required this.e1, required this.e2, required this.e3});

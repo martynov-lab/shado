@@ -31,8 +31,7 @@ void main() {
     });
 
     test('половина — примерно 0.5', () {
-      // Два сегмента: один пройден (3), другой наполовину (полтора от 3
-      // невозможно, берём 0 и 3 → 0.5).
+      // One segment done, another untouched: half of the progress.
       expect(lessonProgressFraction({0: 3, 1: 0}, 2, 3), 0.5);
     });
 

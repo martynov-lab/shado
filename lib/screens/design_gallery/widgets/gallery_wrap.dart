@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 import 'package:shado/theme/theme.dart';
 
-/// Ряд примеров, переносящийся на узких экранах.
+/// Row of examples that wraps on narrow screens.
 class GalleryWrap extends StatelessWidget {
   const GalleryWrap({super.key, required this.children});
 

@@ -3,8 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:shado/theme/theme.dart';
 import 'package:shado/widgets/widgets.dart';
 
-/// Шеврон-стрелка в конце строки настройки — намёк, что строка ведёт дальше.
-/// Экран назначения подключим отдельной задачей.
+/// Chevron at the end of a settings row.
 class SettingsChevron extends StatelessWidget {
   const SettingsChevron({super.key});
 

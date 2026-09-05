@@ -19,36 +19,30 @@ class CreateLessonParams {
 
   final String title;
 
-  /// Текст целиком, куски разделены [kSegmentDelimiter].
+  /// The whole text with segments split by [kSegmentDelimiter].
   final String rawText;
 
-  /// Аудио, уже принятое сервером: загрузка идёт до создания урока.
+  /// Audio already accepted by the server.
   final String audioId;
 
-  /// Длительность файла по версии сервера — он же её и считал.
+  /// File duration as reported by the server.
   final int durationMs;
 
-  /// Акцент и уровень — обязательный выбор (§6): пустое или незнакомое
-  /// значение сервер отвергает с `422`, поэтому в параметрах они не
-  /// обнуляемые.
+  /// Accent and level are required choices.
   final LessonAccent accent;
   final LessonLevel level;
 
-  /// Тема из справочника. `null` — не выбрали, сервер поставит свою
-  /// («Other»).
+  /// Topic from the directory; `null` lets the server pick the default.
   final String? topicId;
 
-  /// Границы, размеченные на волне до создания урока (`N + 1` значение).
-  /// `null` — разложить куски равномерно.
+  /// Boundaries marked on the waveform; `null` lays segments out evenly.
   final List<int>? boundaries;
 
-  /// Публичность урока, когда ей управляет автор (owner). `null` — оставить
-  /// решение серверу (роль автора его и определит).
+  /// Lesson visibility; `null` lets the server decide.
   final bool? isPublic;
 }
 
-/// Создание урока: разбиение текста на куски и передача их репозиторию,
-/// который отправит урок на сервер и положит в кеш.
+/// Lesson creation: splits the text into segments and passes them on.
 class CreateLesson {
   const CreateLesson(this._repository);
 
@@ -79,11 +73,9 @@ class CreateLesson {
       segmentTexts: segmentTexts,
       accent: params.accent,
       level: params.level,
-      // Пустую строку сервер считает незнакомой темой, а не отсутствием
-      // выбора.
+      // The server treats an empty string as an unknown topic.
       topicId: (params.topicId?.isEmpty ?? true) ? null : params.topicId,
-      // Разметка с экрана создания годится, только если она про этот же набор
-      // кусков: текст могли поправить после перетаскивания меток.
+      // The layout only fits when it describes the same set of segments.
       boundaries:
           boundaries != null && boundaries.length == segmentTexts.length + 1
           ? boundaries
@@ -92,8 +84,8 @@ class CreateLesson {
     );
   }
 
-  /// Разбивает текст по [kSegmentDelimiter], обрезает пробелы и выбрасывает
-  /// пустые куски.
+  /// Splits text by [kSegmentDelimiter], trims spaces and drops empty
+  /// segments.
   static List<String> splitIntoSegments(String rawText) {
     return rawText
         .split(kSegmentDelimiter)

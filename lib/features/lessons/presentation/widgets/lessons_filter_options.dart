@@ -8,7 +8,7 @@ import '../../domain/entities/lesson_category.dart';
 import '../controllers/lesson_providers.dart';
 import '../controllers/lessons_filter.dart';
 
-/// Группа фильтров списка уроков.
+/// A filter group of the lesson list.
 enum LessonFilterGroup {
   topic('Тема'),
   level('Уровень'),
@@ -20,15 +20,11 @@ enum LessonFilterGroup {
   final String title;
 }
 
-/// Флажки фильтров: темы, уровни и статусы.
-///
-/// В модальном листе на телефоне/планшете показываем одну группу ([only]).
-/// В боковой панели на десктопе — все три, каждая сворачивается и по умолчанию
-/// свёрнута.
+/// Filter checkboxes: topics, levels and statuses; [only] shows one group.
 class LessonsFilterOptions extends StatelessWidget {
   const LessonsFilterOptions({super.key, this.only});
 
-  /// `null` — показать все группы сворачиваемыми; иначе одну развёрнутую.
+  /// `null` shows every group collapsible; otherwise one expanded group.
   final LessonFilterGroup? only;
 
   @override
@@ -53,8 +49,7 @@ class LessonsFilterOptions extends StatelessWidget {
   };
 }
 
-/// Сворачиваемая секция фильтра: заголовок с шевроном, содержимое скрыто по
-/// умолчанию.
+/// Collapsible filter section; collapsed by default.
 class _CollapsibleGroup extends StatefulWidget {
   const _CollapsibleGroup({required this.title, required this.child});
 
@@ -222,8 +217,7 @@ class _AccessOptions extends ConsumerWidget {
     );
     final notifier = ref.read(lessonsFilterProvider.notifier);
 
-    // Сервер отдаёт приватными только свои уроки, поэтому у обычного
-    // пользователя фильтр просто ничего не отберёт — это ожидаемо.
+    // The server only returns the viewer own private lessons.
     return _OptionRow(
       label: 'Мои приватные',
       selected: onlyPrivate,

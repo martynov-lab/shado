@@ -2,10 +2,7 @@ import 'package:flutter/material.dart';
 
 import 'package:shado/theme/theme.dart';
 
-/// Тепловая карта активности: 7 строк (дни недели) × 10 столбцов (недели).
-///
-/// [cells] — минуты за день по строкам (длина 7×[columns]); насыщенность ячейки
-/// растёт с числом минут. Под сеткой — легенда «меньше → больше».
+/// Activity heatmap: seven weekday rows across [columns] weeks.
 class ActivityHeatmap extends StatelessWidget {
   const ActivityHeatmap({super.key, required this.cells, this.columns = 10});
 
@@ -15,7 +12,7 @@ class ActivityHeatmap extends StatelessWidget {
   static const int _rows = 7;
   static const double _radius = 3;
 
-  /// Насыщенность ячейки по минутам: чем больше занимался, тем плотнее primary.
+  /// Cell opacity derived from the minute count.
   static double _alphaFor(int minutes) {
     if (minutes <= 0) return 0.08;
     if (minutes <= 8) return 0.30;
@@ -63,9 +60,7 @@ class ActivityHeatmap extends StatelessWidget {
   }
 }
 
-/// Ячейка карты: насыщенность растёт с минутами, а в дни с активностью внутри
-/// показываем сами минуты. На тёмных ячейках подпись светлая, на светлых —
-/// основным цветом текста; [FittedBox] ужимает число под размер ячейки.
+/// Heatmap cell with the minute count inside.
 class _Cell extends StatelessWidget {
   const _Cell({required this.minutes, required this.colors});
 

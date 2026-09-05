@@ -6,8 +6,7 @@ import 'package:shado/widgets/widgets.dart';
 import '../pages/main_shell.dart';
 import 'main_shell_brand.dart';
 
-/// Вертикальный rail планшета: логотип сверху, разделы-иконки, а «Добавить» —
-/// приподнятой кнопкой внизу (как `radd` в макете).
+/// Tablet rail: the logo, section icons and the add button.
 class MainShellRail extends StatelessWidget {
   const MainShellRail({
     super.key,
@@ -19,7 +18,7 @@ class MainShellRail extends StatelessWidget {
   final int currentIndex;
   final ValueChanged<int> onSelected;
 
-  /// Показывать ли кнопку «Добавить» внизу rail.
+  /// Whether to show the add button at the bottom of the rail.
   final bool canAdd;
 
   @override

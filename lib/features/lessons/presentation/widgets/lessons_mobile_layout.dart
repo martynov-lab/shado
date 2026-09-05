@@ -12,7 +12,7 @@ import 'lessons_list_view.dart';
 import 'lessons_no_results.dart';
 import 'lesson_search_field.dart';
 
-/// Раскладка списка уроков на телефоне: шапка, поиск, фильтры и список строк.
+/// Phone lesson list: header, search, filters and a row list.
 class LessonsMobileLayout extends StatelessWidget {
   const LessonsMobileLayout({
     super.key,
@@ -28,8 +28,7 @@ class LessonsMobileLayout extends StatelessWidget {
 
   final List<Lesson> lessons;
 
-  /// В библиотеке нет ни уроков, ни папок — вместо поиска и фильтров показываем
-  /// заглушку.
+  /// The library is empty — show a placeholder instead of search and filters.
   final bool emptyLibrary;
 
   final void Function(Lesson) onOpen;

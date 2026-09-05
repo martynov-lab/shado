@@ -6,9 +6,7 @@ import 'package:shado/widgets/widgets.dart';
 import '../../domain/entities/segment.dart';
 import 'lesson_labels.dart';
 
-/// Строка сегмента в списке: номер, текст и длительность. Вне режима выбора тап
-/// делает сегмент текущим (заряжает в плеер), в режиме выбора — набирает
-/// выделение галочкой.
+/// Segment row: number, text and duration; a tap loads or selects it.
 class LessonSegmentRow extends StatefulWidget {
   const LessonSegmentRow({
     super.key,
@@ -23,7 +21,7 @@ class LessonSegmentRow extends StatefulWidget {
 
   final Segment segment;
 
-  /// Сегмент заряжен в плеер — подсвечиваем строку.
+  /// The segment is loaded into the player — highlight the row.
   final bool isCurrent;
   final bool isPlaying;
 

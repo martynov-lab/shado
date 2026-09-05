@@ -2,10 +2,7 @@ import 'package:flutter/material.dart';
 
 import 'package:shado/theme/theme.dart';
 
-/// Поверхность модального листа: скруглённая шапка, ручка, заголовок и тень e3.
-///
-/// Показывают его через `showAppBottomSheet`, но виджет публичный: так лист
-/// можно собрать и вручную — например, в витрине компонентов.
+/// Modal sheet surface: rounded top, handle, title and shadow.
 class AppBottomSheetContent extends StatelessWidget {
   const AppBottomSheetContent({
     super.key,
@@ -16,7 +13,7 @@ class AppBottomSheetContent extends StatelessWidget {
 
   final Widget child;
 
-  /// Полоска-ручка сверху: подсказка, что лист тянется.
+  /// Whether to show the handle on top.
   final bool showHandle;
 
   final String? title;
@@ -26,8 +23,7 @@ class AppBottomSheetContent extends StatelessWidget {
     final colors = context.colors;
 
     return Container(
-      // На планшете и десктопе лист не растягивается на всю ширину — читать
-      // строку в 1400 px невозможно.
+      // On wide screens the sheet does not stretch full width.
       constraints: BoxConstraints(
         maxWidth: context.responsive(
           mobile: double.infinity,
@@ -48,7 +44,7 @@ class AppBottomSheetContent extends StatelessWidget {
             left: AppSpacing.s6,
             right: AppSpacing.s6,
             top: AppSpacing.s3,
-            // Клавиатура не должна закрывать содержимое листа.
+            // Padding for the keyboard.
             bottom: AppSpacing.s6 + MediaQuery.viewInsetsOf(context).bottom,
           ),
           child: Column(

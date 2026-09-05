@@ -4,7 +4,7 @@ import 'package:shado/features/lessons/domain/entities/audio_upload.dart';
 import 'package:shado/features/lessons/domain/repositories/lesson_repository.dart';
 import 'package:shado/features/lessons/domain/usecases/synthesize_tts.dart';
 
-/// Репозиторий-подделка: помнит текст, с которым позвали озвучку.
+/// Fake repository remembering the text the voice-over was called with.
 class _FakeRepository implements LessonRepository {
   String? lastText;
 

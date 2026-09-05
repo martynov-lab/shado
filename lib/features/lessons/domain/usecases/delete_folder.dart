@@ -1,6 +1,6 @@
 import '../repositories/folder_repository.dart';
 
-/// Удаление папки. Уроки при этом не трогаются — снимается лишь группировка.
+/// Folder deletion; the lessons stay in the catalog.
 class DeleteFolder {
   const DeleteFolder(this._repository);
 

@@ -26,13 +26,11 @@ class _ShadoAppState extends ConsumerState<ShadoApp>
     super.dispose();
   }
 
-  /// Системный «уменьшить движение» может переключиться на ходу — тогда
-  /// пересобираем, чтобы подхватить нулевую длительность.
+  /// Rebuilds the app when system accessibility settings change.
   @override
   void didChangeAccessibilityFeatures() => setState(() {});
 
-  /// Уходя в фон, досылаем накопленный прогресс: приложение могут закрыть, не
-  /// вернувшись на экран урока.
+  /// Flushes pending progress when the app goes to background.
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.paused ||
@@ -44,8 +42,7 @@ class _ShadoAppState extends ConsumerState<ShadoApp>
   @override
   Widget build(BuildContext context) {
     final controller = ref.watch(themeControllerProvider);
-    // MediaQuery здесь ещё нет — он появляется внутри MaterialApp, а
-    // длительность нужна самому MaterialApp. Берём тот же флаг из платформы.
+    // There is no MediaQuery here yet — read the flag from the platform.
     final reduceMotion = WidgetsBinding
         .instance
         .platformDispatcher

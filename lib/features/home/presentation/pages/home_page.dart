@@ -17,12 +17,7 @@ import '../widgets/home_desktop_view.dart';
 import '../widgets/home_mobile_view.dart';
 import '../widgets/home_tablet_view.dart';
 
-/// Главная — раздел «Главная»: приветствие, карточка «Продолжить», статистика,
-/// цель недели и превью «Мои уроки».
-///
-/// Каркас (Scaffold, фон, навигация) даёт [MainShell]; раскладку выбирает
-/// [AppAdaptiveLayout]. Метрики — реальные: сводка `GET /v1/progress` и история
-/// (те же данные, что на экране «Прогресс»), а превью уроков — из кеша списка.
+/// Home screen: greeting, continue card, stats, weekly goal and lessons.
 class HomePage extends ConsumerWidget {
   const HomePage({super.key});
 
@@ -35,8 +30,7 @@ class HomePage extends ConsumerWidget {
     );
     final name = _greetingName(email);
 
-    // Сводка вторична: пока грузится — показываем нули, а не спиннер на весь
-    // экран, чтобы приветствие и превью уроков были на месте сразу.
+    // While the summary loads, show zeros instead of a full-screen spinner.
     final summary = ref.watch(progressSummaryProvider).value;
     final history =
         ref.watch(progressHistoryProvider).value ?? const <ProgressDay>[];
@@ -77,9 +71,8 @@ class HomePage extends ConsumerWidget {
   }
 }
 
-/// Уроки для превью: сперва те, с которыми недавно работали
-/// (`recent_lesson_ids`, порядок сохраняем и пропускаем недоступные), а если
-/// таких нет — первые из каталога, чтобы блок не пустовал у новичка. До пяти.
+/// Up to five preview lessons: recent ones, otherwise the first from the
+/// catalog.
 List<HomeLessonTile> _recentLessons(List<String> recentIds, List<Lesson> all) {
   final byId = {for (final lesson in all) lesson.id: lesson};
   final recent = <Lesson>[
@@ -89,7 +82,7 @@ List<HomeLessonTile> _recentLessons(List<String> recentIds, List<Lesson> all) {
   return [for (final lesson in source.take(5)) HomeLessonTile.from(lesson)];
 }
 
-/// Имя для приветствия из почты: часть до «@» с заглавной буквы. Пусто — «друг».
+/// Greeting name from the email — the local part, capitalized.
 String _greetingName(String email) {
   final local = email.split('@').first.trim();
   if (local.isEmpty) return 'друг';

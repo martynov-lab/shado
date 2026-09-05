@@ -4,11 +4,7 @@ import 'package:shado/theme/theme.dart';
 import 'package:shado/widgets/app_focus_ring.dart';
 import 'package:shado/widgets/app_tap_target.dart';
 
-/// Тумблер «включено / выключено».
-///
-/// Трек красится в primary во включённом состоянии и в waveOff — в
-/// выключенном: тот же серо-сиреневый, что у неактивной части волны, поэтому
-/// выключенный тумблер читается одинаково в обеих темах.
+/// On/off switch.
 class AppSwitch extends StatefulWidget {
   const AppSwitch({
     super.key,
@@ -20,10 +16,10 @@ class AppSwitch extends StatefulWidget {
 
   final bool value;
 
-  /// `null` выключает тумблер.
+  /// `null` disables the switch.
   final ValueChanged<bool>? onChanged;
 
-  /// Подпись справа. Нажатие по ней тоже переключает.
+  /// Label on the right; tapping it toggles the switch too.
   final String? label;
   final String? semanticLabel;
 

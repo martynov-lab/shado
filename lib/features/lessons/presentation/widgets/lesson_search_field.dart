@@ -5,7 +5,7 @@ import 'package:shado/widgets/widgets.dart';
 
 import '../controllers/lessons_filter.dart';
 
-/// Поиск по урокам: пишет строку в [lessonsFilterProvider], крестик очищает.
+/// Lesson search; it writes into [lessonsFilterProvider] and can be cleared.
 class LessonSearchField extends ConsumerStatefulWidget {
   const LessonSearchField({super.key});
 
@@ -24,7 +24,7 @@ class _LessonSearchFieldState extends ConsumerState<LessonSearchField> {
 
   void _onChanged(String value) {
     ref.read(lessonsFilterProvider.notifier).setQuery(value);
-    // Крестик появляется и исчезает вместе с текстом.
+    // The clear button appears and disappears with the text.
     setState(() {});
   }
 

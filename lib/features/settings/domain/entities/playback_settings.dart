@@ -1,12 +1,7 @@
 import '../../../../core/constants/app_constants.dart';
 
-/// Настройки воспроизведения урока: применяются плеером и хранятся локально,
-/// поэтому переживают перезапуск.
-///
-/// [defaultSpeed] задаёт стартовую скорость урока, [repeatsInCycle] — сколько
-/// раз проигрывать отрезок при включённом повторе (0 — бесконечно),
-/// [pauseBetweenRepeats] вставляет паузу в 1 секунду между повторами, а
-/// [countdownEnabled] показывает отсчёт «3-2-1» перед стартом.
+/// Lesson playback settings: speed, repeat count, pause between repeats and
+/// the countdown.
 class PlaybackSettings {
   const PlaybackSettings({
     this.defaultSpeed = kNormalSpeed,

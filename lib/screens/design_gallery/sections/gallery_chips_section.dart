@@ -5,7 +5,7 @@ import 'package:shado/screens/design_gallery/widgets/gallery_section.dart';
 import 'package:shado/screens/design_gallery/widgets/gallery_wrap.dart';
 import 'package:shado/widgets/widgets.dart';
 
-/// Раздел витрины: чипы, фильтры и бейджи.
+/// Gallery section: chips, filters and badges.
 class GalleryChipsSection extends StatefulWidget {
   const GalleryChipsSection({super.key});
 

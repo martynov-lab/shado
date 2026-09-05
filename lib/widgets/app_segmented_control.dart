@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:shado/theme/theme.dart';
 import 'package:shado/widgets/app_segment_tile.dart';
 
-/// Один сегмент переключателя.
+/// A single segment of the control.
 class AppSegment<T> {
   const AppSegment({
     required this.value,
@@ -18,11 +18,8 @@ class AppSegment<T> {
   final String? semanticLabel;
 }
 
-/// Переключатель нескольких взаимоисключающих режимов — «пилюля» с дорожкой
-/// surface2, внутри которой выбранный сегмент приподнят на surface и тени e1.
-///
-/// Подходит для коротких наборов (2–4 пункта): скорость, режим повтора, тема.
-/// Для длинных списков берите [AppDropdown].
+/// Segmented control for 2–4 exclusive modes; use `AppDropdown` for longer
+/// lists.
 class AppSegmentedControl<T> extends StatelessWidget {
   const AppSegmentedControl({
     super.key,
@@ -36,10 +33,10 @@ class AppSegmentedControl<T> extends StatelessWidget {
   final T value;
   final List<AppSegment<T>> segments;
 
-  /// `null` выключает переключатель целиком.
+  /// `null` disables the whole control.
   final ValueChanged<T>? onChanged;
 
-  /// Растянуть на всю ширину, разделив её между сегментами поровну.
+  /// Stretches full width, splitting it evenly between segments.
   final bool expand;
 
   final String? semanticLabel;

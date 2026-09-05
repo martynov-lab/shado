@@ -22,24 +22,42 @@
 
 ## Язык и комментарии
 
-Идентификаторы — по-английски, комментарии и строки интерфейса — по-русски.
+Идентификаторы и комментарии — по-английски, строки интерфейса — по-русски.
 
-Комментарий отвечает на вопрос «почему так», а не «что тут написано».
-Дублирующий код комментарий не нужен; неочевидное решение без комментария не
-оставляем.
+**Комментарий — одна строка.** Он называет функционал: что делает класс, метод
+или поле. Две строки — предел, и только если в одну смысл не влезает.
+
+Чего в комментариях не бывает:
+
+* рассуждений и обоснований («так исторически», «иначе бы пришлось…»);
+* разбора крайних случаев и альтернатив, которые не выбрали;
+* примеров использования и команд запуска — им место в `docs/`;
+* пересказа кода, который и так читается.
 
 ```dart
-// bad — пересказ кода
-// Устанавливаем скорость плеера
+// bad — a five-line essay
+/// Upload timeout: 50 MB over a slow link takes minutes.
+///
+/// It is this one, not [requestTimeout], that decides the fate of an upload.
+/// We still cap it rather than dropping the limit: on a dead connection an
+/// uncapped request would never fail and the upload would just hang.
+static const Duration audioTimeout = Duration(minutes: 10);
+
+// good — what it is
+/// Audio file transfer timeout.
+static const Duration audioTimeout = Duration(minutes: 10);
+
+// bad — retelling the code
+// Set the player speed
 await player.setSpeed(speed);
 
-// good — объясняет решение
-// Именно остановка, а не пауза: кусок короткий, и следующий пуск естественнее
-// начать с его начала, чем с середины фразы.
+// good — a non-obvious step named briefly
+// Stop rather than pause: the next start begins at the segment start.
 if (range != null) await _rewindTo(current, range, play: false);
 ```
 
-Публичные классы и неочевидные поля документируем через `///`.
+Публичные классы и неочевидные поля документируем через `///` — одной фразой.
+Очевидное (`build`, `dispose`, геттер `isEmpty`) не комментируем вовсе.
 
 ## Импорты и экспорты
 
@@ -104,14 +122,14 @@ final ValueChanged<String> onTextChanged;
 без промежуточной переменной.
 
 ```dart
-// bad — одна буква и вынос ради единственного обращения
+// bad — one letter, extracted for a single use
 final c = context.colors;
 return AppIcon(AppIcons.check, color: c.primary);
 
-// good — читаем по месту
+// good — read it in place
 return AppIcon(AppIcons.check, color: context.colors.primary);
 
-// good — colors нужен в нескольких местах, поэтому вынесен словом
+// good — colors is used in several places, so it gets a name
 final colors = context.colors;
 return DecoratedBox(
   decoration: BoxDecoration(

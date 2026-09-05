@@ -7,7 +7,7 @@ import 'package:shado/core/network/api_exception.dart';
 import 'fake_http_adapter.dart';
 
 void main() {
-  /// Клиент поверх подставного транспорта.
+  /// A client on top of the stub transport.
   ({ApiClient client, FakeHttpAdapter adapter, FakeTokenStorage tokens}) build(
     Future<ResponseBody> Function(RequestOptions options) handler, {
     String? access,
@@ -26,7 +26,7 @@ void main() {
   }
 
   group('разбор ошибок', () {
-    /// Каждый код из §1 спецификации должен доезжать до вызывающего как есть.
+    /// Every spec error code must reach the caller unchanged.
     const cases = <(int, String, ApiErrorCode)>[
       (422, 'validation_error', ApiErrorCode.validationError),
       (401, 'invalid_credentials', ApiErrorCode.invalidCredentials),
@@ -123,7 +123,7 @@ void main() {
         env.client.get('/v1/me'),
         throwsA(isA<NetworkFailure>()),
       );
-      // Первая попытка плюс два повтора.
+      // The first attempt plus two retries.
       expect(env.adapter.countOf('/v1/me'), 3);
     });
 

@@ -7,7 +7,7 @@ import 'package:shado/screens/design_gallery/widgets/gallery_speed_sheet.dart';
 import 'package:shado/screens/design_gallery/widgets/gallery_wrap.dart';
 import 'package:shado/widgets/widgets.dart';
 
-/// Раздел витрины: модальный лист и всплывающие сообщения.
+/// Gallery section: modal sheet and snackbars.
 class GalleryOverlaysSection extends StatefulWidget {
   const GalleryOverlaysSection({super.key});
 

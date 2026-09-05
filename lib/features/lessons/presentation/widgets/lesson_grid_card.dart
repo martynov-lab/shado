@@ -13,8 +13,7 @@ import 'lesson_gradients.dart';
 import 'lesson_labels.dart';
 import 'lesson_progress_bar.dart';
 
-/// Карточка урока для сетки на планшете: градиентная «крышка» с меткой и
-/// кнопкой play, ниже — заголовок, подзаголовок и прогресс.
+/// Lesson grid card: a cap with a play button, the title and progress.
 class LessonGridCard extends ConsumerWidget {
   const LessonGridCard({
     super.key,
@@ -33,7 +32,7 @@ class LessonGridCard extends ConsumerWidget {
     final role = ref.watch(
       authControllerProvider.select((auth) => auth.user?.role),
     );
-    // Удаление долгим нажатием — только тому, кто вправе; иначе жест не вешаем.
+    // Long-press delete is attached only for users allowed to remove lessons.
     final canDelete = canModifyLesson(role, lesson);
     final progress =
         ref
@@ -76,8 +75,7 @@ class LessonGridCard extends ConsumerWidget {
                           crossAxisAlignment: WrapCrossAlignment.center,
                           children: [
                             if (lesson.isPrivate)
-                              // Признак приватности — замок; на градиенте
-                              // красим светлым, как остальной текст крышки.
+                              // The privacy padlock is light on the gradient.
                               AppIcon(
                                 AppIcons.lock,
                                 size: AppSizes.iconSm,
@@ -126,7 +124,7 @@ class LessonGridCard extends ConsumerWidget {
   }
 }
 
-/// Белый кружок с play в углу «крышки» карточки.
+/// White play dot in the corner of the card cap.
 class _PlayBubble extends StatelessWidget {
   @override
   Widget build(BuildContext context) {

@@ -1,10 +1,6 @@
 import 'lesson.dart';
 
-/// Папка — авторская подборка уже созданных уроков (§6.2).
-///
-/// В списке приходит без уроков, только с их числом ([lessonCount]); сами уроки
-/// живут в [lessons] лишь когда папку открыли (`GET /v1/folders/{id}`). Видимость
-/// и права — те же, что у уроков: приватную видит только автор.
+/// Folder — a lesson collection made by an author.
 class Folder {
   const Folder({
     required this.id,
@@ -20,7 +16,7 @@ class Folder {
   final String id;
   final String title;
 
-  /// Публичность папки. Приватную видит только автор.
+  /// Folder visibility; a private one is visible to its author only.
   final bool isPublic;
 
   bool get isPrivate => !isPublic;
@@ -28,14 +24,13 @@ class Folder {
   final DateTime createdAt;
   final DateTime updatedAt;
 
-  /// Версия агрегата — уезжает в `If-Match` при правке названия и видимости.
+  /// Aggregate version; sent back in `If-Match` on edits.
   final int version;
 
-  /// Число уроков, видимых зрителю. Приходит и в списке, и в деталях.
+  /// Number of lessons visible to the viewer.
   final int lessonCount;
 
-  /// Уроки папки в порядке добавления. Пусто в списке папок — их тянут при
-  /// открытии папки.
+  /// Folder lessons in insertion order; empty in the folder list.
   final List<Lesson> lessons;
 
   @override

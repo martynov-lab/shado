@@ -2,8 +2,7 @@ import '../../../../core/error/failures.dart';
 import '../entities/folder.dart';
 import '../repositories/folder_repository.dart';
 
-/// Создание папки: проверяет название и передаёт репозиторию, который сгенерит
-/// UUID и отправит папку на сервер.
+/// Folder creation: validates the title and passes it to the repository.
 class CreateFolder {
   const CreateFolder(this._repository);
 

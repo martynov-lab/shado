@@ -11,16 +11,14 @@ import '../models/lesson_model.dart';
 import '../models/segment_model.dart';
 import 'lesson_local_datasource.dart';
 
-/// Реализация на sqflite. Сегменты хранятся JSON-колонкой урока: они часть
-/// агрегата и всегда читаются/пишутся вместе с ним.
+/// Sqflite lesson cache; segments live in a JSON column of the lesson.
 class SqfliteLessonLocalDataSource implements LessonLocalDataSource {
   SqfliteLessonLocalDataSource({String databaseName = 'shado.db'})
     : _databaseName = databaseName;
 
   static const String _table = 'lessons';
 
-  /// Служебные значения кеша: пока единственное — «водяной знак»
-  /// синхронизации.
+  /// Table of cache service values.
   static const String _metaTable = 'sync_meta';
   static const String _watermarkKey = 'lessons_updated_at';
 
@@ -34,9 +32,7 @@ class SqfliteLessonLocalDataSource implements LessonLocalDataSource {
     return _opening ??= _open();
   }
 
-  /// Каталог БД. На мобильных его знает сам плагин, а FFI-фабрика на десктопе
-  /// по умолчанию кладёт файл в `.dart_tool` рядом с рабочим каталогом —
-  /// поэтому там берём тот же каталог документов, что и для аудио.
+  /// Database file directory; on desktop the documents folder, as for audio.
   Future<String> _databaseDirectory() async {
     if (!isPluginlessDesktop) return getDatabasesPath();
     final documents = await getApplicationDocumentsDirectory();
@@ -51,14 +47,10 @@ class SqfliteLessonLocalDataSource implements LessonLocalDataSource {
         version: 4,
         onCreate: (db, version) => _createSchema(db),
         onUpgrade: (db, oldVersion, newVersion) async {
-          // Таблицу не переносим, а пересоздаём: это кеш, источник истины —
-          // сервер, и полная выборка вернётся первым же `syncLessons`.
-          // Так было при переходе с версии 1 (уроки без `audio_id` и версии
-          // агрегата), на версии 3 (категории) и на версии 4 (`is_public`).
+          // The cache is recreated, not migrated; `syncLessons` refills it.
           await db.execute('DROP TABLE IF EXISTS $_table');
           await _createSchema(db);
-          // Метка синхронизации осталась от прежней схемы: с ней сервер отдал
-          // бы только дельту, и пересозданная таблица осталась бы почти пустой.
+          // Reset the sync watermark too, otherwise only a delta would arrive.
           await db.delete(_metaTable);
         },
       );
@@ -103,7 +95,7 @@ class SqfliteLessonLocalDataSource implements LessonLocalDataSource {
   Future<List<LessonModel>> getLessons() async {
     try {
       final db = await _db();
-      // Тот же порядок, что и у сервера: свежие правки сверху.
+      // Same order as the server: newest edits first.
       final rows = await db.query(_table, orderBy: 'updated_at DESC');
       return rows.map(_fromRow).toList(growable: false);
     } on Failure {

@@ -21,26 +21,21 @@ import '../bootstrap/app_bootstrap.dart';
 
 final _rootNavigatorKey = GlobalKey<NavigatorState>();
 
-/// Маршруты, доступные без сессии.
+/// Routes reachable without a session.
 const Set<String> _publicRoutes = {
   LoginPage.routePath,
   LoginPage.registerRoutePath,
 };
 
-/// Раздел владельца целиком: под ним могут появиться и другие страницы.
+/// Owner section prefix.
 const String _adminSectionPrefix = '/admin';
 
-/// Витрина дизайн-системы. Временная точка входа: живёт вне правил сессии,
-/// чтобы её можно было открыть с любого состояния приложения.
-///
-/// Открыть сразу при запуске:
-/// `flutter run --dart-define=design_gallery=true`
+/// Whether to open the design gallery right at startup.
 const bool _openDesignGalleryAtLaunch = bool.fromEnvironment('design_gallery');
 
 final appRouterProvider = Provider<GoRouter>((ref) {
-  // Роутер пересобирать нельзя — потеряется стек навигации, поэтому о смене
-  // состояния он узнаёт через слушателя. Будим его и на смене сессии, и на
-  // завершении прогрева данных — оба решают, пора ли уходить с заставки.
+  // The router is never rebuilt — a listener tells it about session and
+  // warm-up changes.
   final refresh = ValueNotifier<int>(0);
   ref.onDispose(refresh.dispose);
   ref.listen(
@@ -61,31 +56,26 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       final location = state.matchedLocation;
       final isPublic = _publicRoutes.contains(location);
 
-      // Витрина не участвует в правилах сессии: она ничего не знает о данных
-      // пользователя и нужна ровно для того, чтобы посмотреть компоненты.
+      // The gallery is outside the session rules.
       if (location == DesignGalleryScreen.routePath) return null;
 
-      // Пока не знаем, жив ли refresh-токен, держим заставку: иначе на старте
-      // мелькнёт экран входа у того, кто уже вошёл.
+      // Keep the splash until the refresh token is checked.
       if (auth.status == AuthStatus.unknown) {
         return location == SplashPage.routePath ? null : SplashPage.routePath;
       }
       if (!auth.isAuthenticated) return isPublic ? null : LoginPage.routePath;
-      // Вошли, но данные к первому кадру ещё греются — держим заставку, чтобы
-      // главный не мигнул пустыми баннерами прогресса.
+      // First-frame data is still warming up — keep the splash.
       if (ref.read(appBootstrapProvider).isLoading) {
         return location == SplashPage.routePath ? null : SplashPage.routePath;
       }
-      // Вошедшему на экранах входа и заставке делать нечего.
+      // A signed-in user has nothing to do on the login or splash screens.
       if (isPublic || location == SplashPage.routePath) {
         return HomePage.routePath;
       }
-      // Раздел админки — не защита, а порядок: сервер всё равно проверяет роль.
+      // Role-gated sections; the real check happens on the server.
       if (location.startsWith(_adminSectionPrefix) && !auth.isOwner) {
         return HomePage.routePath;
       }
-      // «Добавить» — только авторам, «Управление» — только владельцу. Это тоже
-      // порядок, а не защита: создание и админку сервер проверяет сам.
       if (location == AddLessonPage.routePath && !auth.canAuthor) {
         return HomePage.routePath;
       }
@@ -158,7 +148,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           ),
         ],
       ),
-      // Разделы владельца открываются поверх каркаса из меню аккаунта.
+      // Owner sections open above the shell from the account menu.
       GoRoute(
         path: ManagementPage.routePath,
         parentNavigatorKey: _rootNavigatorKey,

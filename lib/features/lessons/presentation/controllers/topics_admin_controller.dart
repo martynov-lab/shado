@@ -7,26 +7,20 @@ import '../../domain/entities/lesson_category.dart';
 import 'lesson_providers.dart';
 import 'lessons_controller.dart';
 
-/// Управление справочником тем владельцем: создание, переименование, удаление
-/// (§8.2). Список для чтения (фильтры, экран создания) живёт в [topicsProvider];
-/// здесь — редактируемая копия для экрана «Управление».
-///
-/// После любой правки сбрасываем [topicsProvider], чтобы каталог и экран
-/// создания перечитали темы. Права проверяет сервер, а не контроллер.
+/// Topic directory management: create, rename and delete.
 class TopicsAdminController extends AsyncNotifier<List<Topic>> {
   TopicRemoteDataSource get _topics => ref.read(topicRemoteDataSourceProvider);
 
   @override
   Future<List<Topic>> build() => _topics.list();
 
-  /// Ошибки (пустое имя, повтор — `422`) уходят наверх: их показывает секция.
+  /// Creates a topic; errors bubble up.
   Future<void> create(String name) => _mutate(() => _topics.create(name));
 
   Future<void> rename({required String id, required String name}) =>
       _mutate(() => _topics.rename(id: id, name: name));
 
-  /// Удаляет тему. Её уроки переезжают на «Other», поэтому дополнительно
-  /// перечитываем каталог — иначе в кеше останется старая разметка.
+  /// Deletes a topic and re-reads the catalog: its lessons move to the default.
   Future<void> delete(String id) async {
     await _topics.delete(id);
     await _reload();
@@ -38,7 +32,7 @@ class TopicsAdminController extends AsyncNotifier<List<Topic>> {
     await _reload();
   }
 
-  /// Перечитывает список (сортировку держит сервер) и сбрасывает кеш тем.
+  /// Re-reads the topic list and invalidates its cache.
   Future<void> _reload() async {
     state = AsyncData(await _topics.list());
     ref.invalidate(topicsProvider);

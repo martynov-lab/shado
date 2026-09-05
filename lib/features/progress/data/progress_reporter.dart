@@ -3,11 +3,7 @@ import '../domain/progress_math.dart';
 import 'datasources/progress_local_datasource.dart';
 import 'datasources/progress_remote_datasource.dart';
 
-/// Движок отчётности прогресса: копит активность локально и батчит её на сервер.
-///
-/// Ошибки сети/сервера глотаем — накопленная дельта остаётся в [local] и уйдёт
-/// следующим [flush]. Периодичность задаёт вызывающий (контроллер урока, фон,
-/// экран прогресса): у reporter’а своего таймера нет.
+/// Accumulates activity locally and sends it to the server in batches.
 class ProgressReporter {
   ProgressReporter({
     required ProgressLocalDataSource local,
@@ -19,16 +15,15 @@ class ProgressReporter {
   final ProgressLocalDataSource _local;
   final ProgressRemoteDataSource _remote;
 
-  /// Свежая сводка после успешного события — чтобы экран прогресса не делал
-  /// лишний `GET /v1/progress`.
+  /// Fresh summary that came with the server response.
   final void Function(ProgressSummary summary)? onSummary;
 
   bool _flushing = false;
 
-  /// Прослушанные миллисекунды (wall-clock).
+  /// Accumulates listened milliseconds.
   Future<void> addListened(int ms) => _local.addListened(ms);
 
-  /// Один доигранный проход отрезка: `+1` каждому его сегменту.
+  /// Counts one range pass for each of its segments.
   Future<void> recordSegmentPass(
     String lessonId,
     Iterable<int> segmentIndices,
@@ -38,8 +33,7 @@ class ProgressReporter {
     }
   }
 
-  /// Отправляет накопленную дельту. [lessonId] добавляет урок в «последние 5»
-  /// (`recent_lesson_ids`) — только для видимого урока, который мы и открыли.
+  /// Sends the pending delta; [lessonId] marks the lesson as recent.
   Future<void> flush({String? lessonId}) async {
     if (_flushing) return;
     _flushing = true;
@@ -53,19 +47,18 @@ class ProgressReporter {
             : null,
         lessonId: lessonId,
       );
-      // Вычитаем ровно отправленное: новая активность во время запроса не
-      // теряется.
+      // Subtract exactly what was sent — activity during the request stays.
       await _local.subtractPending(pending.listenedMs, pending.segmentRepeats);
       onSummary?.call(summary);
     } catch (_) {
-      // Сеть или сервер отвергли — дельта осталась, повторим позже.
+      // The delta stays in the cache — retry later.
     } finally {
       _flushing = false;
     }
   }
 
-  /// Если по локальным счётчикам урок пройден (каждый сегмент повторён
-  /// [completionReps] раз) и отметку ещё не слали — шлёт `completed` один раз.
+  /// Sends `completed` once every segment has been repeated [completionReps]
+  /// times.
   Future<void> reportCompletedIfDone({
     required String lessonId,
     required int segmentCount,
@@ -82,7 +75,7 @@ class ProgressReporter {
       await _local.markCompletedSent(lessonId);
       onSummary?.call(summary);
     } catch (_) {
-      // Не удалось отметить — флаг не ставим, попробуем в следующий раз.
+      // Do not set the flag — try again next time.
     }
   }
 }

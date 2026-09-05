@@ -7,8 +7,7 @@ import '../../domain/entities/lesson.dart';
 import 'folder_grid_card.dart';
 import 'lesson_grid_card.dart';
 
-/// Сетка карточек с pull-to-refresh (планшет). Папки идут первыми карточками —
-/// с брендовой «крышкой», чтобы отличаться от уроков.
+/// Card grid with pull-to-refresh; folders come first.
 class LessonsGridView extends StatelessWidget {
   const LessonsGridView({
     super.key,

@@ -1,10 +1,6 @@
 import 'package:flutter/material.dart';
 
-/// Урок правили на другом устройстве.
-///
-/// Свежая версия уже в кеше — предлагаем открыть её и переписать правку
-/// поверх: молча затирать чужие изменения нельзя. Возвращает `true`, если
-/// открыть свежую версию.
+/// Lesson version conflict dialog; `true` opens the fresh version.
 class VersionConflictDialog extends StatelessWidget {
   const VersionConflictDialog({super.key});
 

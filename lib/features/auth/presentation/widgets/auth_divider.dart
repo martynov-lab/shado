@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 import 'package:shado/theme/theme.dart';
 
-/// Разделитель формы: линия — подпись — линия.
+/// Form divider: rule, caption, rule.
 class AuthDivider extends StatelessWidget {
   const AuthDivider({super.key, required this.label});
 

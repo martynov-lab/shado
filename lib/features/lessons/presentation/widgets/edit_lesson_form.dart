@@ -14,7 +14,7 @@ import 'lesson_section_card.dart';
 import 'segment_splitter/marked_text_controller.dart';
 import 'segment_splitter/segment_splitter_field.dart';
 
-/// Тело экрана правки: название, разбивка текста и волна с границами.
+/// Editor screen body: title, text split and the waveform with boundaries.
 class EditLessonForm extends ConsumerStatefulWidget {
   const EditLessonForm({
     super.key,
@@ -33,14 +33,13 @@ class _EditLessonFormState extends ConsumerState<EditLessonForm> {
   late final _titleController = TextEditingController(text: widget.state.title);
   late final _textController = MarkedTextController(text: widget.state.text);
 
-  /// Фокус самого экрана: пока он здесь, пробел работает как play/pause.
+  /// Focus of the screen itself; while it is here space acts as play/pause.
   final _pageFocus = FocusNode(debugLabel: 'edit-lesson-page');
 
   @override
   void didUpdateWidget(EditLessonForm oldWidget) {
     super.didUpdateWidget(oldWidget);
-    // Метку могли удалить с волны — тогда текст правит контроллер, и его нужно
-    // вернуть в поле. При обычном вводе текст уже совпадает, синк — no-op.
+    // Text edited by the controller is pushed back into the field.
     if (widget.state.text != _textController.text) {
       _textController.text = widget.state.text;
     }
@@ -57,9 +56,7 @@ class _EditLessonFormState extends ConsumerState<EditLessonForm> {
   EditLessonController get _controller =>
       ref.read(editLessonControllerProvider(widget.lessonId).notifier);
 
-  /// Метку поставили в тексте — сажаем парную границу под ползунок. Позицию
-  /// берём ту же, что показывает волна: пока играет — живую, на паузе — где
-  /// оставили.
+  /// Places the paired boundary of a new marker under the playhead.
   void _insertMarker(String text, int ordinal) {
     final state = widget.state;
     final position = ref
@@ -71,10 +68,7 @@ class _EditLessonFormState extends ConsumerState<EditLessonForm> {
     _controller.insertMarker(text, ordinal, playheadMs);
   }
 
-  /// Пробел как play/pause — привычка из любого редактора аудио.
-  ///
-  /// Срабатывает только когда фокус на самом экране: в текстовом поле пробел
-  /// остаётся пробелом, а на кнопке ▶ его обрабатывает сама кнопка.
+  /// Space acts as play/pause while the screen itself holds focus.
   KeyEventResult _onKeyEvent(FocusNode node, KeyEvent event) {
     if (event is! KeyDownEvent ||
         event.logicalKey != LogicalKeyboardKey.space ||
@@ -89,8 +83,7 @@ class _EditLessonFormState extends ConsumerState<EditLessonForm> {
   Widget build(BuildContext context) {
     final state = widget.state;
     final controller = _controller;
-    // Тумблер приватности видит только владелец: остальным авторам публичность
-    // задаёт роль.
+    // The privacy switch is owner-only.
     final isOwner = ref.watch(authControllerProvider).isOwner;
 
     return Focus(
@@ -120,8 +113,7 @@ class _EditLessonFormState extends ConsumerState<EditLessonForm> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                // Тронули волну — забираем фокус из текстового поля, иначе
-                // пробел так и останется пробелом.
+                // Touching the waveform takes focus off the text field.
                 Listener(
                   onPointerDown: (_) => _pageFocus.requestFocus(),
                   child: EditLessonWaveform(
@@ -170,7 +162,7 @@ class _EditLessonFormState extends ConsumerState<EditLessonForm> {
   }
 }
 
-/// Подсказка под волной: что сейчас можно сделать жестами и клавишами.
+/// Hint under the waveform about available gestures and keys.
 String _hint(EditLessonState state) {
   if (state.isTrimming) {
     return 'Тяните метки со стрелочками: затемнённые края отрежутся. '

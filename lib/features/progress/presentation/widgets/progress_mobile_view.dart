@@ -14,8 +14,7 @@ import 'progress_sample.dart';
 import 'progress_stats_row.dart';
 import 'streak_hero_card.dart';
 
-/// Прогресс на телефоне: одна колонка с прокруткой — серия, «продолжить»,
-/// статистика, график минут, тепловая карта, уровень и достижения.
+/// Progress on phone: a single scrollable column.
 class ProgressMobileView extends StatelessWidget {
   const ProgressMobileView({super.key, required this.model});
 
@@ -59,7 +58,7 @@ class ProgressMobileView extends StatelessWidget {
             child: ActivityHeatmap(cells: model.heatmapCells),
           ),
           const SizedBox(height: AppSpacing.s4),
-          // Заглушка из макета: серверных данных об уровне пока нет.
+          // Placeholder: there is no server data about the level yet.
           const ProgressCard(
             title: 'Твой уровень',
             child: LevelProgressBar(

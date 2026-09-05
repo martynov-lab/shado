@@ -2,10 +2,8 @@ import 'package:flutter/material.dart';
 
 import 'package:shado/theme/theme.dart';
 
-/// Компактный график минут по дням для боковой панели: столбцы с подписями
-/// дней. [values] — высоты в процентах (0–100), [labels] — подписи под ними,
-/// [todayIndex] выделяет сегодняшний столбец акцентным цветом. Пустой день —
-/// это пустой столбик с подписью, а не пропуск, чтобы неделя читалась целиком.
+/// Compact daily minutes chart: bars sized by [values] labelled with
+/// [labels].
 class HomeMinutesMini extends StatelessWidget {
   const HomeMinutesMini({
     super.key,

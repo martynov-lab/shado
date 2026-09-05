@@ -7,9 +7,7 @@ import 'package:shado/widgets/widgets.dart';
 import '../controllers/lessons_filter.dart';
 import 'lessons_filter_options.dart';
 
-/// Ряд фильтров списка для телефона и планшета: чип на каждую группу открывает
-/// лист с флажками, а «Сбросить» очищает выбранное. Всегда в одну строку —
-/// при нехватке места прокручивается вбок.
+/// Row of filter chips; each opens a sheet with its group checkboxes.
 class LessonsFilterBar extends ConsumerWidget {
   const LessonsFilterBar({super.key});
 

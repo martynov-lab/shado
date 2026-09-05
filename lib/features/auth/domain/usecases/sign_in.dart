@@ -2,16 +2,14 @@ import '../../../../core/error/failures.dart';
 import '../entities/auth_user.dart';
 import '../repositories/auth_repository.dart';
 
-/// Минимальная длина пароля. Совпадает с серверной: пользователь должен
-/// получать отказ от формы, а не от сети.
+/// Minimum password length.
 const int kMinPasswordLength = 8;
 
-/// Границы полей профиля (§6). Совпадают с серверными, чтобы форма отвергала
-/// неверный ввод сама.
+/// Profile field bounds.
 const int kMaxNameLength = 100;
 const int kMaxDailyGoalMinutes = 1440;
 
-/// Вход по паре email/пароль.
+/// Sign-in with an email and password pair.
 class SignIn {
   const SignIn(this._repository);
 
@@ -23,8 +21,7 @@ class SignIn {
   }
 }
 
-/// Регистрация нового пользователя. Роль назначает сервер. [name]
-/// необязательно — язык и цель задаются позже в настройках.
+/// Registers a new user; the server assigns the role.
 class SignUp {
   const SignUp(this._repository);
 
@@ -48,7 +45,7 @@ class SignOut {
   Future<void> call() => _repository.logout();
 }
 
-/// Текущий пользователь с сервера: роль могли изменить в админке.
+/// Current user from the server.
 class GetCurrentUser {
   const GetCurrentUser(this._repository);
 
@@ -57,8 +54,7 @@ class GetCurrentUser {
   Future<AuthUser> call() => _repository.refreshCurrentUser();
 }
 
-/// Правка профиля с клиентской валидацией (имя ≤ [kMaxNameLength], дневная
-/// цель `0..`[kMaxDailyGoalMinutes]). Передаём только меняемые поля.
+/// Profile update with client-side validation; only changed fields are sent.
 class UpdateProfile {
   const UpdateProfile(this._repository);
 
@@ -89,7 +85,7 @@ class UpdateProfile {
   }
 }
 
-/// Проверки, общие для входа и регистрации.
+/// Checks shared by sign-in and sign-up.
 void validateCredentials({required String email, required String password}) {
   final normalized = email.trim();
   if (normalized.isEmpty) {
@@ -105,8 +101,7 @@ void validateCredentials({required String email, required String password}) {
   }
 }
 
-/// Проверка на явную опечатку, а не на соответствие RFC: настоящую проверку
-/// адреса делает только письмо на него.
+/// Checks the address for an obvious typo.
 bool isValidEmail(String email) {
   final pattern = RegExp(r'^[^@\s]+@[^@\s.]+\.[^@\s]+$');
   return pattern.hasMatch(email);

@@ -21,13 +21,12 @@ final settingsRemoteDataSourceProvider = Provider<SettingsRemoteDataSource>(
   (ref) => ApiSettingsRemoteDataSource(ref.watch(apiClientProvider)),
 );
 
-/// Порог пройденности (`lesson_completion_reps`). Кешируем: читают все экраны.
+/// Lesson completion threshold shared by every screen.
 final completionRepsProvider = FutureProvider<int>(
   (ref) => ref.watch(settingsRemoteDataSourceProvider).getCompletionReps(),
 );
 
-/// Движок отчётности на всё приложение. После успешного события кладёт свежую
-/// сводку в [progressSummaryProvider].
+/// Application-wide progress reporter.
 final progressReporterProvider = Provider<ProgressReporter>((ref) {
   return ProgressReporter(
     local: ref.watch(progressLocalDataSourceProvider),
@@ -37,14 +36,13 @@ final progressReporterProvider = Provider<ProgressReporter>((ref) {
   );
 });
 
-/// Сводка прогресса. Наполняется `GET /v1/progress` при входе и свежими
-/// ответами событий из [ProgressReporter].
+/// Progress summary from the server, refreshed by event responses.
 class ProgressSummaryController extends AsyncNotifier<ProgressSummary> {
   @override
   Future<ProgressSummary> build() =>
       ref.watch(progressRemoteDataSourceProvider).getSummary();
 
-  /// Свежая сводка из ответа события — без лишнего запроса.
+  /// Accepts a fresh summary from an event response.
   void acceptServer(ProgressSummary summary) =>
       state = AsyncValue.data(summary);
 
@@ -61,13 +59,12 @@ final progressSummaryProvider =
       ProgressSummaryController.new,
     );
 
-/// История активности за окно дней — для тепловой карты и серии.
+/// Activity history over a window of days for the heatmap and the streak.
 final progressHistoryProvider = FutureProvider.autoDispose<List<ProgressDay>>(
   (ref) => ref.watch(progressRemoteDataSourceProvider).getHistory(days: 70),
 );
 
-/// Доля пройденности урока `0..1` для прогресс-бара карточки: локальные повторы
-/// против порога. Пересчитывается при повторном входе в список (autoDispose).
+/// Lesson completion share `0..1` from local repeat counters.
 final lessonProgressProvider = FutureProvider.autoDispose
     .family<double, ({String lessonId, int segmentCount})>((ref, key) async {
       final reps = await ref

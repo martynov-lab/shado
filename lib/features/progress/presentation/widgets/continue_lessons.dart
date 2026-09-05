@@ -9,9 +9,7 @@ import '../../../lessons/domain/entities/lesson.dart';
 import '../../../lessons/presentation/controllers/lessons_controller.dart';
 import '../../../lessons/presentation/pages/lesson_page.dart';
 
-/// Блок «Продолжить»: последние уроки (`recent_lesson_ids`), заголовки берём из
-/// кеша списка. Уроки, которых нет в кеше (чужие/удалённые), пропускаем; если
-/// показать нечего — блок скрыт.
+/// Continue block with recent lessons; hidden when there are none.
 class ContinueLessons extends ConsumerWidget {
   const ContinueLessons({super.key, required this.lessonIds});
 

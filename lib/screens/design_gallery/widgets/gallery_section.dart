@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:shado/theme/theme.dart';
 import 'package:shado/widgets/widgets.dart';
 
-/// Раздел витрины: заголовок, пояснение и карточка с содержимым.
+/// Gallery section: title, description and a card with the content.
 class GallerySection extends StatelessWidget {
   const GallerySection({
     super.key,

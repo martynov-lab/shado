@@ -14,8 +14,8 @@ import 'progress_stats_row.dart';
 import 'streak_hero_card.dart';
 import 'weekly_goal_ring.dart';
 
-/// Прогресс на планшете: серия и цель недели в два столбца, ряд статистики,
-/// график минут рядом с тепловой картой и полоса уровня во всю ширину.
+/// Progress on tablet: streak and weekly goal in two columns, a stats row,
+/// the minutes chart beside the heatmap and a full-width level bar.
 class ProgressTabletView extends StatelessWidget {
   const ProgressTabletView({super.key, required this.model});
 
@@ -89,7 +89,7 @@ class ProgressTabletView extends StatelessWidget {
             ),
           ),
           const SizedBox(height: AppSpacing.s4),
-          // Заглушка из макета: серверных данных об уровне пока нет.
+          // Placeholder: there is no server data about the level yet.
           const ProgressCard(
             title: 'Твой уровень',
             child: LevelProgressBar(

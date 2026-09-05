@@ -4,7 +4,7 @@ import 'package:shado/screens/design_gallery/widgets/gallery_section.dart';
 import 'package:shado/theme/theme.dart';
 import 'package:shado/widgets/widgets.dart';
 
-/// Раздел витрины: строки списка и карточки.
+/// Gallery section: list rows and cards.
 class GalleryListsSection extends StatelessWidget {
   const GalleryListsSection({super.key});
 

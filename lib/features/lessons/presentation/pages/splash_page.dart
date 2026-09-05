@@ -5,12 +5,7 @@ import 'package:shado/theme/theme.dart';
 import '../widgets/splash_brand_mark.dart';
 import '../widgets/splash_equalizer.dart';
 
-/// Заставка на время, пока приложение выясняет, жива ли сессия: на старте оно
-/// меняет сохранённый refresh-токен на access и спрашивает `/v1/me`.
-///
-/// Рисуется поверх нативного сплеша на том же тёмном фоне, поэтому переход
-/// незаметен. Уводит с заставки роутер (по итогам проверки сессии), а не сам
-/// экран, — здесь только брендовая разметка и живой эквалайзер ожидания.
+/// Splash shown while the session is checked; the router navigates away.
 class SplashPage extends StatelessWidget {
   const SplashPage({super.key});
 
@@ -21,7 +16,7 @@ class SplashPage extends StatelessWidget {
     return Scaffold(
       backgroundColor: AppBrand.surface,
       body: DecoratedBox(
-        // Фиолетовое свечение к центру-верху собирает взгляд на знаке.
+        // Violet glow towards the top center.
         decoration: BoxDecoration(
           gradient: RadialGradient(
             center: const Alignment(0, -0.25),
@@ -38,7 +33,7 @@ class SplashPage extends StatelessWidget {
             children: [
               const SplashBrandMark(),
               const SizedBox(height: AppSpacing.s5),
-              // Вордмарк перекрашиваем фирменным градиентом через маску.
+              // The wordmark is tinted with the brand gradient through a mask.
               ShaderMask(
                 shaderCallback: AppBrand.signGradient.createShader,
                 child: Text(

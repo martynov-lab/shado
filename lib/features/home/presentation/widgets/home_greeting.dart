@@ -5,8 +5,7 @@ import 'package:shado/widgets/widgets.dart';
 
 import '../../../lessons/presentation/widgets/account_menu.dart';
 
-/// Шапка главного экрана: приветствие с именем пользователя и подсказкой, а
-/// справа — по желанию плашка серии и меню аккаунта.
+/// Home header: greeting, streak chip and the account menu.
 class HomeGreeting extends StatelessWidget {
   const HomeGreeting({
     super.key,
@@ -16,19 +15,19 @@ class HomeGreeting extends StatelessWidget {
     this.showAccount = true,
   });
 
-  /// Имя для приветствия «Привет, …».
+  /// Name used in the greeting.
   final String name;
 
-  /// Число дней в серии для плашки (когда [showStreak]).
+  /// Streak length in days for the chip.
   final int streakDays;
 
-  /// Показать плашку серии занятий (в широких раскладках).
+  /// Whether to show the streak chip.
   final bool showStreak;
 
-  /// Показать меню аккаунта справа (на десктопе оно живёт в sidebar каркаса).
+  /// Whether to show the account menu on the right.
   final bool showAccount;
 
-  /// Мотивационная подпись под приветствием — не метрика, живёт здесь.
+  /// Caption under the greeting.
   static const String _subtitle = 'Продолжим тренировку слуха?';
 
   @override
@@ -74,7 +73,7 @@ class HomeGreeting extends StatelessWidget {
   }
 }
 
-/// Плашка серии занятий: иконка огня и число дней подряд.
+/// Streak chip: a flame icon and the number of days in a row.
 class _StreakChip extends StatelessWidget {
   const _StreakChip({required this.days});
 

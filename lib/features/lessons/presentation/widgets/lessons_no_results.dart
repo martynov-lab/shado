@@ -6,7 +6,7 @@ import 'package:shado/widgets/widgets.dart';
 
 import '../controllers/lessons_filter.dart';
 
-/// Показывается, когда под поиск и фильтры не подошёл ни один урок.
+/// Shown when no lesson matches the search and filters.
 class LessonsNoResults extends ConsumerWidget {
   const LessonsNoResults({super.key});
 

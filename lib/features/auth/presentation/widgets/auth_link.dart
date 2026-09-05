@@ -3,10 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:shado/theme/theme.dart';
 import 'package:shado/widgets/widgets.dart';
 
-/// Текстовая ссылка формы: «Забыли пароль?», «Зарегистрироваться».
-///
-/// Без [onPressed] ссылка остаётся видимой, но не нажимается: так выглядят
-/// пункты макета, за которыми ещё нет действия.
+/// Text link in the form; visible but inert without [onPressed].
 class AuthLink extends StatelessWidget {
   const AuthLink({super.key, required this.label, this.onPressed});
 

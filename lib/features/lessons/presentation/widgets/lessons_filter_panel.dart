@@ -6,7 +6,7 @@ import 'package:shado/theme/theme.dart';
 import '../controllers/lessons_filter.dart';
 import 'lessons_filter_options.dart';
 
-/// Боковая панель фильтров на десктопе: все группы флажков сразу.
+/// Desktop filter sidebar: every checkbox group at once.
 class LessonsFilterPanel extends ConsumerWidget {
   const LessonsFilterPanel({super.key});
 

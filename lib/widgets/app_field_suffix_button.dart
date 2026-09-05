@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:shado/theme/theme.dart';
 import 'package:shado/widgets/app_icon.dart';
 
-/// Нажимаемая иконка справа внутри поля ввода: «показать пароль», «очистить».
+/// Tappable icon on the right inside a text field.
 class AppFieldSuffixButton extends StatelessWidget {
   const AppFieldSuffixButton({
     super.key,

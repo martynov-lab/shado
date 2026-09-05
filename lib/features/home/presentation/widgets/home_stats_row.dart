@@ -4,11 +4,7 @@ import 'package:shado/theme/theme.dart';
 
 import 'home_stat.dart';
 
-/// Ряд плиток статистики. Каждый кортеж — подпись, число, единица (или `null`),
-/// дельта.
-///
-/// В узкой раскладке ([scrollable]) плитки фиксированной ширины и прокручиваются
-/// вбок; иначе делят ширину поровну.
+/// Row of stat tiles; with [scrollable] the tiles scroll sideways.
 class HomeStatsRow extends StatelessWidget {
   const HomeStatsRow({
     super.key,
@@ -19,7 +15,7 @@ class HomeStatsRow extends StatelessWidget {
   final List<(String, String, String?, String)> stats;
   final bool scrollable;
 
-  /// Ширина плитки в прокручиваемом режиме.
+  /// Tile width in the scrollable mode.
   static const double _tileWidth = 150;
 
   @override
@@ -41,8 +37,7 @@ class HomeStatsRow extends StatelessWidget {
       );
     }
 
-    // IntrinsicHeight задаёт ряду конечную высоту, поэтому `stretch` выравнивает
-    // плитки по самой высокой, а не требует бесконечную высоту в прокрутке.
+    // IntrinsicHeight aligns the tiles to the tallest one.
     return IntrinsicHeight(
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.stretch,

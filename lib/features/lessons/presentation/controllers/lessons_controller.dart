@@ -5,10 +5,7 @@ import '../../domain/entities/lesson.dart';
 import 'lesson_providers.dart';
 import 'library_controller.dart';
 
-/// Список уроков для главного экрана.
-///
-/// Показываем кеш, а свежесть подтягиваем дельтой: так список появляется сразу,
-/// даже когда сеть медленная или её нет вовсе.
+/// Lesson list: shows the cache and catches up with a delta.
 class LessonsController extends AsyncNotifier<List<Lesson>> {
   @override
   Future<List<Lesson>> build() async {
@@ -16,17 +13,16 @@ class LessonsController extends AsyncNotifier<List<Lesson>> {
     return ref.read(getLessonsProvider)();
   }
 
-  /// Тянет изменения с сервера. Сетевой сбой не прячет уже известные уроки:
-  /// без связи приложение продолжает работать с тем, что скачано.
+  /// Pulls server changes; a network failure keeps known lessons visible.
   Future<void> _sync() async {
     try {
       await ref.read(syncLessonsProvider)();
     } on NetworkFailure {
-      // Кеша достаточно, чтобы показать список.
+      // The cache is enough to render the list.
     }
   }
 
-  /// Pull-to-refresh: перечитывает дельту и обновляет список.
+  /// Pull-to-refresh: re-reads the delta and refreshes the list.
   Future<void> refresh() async {
     state = await AsyncValue.guard(() async {
       await ref.read(syncLessonsProvider)();
@@ -34,7 +30,7 @@ class LessonsController extends AsyncNotifier<List<Lesson>> {
     });
   }
 
-  /// Локальное обновление без похода на сервер — после создания или правки.
+  /// Re-reads the list from the cache without hitting the server.
   Future<void> reloadFromCache() async {
     state = await AsyncValue.guard(() => ref.read(getLessonsProvider)());
   }
@@ -42,8 +38,7 @@ class LessonsController extends AsyncNotifier<List<Lesson>> {
   Future<void> delete(String lessonId) async {
     await ref.read(deleteLessonProvider)(lessonId);
     await reloadFromCache();
-    // Урок исчез и из корня библиотеки — его собирает сервер, поэтому просто
-    // перечитываем ленту.
+    // The server assembles the library root — re-read the feed.
     ref.invalidate(libraryControllerProvider);
   }
 }

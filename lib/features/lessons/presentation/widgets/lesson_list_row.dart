@@ -14,9 +14,7 @@ import 'lesson_cover.dart';
 import 'lesson_labels.dart';
 import 'lesson_progress_bar.dart';
 
-/// Строка списка уроков: обложка, заголовок с меткой «New», подзаголовок,
-/// полоса прогресса и длительность. Свайп влево или долгое нажатие — удаление
-/// (только тому, кто вправе править урок).
+/// Lesson list row; a swipe or a long press deletes the lesson.
 class LessonListRow extends ConsumerStatefulWidget {
   const LessonListRow({
     super.key,
@@ -43,7 +41,7 @@ class _LessonListRowState extends ConsumerState<LessonListRow> {
     final role = ref.watch(
       authControllerProvider.select((auth) => auth.user?.role),
     );
-    // Свайп и долгое нажатие удаляют урок — вешаем их только тому, кто вправе.
+    // Swipe and long press delete a lesson — only for users allowed to.
     final canDelete = canModifyLesson(role, lesson);
     final progress =
         ref
@@ -63,7 +61,7 @@ class _LessonListRowState extends ConsumerState<LessonListRow> {
           : DismissDirection.none,
       confirmDismiss: (_) async {
         widget.onDelete();
-        // Удалением управляет страница: строка исчезнет вместе с данными.
+        // The page drives deletion: the row disappears with the data.
         return false;
       },
       background: Container(
@@ -109,8 +107,7 @@ class _LessonListRowState extends ConsumerState<LessonListRow> {
                       children: [
                         Row(
                           children: [
-                            // Заголовок занимает всю ширину и прижимает метки к
-                            // правому краю; длинное название обрезается многоточием.
+                            // The title pushes the badges to the right edge.
                             Expanded(
                               child: Text(
                                 lesson.title,
@@ -142,7 +139,7 @@ class _LessonListRowState extends ConsumerState<LessonListRow> {
                           overflow: TextOverflow.ellipsis,
                         ),
                         const SizedBox(height: AppSpacing.s2),
-                        // Длительность — справа от прогресса, в нижнем углу строки.
+                        // Duration sits right of the progress bar.
                         Row(
                           children: [
                             Expanded(child: LessonProgressBar(value: progress)),

@@ -19,13 +19,7 @@ import '../widgets/lessons_tablet_layout.dart';
 import 'folder_page.dart';
 import 'lesson_page.dart';
 
-/// Список уроков — раздел «Уроки». Данные и фильтрацию держат провайдеры,
-/// раскладку выбирает [AppAdaptiveLayout]. Каркас (Scaffold, фон, навигация) —
-/// у [MainShell].
-///
-/// Корень — папки и уроки вне папок — приходит одним запросом `/v1/library`
-/// (§6.3); поиск и фильтры работают плоско по всему каталогу из кеша, поэтому
-/// урок, лежащий в папке, фильтр по уровню всё равно находит.
+/// Lessons section: root folders and lessons with catalog-wide search.
 class LessonsPage extends ConsumerWidget {
   const LessonsPage({super.key});
 
@@ -42,8 +36,7 @@ class LessonsPage extends ConsumerWidget {
       authControllerProvider.select((auth) => auth.canAuthor),
     );
 
-    // Корень тянем заново, а заодно догоняем кеш дельтой — на нём держится
-    // поиск по всему каталогу.
+    // Re-read the root and catch the cache up; search relies on it.
     Future<void> refresh() async {
       await Future.wait([
         libraryController.refresh(),
@@ -101,7 +94,7 @@ class LessonsPage extends ConsumerWidget {
   void _openFolder(BuildContext context, Folder folder) =>
       context.push(FolderPage.routeTo(folder.id));
 
-  /// Создаёт папку и открывает её — там уже можно добавить в неё уроки.
+  /// Creates a folder and opens it.
   Future<void> _createFolder(BuildContext context, WidgetRef ref) async {
     final title = await showDialog<String>(
       context: context,

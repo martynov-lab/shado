@@ -3,9 +3,8 @@ import 'package:flutter/widgets.dart';
 import '../../../../../core/constants/app_constants.dart';
 import 'segment_marker.dart';
 
-/// Контроллер поля-сплиттера: хранит «сырой» текст с символами
-/// [kSegmentDelimiter] (ровно то, что уйдёт на сервер). Сам разделитель в тексте
-/// невидим — метку поверх поля рисует игла, — поэтому «|» лишь занимает место.
+/// Splitter field controller; it stores text with invisible
+/// [kSegmentDelimiter].
 class MarkedTextController extends TextEditingController {
   MarkedTextController({super.text});
 
@@ -23,10 +22,7 @@ class MarkedTextController extends TextEditingController {
   }
 }
 
-/// Режет текст на спаны: обычные куски и подсвеченные метки. Каждый [kSegmentDelimiter]
-/// — отдельный спан из одного символа, поэтому смещения курсора и выделения
-/// не сдвигаются (в отличие от `WidgetSpan`). Та же разбивка кормит зеркальный
-/// `TextPainter` при хит-тесте перетаскивания.
+/// Splits text into spans: plain chunks and one-character marker spans.
 TextSpan buildSegmentSpans({
   required String text,
   required TextStyle? base,

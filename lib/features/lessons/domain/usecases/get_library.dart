@@ -1,7 +1,7 @@
 import '../entities/library_root.dart';
 import '../repositories/library_repository.dart';
 
-/// Корень библиотеки для главного экрана: папки и уроки вне папок.
+/// Library root for the home screen: folders and unfiled lessons.
 class GetLibrary {
   const GetLibrary(this._repository);
 

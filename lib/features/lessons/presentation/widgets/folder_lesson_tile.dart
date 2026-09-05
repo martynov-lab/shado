@@ -8,11 +8,7 @@ import '../../domain/entities/lesson.dart';
 import 'lesson_cover.dart';
 import 'lesson_labels.dart';
 
-/// Строка урока внутри папки: обложка, заголовок, подзаголовок и — у автора —
-/// кнопка «убрать из папки». Тап открывает урок.
-///
-/// Отдельная от [LessonListRow] строка: там свайп удаляет урок навсегда, а
-/// здесь речь только о снятии группировки, не о судьбе урока.
+/// Lesson row inside a folder with a remove-from-folder button.
 class FolderLessonTile extends StatelessWidget {
   const FolderLessonTile({
     super.key,
@@ -24,7 +20,7 @@ class FolderLessonTile extends StatelessWidget {
   final Lesson lesson;
   final VoidCallback onOpen;
 
-  /// Убрать урок из папки. `null` — у зрителя без прав автора кнопки нет.
+  /// Removes a lesson from the folder; `null` hides the button.
   final VoidCallback? onRemove;
 
   @override

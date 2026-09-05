@@ -1,6 +1,6 @@
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
-/// Пара токенов, как её отдаёт `/v1/auth/*`.
+/// Token pair as returned by `/v1/auth/*`.
 class AuthTokens {
   const AuthTokens({
     required this.accessToken,
@@ -17,25 +17,20 @@ class AuthTokens {
   final String accessToken;
   final String refreshToken;
 
-  /// Сколько секунд живёт access. Держим для диагностики: обновление идёт не по
-  /// таймеру, а по ответу 401.
+  /// Access token lifetime in seconds.
   final int expiresIn;
 }
 
-/// Хранилище токенов.
-///
-/// Refresh переживает перезапуск и лежит в защищённом хранилище платформы,
-/// access живёт 15 минут и хранится только в памяти — писать его на диск
-/// незачем.
+/// Token storage: refresh on disk, access in memory only.
 abstract interface class TokenStorage {
-  /// Текущий access; `null` — его ещё не получали или сессию закрыли.
+  /// Current access token; `null` when there is no session.
   String? get accessToken;
 
   Future<String?> readRefreshToken();
 
   Future<void> save(AuthTokens tokens);
 
-  /// Забывает обе половины сессии.
+  /// Forgets both tokens.
   Future<void> clear();
 }
 
@@ -49,9 +44,7 @@ class SecureTokenStorage implements TokenStorage {
 
   String? _accessToken;
 
-  /// Прочитанный с диска refresh: на старте его спрашивают дважды подряд
-  /// (восстановление сессии и первый запрос), а обращение к keychain не
-  /// бесплатное.
+  /// Cached refresh token — keychain reads are not free.
   String? _refreshToken;
   bool _refreshLoaded = false;
 
@@ -71,8 +64,7 @@ class SecureTokenStorage implements TokenStorage {
     _accessToken = tokens.accessToken;
     _refreshToken = tokens.refreshToken;
     _refreshLoaded = true;
-    // Сервер ротирует refresh при каждом обновлении: старый после этого
-    // недействителен, поэтому новый пишем сразу.
+    // The server rotates the refresh token on every refresh — store it now.
     await _storage.write(key: _refreshKey, value: tokens.refreshToken);
   }
 

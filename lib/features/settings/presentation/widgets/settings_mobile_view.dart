@@ -9,7 +9,7 @@ import 'playback_settings_section.dart';
 import 'settings_profile_card.dart';
 import 'storage_settings_section.dart';
 
-/// Настройки на телефоне: профиль и разделы одной колонкой с прокруткой.
+/// Settings on phone: profile and sections in one scrollable column.
 class SettingsMobileView extends StatelessWidget {
   const SettingsMobileView({
     super.key,
@@ -23,7 +23,7 @@ class SettingsMobileView extends StatelessWidget {
   final String email;
   final VoidCallback onEditName;
 
-  /// Подпись изучаемого языка; `null` — бейдж скрыт.
+  /// Studied language label; `null` hides the badge.
   final String? languageLabel;
 
   @override

@@ -1,5 +1,4 @@
-/// Роль пользователя. Задаётся сервером (владелец — по почте из его
-/// конфигурации), клиент её только читает.
+/// User role; assigned by the server, the client only reads it.
 enum UserRole {
   user('user'),
   userPro('user-pro'),
@@ -8,12 +7,10 @@ enum UserRole {
 
   const UserRole(this.wire);
 
-  /// Строка роли в протоколе сервера (§6). Уезжает обратно в админке при
-  /// смене роли пользователя.
+  /// Role string in the server protocol.
   final String wire;
 
-  /// Незнакомую роль не считаем «всё разрешено»: сервер мог добавить более
-  /// привилегированную роль, а старый клиент безопаснее откатить к `user`.
+  /// Parses a role; an unknown one falls back to `user`.
   static UserRole parse(String? raw) {
     for (final role in UserRole.values) {
       if (role.wire == raw) return role;
@@ -25,18 +22,17 @@ enum UserRole {
   bool get isAdmin => this == UserRole.admin;
   bool get isPro => this == UserRole.userPro;
 
-  /// Кто вправе создавать и править уроки: pro (свои приватные), админ и
-  /// владелец.
+  /// Whether the role may create and edit lessons.
   bool get canAuthor =>
       this == UserRole.userPro ||
       this == UserRole.admin ||
       this == UserRole.owner;
 
-  /// Кто видит вкладку «Управление» (пользователи, порог пройденности).
+  /// Whether the role sees the management tab.
   bool get canManage => this == UserRole.owner;
 }
 
-/// Вошедший пользователь.
+/// Signed-in user.
 class AuthUser {
   const AuthUser({
     required this.id,
@@ -65,8 +61,7 @@ class AuthUser {
   final UserRole role;
   final DateTime createdAt;
 
-  /// Профиль (§6). `null` — сервер поля не прислал (старый ответ или
-  /// незаполненное значение).
+  /// Profile fields; `null` when the server did not send them.
   final String? name;
   final String? studiedLanguage;
   final int? dailyGoalMinutes;
@@ -105,7 +100,7 @@ class AuthUser {
   @override
   String toString() => 'AuthUser($email, ${role.name})';
 
-  /// Пустую строку из JSON держим за отсутствие значения.
+  /// An empty JSON string means the value is absent.
   static String? _nonEmpty(Object? raw) {
     if (raw is! String) return null;
     final trimmed = raw.trim();

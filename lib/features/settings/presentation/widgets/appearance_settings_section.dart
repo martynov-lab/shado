@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'settings_section.dart';
 import 'settings_theme_row.dart';
 
-/// Раздел «Оформление»: выбор темы приложения.
+/// Appearance section: the app theme picker.
 class AppearanceSettingsSection extends StatelessWidget {
   const AppearanceSettingsSection({super.key});
 

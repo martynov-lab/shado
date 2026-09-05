@@ -9,7 +9,7 @@ import 'package:shado/widgets/widgets.dart';
 
 void main() {
   group('$AppIcon', () {
-    /// Иконки набора внутри темы приложения — как их рисует любой экран.
+    /// The icon set inside the app theme, as any screen draws it.
     Future<void> pumpIcons(WidgetTester tester, List<Widget> icons) async {
       await tester.pumpWidget(
         MaterialApp(

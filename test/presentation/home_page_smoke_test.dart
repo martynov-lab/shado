@@ -9,20 +9,19 @@ import 'package:shado/features/progress/domain/entities/progress_summary.dart';
 import 'package:shado/features/progress/presentation/controllers/progress_providers.dart';
 import 'package:shado/theme/theme.dart';
 
-/// Подделка контроллера сессии: отдаёт готовое состояние и не ходит в
-/// репозиторий, чтобы экран можно было отрисовать без сети и хранилища.
+/// Fake session controller returning a ready state without the network.
 class _FakeAuthController extends AuthController {
   @override
   AuthState build() => const AuthState(status: AuthStatus.authenticated);
 }
 
-/// Подделка сводки прогресса: фиксированные метрики без похода на сервер.
+/// Fake progress summary: fixed metrics without hitting the server.
 class _FakeProgressSummary extends ProgressSummaryController {
   @override
   Future<ProgressSummary> build() async => _summary;
 }
 
-/// Пустой список уроков без обращения к кешу и сети.
+/// An empty lesson list without touching the cache or the network.
 class _FakeLessons extends LessonsController {
   @override
   Future<List<Lesson>> build() async => const <Lesson>[];

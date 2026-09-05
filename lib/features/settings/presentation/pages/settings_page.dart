@@ -11,13 +11,8 @@ import '../widgets/settings_mobile_view.dart';
 import '../widgets/settings_tablet_view.dart';
 import '../widgets/settings_text_edit_sheet.dart';
 
-/// Экран настроек: профиль, оформление, воспроизведение, обучение, язык и
-/// хранилище.
-///
-/// Каркас (Scaffold, навигация) даёт [MainShell]. Реально работают выбор темы,
-/// профиль (имя, изучаемый язык, дневная цель — через `PATCH /v1/me`) и
-/// воспроизведение (скорость, повторы, пауза, отсчёт — локально); остальные
-/// контролы — визуальные заготовки, привязку добавим отдельной задачей.
+/// Settings screen: profile, appearance, playback, learning, language and
+/// storage.
 class SettingsPage extends ConsumerWidget {
   const SettingsPage({super.key});
 
@@ -48,8 +43,7 @@ class SettingsPage extends ConsumerWidget {
     );
   }
 
-  /// Имя для карточки профиля: имя из профиля, а если его нет — часть почты до
-  /// «@» с заглавной буквы.
+  /// Name for the profile card; without one, the email local part.
   static String _displayName(AuthUser? user, String email) {
     final name = user?.name;
     if (name != null && name.isNotEmpty) return name;

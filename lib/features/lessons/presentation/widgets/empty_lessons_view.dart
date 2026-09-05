@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:shado/theme/theme.dart';
 import 'package:shado/widgets/widgets.dart';
 
-/// Заглушка списка уроков: куда идти, если уроков ещё нет.
+/// Lesson list placeholder shown when there are no lessons yet.
 class EmptyLessonsView extends StatelessWidget {
   const EmptyLessonsView({super.key});
 

@@ -2,14 +2,7 @@ import 'package:flutter/material.dart';
 
 import 'package:shado/theme/theme.dart';
 
-/// Кольцо фокуса с клавиатуры.
-///
-/// Рисуется тенью с нулевым размытием и положительным `spreadRadius`, поэтому
-/// не занимает места и не сдвигает соседей — обводка появляется снаружи
-/// контрола, а раскладка остаётся прежней.
-///
-/// Показывать его должен сам контрол: он знает, пришёл фокус с клавиатуры
-/// или это просто тап (см. [AppFocusRing.isKeyboardFocus]).
+/// Keyboard focus ring; painted as a shadow, it takes no layout space.
 class AppFocusRing extends StatelessWidget {
   const AppFocusRing({
     super.key,
@@ -22,7 +15,7 @@ class AppFocusRing extends StatelessWidget {
   final BorderRadius borderRadius;
   final Widget child;
 
-  /// Фокус пришёл с клавиатуры (а не по тапу) — только тогда кольцо уместно.
+  /// Whether focus arrived from the keyboard rather than a tap.
   static bool get isKeyboardFocus =>
       FocusManager.instance.highlightMode == FocusHighlightMode.traditional;
 

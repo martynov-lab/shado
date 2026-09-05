@@ -1,21 +1,14 @@
-/// Управление плеером урока с системной медиа-сессии: кнопки гарнитуры, экран
-/// блокировки, уведомление-плеер. Реализует активный урок (его контроллер), а
-/// доставляет команды системы мост [ShadowingAudioHandler].
-///
-/// Интерфейс намеренно узкий: handler не должен знать о контроллере урока —
-/// только об этих четырёх действиях.
+/// Lesson player controls driven by the system media session.
 abstract interface class LessonRemoteControl {
-  /// Одиночный клик гарнитуры (play/pause): играть или остановить то, что
-  /// показывает плеер.
+  /// Starts or stops the current segment.
   void remoteToggle();
 
-  /// Двойной клик гарнитуры / «вперёд»: следующий сегмент.
+  /// Moves to the next segment.
   void remoteNext();
 
-  /// Тройной клик гарнитуры / «назад»: предыдущий сегмент.
+  /// Moves to the previous segment.
   void remotePrevious();
 
-  /// Системный стоп (свайп уведомления, потеря аудиофокуса): остановить, если
-  /// сейчас звучит.
+  /// Stops playback on a system command.
   void remoteStop();
 }

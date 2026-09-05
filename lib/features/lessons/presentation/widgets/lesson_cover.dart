@@ -5,7 +5,7 @@ import 'package:shado/widgets/widgets.dart';
 
 import 'lesson_gradients.dart';
 
-/// Квадратная обложка урока: брендовый градиент и иконка по центру.
+/// Square lesson cover: a brand gradient with a centered icon.
 class LessonCover extends StatelessWidget {
   const LessonCover({
     super.key,

@@ -2,8 +2,7 @@ import 'package:flutter/material.dart';
 
 import 'package:shado/theme/theme.dart';
 
-/// Кольцо цели недели: круговой индикатор с процентом в центре и расшифровкой
-/// справа (сделано / всего и сколько осталось).
+/// Weekly goal ring: percentage in the middle, details on the right.
 class HomeGoalRing extends StatelessWidget {
   const HomeGoalRing({
     super.key,
@@ -12,13 +11,13 @@ class HomeGoalRing extends StatelessWidget {
     required this.remaining,
   });
 
-  /// Доля выполненной цели, 0–1.
+  /// Completed share of the goal, 0–1.
   final double ratio;
 
-  /// Основная строка — «126 / 180 мин».
+  /// Main line, e.g. 126 / 180 min.
   final String value;
 
-  /// Пояснение — «осталось 54 минуты».
+  /// Hint with the remaining minutes.
   final String remaining;
 
   static const double _size = 64;

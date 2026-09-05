@@ -4,9 +4,7 @@ import '../../domain/entities/folder.dart';
 import 'folder_providers.dart';
 import 'library_controller.dart';
 
-/// Экран одной папки: её уроки и правка (для автора). Данные тянутся по сети,
-/// а состав меняется точечными вызовами, после которых сервер возвращает
-/// свежую папку.
+/// A single folder screen: its lessons, contents and metadata.
 class FolderDetailController extends AsyncNotifier<Folder> {
   FolderDetailController(this.folderId);
 
@@ -19,8 +17,7 @@ class FolderDetailController extends AsyncNotifier<Folder> {
     state = await AsyncValue.guard(() => ref.read(getFolderProvider)(folderId));
   }
 
-  /// Переименовывает папку поверх её версии. `409` уходит наверх — страница
-  /// покажет «изменена на другом устройстве».
+  /// Renames a folder on top of its version; conflicts bubble up.
   Future<void> rename(String title) async {
     final current = state.value;
     if (current == null) return;
@@ -32,7 +29,7 @@ class FolderDetailController extends AsyncNotifier<Folder> {
     state = AsyncData(updated);
   }
 
-  /// Меняет видимость папки (только для owner).
+  /// Changes folder visibility.
   Future<void> setPrivate(bool isPrivate) async {
     final current = state.value;
     if (current == null) return;
@@ -69,8 +66,7 @@ class FolderDetailController extends AsyncNotifier<Folder> {
     _syncCatalog();
   }
 
-  /// Состав папки изменился — корень библиотеки надо перечитать: какие уроки
-  /// теперь лежат в папках, а какие снова видны в каталоге, решает сервер.
+  /// Re-reads the library root after the folder contents change.
   void _syncCatalog() => ref.invalidate(libraryControllerProvider);
 }
 

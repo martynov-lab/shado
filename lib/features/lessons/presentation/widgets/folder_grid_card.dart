@@ -6,8 +6,7 @@ import 'package:shado/widgets/widgets.dart';
 import '../../domain/entities/folder.dart';
 import 'lesson_labels.dart';
 
-/// Карточка папки для сетки на планшете. Отличается от урока брендовой
-/// «крышкой» с иконкой-папкой — так папку видно среди уроков.
+/// Folder grid card: a cap with a folder icon and the title.
 class FolderGridCard extends StatelessWidget {
   const FolderGridCard({super.key, required this.folder, required this.onTap});
 

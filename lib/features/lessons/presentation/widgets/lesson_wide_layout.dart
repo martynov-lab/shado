@@ -7,8 +7,7 @@ import 'lesson_player_panel.dart';
 import 'lesson_segments_panel.dart';
 import 'lesson_transcript_panel.dart';
 
-/// Экран урока на планшете и десктопе: слева текст сегмента и панель плеера,
-/// справа — постоянная панель списка сегментов.
+/// Lesson screen on a wide layout: the player left, the segment list right.
 class LessonWideLayout extends StatelessWidget {
   const LessonWideLayout({
     super.key,

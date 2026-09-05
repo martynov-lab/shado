@@ -97,7 +97,7 @@ hover/pressed). Всё, что относится к данным урока, с
 глубине дерева.
 
 ```dart
-// bad — плитка сама лезет в контроллер и знает про lessonId
+// bad — the tile reaches into the controller and knows lessonId
 class SegmentTile extends ConsumerWidget {
   const SegmentTile({super.key, required this.lessonId, required this.index});
 
@@ -108,7 +108,7 @@ class SegmentTile extends ConsumerWidget {
   }
 }
 
-// good — плитка знает только про свой кусок
+// good — the tile only knows its own slice
 class SegmentTile extends StatelessWidget {
   const SegmentTile({
     super.key,

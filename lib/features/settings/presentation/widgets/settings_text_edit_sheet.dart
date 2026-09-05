@@ -3,9 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:shado/theme/theme.dart';
 import 'package:shado/widgets/widgets.dart';
 
-/// Лист правки одного текстового поля профиля (имя, дневная цель). Возвращает
-/// введённое значение строкой через `Navigator.pop`; разбор и проверку делает
-/// вызывающий.
+/// Sheet for editing one profile text field; returns the entered string.
 class SettingsTextEditSheet extends StatefulWidget {
   const SettingsTextEditSheet({
     super.key,
@@ -37,7 +35,7 @@ class _SettingsTextEditSheetState extends State<SettingsTextEditSheet> {
 
   @override
   Widget build(BuildContext context) {
-    // Отступ снизу — под клавиатуру: лист поднимается вместе с ней.
+    // Bottom padding for the keyboard.
     return Padding(
       padding: EdgeInsets.only(
         bottom: MediaQuery.of(context).viewInsets.bottom,

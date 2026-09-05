@@ -2,8 +2,7 @@ import 'package:flutter/material.dart';
 
 import 'package:shado/theme/theme.dart';
 
-/// Заголовок раздела на главном экране: название слева и ссылка-действие справа
-/// («Все» → к списку уроков).
+/// Section header: title on the left and an action link on the right.
 class HomeSectionHeader extends StatelessWidget {
   const HomeSectionHeader({
     super.key,

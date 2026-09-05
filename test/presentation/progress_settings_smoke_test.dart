@@ -8,7 +8,7 @@ import 'package:shado/features/progress/presentation/pages/progress_page.dart';
 import 'package:shado/features/settings/presentation/pages/settings_page.dart';
 import 'package:shado/theme/theme.dart';
 
-/// Прогресс без сети: сводка и история отдаются мгновенно, без dio-таймеров.
+/// Progress offline: summary and history return instantly, without dio.
 class _FakeProgressRemote implements ProgressRemoteDataSource {
   @override
   Future<ProgressSummary> reportEvents({
@@ -51,7 +51,7 @@ void main() {
       ),
     );
     await tester.pump();
-    // Даём провайдерам-фьючерам разрешиться (сводка приходит из фейка).
+    // Let the future providers settle; the summary comes from a fake.
     await tester.pump();
   }
 

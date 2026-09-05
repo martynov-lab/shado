@@ -1,20 +1,17 @@
 import '../entities/folder.dart';
 
-/// Доступ к папкам (§6.2). Сервер — источник истины; папки тянутся по сети,
-/// а не кешируются локально, как уроки: это лёгкая группировка поверх каталога.
+/// Folder access; network only, there is no local cache.
 abstract interface class FolderRepository {
-  /// Список папок (публичные + свои приватные), без вложенных уроков.
+  /// Folder list without nested lessons.
   Future<List<Folder>> getFolders();
 
-  /// Папка целиком, с её уроками.
+  /// The whole folder with its lessons.
   Future<Folder> getFolder(String id);
 
-  /// Создаёт папку. UUID генерит клиент, поэтому повтор при обрыве не создаёт
-  /// дубль. [isPublic] задаёт видимость, когда ей управляет автор (owner);
-  /// `null` — решает сервер по роли.
+  /// Creates a folder; a `null` [isPublic] lets the server decide.
   Future<Folder> createFolder({required String title, bool? isPublic});
 
-  /// Правит название и видимость папки поверх [version] (`If-Match`).
+  /// Updates a folder title and visibility on top of [version].
   Future<Folder> updateFolder({
     required String id,
     required String title,
@@ -24,9 +21,9 @@ abstract interface class FolderRepository {
 
   Future<void> deleteFolder(String id);
 
-  /// Добавляет уроки в папку и возвращает её обновлённой.
+  /// Adds lessons to a folder and returns the updated folder.
   Future<Folder> addLessons(String folderId, List<String> lessonIds);
 
-  /// Убирает урок из папки и возвращает её обновлённой.
+  /// Removes a lesson from a folder and returns the updated folder.
   Future<Folder> removeLesson(String folderId, String lessonId);
 }

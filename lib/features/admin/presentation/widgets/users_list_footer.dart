@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 
-/// Хвост списка пользователей: сколько показано и докачивается ли следующая
-/// страница.
+/// User list footer: a counter and a loading indicator.
 class UsersListFooter extends StatelessWidget {
   const UsersListFooter({
     super.key,

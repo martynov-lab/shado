@@ -1,7 +1,6 @@
 import 'package:flutter/widgets.dart';
 
-/// 4pt spacing scale. Use for padding, gaps, and margins everywhere so
-/// rhythm stays consistent across screens.
+/// 4pt spacing scale for padding, gaps and margins.
 abstract final class AppSpacing {
   static const double s1 = 4;
   static const double s2 = 8;
@@ -15,7 +14,7 @@ abstract final class AppSpacing {
   static const double s16 = 64;
 }
 
-/// Corner radii. Raw `double`s plus ready-made [BorderRadius] constants.
+/// Corner radii: raw values plus ready-made [BorderRadius] constants.
 abstract final class AppRadii {
   static const double xs = 6;
   static const double sm = 10;
@@ -34,41 +33,38 @@ abstract final class AppRadii {
   static const BorderRadius rPill = BorderRadius.all(Radius.circular(pill));
 }
 
-/// Layout breakpoints. Below [tablet] is phone; [tablet]..[desktop) is tablet;
-/// [desktop] and up is desktop / web.
+/// Layout breakpoints: phone, tablet, desktop.
 abstract final class AppBreakpoints {
   static const double tablet = 600;
   static const double desktop = 1024;
 
-  /// Ширина, шире которой контент не растягивается на desktop/web — иначе
-  /// строки текста становятся нечитаемо длинными.
+  /// Maximum content width on wide screens.
   static const double maxContent = 1040;
 }
 
-/// Размеры контролов и элементов внутри них. Держит компоненты в одной
-/// вертикальной сетке и гарантирует тач-цели не меньше [minTouchTarget].
+/// Sizes of controls and the elements inside them.
 abstract final class AppSizes {
-  /// Минимальная область нажатия (WCAG 2.5.5 / Material a11y).
+  /// Minimum touch target.
   static const double minTouchTarget = 48;
 
-  // Высота интерактивных контролов по размерам sm / md / lg.
+  // Interactive control heights for the sm / md / lg sizes.
   static const double controlSm = 36;
   static const double controlMd = 44;
   static const double controlLg = 52;
 
-  // Иконки.
+  // Icons.
   static const double iconSm = 16;
   static const double iconMd = 20;
   static const double iconLg = 24;
 
-  // Обводки.
+  // Borders.
   static const double borderThin = 1;
   static const double borderThick = 2;
 
-  /// Толщина кольца фокуса с клавиатуры.
+  /// Keyboard focus ring thickness.
   static const double focusRing = 3;
 
-  // Элементы форм.
+  // Form elements.
   static const double checkbox = 22;
   static const double radio = 22;
   static const double radioDot = 10;
@@ -78,36 +74,35 @@ abstract final class AppSizes {
   static const double sliderTrack = 6;
   static const double sliderThumb = 20;
 
-  /// Обложка урока в строке списка.
+  /// Lesson cover in a list row.
   static const double cover = 48;
 
-  /// Диаметр индикатора загрузки внутри кнопки.
+  /// Spinner diameter inside a button.
   static const double spinner = 18;
   static const double spinnerStroke = 2;
 
-  // «Ручка» модального листа.
+  // Bottom sheet handle.
   static const double sheetHandleWidth = 40;
   static const double sheetHandleHeight = 4;
 
-  /// Максимальная ширина всплывающего меню и тоста.
+  /// Maximum width of a popup menu and a toast.
   static const double overlayMaxWidth = 420;
 }
 
-/// Прозрачности для наложений и выключенных состояний. Вынесены в токены,
-/// чтобы в виджетах не встречались «сырые» альфы.
+/// Opacities for overlays and disabled states.
 abstract final class AppOpacities {
-  /// Выключенный контрол целиком.
+  /// The whole disabled control.
   static const double disabled = 0.45;
 
-  /// Подсветка при наведении и нажатии.
+  /// Hover and press highlight.
   static const double hover = 0.08;
   static const double press = 0.14;
 
-  /// То же самое поверх залитой primary-поверхности — нужен светлый оверлей.
+  /// The same over a filled primary surface.
   static const double hoverOnPrimary = 0.10;
   static const double pressOnPrimary = 0.18;
 
-  /// Кольцо фокуса и затемнение фона под оверлеями.
+  /// Focus ring and the scrim under overlays.
   static const double focusRing = 0.55;
   static const double scrim = 0.45;
 }

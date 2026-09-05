@@ -1,10 +1,8 @@
 import '../../../../../core/constants/app_constants.dart';
 
-/// Разбивка текста на сегменты — это символы [kSegmentDelimiter] в «сырой»
-/// строке. Метку можно поставить в любую позицию каретки, поэтому все операции
-/// работают с индексами символов, а не с зазорами между словами.
+/// Operations on [kSegmentDelimiter] delimiters by character index.
 
-/// Индексы всех разделителей в тексте — по одному на каждую метку.
+/// Indexes of every delimiter in the text, one per marker.
 List<int> markerIndices(String text) {
   final result = <int>[];
   for (var i = 0; i < text.length; i++) {
@@ -13,8 +11,7 @@ List<int> markerIndices(String text) {
   return result;
 }
 
-/// Ставит разделитель в позицию каретки [caret]. Вплотную к уже стоящей метке
-/// второй не ставит — иначе появился бы пустой сегмент.
+/// Puts a delimiter at caret [caret]; never right next to another marker.
 String insertMarkerAt(String text, int caret) {
   final at = caret.clamp(0, text.length);
   if (at > 0 && text[at - 1] == kSegmentDelimiter) return text;
@@ -22,11 +19,10 @@ String insertMarkerAt(String text, int caret) {
   return text.substring(0, at) + kSegmentDelimiter + text.substring(at);
 }
 
-/// Индекс каретки сразу за только что вставленной в [caret] меткой.
+/// Caret index right after the marker just inserted at [caret].
 int caretAfterInsert(int caret) => caret + 1;
 
-/// Убирает разделитель на позиции [index]. Если по обе стороны от него были
-/// пробелы, задвоённый пробел схлопывается до одного.
+/// Removes the delimiter at [index] and collapses a doubled space.
 String removeMarker(String text, int index) {
   if (index < 0 || index >= text.length || text[index] != kSegmentDelimiter) {
     return text;
@@ -39,23 +35,24 @@ String removeMarker(String text, int index) {
   return before + after;
 }
 
-/// Переносит разделитель с позиции [fromIndex] в позицию каретки [toCaret].
+/// Moves a delimiter from [fromIndex] to caret position [toCaret].
 String moveMarker(String text, int fromIndex, int toCaret) {
   if (fromIndex < 0 ||
       fromIndex >= text.length ||
       text[fromIndex] != kSegmentDelimiter) {
     return text;
   }
-  // Обе каретки вплотную к самой метке — это та же точка, ничего не меняем.
+  // Both carets touch the marker itself — same spot, nothing changes.
   if (toCaret == fromIndex || toCaret == fromIndex + 1) return text;
   final without = removeMarker(text, fromIndex);
-  // Сколько символов ушло слева от цели (сам «|» и, возможно, лишний пробел).
+  // How many characters were dropped left of the target: the delimiter and
+  // possibly an extra space.
   final removed = text.length - without.length;
   final target = toCaret > fromIndex ? toCaret - removed : toCaret;
   return insertMarkerAt(without, target);
 }
 
-/// Снимает все разделители, схлопывая задвоённые пробелы.
+/// Removes every delimiter and collapses doubled spaces.
 String clearMarkers(String text) {
   if (!text.contains(kSegmentDelimiter)) return text;
   return text

@@ -4,11 +4,7 @@ import 'package:shado/widgets/widgets.dart';
 
 import 'settings_row.dart';
 
-/// Строка настройки с тумблером справа.
-///
-/// Управляемый режим — заданы [value] и [onChanged]: значение приходит извне и
-/// сохраняется контроллером. Локальный режим — задан только [initialValue]:
-/// тумблер живёт в самом виджете и ничего не сохраняет (заготовки настроек).
+/// Settings row with a switch; with [initialValue] the switch is local.
 class SettingsSwitchRow extends StatefulWidget {
   const SettingsSwitchRow({
     super.key,
@@ -27,11 +23,11 @@ class SettingsSwitchRow extends StatefulWidget {
   final String title;
   final String? subtitle;
 
-  /// Управляемый режим: текущее значение и обработчик изменения.
+  /// Controlled mode: the current value and a change handler.
   final bool? value;
   final ValueChanged<bool>? onChanged;
 
-  /// Локальный режим (заготовка): стартовое значение тумблера.
+  /// Local mode: the initial switch value.
   final bool? initialValue;
 
   @override

@@ -5,19 +5,12 @@ import '../../../../core/network/api_client.dart';
 import '../../domain/entities/tts_quota.dart';
 import '../models/audio_dto.dart';
 
-/// Озвучка текста через ИИ (Gemini TTS, см. `TTS_CLIENT_SPEC.md`).
-///
-/// Для клиента это второй вход в тот же результат, что и загрузка файла
-/// (`POST /v1/audio`): ответ — та же форма (ссылка на файл + пики), поэтому
-/// разбирается в [AudioDto]. Модель, голос и стиль чтения задаёт сервер —
-/// клиент их не шлёт.
+/// AI voice-over; the response has the same shape as an audio upload.
 abstract interface class TtsRemoteDataSource {
-  /// Синтезирует речь по [text]. Файл затем скачивается тем же эндпоинтом
-  /// `GET /v1/audio/{id}/file`, что и обычное аудио. Отдаёт `audio/wav`.
+  /// Synthesizes speech for [text].
   Future<AudioDto> synthesize({required String text, CancelToken? cancelToken});
 
-  /// Остаток бесплатного лимита озвучек (`GET /v1/tts/quota`, §4.1) — для
-  /// подписи у кнопки.
+  /// Remaining free voice-over quota.
   Future<TtsQuota> quota();
 }
 
@@ -35,11 +28,9 @@ class ApiTtsRemoteDataSource implements TtsRemoteDataSource {
       '/v1/tts/synthesize',
       data: {'text': text},
       cancelToken: cancelToken,
-      // Синтез идёт несколько секунд — ждём дольше обычного запроса.
+      // Synthesis takes seconds — wait longer than for a regular request.
       options: Options(receiveTimeout: AppConfig.audioTimeout),
     );
-    // Поле `cached` в ответе на поведение клиента не влияет — [AudioDto] его
-    // просто не читает.
     return AudioDto.fromJson(response.data!);
   }
 

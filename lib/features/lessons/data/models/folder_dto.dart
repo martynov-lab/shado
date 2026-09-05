@@ -1,11 +1,7 @@
 import '../../domain/entities/folder.dart';
 import 'lesson_dto.dart';
 
-/// Папка в том виде, в каком её отдаёт сервер (§6.2).
-///
-/// В списке (`GET /v1/folders`) приходит без `lessons`, только с
-/// `lesson_count`; в деталях (`GET /v1/folders/{id}`) — с уроками, каждый как
-/// в §6.
+/// Folder exactly as the server returns it.
 class FolderDto {
   const FolderDto({
     required this.id,
@@ -41,8 +37,7 @@ class FolderDto {
   final DateTime createdAt;
   final DateTime updatedAt;
 
-  /// Непустое время — папку удалили на другом устройстве. Приходит только в
-  /// дельте (`GET /v1/folders?since=`).
+  /// Deletion time; only present in a delta.
   final DateTime? deletedAt;
 
   final int version;
@@ -52,8 +47,7 @@ class FolderDto {
 
   bool get isDeleted => deletedAt != null;
 
-  /// Папка для домена. Уроки не требуют скачанного аудио: это список для
-  /// открытия, а файл докачает уже экран урока — поэтому `audioPath` пустой.
+  /// Domain folder; its lessons have an empty `audioPath`.
   Folder toEntity() => Folder(
     id: id,
     title: title,

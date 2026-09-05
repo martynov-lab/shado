@@ -4,21 +4,17 @@ import 'package:shado/theme/theme.dart';
 import 'package:shado/widgets/app_focus_ring.dart';
 import 'package:shado/widgets/app_tap_target.dart';
 
-/// Насколько громко выглядит выбранный чип.
+/// Fill of a selected chip.
 enum AppChipStyle {
-  /// Заливка primary, текст на ней — для одного акцентного выбора.
+  /// Solid primary fill.
   on,
 
-  /// Мягкая заливка primarySoft — когда выбранных чипов в ряду много и
-  /// сплошной фиолетовый ряд был бы криклив.
+  /// Soft primarySoft fill.
   onSoft,
 }
 
-/// Пилюля-ярлык: тема урока, уровень, метка фильтра.
-///
-/// Невыбранный чип держится на surface2 с тонкой обводкой; выбранный
-/// заливается по [style]. Если [onTap] равен `null`, чип неинтерактивен —
-/// просто ярлык.
+/// Label pill: lesson topic, level, filter tag. Without [onTap] it is not
+/// interactive.
 class AppChip extends StatefulWidget {
   const AppChip({
     super.key,
@@ -70,8 +66,7 @@ class _AppChipState extends State<AppChip> {
       (false, _) => (colors.surface2, colors.text2, colors.border),
     };
 
-    // Наведение и нажатие подмешиваем к заливке, чтобы не заводить отдельные
-    // токены на каждое сочетание «выбран × состояние».
+    // Hover and press are blended into the fill.
     final overlayAlpha = _pressed
         ? AppOpacities.press
         : (_hovered ? AppOpacities.hover : 0.0);

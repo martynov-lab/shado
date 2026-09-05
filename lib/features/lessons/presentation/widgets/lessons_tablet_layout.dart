@@ -13,7 +13,7 @@ import 'lessons_header.dart';
 import 'lessons_no_results.dart';
 import 'lesson_search_field.dart';
 
-/// Раскладка списка уроков на планшете: шапка, поиск, фильтры и сетка карточек.
+/// Tablet lesson list: header, search, filters and a card grid.
 class LessonsTabletLayout extends StatelessWidget {
   const LessonsTabletLayout({
     super.key,

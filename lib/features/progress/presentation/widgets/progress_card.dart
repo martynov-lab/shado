@@ -3,11 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:shado/theme/theme.dart';
 import 'package:shado/widgets/widgets.dart';
 
-/// Карточка раздела прогресса: заголовок с необязательной подписью справа и
-/// произвольное содержимое под ним.
-///
-/// Обёртка над [AppCard] — чтобы карточки графика, тепловой карты, уровня и
-/// достижений держали один заголовок и отступ.
+/// Progress section card: a title with a caption and the content.
 class ProgressCard extends StatelessWidget {
   const ProgressCard({
     super.key,
@@ -18,7 +14,7 @@ class ProgressCard extends StatelessWidget {
 
   final String title;
 
-  /// Подпись у правого края заголовка — например «эта неделя».
+  /// Caption at the right edge of the title.
   final String? caption;
 
   final Widget child;

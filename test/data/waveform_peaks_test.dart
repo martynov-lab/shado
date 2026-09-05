@@ -6,7 +6,7 @@ import 'package:shado/features/lessons/data/datasources/waveform_datasource.dart
 import 'package:shado/features/lessons/data/models/waveform_peaks.dart';
 import 'package:shado/features/lessons/domain/entities/audio_trim.dart';
 
-/// Кодирует значения так же, как сервер: int8 в base64.
+/// Encodes values the way the server does: int8 into base64.
 String encode(List<int> values) =>
     base64Encode(Int8List.fromList(values).buffer.asUint8List());
 
@@ -26,7 +26,7 @@ void main() {
       final decoded = decodePeaks(encode([for (var i = -128; i < 128; i++) i]));
 
       expect(decoded, hasLength(256));
-      // -128/127 чуть выходит за -1: это край типа, а не ошибка кодирования.
+      // -128/127 goes slightly past -1: a type edge, not an encoding error.
       expect(decoded.every((value) => value >= -1.008 && value <= 1.0), isTrue);
     });
 
@@ -47,8 +47,7 @@ void main() {
     });
 
     test('фактическое разрешение берётся из массивов, а не из поля', () {
-      // Сервер не может отдать больше точек, чем сохранил: просили 2000,
-      // прислал 2 — рисовать надо по тому, что пришло.
+      // The point count comes from the arrays, not from `resolution`.
       final peaks = WaveformPeaks.fromJson({
         'resolution': 2000,
         'minima': encode([-127, -64]),
@@ -77,7 +76,7 @@ void main() {
       );
 
       expect(half.length, 50);
-      // Вторая половина файла — её и должны получить.
+      // The second half of the file is what must come back.
       expect(half.maxima.first, closeTo(0.5, 0.001));
     });
 

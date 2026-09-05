@@ -6,10 +6,7 @@ import 'package:shado/widgets/widgets.dart';
 import '../../domain/entities/lesson.dart';
 import 'lesson_labels.dart';
 
-/// Выбор уроков для добавления в папку. Возвращает список выбранных id или
-/// `null`, если закрыли без подтверждения.
-///
-/// Кандидаты — уроки, которых в папке ещё нет; их считает вызывающий экран.
+/// Lesson picker for a folder; returns their ids or `null`.
 class AddLessonsToFolderSheet extends StatefulWidget {
   const AddLessonsToFolderSheet({super.key, required this.candidates});
 

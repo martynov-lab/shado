@@ -11,15 +11,13 @@ import '../controllers/auth_controller.dart';
 import '../widgets/auth_form.dart';
 import '../widgets/auth_view.dart';
 
-/// Вход и регистрация — одна форма на двух маршрутах: поля почти те же,
-/// отличаются заголовок, кнопка и то, какой запрос уходит.
+/// Sign-in and sign-up — one form on two routes.
 class LoginPage extends ConsumerStatefulWidget {
   const LoginPage({super.key, this.isRegistration = false});
 
   static const String routePath = '/login';
 
-  /// Та же форма, но с регистрацией: свой путь, чтобы ссылка «нет аккаунта»
-  /// была обычным переходом, а не состоянием экрана.
+  /// Route of the same form in sign-up mode.
   static const String registerRoutePath = '/register';
 
   final bool isRegistration;
@@ -29,22 +27,20 @@ class LoginPage extends ConsumerStatefulWidget {
 }
 
 class _LoginPageState extends ConsumerState<LoginPage> {
-  /// Имя из формы регистрации: уходит в `/v1/auth/register` необязательным
-  /// полем (язык и цель задаются позже в настройках).
+  /// Name from the sign-up form — an optional field.
   final _nameController = TextEditingController();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
 
   bool _obscurePassword = true;
 
-  /// Согласие с условиями. В макете флажок уже отмечен, снятый — запирает
-  /// кнопку регистрации.
+  /// Terms consent; unchecked it locks the sign-up button.
   bool _termsAccepted = true;
 
   String? _emailError;
   String? _passwordError;
 
-  /// Тикает, пока форма заперта после `429`, — чтобы таймер на кнопке шёл.
+  /// Ticks while the form is locked after a `429`.
   Timer? _cooldownTicker;
 
   @override
@@ -71,8 +67,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
     if (!ok) _startCooldownTicker();
   }
 
-  /// Те же проверки, что делает сервер: про опечатку в адресе и короткий
-  /// пароль пользователь должен узнать от формы, а не от сети.
+  /// Validates input before sending, with the same rules as the server.
   bool _validate() {
     final email = _emailController.text.trim();
     final password = _passwordController.text;
@@ -91,8 +86,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
     return null;
   }
 
-  /// Кнопка показывает, сколько осталось ждать, поэтому раз в секунду
-  /// перерисовываем её, пока запрет не снимется.
+  /// Refreshes the countdown on the button once a second.
   void _startCooldownTicker() {
     if (!ref.read(authControllerProvider).isRateLimited) return;
     _cooldownTicker?.cancel();
@@ -129,7 +123,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
           isRegistration: isRegistration,
           form: AuthForm(
             isRegistration: isRegistration,
-            // На планшете заголовок стоит в шапке карточки, а не в форме.
+            // On tablets the heading lives in the card header.
             showHeading: !context.isTablet,
             nameController: _nameController,
             emailController: _emailController,

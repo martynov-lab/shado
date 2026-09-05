@@ -7,7 +7,7 @@ import 'package:shado/screens/design_gallery/widgets/gallery_wrap.dart';
 import 'package:shado/theme/theme.dart';
 import 'package:shado/widgets/widgets.dart';
 
-/// Раздел витрины: набор иконок Shadowing и то, как он красится.
+/// Gallery section: the icon set and how it is tinted.
 class GalleryIconsSection extends StatelessWidget {
   const GalleryIconsSection({super.key});
 
@@ -57,7 +57,7 @@ class GalleryIconsSection extends StatelessWidget {
                 size: AppSizes.iconLg,
                 color: colors.text3,
               ),
-              // Логотип остаётся фирменным даже с явным цветом.
+              // The logo keeps brand colors even with an explicit tint.
               AppIcon(
                 AppIcons.brandGoogle,
                 size: AppSizes.iconLg,

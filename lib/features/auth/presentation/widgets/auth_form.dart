@@ -10,10 +10,7 @@ import 'auth_social_button.dart';
 import 'auth_switch_line.dart';
 import 'auth_terms_checkbox.dart';
 
-/// Форма входа и регистрации: поля, главное действие и всё, что под ним.
-///
-/// Одна и та же форма стоит во всех трёх раскладках экрана, поэтому заголовок
-/// в ней необязателен: на планшете он живёт в шапке карточки.
+/// Sign-in and sign-up form: fields, the main action and links below it.
 class AuthForm extends StatelessWidget {
   const AuthForm({
     super.key,
@@ -43,11 +40,11 @@ class AuthForm extends StatelessWidget {
   final TextEditingController emailController;
   final TextEditingController passwordController;
 
-  /// Разбор полей: непустая строка переводит поле в состояние ошибки.
+  /// Field errors: a non-empty string puts the field into an error state.
   final String? emailError;
   final String? passwordError;
 
-  /// Ответ сервера, который касается формы целиком.
+  /// Server error that applies to the whole form.
   final String? errorMessage;
 
   final bool obscurePassword;
@@ -126,7 +123,7 @@ class AuthForm extends StatelessWidget {
           ),
         ] else ...[
           const SizedBox(height: AppSpacing.s3),
-          // Восстановления пароля ещё нет — ссылка из макета есть, действия нет.
+          // Password recovery does not exist yet — the link has no action.
           const Align(
             alignment: Alignment.centerRight,
             child: AuthLink(label: 'Забыли пароль?'),
@@ -147,7 +144,7 @@ class AuthForm extends StatelessWidget {
         const SizedBox(height: AppSpacing.s5),
         const AuthDivider(label: 'или'),
         const SizedBox(height: AppSpacing.s5),
-        // Входа через сервисы пока нет: кнопки из макета стоят без обработчиков.
+        // Social sign-in is not wired yet — buttons have no handlers.
         const Row(
           children: [
             Expanded(

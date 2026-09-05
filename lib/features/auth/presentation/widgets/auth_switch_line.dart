@@ -4,7 +4,7 @@ import 'package:shado/theme/theme.dart';
 
 import 'auth_link.dart';
 
-/// Переход между входом и регистрацией внизу формы.
+/// Switch between sign-in and sign-up at the bottom of the form.
 class AuthSwitchLine extends StatelessWidget {
   const AuthSwitchLine({
     super.key,

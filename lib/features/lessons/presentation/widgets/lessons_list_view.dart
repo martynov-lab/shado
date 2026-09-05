@@ -9,9 +9,7 @@ import 'folders_section_header.dart';
 import 'lesson_list_row.dart';
 import 'lesson_row_divider.dart';
 
-/// Прокручиваемый список уроков с pull-to-refresh. Общий для телефона и
-/// десктопа. Над уроками, в том же скролле, идёт секция папок — визуально
-/// отличная, чтобы папку было видно среди уроков.
+/// Lesson list with pull-to-refresh; the folder section shares the scroll.
 class LessonsListView extends StatelessWidget {
   const LessonsListView({
     super.key,
@@ -30,21 +28,18 @@ class LessonsListView extends StatelessWidget {
   final void Function(Lesson) onDelete;
   final Future<void> Function() onRefresh;
 
-  /// Папки над списком уроков. Пусто — секция не показывается (кроме случая,
-  /// когда автор может её создать).
+  /// Folders shown above the lesson list.
   final List<Folder> folders;
   final void Function(Folder)? onOpenFolder;
 
-  /// Создать папку. `null` — у зрителя без прав автора кнопки нет.
+  /// Creates a folder; `null` hides the button from non-authors.
   final VoidCallback? onCreateFolder;
 
   final EdgeInsets padding;
 
   @override
   Widget build(BuildContext context) {
-    // Плоский список элементов: заголовок папок, строки папок, разделитель,
-    // строки уроков с разделителями между ними. Строим дескрипторы заранее, а
-    // сами (тяжёлые) виджеты — лениво в `itemBuilder`.
+    // Row descriptors are built up front; widgets stay lazy in `itemBuilder`.
     final entries = _buildEntries();
 
     return RefreshIndicator(
@@ -89,7 +84,7 @@ class LessonsListView extends StatelessWidget {
 
 enum _EntryKind { folderHeader, folder, divider, lesson }
 
-/// Дескриптор строки списка — дёшев, чтобы `itemBuilder` оставался ленивым.
+/// List row descriptor — cheap so `itemBuilder` stays lazy.
 class _Entry {
   const _Entry.folderHeader()
     : kind = _EntryKind.folderHeader,

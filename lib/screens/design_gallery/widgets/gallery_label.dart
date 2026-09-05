@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 import 'package:shado/theme/theme.dart';
 
-/// Подпись над группой примеров внутри раздела.
+/// Caption above a group of examples inside a section.
 class GalleryLabel extends StatelessWidget {
   const GalleryLabel(this.text, {super.key});
 

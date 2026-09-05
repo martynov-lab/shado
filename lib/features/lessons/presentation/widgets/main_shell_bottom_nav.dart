@@ -5,10 +5,7 @@ import 'package:shado/widgets/widgets.dart';
 
 import '../pages/main_shell.dart';
 
-/// Нижняя навигация телефона: поверхность surface с верхней границей и ряд
-/// пунктов из [MainShell.destinations]. Пункт «Добавить» ([MainShell.addIndex])
-/// по центру оформлен приподнятой круглой кнопкой (FAB) и виден только тем, кто
-/// вправе создавать уроки.
+/// Phone bottom navigation; the centered add item is a raised button.
 class MainShellBottomNav extends StatelessWidget {
   const MainShellBottomNav({
     super.key,
@@ -20,24 +17,23 @@ class MainShellBottomNav extends StatelessWidget {
   final int currentIndex;
   final ValueChanged<int> onSelected;
 
-  /// Показывать ли центральный FAB «Добавить».
+  /// Whether to show the center add FAB.
   final bool canAdd;
 
-  /// Диаметр FAB и то, насколько он выступает над баром.
+  /// FAB diameter and how far it sticks out above the bar.
   static const double _fabSize = 52;
   static const double _fabOverhang = 18;
 
   @override
   Widget build(BuildContext context) {
     final bar = _bar(context);
-    // Без FAB бар остаётся обычной полосой — центральный слот не резервируем.
+    // Without the FAB the bar is a plain strip and needs no center slot.
     if (!canAdd) return bar;
 
     return Stack(
       clipBehavior: Clip.none,
       children: [
-        // Бар опускаем на высоту выступа, чтобы FAB целиком помещался в границы
-        // виджета и оставался нажимаемым по всей площади.
+        // Lower the bar by the overhang so the button fits inside it.
         Padding(
           padding: const EdgeInsets.only(top: _fabOverhang),
           child: bar,
@@ -85,7 +81,7 @@ class MainShellBottomNav extends StatelessWidget {
                       onTap: () => onSelected(i),
                     ),
                   )
-                // Центральный слот резервируем под FAB, только если он показан.
+                // The center slot is reserved for the FAB when shown.
                 else if (canAdd)
                   const Expanded(child: SizedBox.shrink()),
             ],
@@ -146,8 +142,7 @@ class _BottomNavItem extends StatelessWidget {
   }
 }
 
-/// Приподнятая круглая кнопка «Добавить» в центре нижней навигации: брендовый
-/// градиент в кольце цвета фона — как `nav-fab` в макете.
+/// Raised round add button in the center of the bottom navigation.
 class _BottomNavFab extends StatelessWidget {
   const _BottomNavFab({required this.size, required this.onTap});
 

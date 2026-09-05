@@ -10,14 +10,12 @@ import '../widgets/lesson_editor_header.dart';
 import '../widgets/version_conflict_dialog.dart';
 import 'lesson_page.dart';
 
-/// Правка урока: разбивка текста на куски и границы этих кусков на волне.
-///
-/// Экран возвращает `true`, если правки сохранены — экрану урока по этому
-/// признаку надо перечитать себя.
+/// Lesson editing: text split and segment boundaries; returns `true` when
+/// saved.
 class EditLessonPage extends ConsumerWidget {
   const EditLessonPage({super.key, required this.lessonId});
 
-  /// Правка — вложенный маршрут урока, поэтому в роутер уходит только хвост.
+  /// Tail of the nested edit route.
   static const String routeSegment = 'edit';
 
   static String routeTo(String lessonId) =>
@@ -87,7 +85,7 @@ class EditLessonPage extends ConsumerWidget {
     }
   }
 
-  /// Урок правили на другом устройстве: предлагаем открыть свежую версию.
+  /// Offers to open a fresh lesson version on a version conflict.
   Future<void> _resolveConflict(BuildContext context, WidgetRef ref) async {
     final reload = await showDialog<bool>(
       context: context,

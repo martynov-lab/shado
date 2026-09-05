@@ -3,8 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:shado/theme/theme.dart';
 import 'package:shado/widgets/widgets.dart';
 
-/// Неделя занятий: ряд из семи кружков с подписями дней. Пройденный день —
-/// залитый кружок с галочкой, сегодняшний — обведён, остальные пустые.
+/// Practice week: seven dots with day labels.
 class HomeWeekDots extends StatelessWidget {
   const HomeWeekDots({
     super.key,

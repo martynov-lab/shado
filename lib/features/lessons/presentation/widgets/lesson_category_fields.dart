@@ -3,11 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../domain/entities/lesson_category.dart';
 
-/// Акцент, уровень и тема — по ним потом фильтруется каталог.
-///
-/// Акцент и уровень зашиты в клиенте: это закрытые списки, сервер меняет их
-/// только релизом. Темы, наоборот, справочник — их правит владелец, поэтому
-/// список приходит с сервера и может не загрузиться.
+/// Lesson category fields: accent, level and topic.
 class LessonCategoryFields extends StatelessWidget {
   const LessonCategoryFields({
     super.key,
@@ -21,17 +17,17 @@ class LessonCategoryFields extends StatelessWidget {
     required this.onTopicChanged,
   });
 
-  /// Выбранные значения; `null` — поле ещё не заполняли.
+  /// Selected values; `null` when the field was never filled.
   final LessonAccent? accent;
   final LessonLevel? level;
 
-  /// Выбранная тема; `null` — «без темы».
+  /// Selected topic; `null` means no topic.
   final String? topicId;
 
-  /// Справочник тем с сервера: по нему же собирается подсказка под полем.
+  /// Topic directory from the server; the field hint is built from it.
   final AsyncValue<List<Topic>> topics;
 
-  /// Идёт отправка или загрузка файла — поля заперты.
+  /// An upload is running — the fields are locked.
   final bool isBusy;
 
   final ValueChanged<LessonAccent?> onAccentChanged;
@@ -42,8 +38,7 @@ class LessonCategoryFields extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final available = topics.value ?? const <Topic>[];
-    // Список падает, если выбранного значения нет среди пунктов: тему могли
-    // удалить на другом устройстве, пока заполняли форму.
+    // The dropdown throws when the selected value is not among the items.
     final selectedTopic = available.any((topic) => topic.id == topicId)
         ? topicId
         : null;
@@ -75,8 +70,7 @@ class LessonCategoryFields extends StatelessWidget {
                 key: const ValueKey('dropdown-level'),
                 initialValue: level,
                 decoration: const InputDecoration(labelText: 'Уровень'),
-                // Подписи вида «B1 — средний» в половину строки не влезают,
-                // поэтому в закрытом поле остаётся только код уровня.
+                // The collapsed field keeps only the level code.
                 selectedItemBuilder: (_) => [
                   for (final value in LessonLevel.values)
                     Align(
@@ -122,7 +116,7 @@ class LessonCategoryFields extends StatelessWidget {
                 child: Text(topic.name, overflow: TextOverflow.ellipsis),
               ),
           ],
-          // Пока справочник не пришёл, выбирать нечего.
+          // Until the directory arrives there is nothing to choose.
           onChanged: isBusy || available.isEmpty ? null : onTopicChanged,
         ),
       ],

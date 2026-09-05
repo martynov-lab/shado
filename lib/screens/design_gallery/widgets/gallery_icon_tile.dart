@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:shado/theme/theme.dart';
 import 'package:shado/widgets/widgets.dart';
 
-/// Плитка витрины: иконка и её имя из набора — по нему иконку зовут в коде.
+/// Gallery tile: an icon and its name in the set.
 class GalleryIconTile extends StatelessWidget {
   const GalleryIconTile(this.icon, {super.key});
 

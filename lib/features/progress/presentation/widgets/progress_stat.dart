@@ -2,9 +2,7 @@ import 'package:flutter/material.dart';
 
 import 'package:shado/theme/theme.dart';
 
-/// Плитка статистики: подпись сверху, крупное число и дельта под ним.
-///
-/// Вставляется в горизонтальный ряд — родитель растягивает её через [Expanded].
+/// Stat tile: a label, a large number and a delta below it.
 class ProgressStat extends StatelessWidget {
   const ProgressStat({
     super.key,
@@ -17,10 +15,10 @@ class ProgressStat extends StatelessWidget {
   final String caption;
   final String value;
 
-  /// Единица измерения рядом с числом, например «мин».
+  /// Unit next to the number, e.g. minutes.
   final String? unit;
 
-  /// Короткая пометка снизу — прирост за период.
+  /// Short caption below.
   final String delta;
 
   @override

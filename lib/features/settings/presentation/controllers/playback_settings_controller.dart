@@ -4,9 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../../../core/constants/app_constants.dart';
 import '../../domain/entities/playback_settings.dart';
 
-/// Настройки воспроизведения. Хранятся локально — приложение работает офлайн, и
-/// выбор обязан пережить перезапуск. Плеер читает их при открытии урока и при
-/// каждом запуске отрезка.
+/// Playback settings persisted to disk.
 class PlaybackSettingsController extends AsyncNotifier<PlaybackSettings> {
   static const String _speedKey = 'playback_default_speed';
   static const String _repeatsKey = 'playback_repeats_in_cycle';
@@ -24,7 +22,7 @@ class PlaybackSettingsController extends AsyncNotifier<PlaybackSettings> {
         countdownEnabled: prefs.getBool(_countdownKey) ?? false,
       );
     } on Exception {
-      // Не суметь прочитать настройки — не повод падать: работаем на дефолтах.
+      // On a read error fall back to default values.
       return const PlaybackSettings();
     }
   }
@@ -52,8 +50,7 @@ class PlaybackSettingsController extends AsyncNotifier<PlaybackSettings> {
     (prefs) => prefs.setBool(_countdownKey, enabled),
   );
 
-  /// Применяет изменение сразу (оптимистично) и сохраняет его. Ошибку записи
-  /// гасим: значение уже действует в рантайме, просто не переживёт перезапуск.
+  /// Applies the change immediately and stores it on disk.
   Future<void> _update(
     PlaybackSettings Function(PlaybackSettings) change,
     Future<void> Function(SharedPreferences) write,
@@ -66,7 +63,7 @@ class PlaybackSettingsController extends AsyncNotifier<PlaybackSettings> {
       final prefs = await SharedPreferences.getInstance();
       await write(prefs);
     } on Exception {
-      // Настройка уже применена; запись не переживёт перезапуск.
+      // The setting is applied; the write will not survive a restart.
     }
   }
 }

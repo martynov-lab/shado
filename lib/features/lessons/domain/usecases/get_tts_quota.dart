@@ -1,7 +1,7 @@
 import '../entities/tts_quota.dart';
 import '../repositories/lesson_repository.dart';
 
-/// Остаток бесплатного лимита озвучек через ИИ — для подписи у кнопки.
+/// Remaining free AI voice-over quota, shown next to the button.
 class GetTtsQuota {
   const GetTtsQuota(this._repository);
 

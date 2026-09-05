@@ -13,7 +13,7 @@ void main() {
     endMs: 3000,
   );
 
-  /// Строка с записью того, куда ушёл тап.
+  /// A line recording where the tap went.
   Future<List<String>> pumpRow(
     WidgetTester tester, {
     required bool isSelecting,
@@ -60,7 +60,7 @@ void main() {
     await tester.tap(find.text(segment.text));
     expect(taps, ['select']);
 
-    // И сама галочка ведёт туда же.
+    // The checkbox itself leads to the same place.
     await tester.tap(find.byType(AppCheckbox));
     expect(taps, ['select', 'select']);
   });

@@ -11,34 +11,11 @@ import '../../../../core/utils/duration_format.dart';
 import '../../data/models/waveform_peaks.dart';
 import '../../domain/entities/audio_trim.dart';
 
-/// Какую метку обрезки сейчас тащат.
+/// Which trim handle is being dragged.
 enum TrimEdge { start, end }
 
-/// Волна аудио с перетаскиваемыми метками границ.
-///
-/// Времена везде абсолютные — миллисекунды от начала файла. В окно попадает
-/// отрезок [view]: после обрезки это уже не весь файл, а только оставленный
-/// кусок. Пики [peaks] построены ровно по [view], поэтому у обрезанной дорожки
-/// разрешение волны не падает вместе с её длиной.
-///
-/// Границы кусков общие: для `N` кусков приходит `N + 1` значение, крайние из
-/// них прибиты к краям [view], а перетаскивать можно `N - 1` внутреннюю метку.
-///
-/// Если задан [onSeek], на волне появляется ползунок воспроизведения: его
-/// таскают за ручку внизу или переносят тапом по волне.
-///
-/// Заданный [trim] включает режим обрезки: на волне появляются две метки со
-/// стрелочками, всё за ними затемняется, а метки границ кусков замирают —
-/// сначала надо решить, что оставить.
-///
-/// Управление устроено так, чтобы жест никогда не значил двух вещей сразу:
-///
-/// - ручки (кружок границы наверху, стрелка обрезки посередине, треугольник
-///   ползунка внизу) тащат саму метку — взять её можно только за ручку;
-/// - перетаскивание в любом другом месте двигает волну под окном; на
-///   растянутой волне это единственный способ добраться до её остальной части;
-/// - масштаб — щипок двумя пальцами или Ctrl + колесо мыши; растянутая волна
-///   показывает лишь часть аудио, зато метку удаётся поставить точнее.
+/// Audio waveform with boundary markers, trimming and a playhead; all times
+/// are absolute file milliseconds.
 class WaveformEditor extends StatefulWidget {
   const WaveformEditor({
     super.key,
@@ -58,30 +35,27 @@ class WaveformEditor extends StatefulWidget {
     this.cornerRadius = kWaveCornerRadius,
   });
 
-  /// Пики видимого отрезка: [peaks] разложены ровно по [view].
+  /// Peaks of the visible range: [peaks] are laid out exactly over [view].
   final WaveformPeaks peaks;
 
-  /// Отрезок файла, попадающий в окно.
+  /// File range that fits into the window.
   final AudioTrim view;
 
-  /// Границы кусков в миллисекундах файла.
+  /// Segment boundaries in file milliseconds.
   final List<int> boundaries;
 
-  /// Где стоит ползунок воспроизведения, в миллисекундах файла.
+  /// Playhead position in file milliseconds.
   final int positionMs;
 
   final ValueChanged<List<int>> onBoundariesChanged;
 
-  /// Удаление внутренней метки по её индексу в [boundaries] — двойным тапом по
-  /// кружку. `null` — метки удалять нельзя (экран просмотра), и двойной тап не
-  /// перехватывается, чтобы тап-seek оставался мгновенным.
+  /// Removes an inner marker on a double tap; `null` forbids removal.
   final ValueChanged<int>? onBoundaryRemoved;
 
-  /// Куда перенесли ползунок: тапом по волне или перетаскиванием его ручки.
-  /// `null` — волна только для разметки, ползунок неподвижен.
+  /// Where the playhead moved; `null` keeps it fixed.
   final ValueChanged<int>? onSeek;
 
-  /// Отрезок, который останется после обрезки. `null` — обрезка не идёт.
+  /// Range that survives trimming; `null` when trimming is off.
   final AudioTrim? trim;
 
   final ValueChanged<AudioTrim>? onTrimChanged;
@@ -90,56 +64,46 @@ class WaveformEditor extends StatefulWidget {
   final bool showCursor;
   final double height;
 
-  /// Номера кусков на волне: помогают сопоставить куски текста с аудио.
+  /// Whether to show segment numbers on the waveform.
   final bool showSegmentNumbers;
 
-  /// Скругление карточки, по которому painter клипует волну.
+  /// Card corner radius the painter clips the waveform with.
   final double cornerRadius;
 
   @override
   State<WaveformEditor> createState() => _WaveformEditorState();
 }
 
-/// Высота полоски с временной шкалой сверху.
+/// Height of the time ruler strip on top.
 const double _rulerHeight = 14;
 
-/// Кружок-ручка границы рисуется чуть выше волны — выступая за верхний край
-/// карточки, как игла в макете, — но так, чтобы его центр оставался в зоне
-/// жестов и метку можно было взять прямо за кружок.
+/// Boundary handle dot above the top edge of the waveform.
 const double _boundaryHandleDrawY = 2;
 const double _boundaryHandleRadius = 7;
 
-/// Скругление карточки волны. Волну клипует сам painter, поэтому кружки ручек
-/// могут выступать за верхний край карточки.
+/// Corner radius of the waveform card.
 const double kWaveCornerRadius = 14;
 
-/// Треугольная ручка ползунка у нижнего края волны.
+/// Triangular playhead handle at the bottom edge of the waveform.
 const double _playheadHandleHeight = 14;
 
-/// Стрелка обрезки: язычок с треугольником посередине волны — между ручками
-/// границ сверху и ручкой ползунка снизу.
+/// Trim handle tab in the middle of the waveform.
 const double _trimHandleWidth = 15;
 const double _trimHandleHeight = 30;
 
 class _WaveformEditorState extends State<WaveformEditor> {
-  /// Радиус, в котором ручка ползунка или обрезки считается взятой. Заметно
-  /// больше самой ручки: палец толще, но не настолько, чтобы перехватывать
-  /// перетаскивание волны из середины.
+  /// Radius within which a playhead or trim handle counts as grabbed.
   static const double _handleGrabRadius = 22;
 
-  /// Метку границы берут широкой полосой у верха: по горизонтали — в пределах
-  /// [_boundaryGrabHalfWidth] от линии, по вертикали — от верха волны до
-  /// [_boundaryGrabBottom]. Так не нужно попадать точно по тонкой линии, а
-  /// середина волны по-прежнему остаётся под перетаскивание самой волны.
+  /// Boundary grab area: a strip along the top of the waveform.
   static const double _boundaryGrabHalfWidth = 22;
   static const double _boundaryGrabBottom = 48;
 
-  /// Пределы растяжения: дальше 200× секунда занимает пол-экрана и точность
-  /// упирается уже в сами пики, а не в масштаб.
+  /// Waveform zoom limits.
   static const double _minZoom = 1;
   static const double _maxZoom = 200;
 
-  /// Полоса у края окна, при заходе в которую волна едет сама.
+  /// Edge strip that makes the waveform auto-scroll.
   static const double _autoScrollZone = 28;
   static const double _autoScrollPixelsPerTick = 6;
   static const Duration _autoScrollTick = Duration(milliseconds: 16);
@@ -147,18 +111,17 @@ class _WaveformEditorState extends State<WaveformEditor> {
   late List<int> _boundaries = List<int>.of(widget.boundaries);
   int? _draggedIndex;
 
-  /// Обрезка, пока её метку тащат: наружу она уходит только по отпуске.
+  /// Trim while its handle is dragged; it is reported on release.
   late AudioTrim? _trim = widget.trim;
   TrimEdge? _draggedTrimEdge;
 
-  /// Положение ползунка, пока его тащат: наружу оно уходит только по отпуске,
-  /// чтобы не гонять плеер на каждом кадре.
+  /// Playhead position while dragged; it is reported on release.
   int? _draggedPlayheadMs;
 
-  /// Во сколько раз волна шире окна.
+  /// How many times wider than the window the waveform is.
   double _zoom = 1;
 
-  /// Сдвиг окна по растянутой волне, в пикселях от её начала.
+  /// Window offset along the zoomed waveform, in pixels from its start.
   double _offset = 0;
 
   double _viewportWidth = 0;
@@ -166,20 +129,20 @@ class _WaveformEditorState extends State<WaveformEditor> {
   double? _dragPointerX;
   Timer? _autoScrollTimer;
 
-  /// Точка последнего двойного тапа: по ней ищем метку, которую удаляют.
+  /// Last double-tap point, used to find the marker to remove.
   Offset? _doubleTapPos;
 
   @override
   void didUpdateWidget(WaveformEditor oldWidget) {
     super.didUpdateWidget(oldWidget);
-    // Пока метку тащат, внешние обновления не перетирают локальное состояние.
+    // While a marker is dragged, outer updates do not overwrite local state.
     if (_draggedIndex == null && widget.boundaries != oldWidget.boundaries) {
       _boundaries = List<int>.of(widget.boundaries);
     }
     if (_draggedTrimEdge == null && widget.trim != oldWidget.trim) {
       _trim = widget.trim;
     }
-    // Обрезку применили или отменили — окно поехало, привязка к нему тоже.
+    // The window moved — reset zoom and offset.
     if (widget.view != oldWidget.view) {
       _zoom = 1;
       _offset = 0;
@@ -198,7 +161,7 @@ class _WaveformEditorState extends State<WaveformEditor> {
 
   double get _maxOffset => math.max(0, _contentWidth - _viewportWidth);
 
-  /// Экранная координата момента времени.
+  /// Screen coordinate of a moment in time.
   double _msToX(int ms) => _view.isEmpty
       ? 0
       : (ms - _view.startMs) / _view.durationMs * _contentWidth - _offset;
@@ -213,7 +176,7 @@ class _WaveformEditorState extends State<WaveformEditor> {
     if (clamped != _offset) setState(() => _offset = clamped);
   }
 
-  /// Меняет масштаб, оставляя на месте момент времени под точкой [focalX].
+  /// Changes zoom keeping the moment under [focalX] in place.
   void _setZoom(double zoom, double focalX) {
     final next = zoom.clamp(_minZoom, _maxZoom);
     if (next == _zoom) return;
@@ -227,11 +190,9 @@ class _WaveformEditorState extends State<WaveformEditor> {
     });
   }
 
-  // --- Ввод ------------------------------------------------------------------
+  // --- Input -----------------------------------------------------------------
 
-  /// Колесо мыши достаётся либо волне, либо прокрутке страницы под ней —
-  /// решает [PointerSignalResolver], поэтому свои события мы регистрируем, а
-  /// чужие не трогаем.
+  /// Handles wheel and pinch: waveform zoom or panning.
   void _onPointerSignal(PointerSignalEvent event) {
     final resolver = GestureBinding.instance.pointerSignalResolver;
     if (event is PointerScrollEvent) {
@@ -245,17 +206,15 @@ class _WaveformEditorState extends State<WaveformEditor> {
           );
         });
       } else if (_maxOffset > 0) {
-        // Пока волна помещается целиком, прокручивать в ней нечего — колесо
-        // отдаём форме, внутри которой она лежит.
+        // A fully visible waveform is not scrolled: the wheel goes to the form.
         resolver.register(event, (resolved) {
           final scroll = resolved as PointerScrollEvent;
-          // Вертикальное колесо тоже двигает волну: горизонтального у обычной
-          // мыши нет.
+          // A vertical wheel scrolls the waveform too.
           _setOffset(_offset + scroll.scrollDelta.dx + scroll.scrollDelta.dy);
         });
       }
     } else if (event is PointerScaleEvent) {
-      // Щипок на трекпаде.
+      // Trackpad pinch.
       resolver.register(event, (resolved) {
         final scale = resolved as PointerScaleEvent;
         _setZoom(_zoom * scale.scale, scale.localPosition.dx);
@@ -263,11 +222,10 @@ class _WaveformEditorState extends State<WaveformEditor> {
     }
   }
 
-  /// Ползунок виден только там, где им управляют.
+  /// The playhead is visible only where it can be controlled.
   bool get _hasPlayhead => widget.onSeek != null && widget.showCursor;
 
-  /// Пока идёт обрезка, метки границ кусков заморожены: они всё равно поедут,
-  /// когда обрезку применят.
+  /// Whether trimming is on; boundary markers freeze meanwhile.
   bool get _isTrimming => _trim != null;
 
   int get _playheadMs => _draggedPlayheadMs ?? widget.positionMs;
@@ -277,11 +235,11 @@ class _WaveformEditorState extends State<WaveformEditor> {
       _draggedPlayheadMs != null ||
       _draggedTrimEdge != null;
 
-  /// Центр треугольной ручки ползунка.
+  /// Center of the triangular playhead handle.
   Offset get _playheadHandleCenter =>
       Offset(_msToX(_playheadMs), widget.height - _playheadHandleHeight / 2);
 
-  /// Центр язычка метки обрезки: он лежит внутри остающегося куска.
+  /// Center of the trim tab inside the range that is kept.
   Offset _trimHandleCenter(TrimEdge edge) {
     final trim = _trim!;
     final x = _msToX(edge == TrimEdge.start ? trim.startMs : trim.endMs);
@@ -298,9 +256,7 @@ class _WaveformEditorState extends State<WaveformEditor> {
     if (details.pointerCount > 1) return;
     final point = details.localFocalPoint;
 
-    // Метку берут широкой полосой у верха: по вертикали — от кружка до
-    // [_boundaryGrabBottom], по горизонтали — ближайшая линия в пределах
-    // [_boundaryGrabHalfWidth]. Ниже полосы жест уходит в панораму волны.
+    // Look for the nearest marker inside the grab strip at the top.
     var nearest = -1;
     var nearestDistance = double.infinity;
     if (!_isTrimming && point.dy <= _boundaryGrabBottom) {
@@ -313,7 +269,7 @@ class _WaveformEditorState extends State<WaveformEditor> {
       }
     }
 
-    // Ручки могут оказаться рядом друг с другом — берём ту, что ближе.
+    // Of the neighbouring handles the closest one wins.
     TrimEdge? nearestEdge;
     var nearestEdgeDistance = double.infinity;
     if (_isTrimming) {
@@ -346,7 +302,7 @@ class _WaveformEditorState extends State<WaveformEditor> {
       setState(() => _draggedIndex = nearest);
       _dragPointerX = point.dx;
     }
-    // Мимо ручек — перетаскивание уедет в панораму волны.
+    // Missing the handles sends the gesture to waveform panning.
   }
 
   void _onScaleUpdate(ScaleUpdateDetails details) {
@@ -364,7 +320,7 @@ class _WaveformEditorState extends State<WaveformEditor> {
     _moveDragTarget();
   }
 
-  /// Двигает то, что взяли: метку обрезки, метку границы или ползунок.
+  /// Moves whatever was grabbed: a trim handle, a boundary or the playhead.
   void _moveDragTarget() {
     if (_draggedTrimEdge != null) {
       _moveDraggedTrimEdge();
@@ -419,8 +375,7 @@ class _WaveformEditorState extends State<WaveformEditor> {
     setState(() => _draggedPlayheadMs = ms);
   }
 
-  /// Тянет волну, пока метку держат у края окна: иначе на большом масштабе её
-  /// не увести дальше видимого куска.
+  /// Scrolls the waveform while a marker is held at the window edge.
   void _updateAutoScroll() {
     final x = _dragPointerX;
     if (x == null || _maxOffset <= 0) {
@@ -481,8 +436,7 @@ class _WaveformEditorState extends State<WaveformEditor> {
     widget.onBoundariesChanged(List<int>.unmodifiable(_boundaries));
   }
 
-  /// Тап по волне переносит ползунок — так до нужного места быстрее, чем
-  /// тащить его через весь урок.
+  /// A tap on the waveform moves the playhead.
   void _onTapUp(TapUpDetails details) {
     final onSeek = widget.onSeek;
     if (onSeek == null) return;
@@ -492,8 +446,7 @@ class _WaveformEditorState extends State<WaveformEditor> {
   void _onDoubleTapDown(TapDownDetails details) =>
       _doubleTapPos = details.localPosition;
 
-  /// Двойной тап по кружку метки удаляет её. Метку ищем той же широкой полосой у
-  /// верха, что и при перетаскивании; ниже полосы и во время обрезки — мимо.
+  /// A double tap on a marker dot removes it.
   void _onDoubleTap() {
     final onRemoved = widget.onBoundaryRemoved;
     final point = _doubleTapPos;
@@ -518,7 +471,7 @@ class _WaveformEditorState extends State<WaveformEditor> {
     final colors = Theme.of(context).extension<WaveformColors>()!;
     return LayoutBuilder(
       builder: (context, constraints) {
-        // Ширина меняется на повороте экрана — окно должно остаться на месте.
+        // The window stays put when the width changes.
         if (_viewportWidth != constraints.maxWidth) {
           _viewportWidth = constraints.maxWidth;
           _offset = _offset.clamp(0.0, _maxOffset);
@@ -531,8 +484,8 @@ class _WaveformEditorState extends State<WaveformEditor> {
             onScaleUpdate: _onScaleUpdate,
             onScaleEnd: _onScaleEnd,
             onTapUp: widget.onSeek == null ? null : _onTapUp,
-            // Двойной тап перехватываем только там, где метки можно удалять:
-            // иначе распознаватель задерживал бы обычный тап-seek.
+            // Double tap is caught only where markers can be removed, else
+            // the recognizer would delay a plain tap-to-seek.
             onDoubleTapDown:
                 widget.onBoundaryRemoved == null ? null : _onDoubleTapDown,
             onDoubleTap:
@@ -606,8 +559,7 @@ class _WaveformPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    // Волну клипуем сами — так карточке не нужен свой клип, и кружки ручек
-    // могут выступать за её верхний край.
+    // We clip the wave ourselves so handle dots can overflow the card.
     canvas.save();
     canvas.clipRRect(
       RRect.fromRectAndRadius(
@@ -637,13 +589,11 @@ class _WaveformPainter extends CustomPainter {
     _paintZoomLabel(canvas, size);
     canvas.restore();
 
-    // Кружки-ручки границ рисуем вне клипа: они выступают над верхним краем
-    // карточки, как игла в макете.
+    // Handle dots are painted outside the clip and overflow the card edge.
     _paintBoundaryHandles(canvas, size);
   }
 
-  /// Ширина растянутой волны целиком; в окно шириной [viewportWidth] попадает
-  /// её часть, начиная с [offset].
+  /// Full width of the zoomed waveform.
   double _contentWidth(double viewportWidth) => viewportWidth * zoom;
 
   double _msToX(int ms, double width) =>
@@ -653,8 +603,7 @@ class _WaveformPainter extends CustomPainter {
       view.startMs +
       ((x + offset) / _contentWidth(width) * view.durationMs).round();
 
-  /// Время, которое видит пользователь: от левого края видимого куска, а не от
-  /// начала файла — после обрезки урок начинается с нуля.
+  /// Time from the start of the visible range — that is what the user sees.
   int _displayMs(int ms) => ms - view.startMs;
 
   void _paintActiveSegment(Canvas canvas, Size size) {
@@ -675,8 +624,7 @@ class _WaveformPainter extends CustomPainter {
       ..color = colors.wave
       ..strokeWidth = 1
       ..strokeCap = StrokeCap.round;
-    // Рисуем только видимые столбики: на большом масштабе волна шире окна во
-    // много раз, и проходить её целиком незачем.
+    // Only the visible bars are painted.
     final columns = size.width.floor();
     for (var column = 0; column < columns; column++) {
       final ms = _xToMs(column.toDouble(), size.width);
@@ -690,7 +638,7 @@ class _WaveformPainter extends CustomPainter {
     }
   }
 
-  /// Засечки времени: на растянутой волне без них не понять, куда уехали.
+  /// Paints the time ruler with ticks.
   void _paintRuler(Canvas canvas, Size size) {
     final stepMs = _rulerStepMs(size.width);
     if (stepMs <= 0) return;
@@ -699,8 +647,7 @@ class _WaveformPainter extends CustomPainter {
       ..strokeWidth = 1;
     final fromMs = math.max(view.startMs, _xToMs(0, size.width));
     final toMs = math.min(view.endMs, _xToMs(size.width, size.width));
-    // Шаг отсчитываем от левого края окна: подписи должны идти круглыми
-    // числами того времени, которое видит пользователь.
+    // The step starts at the window left edge so labels land on round numbers.
     final firstStep = (_displayMs(fromMs) ~/ stepMs) * stepMs;
     for (var shown = firstStep; shown <= _displayMs(toMs); shown += stepMs) {
       final x = _msToX(view.startMs + shown, size.width);
@@ -715,7 +662,7 @@ class _WaveformPainter extends CustomPainter {
     }
   }
 
-  /// Круглый шаг засечек, при котором подписи не наезжают друг на друга.
+  /// A round tick step at which labels do not overlap.
   int _rulerStepMs(double width) {
     const candidates = <int>[
       100,
@@ -741,10 +688,9 @@ class _WaveformPainter extends CustomPainter {
     return candidates.last;
   }
 
-  /// Вертикальные линии границ — внутри клипа волны.
+  /// Vertical boundary lines, painted inside the waveform clip.
   void _paintBoundaryLines(Canvas canvas, Size size) {
-    // Во время обрезки метки кусков не трогают — показываем их бледнее, чтобы
-    // не путались с метками обрезки.
+    // While trimming, segment markers are drawn dimmer.
     final alpha = trim == null ? 1.0 : 0.35;
     final edgePaint = Paint()
       ..color = colors.boundary.withValues(alpha: 0.4 * alpha)
@@ -771,8 +717,7 @@ class _WaveformPainter extends CustomPainter {
     }
   }
 
-  /// Кружки на верхнем конце линий — рисуются вне клипа, поэтому выступают за
-  /// верхний край карточки. За них же метку и тянут (захват — по верху линии).
+  /// Paints handle dots at the top end of the boundary lines.
   void _paintBoundaryHandles(Canvas canvas, Size size) {
     final alpha = trim == null ? 1.0 : 0.35;
     for (var i = 1; i < boundaries.length - 1; i++) {
@@ -785,7 +730,7 @@ class _WaveformPainter extends CustomPainter {
         isDragged ? _boundaryHandleRadius + 2 : _boundaryHandleRadius,
         Paint()..color = colors.boundary.withValues(alpha: alpha),
       );
-      // Номер метки внутри кружка — тот же язык, что у игл в тексте.
+      // The marker number inside the dot.
       final number = _layoutLabel(
         '$i',
         colors.background.withValues(alpha: alpha),
@@ -799,7 +744,7 @@ class _WaveformPainter extends CustomPainter {
         ),
       );
       if (isDragged) {
-        // Пока метку тащат, показываем точное время под пальцем.
+        // While a marker is dragged, show the exact time under the finger.
         _paintLabel(
           canvas,
           formatPosition(_displayMs(boundaries[i])),
@@ -817,7 +762,7 @@ class _WaveformPainter extends CustomPainter {
       final from = _msToX(boundaries[i], size.width);
       final to = _msToX(boundaries[i + 1], size.width);
       if (to < 0 || from > size.width) continue;
-      // Номер держится в видимой части куска, а не уезжает вместе с началом.
+      // The number stays inside the visible part of the segment.
       final left = math.max(from, 0.0);
       final right = math.min(to, size.width);
       if (right - left < 16) continue;
@@ -831,8 +776,7 @@ class _WaveformPainter extends CustomPainter {
     }
   }
 
-  /// Обрезка: края за метками темнеют, сами метки — язычки со стрелочками,
-  /// смотрящими внутрь того, что останется.
+  /// Paints the trimmed-away scrim and the trim handles.
   void _paintTrim(Canvas canvas, Size size, double centerY) {
     final range = trim;
     if (range == null) return;
@@ -872,8 +816,7 @@ class _WaveformPainter extends CustomPainter {
         ..strokeWidth = isDragged ? 3 : 2,
     );
 
-    // Язычок стоит на остающейся стороне: слева от левой метки и справа от
-    // правой всё равно обрежут.
+    // The tab sits on the side that is kept.
     final isStart = edge == TrimEdge.start;
     final width = isDragged ? _trimHandleWidth + 2 : _trimHandleWidth;
     final height = isDragged ? _trimHandleHeight + 4 : _trimHandleHeight;
@@ -888,8 +831,7 @@ class _WaveformPainter extends CustomPainter {
       Paint()..color = colors.trimHandle,
     );
 
-    // Стрелочка внутрь: показывает, в какую сторону метку тащат, чтобы
-    // отрезать больше.
+    // The arrow points into the range that is kept.
     const arrow = 5.0;
     final tipX = isStart ? rect.right - 4 : rect.left + 4;
     final baseX = isStart ? rect.left + 4 : rect.right - 4;
@@ -922,8 +864,7 @@ class _WaveformPainter extends CustomPainter {
     final x = _msToX(position, size.width);
     if (x < -12 || x > size.width + 12) return;
     final strokeWidth = isPlayheadDragged ? 3.0 : 2.0;
-    // Курсор белый (как в макете), но на светлой волне белое теряется — поэтому
-    // под ним лёгкая тёмная подложка чуть шире линии.
+    // A dark backing under the white cursor keeps it visible on a light wave.
     final backing = Paint()
       ..color = const Color(0x59000000)
       ..strokeWidth = strokeWidth + 2
@@ -935,8 +876,7 @@ class _WaveformPainter extends CustomPainter {
     canvas.drawLine(Offset(x, 0), Offset(x, size.height), paint);
     if (!isPlayheadDraggable) return;
 
-    // Ручка внизу — треугольник, чтобы ползунок не путался с круглыми
-    // ручками границ наверху.
+    // The playhead handle is a triangle at the bottom.
     final width = isPlayheadDragged ? 13.0 : 10.0;
     final baseY = size.height - _playheadHandleHeight;
     final triangle = Path()
@@ -963,8 +903,7 @@ class _WaveformPainter extends CustomPainter {
     }
   }
 
-  /// Текущий масштаб: кнопок нет, а понимать, насколько волна растянута,
-  /// нужно. Пока она помещается целиком, подпись не нужна.
+  /// Current zoom label; not painted on an unzoomed waveform.
   void _paintZoomLabel(Canvas canvas, Size size) {
     if (zoom <= 1.05) return;
     final text = '${zoom < 10 ? zoom.toStringAsFixed(1) : zoom.round()}×';
@@ -975,11 +914,10 @@ class _WaveformPainter extends CustomPainter {
     );
   }
 
-  /// Индикатор видимого окна: показывает, какая часть аудио сейчас на экране.
+  /// Indicator of the visible window on a zoomed waveform.
   void _paintScrollbar(Canvas canvas, Size size) {
     final contentWidth = _contentWidth(size.width);
     if (zoom <= 1 || contentWidth <= 0) return;
-    // Ползунок — то же окно, только сжатое до ширины виджета.
     final thumbWidth = math.max(24.0, size.width / zoom);
     final left = (offset / contentWidth) * size.width;
     final rect = Rect.fromLTWH(

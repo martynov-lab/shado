@@ -3,7 +3,7 @@ import 'audio_trim.dart';
 import 'lesson_category.dart';
 import 'segment.dart';
 
-/// Урок: аудиофайл, разбитый на куски текста с ручной разметкой границ.
+/// Lesson: an audio file split into text segments with manual boundaries.
 class Lesson {
   const Lesson({
     required this.id,
@@ -19,8 +19,7 @@ class Lesson {
     this.topic,
   });
 
-  /// Создаёт урок с равномерно расставленными начальными границами:
-  /// сегмент `i` получает `[durationMs * i / N, durationMs * (i + 1) / N]`.
+  /// Creates a lesson with evenly spaced segment boundaries.
   factory Lesson.withEvenBoundaries({
     required String id,
     required String title,
@@ -50,7 +49,6 @@ class Lesson {
     return Lesson(
       id: id,
       title: title,
-      // Путь может быть как локальным файлом, так и удалённым URL в будущем.
       audioPath: audioPath,
       durationMs: durationMs,
       createdAt: createdAt.toUtc(),
@@ -61,44 +59,39 @@ class Lesson {
   final String id;
   final String title;
 
-  /// Путь к готовому к воспроизведению локальному файлу. Репозиторий следит,
-  /// чтобы файл был на месте, докачивая его при необходимости.
+  /// Path to a local file ready for playback.
   final String audioPath;
 
-  /// Аудио на сервере. По нему берутся пики волны; у урока, собранного в
-  /// тестах или ещё не побывавшего на сервере, пусто.
+  /// Server-side audio the waveform peaks are taken from.
   final String audioId;
 
-  /// Длительность файла целиком — обрезка её не меняет.
+  /// Duration of the whole file; trimming does not change it.
   final int durationMs;
 
-  /// Публичность урока (§6). Приватный виден только автору.
+  /// Lesson visibility; a private one is visible to its author only.
   final bool isPublic;
 
   bool get isPrivate => !isPublic;
 
-  /// Акцент диктора и уровень английского. Заполняются на экране создания и
-  /// приходят с сервера; `null` — у урока, собранного в тестах или пришедшего
-  /// без этих полей.
+  /// Speaker accent and English level; `null` when unset.
   final LessonAccent? accent;
   final LessonLevel? level;
 
-  /// Тема из справочника сервера. `null` — сервер её ещё не подставил.
+  /// Topic from the server directory.
   final Topic? topic;
 
-  /// Время создания в UTC.
+  /// Creation time in UTC.
   final DateTime createdAt;
   final List<Segment> segments;
 
   int get segmentCount => segments.length;
 
-  /// Отрезок файла, попавший в урок. Куски идут встык и покрывают его целиком,
-  /// поэтому обрезка — это и есть края крайних кусков.
+  /// File range that made it into the lesson — the outer segment edges.
   AudioTrim get trim => segments.isEmpty
       ? AudioTrim.full(durationMs)
       : AudioTrim(startMs: segments.first.startMs, endMs: segments.last.endMs);
 
-  /// Границы кусков: `N + 1` значение, где `b[0]` и `b[N]` — края [trim].
+  /// Segment boundaries: `N + 1` values whose ends match [trim].
   List<int> get boundaries {
     if (segments.isEmpty) return const [];
     return [
@@ -107,7 +100,7 @@ class Lesson {
     ];
   }
 
-  /// Пересобирает сегменты по новому набору границ, сохраняя тексты.
+  /// Rebuilds segments for a new set of boundaries, keeping the texts.
   Lesson withBoundaries(List<int> boundaries) {
     return withSegments(
       texts: [for (final segment in segments) segment.text],
@@ -115,8 +108,7 @@ class Lesson {
     );
   }
 
-  /// Пересобирает урок под новую разбивку: тексты кусков и их границы задаются
-  /// вместе, поэтому число кусков может измениться.
+  /// Rebuilds the lesson for a new split — segment texts with boundaries.
   Lesson withSegments({
     required List<String> texts,
     required List<int> boundaries,

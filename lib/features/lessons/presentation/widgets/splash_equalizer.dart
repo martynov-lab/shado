@@ -4,9 +4,7 @@ import 'package:flutter/widgets.dart';
 
 import 'package:shado/theme/theme.dart';
 
-/// Живой эквалайзер на сплеше: столбики «дышат» фирменным градиентом, пока идёт
-/// инициализация. Контроллером анимации распоряжается сам — экрану о нём знать
-/// незачем. При системном «уменьшить движение» показывает статичный кадр.
+/// Animated splash equalizer; a static frame when motion is reduced.
 class SplashEqualizer extends StatefulWidget {
   const SplashEqualizer({super.key, this.size = const Size(74, 34)});
 
@@ -26,8 +24,7 @@ class _SplashEqualizerState extends State<SplashEqualizer>
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    // MediaQuery с флагом доступности виден только отсюда; повтор включаем
-    // здесь же, чтобы build оставался чистой разметкой.
+    // The accessibility flag is visible here only, so repeat starts here too.
     if (context.reduceMotion) {
       _controller.stop();
     } else if (!_controller.isAnimating) {
@@ -54,7 +51,7 @@ class _SplashEqualizerState extends State<SplashEqualizer>
   }
 }
 
-/// Столбики эквалайзера, залитые брендовым градиентом. [t] — фаза 0..1.
+/// Equalizer bars filled with the brand gradient; [t] is the phase 0..1.
 class _EqualizerPainter extends CustomPainter {
   _EqualizerPainter(this.t);
 
@@ -72,7 +69,7 @@ class _EqualizerPainter extends CustomPainter {
       ..shader = AppBrand.signGradient.createShader(Offset.zero & size);
 
     for (var i = 0; i < _barCount; i++) {
-      // Сдвиг фазы по столбику даёт эффект бегущей волны.
+      // A per-bar phase shift creates the travelling wave effect.
       final phase = t * 2 * math.pi + i * 0.9;
       final amplitude = (0.5 + 0.5 * math.sin(phase)).abs();
       final height = _minBarHeight + (size.height - _minBarHeight) * amplitude;

@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:shado/theme/theme.dart';
 import 'package:shado/widgets/widgets.dart';
 
-/// Список уроков не загрузился: сообщение и кнопка повтора.
+/// The lesson list failed to load: a message and a retry button.
 class LessonsErrorView extends StatelessWidget {
   const LessonsErrorView({
     super.key,

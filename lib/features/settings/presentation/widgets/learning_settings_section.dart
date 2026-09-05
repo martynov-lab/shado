@@ -11,9 +11,7 @@ import 'settings_switch_row.dart';
 import 'settings_text_edit_sheet.dart';
 import 'settings_value.dart';
 
-/// Раздел «Обучение»: дневная цель (редактируется) и напоминания.
-///
-/// Напоминания пока заглушка — их привязку добавим отдельной задачей.
+/// Learning section: the daily goal and reminders.
 class LearningSettingsSection extends ConsumerWidget {
   const LearningSettingsSection({super.key});
 
@@ -61,7 +59,7 @@ class LearningSettingsSection extends ConsumerWidget {
     );
     if (raw == null || !context.mounted) return;
     final trimmed = raw.trim();
-    // Пустое поле — оставляем цель как была.
+    // An empty field leaves the goal unchanged.
     if (trimmed.isEmpty) return;
     final minutes = int.tryParse(trimmed);
     if (minutes == null) {

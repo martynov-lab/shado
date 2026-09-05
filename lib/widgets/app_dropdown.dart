@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:shado/theme/theme.dart';
 import 'package:shado/widgets/app_focus_ring.dart';
 
-/// Один пункт выпадающего списка.
+/// A single dropdown item.
 class AppDropdownItem<T> {
   const AppDropdownItem({required this.value, required this.label, this.icon});
 
@@ -12,12 +12,7 @@ class AppDropdownItem<T> {
   final IconData? icon;
 }
 
-/// Выпадающий список.
-///
-/// Меню строится на [MenuAnchor] — он берёт на себя позиционирование, Esc и
-/// навигацию стрелками, — но рисуется полностью нами: поверхность surface,
-/// радиус rLg, тень e2. Стоковый фон и elevation отключены, иначе поверх нашей
-/// тени легла бы вторая, материаловская.
+/// Dropdown built on [MenuAnchor] and styled by tokens.
 class AppDropdown<T> extends StatefulWidget {
   const AppDropdown({
     super.key,
@@ -32,13 +27,13 @@ class AppDropdown<T> extends StatefulWidget {
   final T? value;
   final List<AppDropdownItem<T>> items;
 
-  /// `null` выключает список.
+  /// `null` disables the dropdown.
   final ValueChanged<T>? onChanged;
 
-  /// Подпись над контролом.
+  /// Label above the control.
   final String? label;
 
-  /// Текст, когда ничего не выбрано.
+  /// Text shown when nothing is selected.
   final String? hint;
   final String? semanticLabel;
 
@@ -83,8 +78,7 @@ class _AppDropdownState<T> extends State<AppDropdown<T>> {
           ],
           LayoutBuilder(
             builder: (context, constraints) {
-              // Меню должно быть не уже кнопки — иначе выпадающий список
-              // выглядит оторванным от неё.
+              // The menu is as wide as the button.
               final menuWidth = constraints.maxWidth.isFinite
                   ? constraints.maxWidth
                   : AppSizes.overlayMaxWidth;
@@ -220,7 +214,7 @@ class _AppDropdownState<T> extends State<AppDropdown<T>> {
   }
 }
 
-/// Строка меню. Отдельный [MenuItemButton], чтобы работали стрелки и Esc.
+/// Menu row on [MenuItemButton] — it handles arrow keys and Esc.
 class _DropdownItemButton<T> extends StatelessWidget {
   const _DropdownItemButton({
     required this.item,

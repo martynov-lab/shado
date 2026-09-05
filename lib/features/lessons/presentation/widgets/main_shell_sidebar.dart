@@ -10,8 +10,7 @@ import 'account_menu.dart';
 import 'lesson_gradients.dart';
 import 'main_shell_brand.dart';
 
-/// Sidebar десктопа: бренд, вертикальное меню разделов, кнопка «Добавить урок»
-/// и блок текущего пользователя внизу.
+/// Desktop sidebar: brand, section menu, the add button and the profile.
 class MainShellSidebar extends ConsumerWidget {
   const MainShellSidebar({
     super.key,
@@ -23,7 +22,7 @@ class MainShellSidebar extends ConsumerWidget {
   final int currentIndex;
   final ValueChanged<int> onSelected;
 
-  /// Показывать ли кнопку «Добавить урок».
+  /// Whether to show the add-lesson button.
   final bool canAdd;
 
   @override
@@ -135,7 +134,7 @@ class _SidebarItem extends StatelessWidget {
   }
 }
 
-/// Блок пользователя: аватар, email и меню аккаунта (выход, раздел владельца).
+/// User block: avatar, email and the account menu.
 class _SidebarUser extends StatelessWidget {
   const _SidebarUser({required this.email});
 

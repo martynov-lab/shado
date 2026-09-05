@@ -2,12 +2,7 @@ import '../../../progress/domain/entities/progress_summary.dart';
 import '../../../progress/domain/progress_streak.dart';
 import '../../../progress/domain/progress_week.dart';
 
-/// Данные главного экрана, приведённые к входам виджетов.
-///
-/// Считаются из сводки прогресса (`GET /v1/progress`) и истории активности —
-/// тех же данных, что показывает экран «Прогресс», — чтобы цифры на экранах не
-/// расходились. Сводка может быть ещё не загружена ([summary] == null): тогда
-/// показываем нули, а не блокируем экран спиннером.
+/// Home screen data computed from the progress summary and activity history.
 class HomeViewModel {
   const HomeViewModel({
     required this.stats,
@@ -43,8 +38,7 @@ class HomeViewModel {
 
     final streak = currentStreak(history);
 
-    // «Сегодня» и «Повторов» — про сегодняшний день; «Серия» — про
-    // непрерывность занятий. Дельта под числом всегда позитивная подсказка.
+    // Stat tiles: minutes today, the day streak and repeats.
     final todayMinutes = today.listenedMinutes;
     final toGoal = dailyGoal - todayMinutes;
     final todayDelta = dailyGoal <= 0
@@ -64,10 +58,10 @@ class HomeViewModel {
       'всего ${totals.segmentRepeats}',
     );
 
-    // Неделя: последние 7 дней с сервера (как на графике прогресса).
+    // The week: the last seven days from the server.
     final (weekDays, weekDone, weekMinutes, weekTodayIndex) = _week(week, today);
 
-    // Недельная цель — дневная × 7; показываем «сделано / цель» и остаток.
+    // The weekly goal is the daily one times seven.
     final weekGoal = dailyGoal * 7;
     final goalRatio = weekGoal <= 0
         ? 0.0
@@ -95,27 +89,27 @@ class HomeViewModel {
     );
   }
 
-  /// Плитки статистики: подпись, число, единица (или `null`), подсказка.
+  /// Stat tiles: label, value, optional unit and a hint.
   final List<(String, String, String?, String)> stats;
 
-  /// Две плитки рядом с «героем» на десктопе: «Сегодня» и «Повторов».
+  /// Two tiles for the narrow layout: today and repeats.
   final List<(String, String, String?, String)> statsCompact;
 
   final int streakDays;
 
-  /// Неделя занятий: подписи дней, отметка активности и индекс сегодня.
+  /// Practice week: day labels, activity flags and the index of today.
   final List<String> weekDays;
   final List<bool> weekDone;
   final int weekTodayIndex;
 
-  /// Минуты по дням в процентах от максимума за неделю — под высоту столбца.
+  /// Daily minutes as a percentage of the weekly maximum.
   final List<int> weekMinutes;
 
   final double goalRatio;
   final String goalValue;
   final String goalRemaining;
 
-  /// Последние уроки, с которыми работал пользователь (`recent_lesson_ids`).
+  /// Lessons the user worked on most recently.
   final List<String> recentLessonIds;
 
   static const List<String> _weekdays = [
@@ -128,9 +122,7 @@ class HomeViewModel {
     'Вс',
   ];
 
-  /// Раскладывает неделю по входам виджетов. Дни без занятий сервер опускает —
-  /// дополняем их нулями, чтобы «Эта неделя» всегда показывала все семь дней, а
-  /// пока сводки нет — пустую неделю, оканчивающуюся сегодня.
+  /// Maps a week onto widget inputs, padding missing days with zeros.
   static (List<String>, List<bool>, List<int>, int) _week(
     List<ProgressDay> week,
     ProgressDay today,

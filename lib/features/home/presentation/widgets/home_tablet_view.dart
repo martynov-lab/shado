@@ -13,8 +13,7 @@ import 'home_lesson_row.dart';
 import 'home_section_header.dart';
 import 'home_stats_row.dart';
 
-/// Главная на планшете: приветствие с плашкой серии, «Продолжить» рядом с целью
-/// недели, ряд статистики и превью «Мои уроки». Левый rail рисует [MainShell].
+/// Home on tablet: continue next to the weekly goal, stats and lessons.
 class HomeTabletView extends StatelessWidget {
   const HomeTabletView({
     super.key,
@@ -44,8 +43,7 @@ class HomeTabletView extends StatelessWidget {
         children: [
           HomeGreeting(name: name, streakDays: model.streakDays, showStreak: true),
           const SizedBox(height: AppSpacing.s5),
-          // Высоту карточкам не выравниваем: в узких планшетах текст цели может
-          // переноситься, и жёсткая высота дала бы переполнение.
+          // Card heights are not aligned — the goal text may wrap.
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [

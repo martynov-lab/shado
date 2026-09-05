@@ -2,10 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../widgets/users_admin_section.dart';
 
-/// Пользователи сервиса и их роли. Экран владельца, открывается из меню
-/// аккаунта (пункт «Пользователи»).
-///
-/// Тело вынесено в [UsersAdminSection]; каркас (Scaffold, AppBar) — здесь.
+/// Owner screen with the user list and their roles.
 class AdminUsersPage extends StatelessWidget {
   const AdminUsersPage({super.key});
 

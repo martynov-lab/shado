@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:shado/theme/theme.dart';
 import 'package:shado/widgets/widgets.dart';
 
-/// Строка списка возможностей на брендовой панели: иконка в плитке и подпись.
+/// Feature row on the brand panel: an icon tile and a caption.
 class AuthBrandFeature extends StatelessWidget {
   const AuthBrandFeature({super.key, required this.icon, required this.label});
 
@@ -21,7 +21,7 @@ class AuthBrandFeature extends StatelessWidget {
           height: AppSizes.controlSm,
           decoration: BoxDecoration(
             borderRadius: AppRadii.rSm,
-            // Плитка — светлый оверлей поверх градиента, а не отдельный цвет.
+            // The tile is a light overlay on top of the gradient.
             color: colors.primaryOn.withValues(
               alpha: AppOpacities.pressOnPrimary,
             ),

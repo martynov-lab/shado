@@ -1,9 +1,7 @@
 import '../../../lessons/domain/entities/lesson.dart';
 import '../../../lessons/presentation/widgets/lesson_labels.dart';
 
-/// Урок в превью главного экрана: заголовок, подзаголовок и длительность,
-/// приведённые из [Lesson]. Держит [id] и [segmentCount] — по ним карточка
-/// «Продолжить» берёт долю пройденности.
+/// Lesson preview tile on the home screen, mapped from [Lesson].
 class HomeLessonTile {
   const HomeLessonTile({
     required this.id,
@@ -25,12 +23,12 @@ class HomeLessonTile {
   final String title;
   final String subtitle;
 
-  /// Длительность урока «m:ss».
+  /// Lesson duration as `m:ss`.
   final String time;
 
   final int segmentCount;
 
-  /// «m:ss» по отрезку файла, попавшему в урок.
+  /// `m:ss` for the file range that made it into the lesson.
   static String _duration(Lesson lesson) {
     final total = lesson.trim.durationMs.clamp(0, 1 << 62);
     final minutes = total ~/ 60000;

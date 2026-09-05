@@ -15,9 +15,7 @@ import 'progress_stats_row.dart';
 import 'streak_hero_card.dart';
 import 'weekly_goal_ring.dart';
 
-/// Прогресс на десктопе: основная колонка с дашбордом и боковая панель справа.
-/// Левое меню приложения рисует каркас [MainShell], поэтому здесь только эти
-/// две области.
+/// Progress on desktop: a dashboard column and a side panel on the right.
 class ProgressDesktopView extends StatelessWidget {
   const ProgressDesktopView({super.key, required this.model});
 
@@ -92,7 +90,7 @@ class ProgressDesktopView extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: AppSpacing.s4),
-                // Заглушки из макета: серверных данных пока нет.
+                // Design placeholders: there is no server data yet.
                 const ProgressCard(
                   title: 'Уровень',
                   child: LevelProgressBar(

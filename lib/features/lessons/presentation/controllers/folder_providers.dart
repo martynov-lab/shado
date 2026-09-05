@@ -12,7 +12,7 @@ import '../../domain/usecases/get_folders.dart';
 import '../../domain/usecases/remove_lesson_from_folder.dart';
 import '../../domain/usecases/update_folder.dart';
 
-/// Сборка зависимостей папок. Presentation дальше видит только use case'ы.
+/// Dependency wiring for folders.
 final folderRemoteDataSourceProvider = Provider<FolderRemoteDataSource>(
   (ref) => ApiFolderRemoteDataSource(ref.watch(apiClientProvider)),
 );

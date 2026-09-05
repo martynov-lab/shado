@@ -1,7 +1,7 @@
 import '../entities/folder.dart';
 import '../repositories/folder_repository.dart';
 
-/// Папка целиком, с её уроками.
+/// The whole folder with its lessons.
 class GetFolder {
   const GetFolder(this._repository);
 

@@ -1,19 +1,11 @@
 import 'package:flutter/widgets.dart';
 
-/// Константы «брендовых» поверхностей Shadowing — сплеша и знака, которые
-/// всегда рисуются на фирменном тёмном фоне и не зависят от текущей темы.
-///
-/// Обычные экраны берут цвета из `AppColors`; здесь — то, что задаёт бренд
-/// целиком. Значения совпадают с нативным сплешем и иконкой приложения
-/// (сгенерированы из того же вектора), поэтому держим их одним местом: изменишь
-/// бренд — правишь и тут, и исходные PNG в `docs/`.
+/// Brand surface colors for the splash and the mark; independent of the theme.
 abstract final class AppBrand {
-  /// Тёмный фон брендовых поверхностей — тот же `#100E18`, что у нативного
-  /// сплеша, чтобы переход с нативного экрана на анимированный был незаметен.
+  /// Dark brand background, shared with the native splash.
   static const Color surface = Color(0xFF100E18);
 
-  /// Знаковый градиент бренда: violet → magenta → pink. Им залиты иконка
-  /// приложения, нативный сплеш и знак с эквалайзером на анимированном сплеше.
+  /// Mark gradient: violet → magenta → pink.
   static const LinearGradient signGradient = LinearGradient(
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,

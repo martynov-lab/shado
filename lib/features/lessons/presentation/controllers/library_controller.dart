@@ -9,12 +9,7 @@ import 'folder_providers.dart';
 import 'lesson_providers.dart';
 import 'library_providers.dart';
 
-/// Корень библиотеки для главного экрана: папки и уроки вне папок одним
-/// запросом (§6.3).
-///
-/// Собирать корень на клиенте из `/v1/lessons` и `/v1/folders` больше не нужно:
-/// какие уроки разложены по папкам, знает только сервер. `since` лента не
-/// поддерживает, поэтому она всегда сетевая, а кеш уроков — запасной путь.
+/// Library root: folders and unfiled lessons in one request.
 class LibraryController extends AsyncNotifier<LibraryRoot> {
   @override
   Future<LibraryRoot> build() => _load();
@@ -23,20 +18,17 @@ class LibraryController extends AsyncNotifier<LibraryRoot> {
     try {
       return await ref.read(getLibraryProvider)();
     } on NetworkFailure {
-      // Нет связи — показываем кеш каталога плоским списком: группировку по
-      // папкам без сервера не восстановить, но уроки открываются как раньше.
+      // Offline the catalog cache is shown as a flat list.
       return LibraryRoot(lessons: await ref.read(getLessonsProvider)());
     }
   }
 
-  /// Pull-to-refresh: перечитывает корень.
+  /// Pull-to-refresh: re-reads the root.
   Future<void> refresh() async {
     state = await AsyncValue.guard(_load);
   }
 
-  /// Создаёт папку и обновляет корень. Видимость определяется ролью автора,
-  /// как у уроков: owner решает сам (по умолчанию публичная), user-pro всегда
-  /// приватна, для admin решает сервер.
+  /// Creates a folder and refreshes the root; the author role sets visibility.
   Future<Folder> create(String title) async {
     final folder = await ref.read(createFolderProvider)(
       title: title,

@@ -4,21 +4,14 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shado/theme/theme.dart';
 import 'package:shado/widgets/app_segmented_control.dart';
 
-/// Переключатель оформления: светлая / тёмная / системная.
-///
-/// Читает и пишет [ThemeController], поэтому выбор сразу сохраняется и
-/// переживает перезапуск. Вставляется куда угодно — в настройки, в шапку
-/// экрана, в галерею компонентов.
-///
-/// На узких экранах подписи скрываются и остаются одни иконки: три слова
-/// в пилюлю на телефоне не помещаются.
+/// Appearance switch: light / dark / system.
 class ThemeToggle extends ConsumerWidget {
   const ThemeToggle({super.key, this.expand = false, this.labels});
 
-  /// Растянуть на всю доступную ширину.
+  /// Stretches to the full available width.
   final bool expand;
 
-  /// Показывать текстовые подписи. По умолчанию — только от планшета и шире.
+  /// Whether to show text labels; defaults to tablet width and wider.
   final bool? labels;
 
   @override

@@ -2,7 +2,7 @@ import 'package:flutter/widgets.dart';
 
 import 'package:shado/theme/theme.dart';
 
-/// Тонкая линия между строками уроков, с отступом от краёв обложки.
+/// Thin divider between lesson rows, inset from the cover edges.
 class LessonRowDivider extends StatelessWidget {
   const LessonRowDivider({super.key});
 

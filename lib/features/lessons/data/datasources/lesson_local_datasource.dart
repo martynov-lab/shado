@@ -1,35 +1,29 @@
 import '../models/lesson_model.dart';
 
-/// Локальный кеш уроков. Конкретная БД — деталь реализации и наружу
-/// не протекает.
-///
-/// С появлением сервера это именно кеш для чтения: источник истины — сервер,
-/// здесь лежит последнее, что от него приходило, плюс пути к скачанному аудио.
+/// Local read cache of lessons.
 abstract interface class LessonLocalDataSource {
   Future<List<LessonModel>> getLessons();
 
   Future<LessonModel?> getLesson(String id);
 
-  /// Вставляет урок или полностью заменяет существующий с тем же id.
+  /// Inserts a lesson or fully replaces the one with the same id.
   Future<void> upsertLesson(LessonModel lesson);
 
-  /// Применяет пачку уроков одной транзакцией — так приходит дельта.
+  /// Applies a batch of lessons in one transaction, the way a delta arrives.
   Future<void> upsertAll(List<LessonModel> lessons);
 
   Future<void> deleteLesson(String id);
 
   Future<void> deleteLessons(Iterable<String> ids);
 
-  /// `audio_id`, на которые ссылается хоть один живой урок. По ним чистится
-  /// кеш файлов: одно и то же аудио может быть у нескольких уроков сразу.
+  /// The `audio_id` values referenced by at least one lesson.
   Future<Set<String>> usedAudioIds();
 
-  /// Верхняя граница уже полученной дельты — максимальный `updated_at` из
-  /// применённых записей. `null` — синхронизации ещё не было.
+  /// Upper bound of the fetched delta; `null` when never synced.
   Future<String?> readSyncWatermark();
 
   Future<void> writeSyncWatermark(String updatedAt);
 
-  /// Стирает кеш целиком: выход из аккаунта.
+  /// Wipes the whole cache.
   Future<void> clear();
 }

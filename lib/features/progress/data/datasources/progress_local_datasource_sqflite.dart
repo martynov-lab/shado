@@ -8,8 +8,8 @@ import '../../../../core/error/failures.dart';
 import '../../../../core/platform/platform_setup.dart';
 import 'progress_local_datasource.dart';
 
-/// Реализация на sqflite. Отдельная БД `progress.db`, миграции только
-/// аддитивные: минуты и повторы — не кеш, их нельзя пересоздать с сервера.
+/// Sqflite implementation backed by a separate `progress.db`; migrations are
+/// additive only, since minutes and repeats cannot be refetched.
 class SqfliteProgressLocalDataSource implements ProgressLocalDataSource {
   SqfliteProgressLocalDataSource({String databaseName = 'progress.db'})
     : _databaseName = databaseName;
@@ -28,8 +28,8 @@ class SqfliteProgressLocalDataSource implements ProgressLocalDataSource {
     return _opening ??= _open();
   }
 
-  /// Каталог БД — тот же приём, что у кеша уроков: FFI-фабрика на десктопе иначе
-  /// кладёт файл в `.dart_tool`.
+  /// Database directory; the desktop FFI factory would otherwise put the file
+  /// into `.dart_tool`.
   Future<String> _databaseDirectory() async {
     if (!isPluginlessDesktop) return getDatabasesPath();
     final documents = await getApplicationDocumentsDirectory();
@@ -43,7 +43,7 @@ class SqfliteProgressLocalDataSource implements ProgressLocalDataSource {
         path,
         version: 1,
         onCreate: (db, version) => _createSchema(db),
-        // Только аддитивно: существующие данные не трогаем.
+        // Additive only: existing data is left untouched.
         onUpgrade: (db, oldVersion, newVersion) => _createSchema(db),
       );
       _database = db;
@@ -76,7 +76,7 @@ class SqfliteProgressLocalDataSource implements ProgressLocalDataSource {
         segment_repeats INTEGER NOT NULL DEFAULT 0
       )
     ''');
-    // Единственная строка-аккумулятор: заводим сразу, дальше только UPDATE.
+    // A single accumulator row: created once, updated afterwards.
     await db.insert(_pendingTable, {
       'id': 1,
       'listened_ms': 0,
@@ -89,14 +89,14 @@ class SqfliteProgressLocalDataSource implements ProgressLocalDataSource {
     try {
       final db = await _db();
       await db.transaction((txn) async {
-        // Повтор конкретного сегмента (для «пройдено» и прогресс-бара).
+        // A repeat of one segment, used for completion and the progress bar.
         await txn.rawInsert(
           'INSERT INTO $_repsTable (lesson_id, segment_index, reps) '
           'VALUES (?, ?, 1) '
           'ON CONFLICT(lesson_id, segment_index) DO UPDATE SET reps = reps + 1',
           [lessonId, segmentIndex],
         );
-        // И в дневную дельту для сервера.
+        // And into the daily delta for the server.
         await txn.rawUpdate(
           'UPDATE $_pendingTable SET segment_repeats = segment_repeats + 1 '
           'WHERE id = 1',
@@ -159,7 +159,7 @@ class SqfliteProgressLocalDataSource implements ProgressLocalDataSource {
   Future<void> subtractPending(int listenedMs, int segmentRepeats) async {
     try {
       final db = await _db();
-      // MAX(0, …): активность во время запроса не уводит счётчик в минус.
+      // MAX(0, …) keeps activity during the request from going negative.
       await db.rawUpdate(
         'UPDATE $_pendingTable SET '
         'listened_ms = MAX(0, listened_ms - ?), '

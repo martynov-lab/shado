@@ -5,8 +5,7 @@ import 'settings_row.dart';
 import 'settings_section.dart';
 import 'settings_switch_row.dart';
 
-/// Раздел «Данные и хранилище»: занятое место, офлайн-загрузка, резервная копия
-/// и очистка кэша.
+/// Data and storage section: space, offline, backup and cache cleanup.
 class StorageSettingsSection extends StatelessWidget {
   const StorageSettingsSection({super.key});
 

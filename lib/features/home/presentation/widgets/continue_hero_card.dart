@@ -9,19 +9,14 @@ import 'package:shado/widgets/widgets.dart';
 import '../../../progress/presentation/controllers/progress_providers.dart';
 import '../controllers/home_lesson_tile.dart';
 
-/// «Герой» главного экрана — карточка «Продолжить»: градиент, название урока,
-/// подзаголовок, эквалайзер, полоса пройденности и кнопка воспроизведения.
-///
-/// Показывает последний урок, с которым работал пользователь; долю пройденности
-/// берёт из [lessonProgressProvider]. Пока продолжать нечего ([lesson] == null)
-/// — приглашает выбрать урок.
+/// Continue card with the latest lesson, its progress and a play button.
 class ContinueHeroCard extends ConsumerWidget {
   const ContinueHeroCard({super.key, required this.lesson, required this.onOpen});
 
-  /// Последний урок пользователя; `null` — ещё ни одного.
+  /// The latest lesson; `null` when there is none yet.
   final HomeLessonTile? lesson;
 
-  /// Открыть урок (или список уроков, если продолжать нечего).
+  /// Opens the lesson or the lesson list.
   final VoidCallback onOpen;
 
   @override
@@ -102,7 +97,7 @@ class ContinueHeroCard extends ConsumerWidget {
   }
 }
 
-/// Круглая кнопка воспроизведения на «герое»: белый круг с primary-стрелкой.
+/// Round play button on the card.
 class _PlayButton extends StatelessWidget {
   const _PlayButton({required this.onTap});
 
@@ -141,8 +136,7 @@ class _PlayButton extends StatelessWidget {
   }
 }
 
-/// Декоративный эквалайзер на «герое»: полоски, у которых начало «пройдено».
-/// Это украшение, а не данные, — форма считается по индексу полоски.
+/// Decorative equalizer on the card.
 class _HeroWave extends StatelessWidget {
   const _HeroWave();
 

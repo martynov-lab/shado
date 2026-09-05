@@ -1,7 +1,7 @@
 import '../entities/folder.dart';
 import '../repositories/folder_repository.dart';
 
-/// Добавление уроков в папку. Повторное добавление того же урока — не ошибка.
+/// Adds lessons to a folder; adding one twice is not an error.
 class AddLessonsToFolder {
   const AddLessonsToFolder(this._repository);
 

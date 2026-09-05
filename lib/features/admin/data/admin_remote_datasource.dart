@@ -1,7 +1,7 @@
 import '../../../core/network/api_client.dart';
 import '../../auth/domain/entities/auth_user.dart';
 
-/// Страница списка пользователей.
+/// A page of the user list.
 class AdminUserPage {
   const AdminUserPage({
     required this.users,
@@ -28,9 +28,9 @@ class AdminUserPage {
   bool get hasMore => offset + users.length < total;
 }
 
-/// Админка владельца: `/v1/admin/*`.
+/// Owner admin API: `/v1/admin/*`.
 abstract interface class AdminRemoteDataSource {
-  /// [query] — подстрока email, регистр не важен.
+  /// [query] is an email substring, case-insensitive.
   Future<AdminUserPage> listUsers({String? query, int limit, int offset});
 
   Future<AuthUser> setRole({required String userId, required UserRole role});

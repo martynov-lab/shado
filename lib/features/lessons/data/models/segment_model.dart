@@ -5,8 +5,7 @@ import '../../domain/entities/segment.dart';
 part 'segment_model.freezed.dart';
 part 'segment_model.g.dart';
 
-/// DTO куска урока. JSON-форма рассчитана на то, чтобы без изменений уехать
-/// в тело будущего REST-запроса.
+/// Lesson segment DTO; the JSON shape is shared by the server and the cache.
 @freezed
 abstract class SegmentModel with _$SegmentModel {
   const factory SegmentModel({

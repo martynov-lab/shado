@@ -2,10 +2,7 @@ import 'package:flutter/material.dart';
 
 import 'package:shado/theme/theme.dart';
 
-/// Столбчатый график минут по дням недели.
-///
-/// [values] — высоты столбцов в процентах (0–100), [labels] — подписи под ними,
-/// [todayIndex] выделяет сегодняшний столбец акцентным цветом.
+/// Daily minutes bar chart: heights from [values], labels from [labels].
 class MinutesBarChart extends StatelessWidget {
   const MinutesBarChart({
     super.key,
@@ -18,8 +15,7 @@ class MinutesBarChart extends StatelessWidget {
   final List<String> labels;
   final int todayIndex;
 
-  /// Высота области столбцов. Это высота графика, а не текста, поэтому задаётся
-  /// константой и не зависит от масштаба шрифта.
+  /// Height of the bars area.
   static const double _trackHeight = 120;
   static const double _barWidth = 24;
 

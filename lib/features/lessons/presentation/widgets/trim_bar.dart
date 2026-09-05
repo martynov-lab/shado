@@ -4,9 +4,7 @@ import 'package:shado/core/utils/duration_format.dart';
 
 import '../../domain/entities/audio_trim.dart';
 
-/// Полоска обрезки под волной: пока обрезка не начата — одна кнопка
-/// «Обрезать», в режиме обрезки — «Применить» и «Отменить» рядом с
-/// длительностью того, что останется.
+/// Trim bar under the waveform: a trim button, or apply and cancel.
 class TrimBar extends StatelessWidget {
   const TrimBar({
     super.key,
@@ -17,10 +15,10 @@ class TrimBar extends StatelessWidget {
     required this.onCancelPressed,
   });
 
-  /// Отрезок, который останется. `null` — обрезка ещё не начата.
+  /// Range that survives trimming; `null` before trimming starts.
   final AudioTrim? trim;
 
-  /// Волна ещё не пришла — обрезать нечего.
+  /// The waveform has not arrived — there is nothing to trim.
   final bool isEnabled;
 
   final VoidCallback? onStartPressed;

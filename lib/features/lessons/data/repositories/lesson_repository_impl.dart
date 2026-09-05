@@ -23,11 +23,8 @@ import '../models/lesson_dto.dart';
 import '../models/lesson_model.dart';
 import '../models/segment_model.dart';
 
-/// Сервер — источник истины, sqflite — кеш для чтения, файлы аудио — кеш по
-/// `audio_id`.
-///
-/// Наружу репозиторий отдаёт ровно то же, что и раньше: урок с локальным путём
-/// к аудио. Всё, что для этого нужно сделать по сети, происходит здесь.
+/// Lessons: the server is the source of truth, sqflite is the read cache and
+/// audio files are cached by `audio_id`.
 class LessonRepositoryImpl implements LessonRepository {
   LessonRepositoryImpl({
     required LessonLocalDataSource localDataSource,
@@ -45,11 +42,10 @@ class LessonRepositoryImpl implements LessonRepository {
        _cache = audioCache,
        _uuid = uuid;
 
-  /// Сколько места отдаём под скачанное аудио. Свыше — вытесняем давно не
-  /// открывавшиеся уроки, они докачаются, когда к ним вернутся.
+  /// Audio cache size limit; older files are evicted beyond it.
   static const int _maxCacheBytes = 2 * 1024 * 1024 * 1024;
 
-  /// Размер страницы списка. Сервер отдаёт максимум 200 за раз.
+  /// Lesson list page size.
   static const int _pageLimit = 100;
 
   final LessonLocalDataSource _local;
@@ -75,9 +71,7 @@ class LessonRepositoryImpl implements LessonRepository {
 
     String? cursor;
     do {
-      // Без `since` сервер отдаёт только живые уроки — так идёт первый запуск.
-      // С `since` приходит дельта, и в ней есть удалённые: только по ним видно,
-      // что урок стёрли на другом устройстве.
+      // With `since` a delta arrives that also lists deleted lessons.
       final page = await _remote.list(
         since: since,
         limit: _pageLimit,
@@ -93,8 +87,7 @@ class LessonRepositoryImpl implements LessonRepository {
         fresh.add(
           LessonModel.fromDto(
             dto,
-            // Файл под тем же `audio_id` не меняется никогда, поэтому уже
-            // скачанное остаётся на месте.
+            // The file behind an `audio_id` never changes: keep it.
             audioPath: cached?.audioId == dto.audio.id
                 ? cached?.audioPath ?? ''
                 : '',
@@ -106,8 +99,7 @@ class LessonRepositoryImpl implements LessonRepository {
 
     await _local.deleteLessons(removed);
     await _local.upsertAll(fresh);
-    // Метка — максимальный `updated_at` из полученного, а не текущее время:
-    // часы устройства могут врать, и тогда часть правок потерялась бы навсегда.
+    // The watermark is the max `updated_at` of the response, not device time.
     if (watermark != null) await _local.writeSyncWatermark(watermark);
     await _tidyAudioCache();
   }
@@ -118,14 +110,14 @@ class LessonRepositoryImpl implements LessonRepository {
     try {
       dto = await _remote.getLesson(id);
     } on ApiException catch (error) {
-      // Урока нет или он чужой — в обоих случаях его надо убрать из кеша.
+      // The lesson is gone or not ours — drop it from the cache.
       if (error.isNotFound) {
         await _forget(id);
         return null;
       }
       rethrow;
     } on NetworkFailure {
-      // Сети нет: отдаём последнее известное, если аудио уже скачано.
+      // Offline: return the last known lesson when its audio is downloaded.
       return _cachedPlayable(id);
     }
 
@@ -146,8 +138,7 @@ class LessonRepositoryImpl implements LessonRepository {
       onProgress: onProgress,
       cancelToken: cancel is CancelToken ? cancel : null,
     );
-    // Файл уже здесь — кладём его в кеш сразу, качать обратно после создания
-    // урока незачем.
+    // The file is already here — put it into the cache right away.
     final cached = await _cache.put(
       audioId: dto.id,
       extension: dto.fileExtension,
@@ -157,8 +148,7 @@ class LessonRepositoryImpl implements LessonRepository {
       audioId: dto.id,
       durationMs: dto.durationMs,
       sizeBytes: dto.sizeBytes,
-      // Отдаём копию из кеша, а не исходный путь: выбранный файл мог быть
-      // временной распаковкой content-URI, которую система вправе стереть.
+      // Return the cached copy: the system may delete the original file.
       localPath: cached,
     );
   }
@@ -172,9 +162,7 @@ class LessonRepositoryImpl implements LessonRepository {
       text: text,
       cancelToken: cancel is CancelToken ? cancel : null,
     );
-    // В отличие от загрузки, файла локально ещё нет — только ссылка. Качаем его
-    // в кеш по `audio_id` тем же путём, что и остальное аудио, чтобы экран
-    // создания играл его с диска и метки можно было ставить на слух.
+    // Synthesis returns a link only — download the file into the cache.
     final localPath = await _ensureAudioFile(dto);
     return AudioUpload(
       audioId: dto.id,
@@ -202,8 +190,7 @@ class LessonRepositoryImpl implements LessonRepository {
     List<int>? boundaries,
     bool? isPublic,
   }) async {
-    // UUID генерит клиент, поэтому повтор `PUT` после потери сети не создаёт
-    // дубль.
+    // The client generates the UUID, so a repeated `PUT` makes no duplicate.
     final id = _uuid.v4();
     final createdAt = DateTime.now().toUtc();
     final segments = _segmentsFor(
@@ -248,11 +235,9 @@ class LessonRepositoryImpl implements LessonRepository {
         audioId: cached.audioId,
         createdAt: lesson.createdAt,
         segments: segments,
-        // Версия из кеша: правка идёт поверх того, что мы последний раз видели.
+        // Version from the cache: the edit applies on top of the last seen one.
         version: cached.version,
-        // `PUT` заменяет урок целиком, поэтому категории пересылаем как есть:
-        // не отправить их — значит попросить сервер их потерять. Берём из
-        // правленого урока, а чего в нём нет — из кеша.
+        // `PUT` replaces the whole lesson — categories are resent as is.
         accent: lesson.accent ?? LessonAccent.parse(cached.accent),
         level: lesson.level ?? LessonLevel.parse(cached.level),
         topicId: lesson.topic?.id ?? _nullIfEmpty(cached.topicId),
@@ -264,8 +249,7 @@ class LessonRepositoryImpl implements LessonRepository {
     } on ApiException catch (error) {
       final current = error.current;
       if (!error.isVersionConflict || current == null) rethrow;
-      // Урок правили на другом устройстве. Свежую версию кладём в кеш, чтобы
-      // пользователю было что переписать, а сам конфликт показываем ему.
+      // Version conflict: store the fresh version, let the error bubble up.
       final fresh = LessonDto.fromJson(current);
       await _local.upsertLesson(
         LessonModel.fromDto(fresh, audioPath: cached.audioPath),
@@ -279,7 +263,7 @@ class LessonRepositoryImpl implements LessonRepository {
     try {
       await _remote.deleteLesson(id);
     } on ApiException catch (error) {
-      // Удалять то, чего нет, — успех: локально запись всё равно уходит.
+      // Deleting something that does not exist counts as success.
       if (!error.isNotFound) rethrow;
     }
     await _forget(id);
@@ -291,11 +275,7 @@ class LessonRepositoryImpl implements LessonRepository {
     await _cache.clear();
   }
 
-  /// Сегменты для сервера.
-  ///
-  /// Сервер требует, чтобы куски покрывали файл целиком (`0..duration_ms`),
-  /// поэтому крайние границы прижимаются к краям файла: обрезка остаётся
-  /// инструментом разметки на клиенте и на сервер не уезжает.
+  /// Segments for the server: they cover the whole `0..duration_ms` file.
   List<SegmentModel> _segmentsFor({
     required List<String> texts,
     required List<int>? boundaries,
@@ -317,11 +297,7 @@ class LessonRepositoryImpl implements LessonRepository {
     ];
   }
 
-  /// Возвращает путь к готовому к воспроизведению файлу, докачивая его при
-  /// необходимости.
-  ///
-  /// Целостность проверяем по `sha256`: недокачанный или битый файл удаляем и
-  /// качаем заново, иначе плеер молча споткнётся на нём позже.
+  /// Path to the audio file: downloads a missing one and verifies `sha256`.
   Future<String> _ensureAudioFile(AudioDto audio) async {
     final existing = await _cache.find(audio.id);
     if (existing != null) {
@@ -340,8 +316,7 @@ class LessonRepositoryImpl implements LessonRepository {
     return target;
   }
 
-  /// Урок из кеша, но только если его аудио на месте: без файла экран урока
-  /// всё равно ничего не сыграет.
+  /// Cached lesson when its audio is already downloaded.
   Future<Lesson?> _cachedPlayable(String id) async {
     final cached = await _local.getLesson(id);
     if (cached == null) return null;
@@ -358,19 +333,14 @@ class LessonRepositoryImpl implements LessonRepository {
     await _tidyAudioCache();
   }
 
-  /// Убирает файлы, на которые не ссылается ни один урок, и ужимает кеш.
-  ///
-  /// Осторожно с удалением «аудио удалённого урока»: сервер дедуплицирует
-  /// загрузки по sha256, поэтому один `audio_id` может быть у нескольких
-  /// уроков сразу.
+  /// Drops files no lesson refers to and shrinks the cache.
   Future<void> _tidyAudioCache() async {
     final used = await _local.usedAudioIds();
     await _cache.retainOnly(used);
     await _cache.trimToSize(_maxCacheBytes);
   }
 
-  /// Пустая строка в кеше значит «значения нет»; на сервер такое поле уезжать
-  /// не должно вовсе.
+  /// An empty cached string means the value is absent.
   static String? _nullIfEmpty(String value) => value.isEmpty ? null : value;
 
   static String? _laterOf(String? current, DateTime candidate) {

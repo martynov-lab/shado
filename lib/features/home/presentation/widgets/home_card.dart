@@ -3,11 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:shado/theme/theme.dart';
 import 'package:shado/widgets/widgets.dart';
 
-/// Карточка раздела главного экрана: заголовок с необязательной подписью справа
-/// и произвольное содержимое под ним.
-///
-/// Обёртка над [AppCard] — чтобы карточки цели недели, активности и минут
-/// держали один заголовок и отступ.
+/// Home section card: a title with a caption and the content.
 class HomeCard extends StatelessWidget {
   const HomeCard({
     super.key,
@@ -18,7 +14,7 @@ class HomeCard extends StatelessWidget {
 
   final String title;
 
-  /// Подпись у правого края заголовка — например «эта неделя».
+  /// Caption at the right edge of the title.
   final String? caption;
 
   final Widget child;

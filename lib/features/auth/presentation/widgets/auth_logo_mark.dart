@@ -5,7 +5,7 @@ import 'package:shado/widgets/widgets.dart';
 
 import 'auth_brand_surface.dart';
 
-/// Знак Shadowing: волна на фирменном градиенте.
+/// App mark: a wave on the brand gradient.
 class AuthLogoMark extends StatelessWidget {
   const AuthLogoMark({
     super.key,

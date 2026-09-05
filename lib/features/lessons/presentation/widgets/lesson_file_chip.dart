@@ -5,8 +5,7 @@ import 'package:shado/widgets/widgets.dart';
 
 import 'upload_progress.dart';
 
-/// Плашка аудиофайла на экране создания: выбор файла или озвучка через ИИ, ход
-/// загрузки и — когда файл принят — его имя с длительностью и кнопкой «Заменить».
+/// Audio chip: file picking or voice-over, upload progress and the file name.
 class LessonFileChip extends StatelessWidget {
   const LessonFileChip({
     super.key,
@@ -22,32 +21,29 @@ class LessonFileChip extends StatelessWidget {
     this.helper,
   });
 
-  /// Имя выбранного файла; `null` — файл ещё не выбирали.
+  /// Chosen file name; `null` when no file was picked.
   final String? fileName;
 
-  /// Подпись под именем, например длительность.
+  /// Caption under the name, for example the duration.
   final String? detail;
 
   final bool isUploading;
   final double uploadProgress;
 
-  /// Идёт озвучка через ИИ, а не загрузка файла: у неё нет процентов, поэтому
-  /// подпись прогресса другая.
+  /// An AI voice-over is running rather than a file upload.
   final bool isSynthesizing;
 
-  /// Выбрать или заменить файл. `null` — действие заперто (идёт отправка).
+  /// Picks or replaces the file; `null` locks the action during an upload.
   final VoidCallback? onPick;
   final VoidCallback onCancelUpload;
 
-  /// Озвучить текст через ИИ. `null` — озвучивать нечего (текст пуст) или идёт
-  /// отправка: кнопка показана заперто, подсказывая, что нужен текст.
+  /// Runs an AI voice-over; `null` locks the button.
   final VoidCallback? onSynthesize;
 
-  /// Доступна ли озвучка этому автору. `false` — кнопки нет вовсе: озвучивать
-  /// вправе только владелец, остальным сервер ответит `403`.
+  /// Whether voice-over is available to this author; `false` hides the button.
   final bool canSynthesize;
 
-  /// Подсказка про поддерживаемые форматы, когда файл ещё не выбран.
+  /// Hint about supported formats shown before a file is picked.
   final String? helper;
 
   @override
@@ -133,8 +129,7 @@ class LessonFileChip extends StatelessWidget {
             ),
           ),
           const SizedBox(width: AppSpacing.s2),
-          // Озвучка доступна и когда файл уже выбран — заменит его. Предупреждение
-          // о замене показывает экран создания.
+          // Voice-over is available with a file chosen too — it replaces it.
           if (canSynthesize) ...[
             AppButton(
               label: 'Озвучить ИИ',
@@ -156,7 +151,7 @@ class LessonFileChip extends StatelessWidget {
   }
 }
 
-/// Общая рамка плашки: мягкая поверхность с пунктирным на вид контуром.
+/// Shared chip frame: a soft surface with a dashed-looking outline.
 class _Shell extends StatelessWidget {
   const _Shell({required this.child});
 

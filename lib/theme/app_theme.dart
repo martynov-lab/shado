@@ -6,9 +6,7 @@ import 'package:shado/theme/tokens/app_dimens.dart';
 import 'package:shado/theme/tokens/app_shadows.dart';
 import 'package:shado/theme/tokens/app_typography.dart';
 
-/// Builds the app's [ThemeData]. `MaterialApp` is kept as the shell (routing,
-/// localization, gestures), but every surface is driven by our own tokens, so
-/// the look is fully custom rather than stock Material.
+/// Builds the app [ThemeData] from design system tokens.
 abstract final class AppTheme {
   static ThemeData light() =>
       _build(Brightness.light, AppColors.light, AppShadows.light);
@@ -59,8 +57,7 @@ abstract final class AppTheme {
         centerTitle: false,
         titleTextStyle: AppText.h2.copyWith(color: colors.text),
       ),
-      // Стоковые поля ввода на остальных экранах должны попадать в ту же
-      // сетку, что и AppTextField, иначе после смены темы они выбиваются.
+      // Stock input fields follow the same grid as AppTextField.
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
         fillColor: colors.surface2,
@@ -135,21 +132,15 @@ abstract final class AppTheme {
     );
   }
 
-  /// Волна рисуется собственным painter'ом и читает цвета из [WaveformColors].
-  /// Расширение остаётся зарегистрированным, но палитра теперь выводится из
-  /// токенов, а не из стокового [ColorScheme].
+  /// Waveform palette derived from the tokens.
   static WaveformColors _waveform(AppColors colors) {
     return WaveformColors(
       wave: colors.waveOn,
       activeSegment: colors.primarySoft,
       boundary: colors.accent,
-      // Белый ползунок как в макете; контраст на светлой волне добавляет
-      // подложка в самом painter'е.
       cursor: const Color(0xFFFFFFFF),
       background: colors.surface2,
       trimHandle: colors.warning,
-      // Обрезаемые края гасим цветом фона, а не чёрным: так они уходят на
-      // второй план и в светлой, и в тёмной теме.
       trimmedAway: colors.bg.withValues(alpha: AppOpacities.scrim),
     );
   }

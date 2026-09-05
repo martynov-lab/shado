@@ -3,9 +3,7 @@ import 'package:flutter/widgets.dart';
 import 'package:shado/theme/theme.dart';
 import 'package:shado/widgets/widgets.dart';
 
-/// Тумблер «Приватный урок». Показывается только владельцу: остальным авторам
-/// публичность определяет роль (user-pro — всегда приватно, admin — публично),
-/// поэтому выбирать нечего.
+/// The private lesson switch; shown to the owner only.
 class LessonPrivacyField extends StatelessWidget {
   const LessonPrivacyField({
     super.key,

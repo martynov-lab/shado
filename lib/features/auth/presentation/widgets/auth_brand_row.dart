@@ -4,7 +4,7 @@ import 'package:shado/theme/theme.dart';
 
 import 'auth_logo_mark.dart';
 
-/// Логотип с названием — шапка брендового блока на планшете и десктопе.
+/// Logo with the name — brand block header on tablet and desktop.
 class AuthBrandRow extends StatelessWidget {
   const AuthBrandRow({super.key});
 

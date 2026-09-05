@@ -1,8 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shado/features/lessons/presentation/widgets/segment_splitter/segment_boundary_math.dart';
 
-/// Разметка сводится к правкам «сырой» строки с «|»: метку можно поставить в
-/// любую позицию каретки, поэтому все операции индексные.
+/// Index operations on delimiters inside a text string.
 void main() {
   group('markerIndices', () {
     test('находит все разделители', () {
@@ -14,7 +13,7 @@ void main() {
   group('insertMarkerAt', () {
     test('ставит метку в позицию каретки', () {
       expect(insertMarkerAt('one two', 3), 'one| two');
-      // Даже в середину слова — куда поставили, там и метка.
+      // Even mid-word: the marker lands exactly where it was put.
       expect(insertMarkerAt('word', 2), 'wo|rd');
       expect(caretAfterInsert(3), 4);
     });
@@ -41,7 +40,7 @@ void main() {
 
   group('moveMarker', () {
     test('переносит метку в новую позицию каретки', () {
-      // «one| two three» → метку из 3 в позицию перед «three».
+      // Moves the marker from index 3 to the position before the third word.
       expect(moveMarker('one| two three', 3, 8), 'one two| three');
     });
 

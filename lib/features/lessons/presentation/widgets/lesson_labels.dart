@@ -1,8 +1,7 @@
 import '../../domain/entities/lesson.dart';
 import '../../domain/entities/segment.dart';
 
-/// «12 сегментов» с правильным окончанием. В UI урок нарезан на сегменты —
-/// придерживаемся этого слова во всех новых экранах вслед за макетом.
+/// Segment count label with the right plural form.
 String segmentsLabel(int count) {
   final word = _segmentsWord(count);
   return '$count $word';
@@ -17,7 +16,7 @@ String _segmentsWord(int count) {
   };
 }
 
-/// «3 урока» с правильным окончанием — подпись папки.
+/// Lesson count label for a folder with the right plural form.
 String lessonsLabel(int count) {
   final word = _lessonsWord(count);
   return '$count $word';
@@ -32,14 +31,14 @@ String _lessonsWord(int count) {
   };
 }
 
-/// Порядковый номер сегмента с ведущим нулём: `01`, `02`, …
+/// Segment ordinal with a leading zero: `01`, `02`, …
 String segmentNumber(int index) => (index + 1).toString().padLeft(2, '0');
 
-/// Границы сегмента «0:04–0:12» (минуты:секунды, без долей).
+/// Segment bounds in minutes and seconds without fractions.
 String segmentTimecodes(Segment segment) =>
     rangeTimecodes(segment.startMs, segment.endMs);
 
-/// Границы отрезка «0:04–0:20» по началу первого и концу последнего куска.
+/// Range bounds from the first segment start to the last segment end.
 String rangeTimecodes(int startMs, int endMs) =>
     '${_clock(startMs)}–${_clock(endMs)}';
 
@@ -50,10 +49,8 @@ String _clock(int milliseconds) {
   return '$minutes:${seconds.toString().padLeft(2, '0')}';
 }
 
-/// Подзаголовок строки/карточки урока: «Подкаст · 12 сегментов · B1».
-///
-/// Пропускает поля, которых нет: у урока без темы или уровня строка просто
-/// короче.
+/// Lesson subtitle such as topic, segment count and level; empty fields are
+/// skipped.
 String lessonSubtitle(Lesson lesson) {
   return [
     if (lesson.topic != null && lesson.topic!.name.isNotEmpty) lesson.topic!.name,

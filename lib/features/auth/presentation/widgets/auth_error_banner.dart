@@ -2,8 +2,7 @@ import 'package:flutter/material.dart';
 
 import 'package:shado/theme/theme.dart';
 
-/// Что пошло не так на входе или регистрации — над кнопкой, а не снеком:
-/// сообщение должно оставаться на экране, пока его не исправят.
+/// Sign-in or sign-up error message above the form button.
 class AuthErrorBanner extends StatelessWidget {
   const AuthErrorBanner({super.key, required this.message});
 

@@ -10,9 +10,8 @@ import '../../../settings/presentation/widgets/settings_section.dart';
 import '../../../settings/presentation/widgets/settings_text_edit_sheet.dart';
 import '../../../settings/presentation/widgets/settings_value.dart';
 
-/// Блок «Порог пройденности» во вкладке «Управление» (owner): сколько раз
-/// повторить каждый сегмент, чтобы урок считался пройденным. Правит owner,
-/// читают все (§12.3).
+/// The completion threshold block: how many repeats per segment mark a
+/// lesson as done.
 class CompletionThresholdSection extends ConsumerWidget {
   const CompletionThresholdSection({super.key});
 

@@ -7,12 +7,7 @@ import 'package:shado/theme/theme.dart';
 
 import '../controllers/lesson_controller.dart';
 
-/// Волна аудио на панели плеера с курсором текущей позиции.
-///
-/// Форма столбиков декоративная (детерминированная функция, а не реальные
-/// пики), но заливка «сыгранного» двигается по позиции воспроизведения:
-/// в пределах текущего сегмента столбики слева от курсора подсвечены. Пока
-/// сегмент не играет, курсор стоит в начале.
+/// Player panel waveform with a position cursor; the bars are decorative.
 class LessonPlayerWaveform extends ConsumerWidget {
   const LessonPlayerWaveform({
     super.key,
@@ -21,15 +16,14 @@ class LessonPlayerWaveform extends ConsumerWidget {
     this.height = 56,
   });
 
-  /// Цвет «сыгранных» столбиков; несыгранные — он же, но приглушённый.
+  /// Color of played bars; unplayed ones use a dimmed variant.
   final Color color;
   final double height;
   final String lessonId;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    // Границы показанного отрезка и признак «играет» — перестраиваемся только
-    // при их смене, не на каждом тике позиции.
+    // Rebuild on a range change rather than on every position tick.
     final segment = ref.watch(
       lessonControllerProvider(lessonId).select((async) {
         final state = async.value;
@@ -41,7 +35,7 @@ class LessonPlayerWaveform extends ConsumerWidget {
         );
       }),
     );
-    // Позицию слушаем всегда, а применяем только на проигрывании.
+    // The position is always observed but only applied while playing.
     final positionMs = ref.watch(lessonPositionMsProvider(lessonId));
 
     var fraction = 0.0;
