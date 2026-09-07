@@ -5,6 +5,8 @@ import 'package:shado/widgets/widgets.dart';
 
 import '../../../auth/presentation/controllers/auth_controller.dart';
 import '../../../languages/presentation/controllers/language_providers.dart';
+import '../../../lessons/presentation/controllers/tts_voice_controller.dart';
+import '../../../lessons/presentation/widgets/tts_voice_sheet.dart';
 import '../controllers/studied_language_controller.dart';
 import 'settings_row.dart';
 import 'settings_section.dart';
@@ -21,6 +23,8 @@ class LanguageSettingsSection extends ConsumerWidget {
     final code = ref.watch(
       authControllerProvider.select((state) => state.user?.studiedLanguage),
     );
+    // The AI voice-over is owner-only, and so is its voice.
+    final isOwner = ref.watch(authControllerProvider).isOwner;
 
     return SettingsSection(
       title: 'Язык',
@@ -33,6 +37,13 @@ class LanguageSettingsSection extends ConsumerWidget {
           ),
           onTap: () => _editLanguage(context, ref, code),
         ),
+        if (isOwner)
+          SettingsRow(
+            icon: Icons.record_voice_over_outlined,
+            title: 'Голос озвучки ИИ',
+            trailing: SettingsValue(label: ref.watch(ttsVoiceLabelProvider)),
+            onTap: () => _editVoice(context),
+          ),
         const SettingsRow(
           icon: Icons.language_rounded,
           title: 'Язык интерфейса',
@@ -46,6 +57,13 @@ class LanguageSettingsSection extends ConsumerWidget {
       ],
     );
   }
+
+  /// Opens the voice-over sheet; the choice is saved inside it.
+  Future<void> _editVoice(BuildContext context) => showAppBottomSheet<void>(
+    context: context,
+    title: 'Голос озвучки ИИ',
+    builder: (_) => const TtsVoiceSheet(),
+  );
 
   /// Picks a language, warns about the catalog and switches it.
   Future<void> _editLanguage(

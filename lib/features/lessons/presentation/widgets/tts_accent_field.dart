@@ -14,7 +14,7 @@ class TtsAccentField extends ConsumerWidget {
     if (accents.isEmpty) return const SizedBox.shrink();
 
     final selected = ref.watch(
-      ttsVoiceControllerProvider.select((state) => state.accent),
+      ttsVoiceControllerProvider.select((state) => state.value?.accent),
     );
     // The dropdown throws when the selected value is not among the items.
     final value = accents.any((accent) => accent.code == selected)

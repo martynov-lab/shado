@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:just_audio/just_audio.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../languages/presentation/controllers/language_providers.dart';
 import 'lesson_providers.dart';
@@ -23,29 +24,71 @@ class TtsVoiceSelection {
       );
 }
 
-/// Voice and accent of the voice-over; kept between openings of the sheet.
-class TtsVoiceController extends Notifier<TtsVoiceSelection> {
+/// Voice and accent of the voice-over, picked in settings and persisted.
+class TtsVoiceController extends AsyncNotifier<TtsVoiceSelection> {
+  static const String _voiceKey = 'tts_voice';
+  static const String _accentKey = 'tts_accent';
+
   @override
-  TtsVoiceSelection build() => const TtsVoiceSelection();
+  Future<TtsVoiceSelection> build() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      return TtsVoiceSelection(
+        voice: prefs.getString(_voiceKey),
+        accent: prefs.getString(_accentKey),
+      );
+    } on Exception {
+      // On a read error the server picks the voice itself.
+      return const TtsVoiceSelection();
+    }
+  }
 
-  void selectVoice(String voice) => state = state.copyWith(voice: voice);
+  TtsVoiceSelection get selection => state.value ?? const TtsVoiceSelection();
 
-  void selectAccent(String accent) => state = state.copyWith(accent: accent);
+  Future<void> selectVoice(String voice) => _update(
+    selection.copyWith(voice: voice),
+    (prefs) => prefs.setString(_voiceKey, voice),
+  );
+
+  Future<void> selectAccent(String accent) => _update(
+    selection.copyWith(accent: accent),
+    (prefs) => prefs.setString(_accentKey, accent),
+  );
 
   /// Accent for the request: the chosen one while it belongs to the current
   /// language, otherwise none.
   String? accentForRequest() {
     final accents = ref.read(currentAccentsProvider);
     if (accents.isEmpty) return null;
-    final selected = state.accent;
+    final selected = selection.accent;
     return accents.any((accent) => accent.code == selected) ? selected : null;
+  }
+
+  /// Applies the choice immediately and stores it on disk.
+  Future<void> _update(
+    TtsVoiceSelection next,
+    Future<void> Function(SharedPreferences) write,
+  ) async {
+    state = AsyncValue.data(next);
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await write(prefs);
+    } on Exception {
+      // The choice is applied; the write will not survive a restart.
+    }
   }
 }
 
 final ttsVoiceControllerProvider =
-    NotifierProvider<TtsVoiceController, TtsVoiceSelection>(
+    AsyncNotifierProvider<TtsVoiceController, TtsVoiceSelection>(
       TtsVoiceController.new,
     );
+
+/// Chosen voice for the settings row; without one the server picks it.
+final ttsVoiceLabelProvider = Provider<String>((ref) {
+  final voice = ref.watch(ttsVoiceControllerProvider).value?.voice;
+  return voice == null || voice.isEmpty ? 'По умолчанию' : voice;
+});
 
 /// Player of the voice samples; separate from the lesson players.
 final ttsPreviewPlayerProvider = Provider.autoDispose<AudioPlayer>((ref) {

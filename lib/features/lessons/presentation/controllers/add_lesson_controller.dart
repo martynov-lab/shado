@@ -361,13 +361,12 @@ class AddLessonController extends Notifier<AddLessonFormState> {
     );
 
     try {
-      final selection = ref.read(ttsVoiceControllerProvider);
+      // Voice and accent come from settings; unset ones are the server's own.
+      final voices = ref.read(ttsVoiceControllerProvider.notifier);
       final upload = await ref.read(synthesizeTtsProvider)(
         text: state.text,
-        voice: selection.voice,
-        accent: ref
-            .read(ttsVoiceControllerProvider.notifier)
-            .accentForRequest(),
+        voice: voices.selection.voice,
+        accent: voices.accentForRequest(),
         cancel: cancelToken,
       );
       if (_uploadCancel != cancelToken) return true;

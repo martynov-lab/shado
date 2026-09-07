@@ -7,7 +7,6 @@ import 'package:shado/features/auth/presentation/controllers/auth_controller.dar
 import 'package:shado/features/lessons/domain/entities/audio_upload.dart';
 import 'package:shado/features/lessons/domain/entities/lesson_category.dart';
 import 'package:shado/features/lessons/domain/entities/tts_quota.dart';
-import 'package:shado/features/lessons/domain/entities/tts_voice.dart';
 import 'package:shado/features/languages/domain/entities/language.dart';
 import 'package:shado/features/languages/presentation/controllers/language_providers.dart';
 import 'package:shado/features/lessons/domain/usecases/synthesize_tts.dart';
@@ -94,12 +93,6 @@ void main() {
           () => _FakeAuthController(role, language.code),
         ),
         languagesProvider.overrideWith((ref) async => [language]),
-        ttsVoicesProvider.overrideWith(
-          (ref) async => const TtsVoices(
-            items: [TtsVoice(name: 'Kore', description: 'Мягкий')],
-            defaultVoice: 'Kore',
-          ),
-        ),
         topicsProvider.overrideWith((ref) async {
           if (topicsError != null) throw topicsError;
           return available;
@@ -124,11 +117,9 @@ void main() {
     return container;
   }
 
-  /// Presses the voice-over button and confirms the voice in the sheet.
+  /// Starts the voice-over; the voice comes from settings, so no sheet opens.
   Future<void> startSynthesis(WidgetTester tester) async {
     await tester.tap(find.widgetWithText(AppButton, 'Озвучить ИИ'));
-    await tester.pumpAndSettle();
-    await tester.tap(find.widgetWithText(AppButton, 'Озвучить'));
     await tester.pumpAndSettle();
   }
 

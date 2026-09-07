@@ -23,7 +23,6 @@ import '../widgets/lesson_privacy_field.dart';
 import '../widgets/lesson_section_card.dart';
 import '../widgets/synthesize_tts_dialog.dart';
 import '../widgets/tts_quota_hint.dart';
-import '../widgets/tts_voice_sheet.dart';
 import '../widgets/segment_splitter/marked_text_controller.dart';
 import '../widgets/segment_splitter/segment_splitter_field.dart';
 import '../../../home/presentation/pages/home_page.dart';
@@ -76,7 +75,7 @@ class _AddLessonPageState extends ConsumerState<AddLessonPage> {
     }
   }
 
-  /// Runs an AI voice-over: confirms the replacement, then picks a voice.
+  /// Runs an AI voice-over, confirming a replacement of the chosen audio.
   Future<void> _synthesize() async {
     if (ref.read(addLessonControllerProvider).audioId != null) {
       final confirmed = await showDialog<bool>(
@@ -85,16 +84,10 @@ class _AddLessonPageState extends ConsumerState<AddLessonPage> {
       );
       if (confirmed != true || !mounted) return;
     }
-    final started = await showAppBottomSheet<bool>(
-      context: context,
-      title: 'Голос озвучки',
-      builder: (_) => const TtsVoiceSheet(),
-    );
-    if (started != true || !mounted) return;
     await _runSynthesis();
   }
 
-  /// Sends the text for synthesis with the chosen voice.
+  /// Sends the text for synthesis; the voice and accent come from settings.
   Future<void> _runSynthesis() async {
     try {
       await ref.read(addLessonControllerProvider.notifier).synthesizeTts();
@@ -204,9 +197,7 @@ class _AddLessonPageState extends ConsumerState<AddLessonPage> {
               title: 'Новый урок',
               onBack: () => context.go(HomePage.routePath),
               primaryLabel: 'Создать урок',
-              onPrimary: ref.watch(addLessonCanSubmitProvider)
-                  ? _submit
-                  : null,
+              onPrimary: ref.watch(addLessonCanSubmitProvider) ? _submit : null,
               primaryLoading: state.isSubmitting,
             ),
             Expanded(

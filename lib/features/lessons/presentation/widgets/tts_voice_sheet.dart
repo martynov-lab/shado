@@ -12,15 +12,17 @@ import 'tts_accent_field.dart';
 import 'tts_quota_hint.dart';
 import 'tts_voice_row.dart';
 
-/// Voice-over sheet: a voice with a listen button, the accent and the quota.
-/// Popping `true` starts the synthesis.
+/// Voice-over settings sheet: a voice with a listen button, the accent and
+/// the quota. The choice is saved as it is made.
 class TtsVoiceSheet extends ConsumerWidget {
   const TtsVoiceSheet({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final voices = ref.watch(ttsVoicesProvider);
-    final selection = ref.watch(ttsVoiceControllerProvider);
+    final selection =
+        ref.watch(ttsVoiceControllerProvider).value ??
+        const TtsVoiceSelection();
     final preview = ref.watch(ttsPreviewControllerProvider);
     final hasAccents = ref.watch(currentAccentsProvider).isNotEmpty;
 
@@ -30,13 +32,23 @@ class TtsVoiceSheet extends ConsumerWidget {
       children: [
         switch (voices) {
           // No choice from the provider — synthesis still works.
-          AsyncData(:final value) when value.isEmpty => const SizedBox.shrink(),
-          AsyncData(:final value) => Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              for (final TtsVoice voice in value.items)
-                TtsVoiceRow(
+          AsyncData(:final value) when value.isEmpty => Padding(
+            padding: const EdgeInsets.all(AppSpacing.s3),
+            child: Text(
+              'Провайдер не даёт выбора голоса — озвучка пойдёт голосом по '
+              'умолчанию',
+              style: AppText.caption.copyWith(color: context.colors.text3),
+            ),
+          ),
+          // The provider offers dozens of voices — the list scrolls, the
+          // accent and the button below stay in place.
+          AsyncData(:final value) => Flexible(
+            child: ListView.builder(
+              shrinkWrap: true,
+              itemCount: value.items.length,
+              itemBuilder: (context, index) {
+                final TtsVoice voice = value.items[index];
+                return TtsVoiceRow(
                   name: voice.name,
                   description: voice.description,
                   selected:
@@ -47,8 +59,9 @@ class TtsVoiceSheet extends ConsumerWidget {
                       .read(ttsVoiceControllerProvider.notifier)
                       .selectVoice(voice.name),
                   onPlay: () => _play(context, ref, voice.name),
-                ),
-            ],
+                );
+              },
+            ),
           ),
           AsyncError() => Padding(
             padding: const EdgeInsets.all(AppSpacing.s3),
@@ -78,8 +91,8 @@ class TtsVoiceSheet extends ConsumerWidget {
         const TtsQuotaHint(),
         const SizedBox(height: AppSpacing.s5),
         AppButton(
-          label: 'Озвучить',
-          onPressed: () => Navigator.of(context).pop(true),
+          label: 'Готово',
+          onPressed: () => Navigator.of(context).pop(),
         ),
       ],
     );
