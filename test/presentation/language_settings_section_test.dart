@@ -31,8 +31,8 @@ class _FakeAuthController extends AuthController {
 void main() {
   const english = Language(
     code: 'en',
-    name: 'Английский',
-    accents: [Accent(code: 'US', name: 'Американский', isDefault: true)],
+    name: 'English',
+    accents: [Accent(code: 'US', name: 'American', isDefault: true)],
   );
 
   Future<void> pumpSection(WidgetTester tester, UserRole role) async {
@@ -53,7 +53,7 @@ void main() {
     await tester.pumpAndSettle();
   }
 
-  testWidgets('владелец видит выбор голоса озвучки', (tester) async {
+  testWidgets('the owner sees the voice-over voice picker', (tester) async {
     await pumpSection(tester, UserRole.owner);
 
     expect(find.text('Изучаемый язык'), findsOneWidget);
@@ -62,7 +62,7 @@ void main() {
     expect(find.text('По умолчанию'), findsOneWidget);
   });
 
-  testWidgets('обычный пользователь голос озвучки не видит', (tester) async {
+  testWidgets('a plain user does not see the voice-over voice', (tester) async {
     await pumpSection(tester, UserRole.user);
 
     expect(find.text('Изучаемый язык'), findsOneWidget);

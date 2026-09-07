@@ -88,7 +88,7 @@ class _FakeRemote implements ProgressRemoteDataSource {
 
 void main() {
   group('ProgressReporter.flush', () {
-    test('шлёт накопленное и вычитает отправленное', () async {
+    test('sends what was accumulated and subtracts what was sent', () async {
       final local = _FakeLocal();
       final remote = _FakeRemote();
       final reporter = ProgressReporter(local: local, remote: remote);
@@ -105,7 +105,7 @@ void main() {
       expect(pending.isEmpty, isTrue);
     });
 
-    test('пустую дельту не шлёт', () async {
+    test('does not send an empty delta', () async {
       final local = _FakeLocal();
       final remote = _FakeRemote();
       final reporter = ProgressReporter(local: local, remote: remote);
@@ -115,7 +115,7 @@ void main() {
       expect(remote.events, isEmpty);
     });
 
-    test('при сбое дельта сохраняется', () async {
+    test('the delta survives a failure', () async {
       final local = _FakeLocal();
       final remote = _FakeRemote(throwOnEvents: true);
       final reporter = ProgressReporter(local: local, remote: remote);
@@ -129,7 +129,7 @@ void main() {
   });
 
   group('ProgressReporter.reportCompletedIfDone', () {
-    test('шлёт completed один раз и ставит флаг', () async {
+    test('sends completed once and sets the flag', () async {
       final local = _FakeLocal();
       final remote = _FakeRemote();
       final reporter = ProgressReporter(local: local, remote: remote);
@@ -156,7 +156,7 @@ void main() {
       expect(await local.isCompletedSent('l1'), isTrue);
     });
 
-    test('недобитый урок не отмечается', () async {
+    test('an unfinished lesson is not marked', () async {
       final local = _FakeLocal();
       final remote = _FakeRemote();
       final reporter = ProgressReporter(local: local, remote: remote);

@@ -3,7 +3,7 @@ import 'package:shado/features/progress/domain/entities/progress_summary.dart';
 
 void main() {
   group('ProgressSummary.fromJson', () {
-    test('читает сводку целиком', () {
+    test('reads the whole summary', () {
       final summary = ProgressSummary.fromJson({
         'today': {
           'day': '2026-08-06',
@@ -33,7 +33,7 @@ void main() {
       expect(summary.completionReps, 10);
     });
 
-    test('отсутствующие поля — безопасные значения по умолчанию', () {
+    test('missing fields fall back to safe defaults', () {
       final summary = ProgressSummary.fromJson(const {});
 
       expect(summary.today.listenedMs, 0);

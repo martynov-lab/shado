@@ -34,7 +34,7 @@ void main() {
     );
   }
 
-  testWidgets('показывает чип-метку и число сегментов', (tester) async {
+  testWidgets('shows the marker chip and the segment count', (tester) async {
     final controller = MarkedTextController(text: 'one | two | three');
     addTearDown(controller.dispose);
 
@@ -45,7 +45,7 @@ void main() {
     expect(find.text('Сегментов: 3'), findsOneWidget);
   });
 
-  testWidgets('«Сбросить» снимает все метки', (tester) async {
+  testWidgets('the reset button removes every marker', (tester) async {
     final controller = MarkedTextController(text: 'one | two | three');
     addTearDown(controller.dispose);
     String? changed;
@@ -69,7 +69,7 @@ void main() {
     expect(changed, 'one two three');
   });
 
-  testWidgets('«Сбросить» заперт, пока меток нет', (tester) async {
+  testWidgets('the reset button is locked while there are no markers', (tester) async {
     final controller = MarkedTextController(text: 'one two');
     addTearDown(controller.dispose);
 
@@ -80,7 +80,7 @@ void main() {
     expect(tester.widget<AppButton>(reset).onPressed, isNull);
   });
 
-  testWidgets('режим «Метка»: клик по тексту ставит разделитель', (
+  testWidgets('marker mode: a click in the text places a separator', (
     tester,
   ) async {
     final controller = MarkedTextController(text: 'alpha beta gamma');
@@ -112,7 +112,7 @@ void main() {
     expect(insertedOrdinal, 1);
   });
 
-  testWidgets('в режиме «Метка» старые метки остаются видны', (tester) async {
+  testWidgets('in marker mode the existing markers stay visible', (tester) async {
     final controller = MarkedTextController(text: 'alpha | beta');
     addTearDown(controller.dispose);
 
@@ -126,7 +126,7 @@ void main() {
     expect(find.byType(SegmentMarkerNeedle), findsNWidgets(2));
   });
 
-  testWidgets('перетаскивание чипа в текст вставляет разделитель', (
+  testWidgets('dragging the chip into the text inserts a separator', (
     tester,
   ) async {
     final controller = MarkedTextController(text: 'alpha beta');
@@ -148,7 +148,7 @@ void main() {
     expect(controller.text, contains('|'));
   });
 
-  testWidgets('тап по игле сообщает номер метки', (tester) async {
+  testWidgets('a tap on the needle reports the marker ordinal', (tester) async {
     final controller = MarkedTextController(text: 'alpha | beta | gamma');
     addTearDown(controller.dispose);
     int? removed;
@@ -171,7 +171,7 @@ void main() {
     expect(controller.text, 'alpha | beta | gamma');
   });
 
-  testWidgets('иглы пронумерованы по порядку', (tester) async {
+  testWidgets('the needles are numbered in order', (tester) async {
     final controller = MarkedTextController(text: 'one | two | three');
     addTearDown(controller.dispose);
 
@@ -183,7 +183,7 @@ void main() {
     expect(find.text('2'), findsOneWidget);
   });
 
-  testWidgets('перетаскивание иглы переносит метку', (tester) async {
+  testWidgets('dragging a needle moves the marker', (tester) async {
     final controller = MarkedTextController(text: 'alpha | beta gamma');
     addTearDown(controller.dispose);
 

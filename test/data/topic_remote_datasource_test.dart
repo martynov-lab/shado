@@ -20,7 +20,7 @@ void main() {
     return (remote: ApiTopicRemoteDataSource(client), adapter: adapter);
   }
 
-  test('list читает справочник тем', () async {
+  test('list reads the topic directory', () async {
     final env = build(
       (_) async => jsonResponse(200, {
         'topics': [
@@ -37,7 +37,7 @@ void main() {
     expect(topics.last.isDefault, isTrue);
   });
 
-  test('create шлёт POST с именем и возвращает тему', () async {
+  test('create sends a POST with the name and returns the topic', () async {
     final env = build(
       (_) async =>
           jsonResponse(201, {'id': 't2', 'name': 'Sport', 'is_default': false}),
@@ -53,7 +53,7 @@ void main() {
     expect(topic.name, 'Sport');
   });
 
-  test('rename шлёт PATCH на конкретную тему', () async {
+  test('rename sends a PATCH to the given topic', () async {
     final env = build(
       (_) async =>
           jsonResponse(200, {'id': 't2', 'name': 'Sports', 'is_default': false}),
@@ -68,7 +68,7 @@ void main() {
     expect(topic.name, 'Sports');
   });
 
-  test('delete шлёт DELETE на конкретную тему', () async {
+  test('delete sends a DELETE to the given topic', () async {
     final env = build((_) async => jsonResponse(204, const {}));
 
     await env.remote.delete('t2');

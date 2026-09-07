@@ -1,55 +1,62 @@
-# Перевод в уроке: спецификация
+# Translation in a lesson: specification
 
-Задача — добавить два вида перевода на экране урока:
+The goal is to add two kinds of translation to the lesson screen:
 
-1. **Перевод фразы (фрагмента).** Пользователь нажимает кнопку «Перевод», под
-   текстом появляется перевод того фрагмента, что сейчас отображается —
-   а это **активный отрезок сегментов** (`SegmentRange`), а не один сегмент.
-   Показаны 2 сегмента — переводим объединённый текст двух сегментов.
-2. **Перевод слова.** Пользователь нажимает на слово внутри фрагмента, рядом со
-   словом всплывает попап: перевод слова, часть речи, синонимы, транскрипция
-   (нет — заглушка), примеры в контексте.
+1. **Phrase (fragment) translation.** The user taps the «Перевод» button and the
+   translation of the fragment currently on screen appears under the text — and
+   that fragment is the **active segment range** (`SegmentRange`), not a single
+   segment. Two segments shown means we translate the joined text of both.
+2. **Word translation.** The user taps a word inside the fragment and a popup
+   comes up next to it: the word translation, part of speech, synonyms,
+   transcription (absent — a placeholder), examples in context.
 
-Провайдер — **Azure Translator** (и перевод фразы, и словарь — одним ключом).
-Заложить переезд словаря на **Yandex Dictionary** без смены контракта. Работаем
-только в **бесплатных лимитах**: превышение — понятная ошибка от нашего сервера,
-не молчаливый сбой. Платные подписки — при выходе в прод, отдельной задачей.
+The provider is **Azure Translator** (both the phrase translation and the
+dictionary, under a single key). Plan for moving the dictionary to **Yandex
+Dictionary** without changing the contract. We stay strictly within the **free
+tiers**: going over the limit gives a clear error from our own server, not a
+silent failure. Paid subscriptions come with the production launch, as a
+separate task.
 
-**Порядок: сначала сервер целиком, потом клиент** (§8).
+**Order: the server first, in full, then the client** (§8).
 
-Документ в стиле [CLIENT_SPEC.md](CLIENT_SPEC.md): те же правила API (§1 там),
-`Bearer`-авторизация, `snake_case`, единый формат ошибок.
-
----
-
-## 1. Ключевые решения
-
-Зафиксированы здесь, чтобы не расходились между сервером и клиентом.
-
-1. **Контракт провайдер-агностичен.** Клиент не знает, Azure это или Yandex.
-   Сервер отдаёт унифицированный ответ, маппинг провайдера — внутри сервера.
-2. **Два независимых провайдера.** Перевод фразы и словарь переключаются
-   отдельными настройками (`PHRASE_PROVIDER`, `DICTIONARY_PROVIDER`). Сегодня оба
-   `azure`; завтра словарь станет `yandex`, а фраза останется `azure` — контракт
-   и клиент не меняются.
-3. **Фразу переводим по тексту, не по уроку.** Тело запроса несёт готовый текст
-   фрагмента; сервер про сегменты и уроки ничего не знает. Кеш — по хешу
-   нормализованного текста. Проще, переиспользуемо, не завязано на модель урока.
-4. **Транскрипция — nullable.** Azure её не даёт → `transcription: null` →
-   клиент показывает заглушку. Yandex позже заполнит это же поле, контракт тот же.
-5. **Направление по умолчанию `en → ru`.** Приложение учит английский
-   русскоязычных. `source_lang`/`target_lang` в запросе опциональны, значения по
-   умолчанию — `en`/`ru`. Заложены на будущее, но не обязательны.
-6. **«Слова нет в словаре» — не ошибка.** Пустой словарный ответ — это `200` с
-   `meanings: []`, клиент показывает «нет словарной статьи», а не ошибку.
+The document follows the style of [CLIENT_SPEC.md](CLIENT_SPEC.md): the same API
+rules (§1 there), `Bearer` authorization, `snake_case`, one error format.
 
 ---
 
-## 2. Контракт API
+## 1. Key decisions
 
-Оба пути — под `Bearer`-авторизацией, как весь `/v1/*` (§1 CLIENT_SPEC).
+Fixed here so that the server and the client do not drift apart.
 
-### 2.1 Перевод фразы
+1. **The contract is provider agnostic.** The client does not know whether it is
+   Azure or Yandex. The server returns a unified response and the provider
+   mapping stays inside the server.
+2. **Two independent providers.** The phrase translation and the dictionary are
+   switched by separate settings (`PHRASE_PROVIDER`, `DICTIONARY_PROVIDER`).
+   Today both are `azure`; tomorrow the dictionary becomes `yandex` while the
+   phrase stays `azure` — neither the contract nor the client changes.
+3. **A phrase is translated by text, not by lesson.** The request body carries
+   the ready fragment text; the server knows nothing about segments and lessons.
+   The cache key is the hash of the normalized text. Simpler, reusable, and not
+   tied to the lesson model.
+4. **Transcription is nullable.** Azure does not provide it → `transcription:
+   null` → the client shows a placeholder. Yandex will later fill the very same
+   field, with the same contract.
+5. **The default direction is `en → ru`.** The app teaches English to Russian
+   speakers. `source_lang`/`target_lang` are optional in the request and default
+   to `en`/`ru`. They are there for the future but are not required.
+6. **«The word is not in the dictionary» is not an error.** An empty dictionary
+   answer is a `200` with `meanings: []`; the client shows "no dictionary entry"
+   rather than an error.
+
+---
+
+## 2. API contract
+
+Both paths sit behind `Bearer` authorization, like the whole of `/v1/*`
+(§1 CLIENT_SPEC).
+
+### 2.1 Phrase translation
 
 ```http
 POST /v1/translate/phrase
@@ -58,12 +65,12 @@ Content-Type: application/json
 
 {
   "text": "Hello there. How are you?",
-  "source_lang": "en",   // опционально, по умолчанию "en"
-  "target_lang": "ru"    // опционально, по умолчанию "ru"
+  "source_lang": "en",   // optional, defaults to "en"
+  "target_lang": "ru"    // optional, defaults to "ru"
 }
 ```
 
-Ответ `200`:
+A `200` response:
 
 ```json
 {
@@ -75,12 +82,13 @@ Content-Type: application/json
 }
 ```
 
-- `text` — не длиннее **2000 символов** (несколько сегментов — это заведомо
-  меньше); больше — `validation_error` (422). Так закрываем расход квоты на
-  случайный огромный вход.
-- `provider` — справочно (диагностика, аналитика). Клиент на него не завязывается.
+- `text` — no longer than **2000 characters** (several segments are well under
+  that); more gives a `validation_error` (422). This caps the quota spent on an
+  accidentally huge input.
+- `provider` — informational (diagnostics, analytics). The client does not
+  depend on it.
 
-### 2.2 Перевод слова (словарь)
+### 2.2 Word translation (dictionary)
 
 ```http
 POST /v1/dictionary/lookup
@@ -89,12 +97,12 @@ Content-Type: application/json
 
 {
   "word": "learn",
-  "source_lang": "en",   // опционально, по умолчанию "en"
-  "target_lang": "ru"    // опционально, по умолчанию "ru"
+  "source_lang": "en",   // optional, defaults to "en"
+  "target_lang": "ru"    // optional, defaults to "ru"
 }
 ```
 
-Ответ `200`:
+A `200` response:
 
 ```json
 {
@@ -118,64 +126,72 @@ Content-Type: application/json
 }
 ```
 
-- `word` — одно слово, не длиннее **100 символов**; больше — `validation_error`.
-- `transcription` — фонетическая запись слова или `null` (Azure всегда `null`).
-- `meanings` — сгруппировано **по части речи** (`part_of_speech`): так словарь
-  ложится и на Azure (группируем плоский список по `posTag`), и на Yandex (у него
-  `def[].pos`). Пустой массив — слова в словаре нет.
-- `translations[].synonyms` — близкие слова. Для Azure это `backTranslations`
-  (обратные переводы — по смыслу «синонимы/родственные»), для Yandex — `syn`.
-- `examples` — примеры для верхнего перевода; пустой массив, если их нет.
+- `word` — a single word, no longer than **100 characters**; more gives a
+  `validation_error`.
+- `transcription` — the phonetic spelling of the word or `null` (Azure always
+  gives `null`).
+- `meanings` — grouped **by part of speech** (`part_of_speech`): that shape fits
+  both Azure (we group its flat list by `posTag`) and Yandex (which has
+  `def[].pos`). An empty array means the word is not in the dictionary.
+- `translations[].synonyms` — closely related words. For Azure these are
+  `backTranslations` (back translations, which read as "synonyms/related"), for
+  Yandex it is `syn`.
+- `examples` — examples for the top translation; an empty array when there are
+  none.
 
-Такая форма (`meanings → part_of_speech → translations → synonyms`, `examples`)
-задаётся **нами**, а не Azure. Оба провайдера маппятся в неё (§4.2, §4.5).
+This shape (`meanings → part_of_speech → translations → synonyms`, `examples`)
+is defined by **us**, not by Azure. Both providers map into it (§4.2, §4.5).
 
-### 2.3 Новые коды ошибок
+### 2.3 New error codes
 
-Формат — общий (§1 CLIENT_SPEC): `{ "error": { "code", "message" } }`.
-Сообщение уже готово к показу пользователю (по-русски).
+The format is the common one (§1 CLIENT_SPEC): `{ "error": { "code", "message" } }`.
+The message is already fit to show to the user (in Russian).
 
-| code | HTTP | Когда | Что делает клиент |
+| code | HTTP | When | What the client does |
 | --- | --- | --- | --- |
-| `translation_quota_exceeded` | 429 | исчерпан бесплатный месячный лимит провайдера | показать `message` («Бесплатный лимит переводов на этот месяц исчерпан, попробуйте позже»); не долбить повторами |
-| `translation_unavailable` | 503 | провайдер недоступен или вернул сбой | показать `message`, дать «Повторить» |
-| `unsupported_language` | 422 | пара языков не поддержана (актуально для словаря) | показать `message`, скрыть перевод для этой пары |
-| `validation_error` | 422 | пустой ввод или превышение длины | показать `message` |
+| `translation_quota_exceeded` | 429 | the free monthly provider limit is used up | show `message` («Бесплатный лимит переводов на этот месяц исчерпан, попробуйте позже»); do not hammer with retries |
+| `translation_unavailable` | 503 | the provider is down or returned a failure | show `message`, offer a retry |
+| `unsupported_language` | 422 | the language pair is not supported (relevant for the dictionary) | show `message`, hide translation for this pair |
+| `validation_error` | 422 | empty input or a length overrun | show `message` |
 
-Замечание для клиента: даже без нового значения в `ApiErrorCode` эти ошибки
-покажутся корректно — `ApiClient.mapError` берёт `message` из тела, а неизвестный
-код становится `unknown`. Но для типизированной обработки
-`translation_quota_exceeded` стоит добавить в enum (§7).
-
----
-
-## 3. Бесплатные лимиты и их контроль (сервер)
-
-Azure Translator тариф **F0**: суммарно ~**2 000 000 символов в месяц** на все
-операции (translate + dictionary lookup + examples). Наша задача — **не выйти за
-предел и не словить биллинг**, а при подходе к нему отдавать понятную ошибку.
-
-1. **Счётчик символов за календарный месяц** (UTC), с persist в БД: на каждый
-   успешный вызов провайдера прибавляем число отправленных символов (для
-   `examples` — тоже, это отдельный оплачиваемый вызов).
-2. **Порог из конфигурации** (`TRANSLATION_MONTHLY_CHAR_LIMIT`, по умолчанию с
-   запасом — например `1_900_000`, ~95 % от лимита). Достигли порога — на новые
-   запросы отдаём `translation_quota_exceeded` (429) **до обращения к Azure**.
-3. **Провайдер сам вернул 403/429** (превышение на стороне Azure) — ловим и
-   маппим в тот же `translation_quota_exceeded`, чтобы поведение было единым.
-4. Счётчик сбрасывается 1-го числа месяца (или по полю периода в таблице).
-
-Кеш (§5) резко снижает расход: повторный перевод той же фразы/слова символы не
-тратит.
+A note for the client: even without a new value in `ApiErrorCode` these errors
+show correctly — `ApiClient.mapError` takes `message` from the body and an
+unknown code becomes `unknown`. For typed handling, though,
+`translation_quota_exceeded` is worth adding to the enum (§7).
 
 ---
 
-## 4. Сервер: реализация
+## 3. Free limits and how they are controlled (server)
 
-### 4.1 Провайдерная абстракция
+The Azure Translator **F0** tier gives roughly **2,000,000 characters a month**
+in total across all operations (translate + dictionary lookup + examples). Our
+job is to **stay under the ceiling and never get billed**, and to return a clear
+error as we approach it.
 
-Два независимых интерфейса (trait) — чтобы словарь переключался отдельно от
-фразы:
+1. **A character counter for the calendar month** (UTC), persisted in the
+   database: every successful provider call adds the number of characters sent
+   (`examples` counts too — it is a separately billed call).
+2. **A threshold from the configuration** (`TRANSLATION_MONTHLY_CHAR_LIMIT`,
+   defaulting with a margin — say `1_900_000`, ~95 % of the limit). Once the
+   threshold is reached, new requests get `translation_quota_exceeded` (429)
+   **before Azure is called**.
+3. **The provider itself returned 403/429** (an overrun on the Azure side) — we
+   catch it and map it to the same `translation_quota_exceeded`, so the behavior
+   is uniform.
+4. The counter resets on the first day of the month (or by the period field in
+   the table).
+
+The cache (§5) cuts the spend sharply: translating the same phrase or word again
+costs no characters.
+
+---
+
+## 4. Server: implementation
+
+### 4.1 The provider abstraction
+
+Two independent interfaces (traits), so that the dictionary can be switched
+apart from the phrase:
 
 ```
 PhraseTranslator:
@@ -185,26 +201,26 @@ DictionaryProvider:
   lookup(word, source_lang, target_lang) -> WordDefinition   // unified
 ```
 
-- `AzureTranslator` реализует `PhraseTranslator`.
-- `AzureDictionary` реализует `DictionaryProvider`.
-- Позже `YandexDictionary` реализует `DictionaryProvider` — и всё, точка выбора
-  одна (фабрика по `DICTIONARY_PROVIDER`).
-- Оба возвращают **унифицированные** структуры (`WordDefinition` и т.д.),
-  провайдер-специфичный JSON дальше слоя провайдера не уходит.
+- `AzureTranslator` implements `PhraseTranslator`.
+- `AzureDictionary` implements `DictionaryProvider`.
+- Later `YandexDictionary` implements `DictionaryProvider` — and that is all,
+  there is a single point of choice (a factory keyed by `DICTIONARY_PROVIDER`).
+- Both return **unified** structures (`WordDefinition` and friends);
+  provider-specific JSON never leaves the provider layer.
 
-### 4.2 Azure: эндпоинты и маппинг
+### 4.2 Azure: endpoints and mapping
 
-База: `https://api.cognitive.microsofttranslator.com`. Заголовки на каждый
-запрос: `Ocp-Apim-Subscription-Key: <ключ>`, `Ocp-Apim-Subscription-Region:
-<регион>`, `Content-Type: application/json`. Ключ и регион — только в конфиге
-сервера, в клиент не попадают.
+The base is `https://api.cognitive.microsofttranslator.com`. Headers on every
+request: `Ocp-Apim-Subscription-Key: <key>`, `Ocp-Apim-Subscription-Region:
+<region>`, `Content-Type: application/json`. The key and the region live in the
+server config only and never reach the client.
 
-**Перевод фразы** — `POST /translate?api-version=3.0&from=en&to=ru`, тело
-`[{ "Text": "…" }]`, ответ `[{ "translations": [{ "text": "…", "to": "ru" }] }]`.
-Берём `translations[0].text`.
+**Phrase translation** — `POST /translate?api-version=3.0&from=en&to=ru`, body
+`[{ "Text": "…" }]`, response `[{ "translations": [{ "text": "…", "to": "ru" }] }]`.
+We take `translations[0].text`.
 
-**Словарь** — `POST /dictionary/lookup?api-version=3.0&from=en&to=ru`, тело
-`[{ "Text": "learn" }]`. Ответ (сокращённо):
+**Dictionary** — `POST /dictionary/lookup?api-version=3.0&from=en&to=ru`, body
+`[{ "Text": "learn" }]`. The response (abridged):
 
 ```json
 [{ "translations": [
@@ -213,80 +229,87 @@ DictionaryProvider:
 ]}]
 ```
 
-Маппинг Azure → unified `WordDefinition`:
-- сгруппировать `translations` по `posTag` → `meanings[].part_of_speech`
-  (`VERB→verb`, `NOUN→noun`, … привести к нижнему регистру);
+Mapping Azure → unified `WordDefinition`:
+- group `translations` by `posTag` → `meanings[].part_of_speech`
+  (`VERB→verb`, `NOUN→noun`, … lowercased);
 - `normalizedTarget → translations[].text`, `confidence → confidence`;
 - `backTranslations[].normalizedText → translations[].synonyms`;
 - `transcription = null`.
 
-**Примеры** — `POST /dictionary/examples?api-version=3.0&from=en&to=ru`, тело
-`[{ "Text": "learn", "Translation": "учиться" }]` (перевод берём из верхнего
-результата lookup). Ответ несёт `examples[]` с `sourcePrefix/sourceTerm/
-sourceSuffix` и такими же `target*`; склеиваем в `source`/`target` предложения.
+**Examples** — `POST /dictionary/examples?api-version=3.0&from=en&to=ru`, body
+`[{ "Text": "learn", "Translation": "учиться" }]` (the translation comes from
+the top lookup result). The response carries `examples[]` with
+`sourcePrefix/sourceTerm/sourceSuffix` and the matching `target*`; we glue them
+into `source`/`target` sentences.
 
-Примеры — **отдельный вызов Azure** (тратит символы). Делать его сразу после
-lookup для верхнего перевода и класть в `examples`. Если экономия важна — вынести
-за флаг (см. открытые вопросы, §9), но по умолчанию отдаём с примерами: они
-нужны в попапе.
+Examples are a **separate Azure call** (it spends characters). Make it right
+after the lookup for the top translation and put the result into `examples`. If
+saving quota matters, move it behind a flag (see the open questions, §9), but by
+default we return the examples: the popup needs them.
 
-### 4.3 Кеш
+### 4.3 Cache
 
-Две таблицы (или одна с полем `kind`). Кешируем **уже унифицированный** ответ.
+Two tables (or one with a `kind` field). We cache the **already unified**
+response.
 
-| Что | Ключ | Значение |
+| What | Key | Value |
 | --- | --- | --- |
-| Фраза | `sha256(source_lang | target_lang | provider | нормализованный_текст)` | `translation` |
-| Слово | `(нормализованное_слово, source_lang, target_lang, provider)` | `WordDefinition` (JSON) |
+| Phrase | `sha256(source_lang \| target_lang \| provider \| normalized_text)` | `translation` |
+| Word | `(normalized_word, source_lang, target_lang, provider)` | `WordDefinition` (JSON) |
 
-- **Нормализация фразы:** `trim`, схлопнуть повторные пробелы; **регистр
-  сохраняем** (имена собственные переводятся иначе).
-- **Нормализация слова:** `trim` + `lowercase` (словарь регистронезависим).
-- `provider` в ключе — чтобы переезд словаря на Yandex не отдавал старые
-  Azure-статьи; заодно кеш можно просто пересчитать сменой значения.
-- Кеш-хит **не** трогает Azure и **не** увеличивает счётчик символов.
+- **Phrase normalization:** `trim`, collapse repeated spaces; **case is
+  preserved** (proper nouns translate differently).
+- **Word normalization:** `trim` + `lowercase` (the dictionary is case
+  insensitive).
+- `provider` sits in the key so that moving the dictionary to Yandex does not
+  serve stale Azure entries; it also lets the cache be recomputed simply by
+  changing the value.
+- A cache hit does **not** touch Azure and does **not** advance the character
+  counter.
 
-### 4.4 Ошибки
+### 4.4 Errors
 
-- Пустой/слишком длинный ввод — `validation_error` (422) с текстом причины.
-- Пара языков не поддержана словарём — `unsupported_language` (422).
-- Порог месячного лимита достигнут — `translation_quota_exceeded` (429), **до**
-  вызова Azure.
-- Azure вернул 403/429 — тоже `translation_quota_exceeded` (429).
-- Прочий сбой/таймаут Azure — `translation_unavailable` (503).
-- Пустой словарный ответ — **не ошибка**: `200` с `meanings: []`.
+- Empty or overlong input — `validation_error` (422) with the reason in the text.
+- A language pair the dictionary does not support — `unsupported_language` (422).
+- The monthly threshold is reached — `translation_quota_exceeded` (429),
+  **before** calling Azure.
+- Azure returned 403/429 — also `translation_quota_exceeded` (429).
+- Any other Azure failure or timeout — `translation_unavailable` (503).
+- An empty dictionary answer is **not an error**: `200` with `meanings: []`.
 
-### 4.5 Конфигурация (env)
+### 4.5 Configuration (env)
 
-| Переменная | Смысл |
+| Variable | Meaning |
 | --- | --- |
-| `PHRASE_PROVIDER` | `azure` (пока единственный) |
-| `DICTIONARY_PROVIDER` | `azure` сейчас, `yandex` позже |
-| `AZURE_TRANSLATOR_KEY` | ключ подписки Azure |
-| `AZURE_TRANSLATOR_REGION` | регион подписки |
-| `TRANSLATION_MONTHLY_CHAR_LIMIT` | порог символов в месяц (по умолчанию `1_900_000`) |
+| `PHRASE_PROVIDER` | `azure` (the only one so far) |
+| `DICTIONARY_PROVIDER` | `azure` now, `yandex` later |
+| `AZURE_TRANSLATOR_KEY` | the Azure subscription key |
+| `AZURE_TRANSLATOR_REGION` | the subscription region |
+| `TRANSLATION_MONTHLY_CHAR_LIMIT` | the monthly character threshold (defaults to `1_900_000`) |
 
-Заготовки под Yandex (`YANDEX_DICTIONARY_KEY`) добавляются в момент переезда, не
-сейчас.
+Placeholders for Yandex (`YANDEX_DICTIONARY_KEY`) are added at the moment of the
+move, not now.
 
-### 4.6 Тесты сервера
+### 4.6 Server tests
 
-- маппинг Azure `lookup`/`examples` → unified (группировка по части речи,
+- mapping Azure `lookup`/`examples` → unified (grouping by part of speech,
   `backTranslations → synonyms`, `transcription == null`);
-- кеш-хит: второй одинаковый запрос **не** зовёт провайдера и **не** двигает
-  счётчик (провайдер — подделка со счётчиком вызовов);
-- лимит: счётчик у порога → `translation_quota_exceeded` **до** вызова провайдера;
-- Azure 429/403 → `translation_quota_exceeded`; таймаут → `translation_unavailable`;
-- пустой lookup → `200`, `meanings: []`;
-- превышение длины/пустой ввод → `validation_error`.
+- a cache hit: a second identical request does **not** call the provider and
+  does **not** move the counter (the provider is a fake with a call counter);
+- the limit: with the counter at the threshold →
+  `translation_quota_exceeded` **before** the provider is called;
+- Azure 429/403 → `translation_quota_exceeded`; a timeout →
+  `translation_unavailable`;
+- an empty lookup → `200`, `meanings: []`;
+- a length overrun or empty input → `validation_error`.
 
 ---
 
-## 5. Клиент (Flutter): реализация — этап 2
+## 5. Client (Flutter): implementation — stage 2
 
-Начинать после готового сервера. Чистая архитектура, feature-first: новая фича
-`features/translation` (переиспользуема и провайдер-агностична), её показ — на
-экране урока.
+Start once the server is ready. Clean architecture, feature-first: a new
+`features/translation` feature (reusable and provider agnostic), shown on the
+lesson screen.
 
 ### 5.1 Domain (`features/translation/domain`)
 
@@ -301,109 +324,118 @@ lookup для верхнего перевода и класть в `examples`. �
 
 ### 5.2 Data (`features/translation/data`)
 
-- `models/…_dto.dart` — DTO под ответы §2.1/§2.2 (freezed + json_serializable,
-  `snake_case`). `transcription` — nullable.
-- `datasources/translation_remote_datasource.dart` — за интерфейсом, поверх
-  `ApiClient` (`post('/v1/translate/phrase', …)`,
+- `models/…_dto.dart` — DTOs for the §2.1/§2.2 responses (freezed +
+  json_serializable, `snake_case`). `transcription` is nullable.
+- `datasources/translation_remote_datasource.dart` — behind an interface, on top
+  of `ApiClient` (`post('/v1/translate/phrase', …)`,
   `post('/v1/dictionary/lookup', …)`).
-- `repositories/translation_repository_impl.dart` — **in-memory кеш** по ключу
-  (текст / слово): в shadowing один фрагмент открывают и зацикливают много раз,
-  сеть на каждый показ недопустима. Серверный кеш (§4.3) это дублирует, но
-  клиентский убирает сетевой round-trip внутри урока.
+- `repositories/translation_repository_impl.dart` — an **in-memory cache** keyed
+  by text or word: in shadowing one fragment is opened and looped many times, so
+  hitting the network on every showing is unacceptable. The server cache (§4.3)
+  duplicates this, but the client one removes the network round trip inside the
+  lesson.
 
 ### 5.3 Presentation
 
-Провайдеры (`features/translation/presentation/controllers`):
-- DI use case'ов и репозитория (по образцу `lesson_providers.dart`).
-- `phraseTranslationProvider(String text)` — `FutureProvider.family` по тексту
-  фрагмента.
-- `wordLookupProvider(String word)` — `FutureProvider.family` по слову.
+Providers (`features/translation/presentation/controllers`):
+- DI for the use cases and the repository (following `lesson_providers.dart`).
+- `phraseTranslationProvider(String text)` — a `FutureProvider.family` keyed by
+  the fragment text.
+- `wordLookupProvider(String word)` — a `FutureProvider.family` keyed by the word.
 
-Экран урока (`features/lessons/presentation`):
-- В `LessonState` добавить, что именно сейчас показывается:
+The lesson screen (`features/lessons/presentation`):
+- Add to `LessonState` what exactly is on screen right now:
   `displayedRange = activeRange ?? selection ?? SegmentRange.single(currentIndex)`
-  и `displayedText` — тексты сегментов диапазона, склеенные через пробел. Отсюда
-  берётся «показал 2 сегмента → переводим 2 сегмента».
-- `LessonTranscriptPanel` (сейчас заглушка) — заменить: кнопка «Перевод»
-  становится тумблером; включён → под текстом показываем
-  `phraseTranslationProvider(state.displayedText)` (загрузка/ошибка/готово).
-  Перевод грузим **лениво, по нажатию**, а не заранее.
-- Текст фрагмента сделать **кликабельным по словам**: `Text.rich` со `TextSpan`
-  на каждое слово и `TapGestureRecognizer` (один виджет — один файл; логику
-  разбивки на слова вынести из `build`). Тап по слову открывает попап.
-- `features/translation/presentation/widgets/word_popup_card.dart` — чистая
-  карточка словарной статьи: принимает `WordDefinition`, рисует перевод, часть
-  речи, синонимы, транскрипцию (нет — заглушка), примеры. Позиционируется рядом
-  со словом (`OverlayPortal`/`showMenu`/кастомный `Overlay`).
+  and `displayedText` — the segment texts of the range joined by a space. This is
+  where "two segments shown → two segments translated" comes from.
+- `LessonTranscriptPanel` (a stub today) — replace it: the «Перевод» button
+  becomes a toggle; when it is on, we show
+  `phraseTranslationProvider(state.displayedText)` under the text
+  (loading/error/ready). The translation is fetched **lazily, on tap**, not
+  ahead of time.
+- Make the fragment text **clickable word by word**: `Text.rich` with a
+  `TextSpan` per word and a `TapGestureRecognizer` (one widget — one file; move
+  the word-splitting logic out of `build`). A tap on a word opens the popup.
+- `features/translation/presentation/widgets/word_popup_card.dart` — a pure
+  dictionary entry card: it takes a `WordDefinition` and draws the translation,
+  the part of speech, the synonyms, the transcription (a placeholder when absent)
+  and the examples. It is positioned next to the word
+  (`OverlayPortal`/`showMenu`/a custom `Overlay`).
 
-Дизайн-система обязательна (§6 CLAUDE): токены `context.colors`, `AppSpacing`,
-`AppText`, компоненты `lib/widgets/`. Литералов отступов и цветов в виджетах нет.
+The design system is mandatory (§6 CLAUDE): the `context.colors`, `AppSpacing`
+and `AppText` tokens, and the components in `lib/widgets/`. No spacing or color
+literals inside widgets.
 
-### 5.4 Тесты клиента
+### 5.4 Client tests
 
-- репозиторий: подделка `TranslationRemoteDataSource`; второй одинаковый запрос
-  берётся из кеша, датасорс не зовётся;
-- парсинг DTO: `word_definition` с `transcription: null` → доменная сущность с
-  заглушкой;
-- `LessonState.displayedText`: выбраны 2 сегмента → текст — их объединение;
-- виджет-тесты: кнопка «Перевод» показывает перевод; тап по слову открывает
-  попап с разобранной статьёй.
+- the repository: a fake `TranslationRemoteDataSource`; a second identical
+  request comes from the cache and the datasource is not called;
+- DTO parsing: a `word_definition` with `transcription: null` → a domain entity
+  with a placeholder;
+- `LessonState.displayedText`: with two segments selected the text is their
+  concatenation;
+- widget tests: the «Перевод» button shows the translation; a tap on a word
+  opens the popup with the parsed entry.
 
 ---
 
-## 6. Порядок работ
+## 6. Order of work
 
-Сервер (сначала):
-1. Контракт §2, новые коды ошибок §2.3, конфиг §4.5.
-2. Провайдерная абстракция §4.1 + `AzureTranslator` и `AzureDictionary` §4.2.
-3. Кеш §4.3.
-4. Счётчик месячного лимита и маппинг ошибок §3, §4.4.
-5. Тесты §4.6.
+The server (first):
+1. The contract §2, the new error codes §2.3, the config §4.5.
+2. The provider abstraction §4.1 plus `AzureTranslator` and `AzureDictionary` §4.2.
+3. The cache §4.3.
+4. The monthly limit counter and the error mapping §3, §4.4.
+5. The tests §4.6.
 
-Клиент (после сервера):
-6. `domain` + `data` §5.1–5.2; добавить `translation_quota_exceeded` в
+The client (after the server):
+6. `domain` + `data` §5.1–5.2; add `translation_quota_exceeded` to
    `ApiErrorCode` (§7).
-7. Провайдеры §5.3; кнопка «Перевод» и показ перевода фрагмента.
-8. Кликабельные слова + `WordPopupCard`.
-9. Тесты §5.4.
+7. The providers §5.3; the «Перевод» button and showing the fragment translation.
+8. Clickable words plus `WordPopupCard`.
+9. The tests §5.4.
 
 ---
 
-## 7. Правка клиентского `ApiErrorCode`
+## 7. A change to the client `ApiErrorCode`
 
-Добавить значение (файл `lib/core/network/api_exception.dart`):
+Add the value (in `lib/core/network/api_exception.dart`):
 
 ```dart
 translationQuotaExceeded('translation_quota_exceeded'),
 ```
 
-`translation_unavailable`/`unsupported_language` специальной обработки не требуют
-— показываются как общая ошибка по `message`; отдельные значения заводить только
-если под них появится особый UI.
+`translation_unavailable`/`unsupported_language` need no special handling — they
+show as a generic error built from `message`; give them their own values only
+once they get a UI of their own.
 
 ---
 
-## 8. Чек-лист приёмки
+## 8. Acceptance checklist
 
-- [ ] «Перевод» показывает перевод именно текущего фрагмента; выбраны 2 сегмента
-      — перевод по тексту двух сегментов;
-- [ ] повторное открытие того же фрагмента не ходит в сеть (клиентский кеш);
-- [ ] один и тот же фрагмент у разных пользователей не тратит квоту дважды
-      (серверный кеш);
-- [ ] тап по слову открывает попап: перевод, часть речи, синонимы, примеры;
-- [ ] у слова без транскрипции (Azure) в попапе стоит заглушка, а не пустота;
-- [ ] слова нет в словаре → «нет статьи», а не ошибка;
-- [ ] при исчерпании месячного лимита сервер отвечает понятным сообщением, а не
-      молча падает; клиент показывает это сообщение;
-- [ ] смена `DICTIONARY_PROVIDER` не требует правок клиента и контракта.
+- [ ] «Перевод» shows the translation of exactly the current fragment; with two
+      segments selected the translation covers the text of both;
+- [ ] reopening the same fragment does not hit the network (the client cache);
+- [ ] the same fragment across different users does not spend the quota twice
+      (the server cache);
+- [ ] a tap on a word opens the popup: translation, part of speech, synonyms,
+      examples;
+- [ ] a word without a transcription (Azure) gets a placeholder in the popup
+      rather than a blank;
+- [ ] a word missing from the dictionary gives "no entry", not an error;
+- [ ] when the monthly limit is used up the server answers with a clear message
+      instead of failing silently, and the client shows that message;
+- [ ] changing `DICTIONARY_PROVIDER` requires no changes to the client or the
+      contract.
 
 ---
 
-## 9. Открытые вопросы
+## 9. Open questions
 
-1. **Транскрипция на Azure всегда заглушка** (Azure её не отдаёт). Ок для первого
-   этапа? Появится после переезда словаря на Yandex.
-2. **Примеры** — второй вызов Azure на каждый lookup (тратит квоту). Оставляем
-   всегда включёнными или прячем за флагом `include_examples` ради экономии?
-3. **`en → ru` фиксировано** на этом этапе. Другие пары не понадобятся в
-   ближайшее время?
+1. **The transcription on Azure is always a placeholder** (Azure does not return
+   it). Is that fine for the first stage? It appears once the dictionary moves to
+   Yandex.
+2. **Examples** are a second Azure call per lookup (it spends quota). Do we keep
+   them always on, or hide them behind an `include_examples` flag to save?
+3. **`en → ru` is fixed** at this stage. Will other pairs be needed any time
+   soon?

@@ -20,7 +20,7 @@ void main() {
     return (remote: ApiSettingsRemoteDataSource(client), adapter: adapter);
   }
 
-  test('getCompletionReps читает порог', () async {
+  test('getCompletionReps reads the threshold', () async {
     final env = build(
       (_) async => jsonResponse(200, {'lesson_completion_reps': 15}),
     );
@@ -31,7 +31,7 @@ void main() {
     expect(reps, 15);
   });
 
-  test('setCompletionReps шлёт PATCH с телом', () async {
+  test('setCompletionReps sends a PATCH with a body', () async {
     final env = build(
       (_) async => jsonResponse(200, {'lesson_completion_reps': 20}),
     );

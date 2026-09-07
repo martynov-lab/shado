@@ -65,7 +65,7 @@ void main() {
       Size(800, 1200),
       Size(1400, 1000),
     ]) {
-      testWidgets('витрина рисуется: $mode, ширина ${size.width}', (
+      testWidgets('the gallery renders: $mode, width ${size.width}', (
         tester,
       ) async {
         await pumpGallery(tester, mode: mode, size: size);
@@ -76,7 +76,7 @@ void main() {
           for (final type in expected) {
             if (find.byType(type).evaluate().isNotEmpty) seen.add(type);
           }
-          expect(tester.takeException(), isNull, reason: 'шаг прокрутки $step');
+          expect(tester.takeException(), isNull, reason: 'scroll step $step');
           await tester.drag(scrollable, const Offset(0, -300));
           await tester.pump();
         }
@@ -86,7 +86,7 @@ void main() {
     }
   }
 
-  testWidgets('модальный лист и снек открываются', (tester) async {
+  testWidgets('the modal sheet and the snackbar open', (tester) async {
     await pumpGallery(
       tester,
       mode: ThemeMode.dark,
@@ -115,7 +115,7 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('выбор темы переживает перезапуск', (tester) async {
+  testWidgets('the theme choice survives a restart', (tester) async {
     SharedPreferences.setMockInitialValues({});
     final first = await ThemeController.restored();
     expect(first.value, ThemeMode.system);
@@ -126,7 +126,7 @@ void main() {
     expect(reopened.value, ThemeMode.dark);
   });
 
-  testWidgets('ThemeToggle переключает тему приложения', (tester) async {
+  testWidgets('ThemeToggle switches the app theme', (tester) async {
     tester.view.physicalSize = const Size(1400, 1000);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.reset);

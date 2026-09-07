@@ -1,38 +1,41 @@
-# Стиль кода
+# Code style
 
-Правила, по которым пишется и правится Dart-код в этом проекте. Виджеты и
-экраны — в [ui_guidelines.md](ui_guidelines.md), состояние — в
-[state_management.md](state_management.md), тесты — в [testing.md](testing.md).
+The rules Dart code is written and edited by in this project. Widgets and
+screens are in [ui_guidelines.md](ui_guidelines.md), state in
+[state_management.md](state_management.md), tests in [testing.md](testing.md).
 
-Базовый набор линтов — `package:flutter_lints` (см. `analysis_options.yaml`).
-Всё ниже — сверх него.
+The base lint set is `package:flutter_lints` (see `analysis_options.yaml`).
+Everything below is on top of it.
 
-1. [Язык и комментарии](#язык-и-комментарии)
-2. [Импорты и экспорты](#импорты-и-экспорты)
-3. [Именование](#именование)
-4. [Параметры и конструкторы](#параметры-и-конструкторы)
-5. [Типизация](#типизация)
-6. [Паттерн-матчинг](#паттерн-матчинг)
-7. [Коллекции](#коллекции)
-8. [Модели данных](#модели-данных)
-9. [Ошибки](#ошибки)
-10. [Константы и магические числа](#константы-и-магические-числа)
-11. [Асинхронность](#асинхронность)
-12. [Структура фичи](#структура-фичи)
+1. [Language and comments](#language-and-comments)
+2. [Imports and exports](#imports-and-exports)
+3. [Naming](#naming)
+4. [Parameters and constructors](#parameters-and-constructors)
+5. [Typing](#typing)
+6. [Pattern matching](#pattern-matching)
+7. [Collections](#collections)
+8. [Data models](#data-models)
+9. [Errors](#errors)
+10. [Constants and magic numbers](#constants-and-magic-numbers)
+11. [Asynchrony](#asynchrony)
+12. [Feature structure](#feature-structure)
 
-## Язык и комментарии
+## Language and comments
 
-Идентификаторы и комментарии — по-английски, строки интерфейса — по-русски.
+Identifiers and comments are in English, interface strings are in Russian. Test
+descriptions and test data are in English too — see
+[testing.md](testing.md#naming).
 
-**Комментарий — одна строка.** Он называет функционал: что делает класс, метод
-или поле. Две строки — предел, и только если в одну смысл не влезает.
+**A comment is one line.** It names the functionality: what the class, the
+method or the field does. Two lines are the ceiling, and only when the meaning
+does not fit into one.
 
-Чего в комментариях не бывает:
+What never appears in comments:
 
-* рассуждений и обоснований («так исторически», «иначе бы пришлось…»);
-* разбора крайних случаев и альтернатив, которые не выбрали;
-* примеров использования и команд запуска — им место в `docs/`;
-* пересказа кода, который и так читается.
+* reasoning and justification ("historically", "otherwise we would have to…");
+* a walk through edge cases and the alternatives that were not chosen;
+* usage examples and run commands — those belong in `docs/`;
+* a retelling of code that already reads fine.
 
 ```dart
 // bad — a five-line essay
@@ -56,54 +59,57 @@ await player.setSpeed(speed);
 if (range != null) await _rewindTo(current, range, play: false);
 ```
 
-Публичные классы и неочевидные поля документируем через `///` — одной фразой.
-Очевидное (`build`, `dispose`, геттер `isEmpty`) не комментируем вовсе.
+Public classes and non-obvious fields are documented with `///`, in a single
+phrase. The obvious ones (`build`, `dispose`, an `isEmpty` getter) are not
+commented at all.
 
-## Импорты и экспорты
+## Imports and exports
 
-* **Внутри одной фичи** (`lib/features/<feature>/**`) — относительные пути:
+* **Within one feature** (`lib/features/<feature>/**`) — relative paths:
   `import '../../domain/entities/lesson.dart';`
-* **За пределы фичи** (`core`, `theme`, `widgets`, другая фича) — абсолютные:
-  `import 'package:shado/theme/theme.dart';`
-* Файлы-барели (`lib/widgets/widgets.dart`, `lib/theme/theme.dart`)
-  импортируем целиком, а не отдельные файлы за ними.
-* В барели экспортируем полным путём: `export 'package:shado/widgets/app_button.dart';`
+* **Outside the feature** (`core`, `theme`, `widgets`, another feature) —
+  absolute: `import 'package:shado/theme/theme.dart';`
+* Barrel files (`lib/widgets/widgets.dart`, `lib/theme/theme.dart`) are
+  imported whole, not the individual files behind them.
+* In a barrel we export by the full path:
+  `export 'package:shado/widgets/app_button.dart';`
 
-Порядок: `dart:` → `package:` → относительные, между группами пустая строка.
-Внутри группы — по алфавиту (это делает `dart format` вместе с IDE, руками не
-пересортировываем).
+The order is `dart:` → `package:` → relative, with a blank line between the
+groups. Inside a group it is alphabetical (`dart format` together with the IDE
+does that; we do not re-sort by hand).
 
-## Именование
+## Naming
 
-**Файлы** — `snake_case.dart`, имя файла повторяет главный класс:
+**Files** are `snake_case.dart` and the file name repeats the main class:
 `segment_tile.dart` → `SegmentTile`.
 
-**Логические переменные и геттеры** — с префиксом `is`, `has`, `can`, `should`:
-`isPlaying`, `hasAudioFile`, `canSubmit`. Отрицаний избегаем: `isInitialized`,
-а не `isNotInitialized`.
+**Boolean variables and getters** carry an `is`, `has`, `can` or `should`
+prefix: `isPlaying`, `hasAudioFile`, `canSubmit`. Negations are avoided:
+`isInitialized`, not `isNotInitialized`.
 
-**Колбэки виджетов** отвечают на вопрос «когда вызовется» — префикс `on`:
+**Widget callbacks** answer the question "when will it be called" — the `on`
+prefix:
 
 ```dart
 final VoidCallback onPlayPressed;
 final ValueChanged<int> onSegmentSelected;
 ```
 
-**Методы контроллеров и моделей** отвечают на вопрос «что произойдёт» — без
-`on`: `togglePlay()`, `clearSelection()`, `reload()`.
+**Controller and model methods** answer the question "what will happen" —
+without `on`: `togglePlay()`, `clearSelection()`, `reload()`.
 
-**Приватные обработчики внутри виджета/контроллера**, вызываемые по событию, —
-с `on`/`_on`: `_onKeyEvent`, `_onPosition`.
+**Private handlers inside a widget or controller**, called on an event, take
+`on`/`_on`: `_onKeyEvent`, `_onPosition`.
 
-**`fetch` vs `get`**: метод, результат которого не используется (возвращает
-`void`/`Future<void>`), — `fetch*`; метод, возвращающий значение, — `get*`.
+**`fetch` vs `get`**: a method whose result is not used (returning
+`void`/`Future<void>`) is `fetch*`; a method returning a value is `get*`.
 
-**Интерфейсы** описываем как `abstract interface class` и даём функциональное
-имя без приставок: `LessonRepository`, `AudioCache` — не `ILessonRepository`,
-не `AbstractCache`. Реализации получают суффикс по сути:
-`SqfliteLessonLocalDataSource`, `ApiLessonRemoteDataSource`.
+**Interfaces** are declared as `abstract interface class` and given a functional
+name without prefixes: `LessonRepository`, `AudioCache` — not
+`ILessonRepository`, not `AbstractCache`. Implementations get a suffix by their
+nature: `SqfliteLessonLocalDataSource`, `ApiLessonRemoteDataSource`.
 
-**Алиасы вместо `Function`**: `VoidCallback`, `ValueChanged<T>`,
+**Aliases instead of `Function`**: `VoidCallback`, `ValueChanged<T>`,
 `ValueGetter<T>`, `ValueSetter<T>`.
 
 ```dart
@@ -116,10 +122,10 @@ final VoidCallback onTap;
 final ValueChanged<String> onTextChanged;
 ```
 
-**Локальные переменные** — осмысленным словом, а не одной буквой: `colors`,
-`segment`, `controller`, а не `c`, `s`, `ctrl`. И в переменную выносим только то,
-что читается больше одного раза; значение из единственного места берём по месту,
-без промежуточной переменной.
+**Local variables** get a meaningful word rather than a single letter: `colors`,
+`segment`, `controller`, not `c`, `s`, `ctrl`. And only what is read more than
+once goes into a variable; a value used in a single place is read in place,
+without an intermediate variable.
 
 ```dart
 // bad — one letter, extracted for a single use
@@ -140,10 +146,10 @@ return DecoratedBox(
 );
 ```
 
-## Параметры и конструкторы
+## Parameters and constructors
 
-Если параметров больше одного — они именованные и каждый с новой строки. То же
-для значений `enum`.
+With more than one parameter they are named and each goes on its own line. The
+same holds for `enum` values.
 
 ```dart
 // bad
@@ -170,14 +176,14 @@ enum AppButtonSize {
 }
 ```
 
-Исключение — один обязательный позиционный параметр, читаемый без имени:
-`formatPosition(int ms)`, `SegmentRange.single(index)`.
+The exception is a single required positional parameter that reads fine without
+a name: `formatPosition(int ms)`, `SegmentRange.single(index)`.
 
-Конструкторы виджетов всегда `const`, если позволяют поля.
+Widget constructors are always `const` when the fields allow it.
 
-## Типизация
+## Typing
 
-Тип выводит анализатор — не повторяем его руками:
+The analyzer infers the type — we do not repeat it by hand:
 
 ```dart
 // bad
@@ -189,19 +195,21 @@ final title = lesson.title;
 final segments = <Segment>[];
 ```
 
-`dynamic` не используем — вместо него `Object?`. Исключение — сигнатуры
-`fromJson(Map<String, dynamic> json)`, которых требует `json_serializable`.
+We do not use `dynamic` — `Object?` instead. The exception is the
+`fromJson(Map<String, dynamic> json)` signature that `json_serializable`
+requires.
 
 ```dart
 // good
 final payload = <String, Object?>{'id': id, 'version': version};
 ```
 
-`num` допустим в DTO (сервер шлёт и `int`, и `double`), но в домен уезжает уже
-`int` или `double`: `(json['duration_ms'] as num?)?.toInt() ?? 0`.
+`num` is acceptable in a DTO (the server sends both `int` and `double`), but
+what travels into the domain is already an `int` or a `double`:
+`(json['duration_ms'] as num?)?.toInt() ?? 0`.
 
-**Dot shorthand** (Dart 3.10+): когда тип очевиден из контекста, пишем короткую
-форму.
+**Dot shorthand** (Dart 3.10+): when the type is obvious from the context we
+write the short form.
 
 ```dart
 // bad
@@ -213,15 +221,15 @@ setSpeed(.slow);
 const Alignment a = .center;
 ```
 
-Только там, где не страдает читаемость: если из строки непонятно, к какому типу
-относится член, оставляем полную форму.
+Only where readability does not suffer: if the line does not make it clear which
+type the member belongs to, we keep the full form.
 
-## Паттерн-матчинг
+## Pattern matching
 
-Возвращаем значение — `switch`-выражение; делаем побочный эффект —
-`switch`-инструкция. По `sealed`-типам и `enum` switch должен быть
-исчерпывающим, без `default`: тогда новый вариант сломает сборку, а не поведение
-в рантайме.
+Returning a value calls for a `switch` expression; performing a side effect
+calls for a `switch` statement. Over `sealed` types and `enum`s the switch must
+be exhaustive, without a `default`: then a new variant breaks the build rather
+than the runtime behavior.
 
 ```dart
 Color foreground(AppColors colors) => switch (this) {
@@ -231,12 +239,12 @@ Color foreground(AppColors colors) => switch (this) {
 };
 ```
 
-Подробности — скилл `dart-pattern-matching`.
+The details are in the `dart-pattern-matching` skill.
 
-## Коллекции
+## Collections
 
-Новая коллекция из имеющейся собирается через `for` в литерале, а не `map`
-+ `toList()`:
+A new collection built from an existing one is assembled with a `for` inside the
+literal, not with `map` + `toList()`:
 
 ```dart
 // bad
@@ -248,43 +256,46 @@ children: [
 ],
 ```
 
-Коллекция, уезжающая наружу из контроллера или модели, отдаётся неизменяемой:
+A collection leaving a controller or a model is handed out immutable:
 `Set.unmodifiable(_loopedSegments)`, `List.unmodifiable(items)`, `const []`.
 
-Пустые константные коллекции — `const []`, `const {}`, а не пересоздаваемые
-литералы.
+Empty constant collections are `const []`, `const {}`, not literals recreated
+each time.
 
-## Модели данных
+## Data models
 
-В проекте три слоя моделей, каждый в своём каталоге:
+The project has three layers of models, each in its own directory:
 
-| Слой | Каталог | Файл | Класс |
+| Layer | Directory | File | Class |
 | --- | --- | --- | --- |
-| Домен | `domain/entities/` | `lesson.dart` | `Lesson` |
-| Кеш / хранение | `data/models/` | `lesson_model.dart` | `LessonModel` (freezed + json) |
-| Сеть | `data/models/` | `lesson_dto.dart` | `LessonDto` |
+| Domain | `domain/entities/` | `lesson.dart` | `Lesson` |
+| Cache / storage | `data/models/` | `lesson_model.dart` | `LessonModel` (freezed + json) |
+| Network | `data/models/` | `lesson_dto.dart` | `LessonDto` |
 
-* **DTO** повторяет форму ответа сервера — все поля, как они пришли. Новые поля
-  в уже кешируемых моделях делаем nullable или с `@Default`, иначе старый кеш
-  не прочитается после обновления.
-* **Domain entity** содержит только то, что нужно бизнес-логике, и не знает ни
-  про JSON, ни про Flutter. Маппинг — методом `toEntity()` на стороне data.
-* Внутри `data` freezed-модели описываем через `@freezed abstract class ... with _$X`,
-  ключи сервера — через `@JsonKey(name: 'snake_case')`.
-* Для sealed-объединений freezed вызываем именованные конструкторы
-  (`Result.success(...)`), а не сгенерированные классы напрямую.
+* A **DTO** repeats the shape of the server response — every field exactly as it
+  arrived. New fields in already cached models are made nullable or given a
+  `@Default`, otherwise the old cache cannot be read after an update.
+* A **domain entity** holds only what the business logic needs and knows about
+  neither JSON nor Flutter. The mapping is a `toEntity()` method on the data
+  side.
+* Inside `data`, freezed models are declared as
+  `@freezed abstract class ... with _$X`, and the server keys through
+  `@JsonKey(name: 'snake_case')`.
+* For freezed sealed unions we call the named constructors
+  (`Result.success(...)`) rather than the generated classes directly.
 
-После правки freezed/json-моделей — `dart run build_runner build --force-jit`.
+After editing freezed/json models — `dart run build_runner build --force-jit`.
 
-## Ошибки
+## Errors
 
-* Модели ошибок наследуются от `Exception` (восстановимые) — в проекте это
-  `Failure` из `core/error/failures.dart` и `ApiException`.
-* Ловим `Exception` и его наследников. `Error` (`TypeError`, `ArgumentError`) не
-  ловим — это баг, его чинят, а не глушат.
-* Пробрасываем через `rethrow`, чтобы не терять стек.
-* У собственных исключений переопределяем `toString()` — по нему их будут читать
-  в логах.
+* Error models descend from `Exception` (recoverable ones) — in this project
+  that means `Failure` from `core/error/failures.dart` and `ApiException`.
+* We catch `Exception` and its descendants. `Error` (`TypeError`,
+  `ArgumentError`) is not caught — that is a bug, to be fixed rather than
+  muffled.
+* We rethrow with `rethrow` so as not to lose the stack.
+* Our own exceptions override `toString()` — that is how they will be read in
+  the logs.
 
 ```dart
 class VersionConflictFailure implements Failure {
@@ -297,47 +308,50 @@ class VersionConflictFailure implements Failure {
 }
 ```
 
-Сообщение для пользователя формирует presentation, а не data: наружу из data
-уезжает тип ошибки, а не готовая фраза.
+The message for the user is composed by presentation, not by data: what leaves
+data is the error type, not a ready phrase.
 
-## Константы и магические числа
+## Constants and magic numbers
 
-Числа и строки с смыслом живут в константах: `core/constants/app_constants.dart`
-(`kSlowSpeed`, `kNormalSpeed`), токены дизайна — в `lib/theme/tokens/`.
+Numbers and strings that carry meaning live in constants:
+`core/constants/app_constants.dart` (`kSlowSpeed`, `kNormalSpeed`), and the
+design tokens in `lib/theme/tokens/`.
 
-HTTP-коды — `HttpStatus` из `dart:io`, а не литералы:
+HTTP codes come from `HttpStatus` in `dart:io`, not from literals:
 
 ```dart
 if (response.statusCode == HttpStatus.preconditionFailed) { ... }
 ```
 
-Литералы цветов допустимы **только** в `lib/theme/tokens/app_colors.dart`.
-В виджетах цвет берётся из `context.colors`.
+Color literals are allowed **only** in `lib/theme/tokens/app_colors.dart`.
+Inside widgets a color comes from `context.colors`.
 
-## Асинхронность
+## Asynchrony
 
-* Не ждём то, чего ждать не нужно, — заворачиваем в `unawaited(...)`
-  (аналитика, `player.play()`, который завершится только в конце трека).
-* После `await` перед обращением к `context` проверяем `mounted`.
-* Не глотаем ошибки пустым `catch {}`: либо обрабатываем, либо `rethrow`.
+* We do not await what need not be awaited — it goes into `unawaited(...)`
+  (analytics, or a `player.play()` that only completes at the end of the track).
+* After an `await`, `mounted` is checked before touching `context`.
+* We do not swallow errors with an empty `catch {}`: either handle it or
+  `rethrow`.
 
-## Структура фичи
+## Feature structure
 
 ```text
 lib/features/<feature>/
   data/
-    datasources/     # интерфейс + реализации (Api*, Sqflite*, File*)
-    models/          # *_dto.dart (сеть), *_model.dart (кеш, freezed)
+    datasources/     # the interface plus implementations (Api*, Sqflite*, File*)
+    models/          # *_dto.dart (network), *_model.dart (cache, freezed)
     repositories/    # *_repository_impl.dart
   domain/
-    entities/        # чистые модели предметной области
-    repositories/    # интерфейсы
-    usecases/        # по одному классу на сценарий, вызов через call()
+    entities/        # pure domain models
+    repositories/    # interfaces
+    usecases/        # one class per scenario, invoked through call()
   presentation/
-    controllers/     # Riverpod-контроллеры, состояние, *_providers.dart
-    pages/           # экраны
-    widgets/         # виджеты фичи, по одному в файле
+    controllers/     # Riverpod controllers, state, *_providers.dart
+    pages/           # screens
+    widgets/         # feature widgets, one per file
 ```
 
-Общее для всего приложения — в `lib/core/` (config, network, storage, router,
-constants, error, utils), дизайн-система — в `lib/theme/` и `lib/widgets/`.
+What is common to the whole app lives in `lib/core/` (config, network, storage,
+router, constants, error, utils), and the design system in `lib/theme/` and
+`lib/widgets/`.

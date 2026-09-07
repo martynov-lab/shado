@@ -6,7 +6,7 @@ import 'package:shado/features/lessons/data/repositories/folder_repository_impl.
 /// The server response for a folder.
 Map<String, dynamic> folderJson({
   String id = 'f1',
-  String title = 'Папка',
+  String title = 'Folder',
   int version = 1,
   int lessonCount = 0,
   bool isPublic = true,
@@ -76,31 +76,31 @@ class FakeFolderRemote implements FolderRemoteDataSource {
 }
 
 void main() {
-  test('создание генерит id и идёт без If-Match', () async {
+  test('creation generates an id and goes without If-Match', () async {
     final remote = FakeFolderRemote();
     final repository = FolderRepositoryImpl(remoteDataSource: remote);
 
-    final folder = await repository.createFolder(title: 'Новая', isPublic: false);
+    final folder = await repository.createFolder(title: 'New folder', isPublic: false);
 
     final put = remote.puts.single;
     expect(put.id, isNotEmpty);
     // Creation carries no version; visibility is sent exactly as set.
     expect(put.version, isNull);
     expect(put.isPublic, isFalse);
-    expect(folder.title, 'Новая');
+    expect(folder.title, 'New folder');
   });
 
-  test('правка идёт с версией (If-Match)', () async {
+  test('an edit goes with the version (If-Match)', () async {
     final remote = FakeFolderRemote();
     final repository = FolderRepositoryImpl(remoteDataSource: remote);
 
-    await repository.updateFolder(id: 'f1', title: 'Другое', version: 4);
+    await repository.updateFolder(id: 'f1', title: 'Another title', version: 4);
 
     expect(remote.puts.single.version, 4);
     expect(remote.puts.single.id, 'f1');
   });
 
-  test('список обходит страницы по курсору и пропускает удалённые', () async {
+  test('the list walks pages by cursor and skips deleted ones', () async {
     final remote = FakeFolderRemote(
       pages: [
         FolderPage(
@@ -117,7 +117,7 @@ void main() {
     expect(folders.map((folder) => folder.id), ['a', 'b']);
   });
 
-  test('добавление уроков возвращает обновлённую папку', () async {
+  test('adding lessons returns the updated folder', () async {
     final remote = FakeFolderRemote();
     final repository = FolderRepositoryImpl(remoteDataSource: remote);
 
@@ -127,7 +127,7 @@ void main() {
     expect(folder.lessonCount, 2);
   });
 
-  test('удаление урока перечитывает папку — сервер отдаёт 204 без тела', () async {
+  test('removing a lesson re-reads the folder: the server answers 204 with no body', () async {
     final remote = FakeFolderRemote();
     final repository = FolderRepositoryImpl(remoteDataSource: remote);
 

@@ -35,19 +35,19 @@ void main() {
       (options.data as Map).cast<String, dynamic>();
 
   group('register', () {
-    test('непустое имя уходит в теле', () async {
+    test('a non-empty name goes in the body', () async {
       final env = build((_) async => jsonResponse(200, sessionBody()));
 
       await env.remote.register(
         email: 'a@b.c',
         password: 'password1',
-        name: 'Андрей',
+        name: 'Andrew',
       );
 
-      expect(bodyOf(env.adapter.requests.single)['name'], 'Андрей');
+      expect(bodyOf(env.adapter.requests.single)['name'], 'Andrew');
     });
 
-    test('пустое имя не отправляем', () async {
+    test('an empty name is not sent', () async {
       final env = build((_) async => jsonResponse(200, sessionBody()));
 
       await env.remote.register(
@@ -61,7 +61,7 @@ void main() {
   });
 
   group('updateProfile', () {
-    test('шлёт PATCH /v1/me только с переданными полями', () async {
+    test('sends PATCH /v1/me with the passed fields only', () async {
       final env = build(
         (_) async => jsonResponse(200, {
           'id': 'u1',

@@ -61,12 +61,12 @@ void main() {
     Size(760, 1024),
     Size(1280, 800),
   ]) {
-    testWidgets('ProgressPage рисуется на $size без исключений', (tester) async {
+    testWidgets('ProgressPage renders at $size without exceptions', (tester) async {
       await pumpPage(tester, const ProgressPage(), size: size);
       expect(tester.takeException(), isNull);
     });
 
-    testWidgets('SettingsPage рисуется на $size без исключений', (tester) async {
+    testWidgets('SettingsPage renders at $size without exceptions', (tester) async {
       await pumpPage(tester, const SettingsPage(), size: size);
       expect(tester.takeException(), isNull);
     });

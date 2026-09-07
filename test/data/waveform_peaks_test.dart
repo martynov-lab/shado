@@ -12,7 +12,7 @@ String encode(List<int> values) =>
 
 void main() {
   group('decodePeaks', () {
-    test('разбирает base64 int8 в доли единицы', () {
+    test('parses base64 int8 into fractions of one', () {
       final decoded = decodePeaks(encode([127, 64, 0, -64, -127]));
 
       expect(decoded, hasLength(5));
@@ -22,7 +22,7 @@ void main() {
       expect(decoded.last, closeTo(-1.0, 0.001));
     });
 
-    test('держится в диапазоне -1..1 на всех значениях int8', () {
+    test('stays within -1..1 for every int8 value', () {
       final decoded = decodePeaks(encode([for (var i = -128; i < 128; i++) i]));
 
       expect(decoded, hasLength(256));
@@ -30,11 +30,11 @@ void main() {
       expect(decoded.every((value) => value >= -1.008 && value <= 1.0), isTrue);
     });
 
-    test('пустая строка — пустая волна', () {
+    test('an empty string gives an empty waveform', () {
       expect(decodePeaks(''), isEmpty);
     });
 
-    test('длина совпадает с числом точек, присланных сервером', () {
+    test('the length matches the number of points sent by the server', () {
       final peaks = WaveformPeaks.fromJson({
         'resolution': 3,
         'minima': encode([-127, -64, -10]),
@@ -46,7 +46,7 @@ void main() {
       expect(peaks.minima.every((value) => value <= 0), isTrue);
     });
 
-    test('фактическое разрешение берётся из массивов, а не из поля', () {
+    test('the actual resolution comes from the arrays, not from the field', () {
       // The point count comes from the arrays, not from `resolution`.
       final peaks = WaveformPeaks.fromJson({
         'resolution': 2000,
@@ -64,11 +64,11 @@ void main() {
       maxima: [for (var i = 0; i < 100; i++) i / 100],
     );
 
-    test('без отрезка отдаёт волну как есть', () {
+    test('without a range it returns the waveform as is', () {
       expect(slicePeaks(peaks, null, 1000).length, 100);
     });
 
-    test('вырезает долю, соответствующую отрезку', () {
+    test('cuts out the share matching the range', () {
       final half = slicePeaks(
         peaks,
         const AudioTrim(startMs: 500, endMs: 1000),
@@ -80,7 +80,7 @@ void main() {
       expect(half.maxima.first, closeTo(0.5, 0.001));
     });
 
-    test('отрезок во весь файл ничего не режет', () {
+    test('a range spanning the whole file cuts nothing', () {
       final whole = slicePeaks(
         peaks,
         const AudioTrim(startMs: 0, endMs: 1000),

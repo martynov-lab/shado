@@ -28,7 +28,7 @@ void main() {
   Text tabletMarker(BuildContext context) => const Text('tablet');
   Text desktopMarker(BuildContext context) => const Text('desktop');
 
-  testWidgets('узкое окно — раскладка телефона', (tester) async {
+  testWidgets('a narrow window gives the phone layout', (tester) async {
     await pumpAt(tester, 400, tablet: tabletMarker, desktop: desktopMarker);
 
     expect(find.text('mobile'), findsOneWidget);
@@ -36,25 +36,25 @@ void main() {
     expect(find.text('desktop'), findsNothing);
   });
 
-  testWidgets('средняя полоса — раскладка планшета', (tester) async {
+  testWidgets('the middle band gives the tablet layout', (tester) async {
     await pumpAt(tester, 700, tablet: tabletMarker, desktop: desktopMarker);
 
     expect(find.text('tablet'), findsOneWidget);
   });
 
-  testWidgets('широкое окно — раскладка десктопа', (tester) async {
+  testWidgets('a wide window gives the desktop layout', (tester) async {
     await pumpAt(tester, 1200, tablet: tabletMarker, desktop: desktopMarker);
 
     expect(find.text('desktop'), findsOneWidget);
   });
 
-  testWidgets('десктоп без своей раскладки падает на планшет', (tester) async {
+  testWidgets('a desktop without its own layout falls back to the tablet one', (tester) async {
     await pumpAt(tester, 1200, tablet: tabletMarker);
 
     expect(find.text('tablet'), findsOneWidget);
   });
 
-  testWidgets('планшет без своей раскладки падает на телефон', (tester) async {
+  testWidgets('a tablet without its own layout falls back to the phone one', (tester) async {
     await pumpAt(tester, 700);
 
     expect(find.text('mobile'), findsOneWidget);

@@ -29,7 +29,7 @@ void main() {
     return (container: container, settings: settings);
   }
 
-  test('порог вне 1..1000 отвергается до сети', () async {
+  test('a threshold outside 1..1000 is rejected before the network', () async {
     final env = build();
     final controller = env.container.read(
       completionRepsControllerProvider.notifier,
@@ -40,7 +40,7 @@ void main() {
     expect(env.settings.saved, isEmpty);
   });
 
-  test('корректный порог уходит в датасорс', () async {
+  test('a valid threshold reaches the datasource', () async {
     final env = build();
     final controller = env.container.read(
       completionRepsControllerProvider.notifier,

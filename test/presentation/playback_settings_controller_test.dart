@@ -15,7 +15,7 @@ void main() {
     return container;
   }
 
-  test('без сохранённого — значения по умолчанию', () async {
+  test('with nothing saved the defaults apply', () async {
     final container = makeContainer();
     final settings = await container.read(
       playbackSettingsControllerProvider.future,
@@ -27,7 +27,7 @@ void main() {
     expect(settings.countdownEnabled, isFalse);
   });
 
-  test('выбор скорости применяется сразу и переживает перезапуск', () async {
+  test('the chosen speed applies at once and survives a restart', () async {
     final container = makeContainer();
     await container.read(playbackSettingsControllerProvider.future);
     await container
@@ -47,7 +47,7 @@ void main() {
     expect(restored.defaultSpeed, 1.25);
   });
 
-  test('число повторов зажимается в допустимые границы', () async {
+  test('the repeat count is clamped to the allowed range', () async {
     final container = makeContainer();
     await container.read(playbackSettingsControllerProvider.future);
     final controller = container.read(
@@ -67,7 +67,7 @@ void main() {
     );
   });
 
-  test('тумблеры паузы и отсчёта сохраняются между запусками', () async {
+  test('the pause and countdown switches persist between runs', () async {
     final container = makeContainer();
     await container.read(playbackSettingsControllerProvider.future);
     final controller = container.read(

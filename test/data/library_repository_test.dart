@@ -26,7 +26,7 @@ class FakeLibraryRemote implements LibraryRemoteDataSource {
 }
 
 void main() {
-  test('корень разбирается на папки и свободные уроки', () async {
+  test('the root splits into folders and unfiled lessons', () async {
     final remote = FakeLibraryRemote(
       pages: [
         LibraryPage(
@@ -45,7 +45,7 @@ void main() {
     expect(root.isEmpty, isFalse);
   });
 
-  test('страницы обходятся одним курсором на обе половины', () async {
+  test('pages are walked with one cursor for both halves', () async {
     final remote = FakeLibraryRemote(
       pages: [
         LibraryPage(
@@ -65,7 +65,7 @@ void main() {
     expect(root.lessons.map((lesson) => lesson.id), ['l1', 'l2']);
   });
 
-  test('пустой корень — библиотека пуста', () async {
+  test('an empty root means an empty library', () async {
     final repository = LibraryRepositoryImpl(
       remoteDataSource: FakeLibraryRemote(),
     );

@@ -20,7 +20,7 @@ void main() {
     return (remote: ApiTtsRemoteDataSource(client), adapter: adapter);
   }
 
-  test('synthesize шлёт POST с текстом и разбирает ответ как аудио', () async {
+  test('synthesize sends a POST with the text and parses the response as audio', () async {
     final env = build(
       (_) async => jsonResponse(200, {
         'id': 'b21e',
@@ -47,7 +47,7 @@ void main() {
     expect(audio.fileExtension, 'wav');
   });
 
-  test('quota разбирает остаток озвучек, limit 0 — без ограничения', () async {
+  test('quota parses the remaining voice-overs; limit 0 means no cap', () async {
     final env = build(
       (_) async => jsonResponse(200, {
         'provider': 'gemini',
@@ -68,7 +68,7 @@ void main() {
     expect(quota.minute.limit, 2);
   });
 
-  test('quota: limit 0 в окне — без ограничения, remaining отсутствует', () async {
+  test('quota: limit 0 in a window means no cap and no remaining', () async {
     final env = build(
       (_) async => jsonResponse(200, {
         'provider': 'gemini',

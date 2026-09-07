@@ -39,7 +39,7 @@ void main() {
     return taps;
   }
 
-  testWidgets('вне режима выбора галочки нет, тап делает сегмент текущим', (
+  testWidgets('outside selection mode there is no checkbox and a tap makes the segment current', (
     tester,
   ) async {
     final taps = await pumpRow(tester, isSelecting: false);
@@ -50,7 +50,7 @@ void main() {
     expect(taps, ['current']);
   });
 
-  testWidgets('в режиме выбора тап по строке набирает выделение', (
+  testWidgets('in selection mode a tap on the row builds up the selection', (
     tester,
   ) async {
     final taps = await pumpRow(tester, isSelecting: true);
@@ -65,7 +65,7 @@ void main() {
     expect(taps, ['select', 'select']);
   });
 
-  testWidgets('галочка показывает, выбран ли сегмент', (tester) async {
+  testWidgets('the checkbox shows whether the segment is selected', (tester) async {
     await pumpRow(tester, isSelecting: true, isSelected: true);
     expect(
       tester.widget<AppCheckbox>(find.byType(AppCheckbox)).value,

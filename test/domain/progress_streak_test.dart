@@ -10,15 +10,15 @@ ProgressDay _inactive(String day) =>
 
 void main() {
   group('currentStreak', () {
-    test('пустая история — ноль', () {
+    test('an empty history gives zero', () {
       expect(currentStreak(const []), 0);
     });
 
-    test('один активный день — единица', () {
+    test('a single active day gives one', () {
       expect(currentStreak([_day('2026-08-06')]), 1);
     });
 
-    test('подряд идущие активные дни складываются', () {
+    test('consecutive active days add up', () {
       expect(
         currentStreak([
           _day('2026-08-04'),
@@ -29,7 +29,7 @@ void main() {
       );
     });
 
-    test('разрыв в календаре обрывает серию на свежем участке', () {
+    test('a gap in the calendar cuts the streak at the recent stretch', () {
       expect(
         currentStreak([
           _day('2026-08-01'),
@@ -41,7 +41,7 @@ void main() {
       );
     });
 
-    test('дни без активности не в счёт', () {
+    test('days without activity do not count', () {
       expect(
         currentStreak([
           _inactive('2026-08-05'),

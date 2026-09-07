@@ -45,7 +45,7 @@ ResponseBody jsonResponse(int status, Map<String, dynamic> body) {
 ResponseBody errorResponse(
   int status,
   String code, {
-  String message = 'что-то пошло не так',
+  String message = 'something went wrong',
   Map<String, dynamic>? extra,
 }) {
   return jsonResponse(status, {

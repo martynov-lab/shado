@@ -97,7 +97,7 @@ void main() {
 
   tearDownAll(() => tempDir.deleteSync(recursive: true));
 
-  test('загрузка аудио: сервер считает длительность и пики', () async {
+  test('audio upload: the server computes the duration and the peaks', () async {
     final uploaded = await audioApi.upload(filePath: wavPath);
     audioId = uploaded.id;
     durationMs = uploaded.durationMs;
@@ -111,31 +111,31 @@ void main() {
     expect(uploaded.fileExtension, 'wav');
   });
 
-  test('повторная загрузка того же файла дедуплицируется', () async {
+  test('re-uploading the same file is deduplicated', () async {
     final again = await audioApi.upload(filePath: wavPath);
     expect(again.id, audioId);
   });
 
-  test('пики отдаются в запрошенном разрешении', () async {
+  test('peaks come back at the requested resolution', () async {
     final peaks = await audioApi.peaks(audioId, resolution: 500);
     expect(peaks.length, 500);
     expect(peaks.minima.length, peaks.maxima.length);
   });
 
-  test('файл скачивается и совпадает с исходным', () async {
+  test('the file downloads and matches the original', () async {
     final target = p.join(tempDir.path, 'downloaded.wav');
     await audioApi.download(audioId: audioId, targetPath: target);
 
     expect(File(target).lengthSync(), File(wavPath).lengthSync());
   });
 
-  group('уроки', () {
+  group('lessons', () {
     final lessonId = const Uuid().v4();
 
-    test('создание одним PUT', () async {
+    test('creation in a single PUT', () async {
       final created = await lessonApi.putLesson(
         id: lessonId,
-        title: 'Живой урок',
+        title: 'Live lesson',
         audioId: audioId,
         createdAt: DateTime.now().toUtc(),
         accent: 'US',
@@ -143,13 +143,13 @@ void main() {
         segments: [
           SegmentModel(
             index: 0,
-            text: 'Раз',
+            text: 'One',
             startMs: 0,
             endMs: durationMs ~/ 2,
           ),
           SegmentModel(
             index: 1,
-            text: 'Два',
+            text: 'Two',
             startMs: durationMs ~/ 2,
             endMs: durationMs,
           ),
@@ -166,67 +166,67 @@ void main() {
       expect(created.topic, isNotNull);
     });
 
-    test('повтор того же PUT не создаёт дубль', () async {
+    test('repeating the same PUT creates no duplicate', () async {
       final page = await lessonApi.list();
       expect(page.items.where((item) => item.id == lessonId), hasLength(1));
     });
 
-    test('правка без If-Match — конфликт версий с актуальным уроком', () async {
+    test('an edit without If-Match gives a version conflict with the current lesson', () async {
       try {
         await lessonApi.putLesson(
           id: lessonId,
-          title: 'Без версии',
+          title: 'No version',
           audioId: audioId,
           createdAt: DateTime.now().toUtc(),
           // Checks the rejection caused by a missing `If-Match`.
           accent: 'US',
           level: LessonLevel.b1,
           segments: [
-            SegmentModel(index: 0, text: 'Раз', startMs: 0, endMs: durationMs),
+            SegmentModel(index: 0, text: 'One', startMs: 0, endMs: durationMs),
           ],
         );
-        fail('ожидался конфликт версий');
+        fail('expected a version conflict');
       } on ApiException catch (error) {
         expect(error.isVersionConflict, isTrue);
         expect(error.current?['version'], 1);
       }
     });
 
-    test('правка с If-Match поднимает версию', () async {
+    test('an edit with If-Match raises the version', () async {
       final updated = await lessonApi.putLesson(
         id: lessonId,
-        title: 'Правленый урок',
+        title: 'Edited lesson',
         audioId: audioId,
         createdAt: DateTime.now().toUtc(),
         // `PUT` replaces the whole lesson: categories are resent on edits too.
         accent: 'UK',
         level: LessonLevel.c1,
         segments: [
-          SegmentModel(index: 0, text: 'Один', startMs: 0, endMs: durationMs),
+          SegmentModel(index: 0, text: 'Single', startMs: 0, endMs: durationMs),
         ],
         version: 1,
       );
 
       expect(updated.version, 2);
-      expect(updated.title, 'Правленый урок');
+      expect(updated.title, 'Edited lesson');
       expect(updated.segments, hasLength(1));
       expect(updated.accent, 'UK');
       expect(updated.level, LessonLevel.c1);
     });
 
-    test('сегменты не встык — 422 с объяснением', () async {
+    test('segments that are not back to back give a 422 with an explanation', () async {
       try {
         await lessonApi.putLesson(
           id: lessonId,
-          title: 'Дырявый',
+          title: 'Gapped',
           audioId: audioId,
           createdAt: DateTime.now().toUtc(),
           segments: [
-            SegmentModel(index: 0, text: 'Раз', startMs: 500, endMs: durationMs),
+            SegmentModel(index: 0, text: 'One', startMs: 500, endMs: durationMs),
           ],
           version: 2,
         );
-        fail('ожидалась ошибка валидации');
+        fail('expected a validation error');
       } on ApiException catch (error) {
         expect(error.code, ApiErrorCode.validationError);
         expect(error.status, 422);
@@ -234,7 +234,7 @@ void main() {
       }
     });
 
-    test('удаление мягкое и видно в дельте', () async {
+    test('the deletion is soft and shows up in the delta', () async {
       final before = await lessonApi.getLesson(lessonId);
       await lessonApi.deleteLesson(lessonId);
 
@@ -251,39 +251,39 @@ void main() {
       expect(deleted.version, greaterThan(before.version));
     });
 
-    test('чужой или несуществующий урок — 404', () async {
+    test('someone else lesson or a missing one gives a 404', () async {
       try {
         await lessonApi.getLesson(const Uuid().v4());
-        fail('ожидался 404');
+        fail('expected a 404');
       } on ApiException catch (error) {
         expect(error.isNotFound, isTrue);
       }
     });
   });
 
-  test('обычный пользователь в админку не ходит', () async {
+  test('a plain user has no access to the admin area', () async {
     try {
       await client.get('/v1/admin/users');
-      fail('ожидался 403');
+      fail('expected a 403');
     } on ApiException catch (error) {
       expect(error.code, ApiErrorCode.forbidden);
       expect(error.status, 403);
     }
   });
 
-  test('неверный пароль — invalid_credentials', () async {
+  test('a wrong password gives invalid_credentials', () async {
     final anonymous = ApiClient(tokens: MemoryTokenStorage(), baseUrl: baseUrl);
     try {
       await ApiAuthRemoteDataSource(
         anonymous,
       ).login(email: 'nobody@example.com', password: 'wrong-password');
-      fail('ожидался отказ');
+      fail('expected a rejection');
     } on ApiException catch (error) {
       expect(error.code, ApiErrorCode.invalidCredentials);
     }
   });
 
-  test('access обновляется по refresh, старый refresh уходит', () async {
+  test('access is refreshed and the old refresh token is retired', () async {
     final before = await tokens.readRefreshToken();
     final refreshed = await auth.refresh(before!);
     await tokens.save(refreshed);
@@ -293,12 +293,12 @@ void main() {
     expect(await auth.me(), isNotNull);
   });
 
-  test('файл больше лимита не отправляется', () async {
+  test('a file over the limit is not sent', () async {
     final big = File(p.join(tempDir.path, 'big.wav'));
     big.writeAsBytesSync(Uint8List(51 * 1024 * 1024));
     try {
       await audioApi.upload(filePath: big.path);
-      fail('ожидался отказ по размеру');
+      fail('expected a rejection by size');
     } on ApiException catch (error) {
       expect(error.code, ApiErrorCode.payloadTooLarge);
     } finally {
@@ -306,7 +306,7 @@ void main() {
     }
   });
 
-  test('загрузка отменяется на лету', () async {
+  test('an upload can be cancelled mid-flight', () async {
     final cancelToken = CancelToken();
     final future = audioApi.upload(
       filePath: wavPath,

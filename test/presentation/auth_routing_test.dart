@@ -201,8 +201,8 @@ void main() {
   ]) {
     for (final isRegistration in const [false, true]) {
       testWidgets(
-        'форма ${isRegistration ? 'регистрации' : 'входа'} '
-        'рисуется на ширине ${size.width}',
+        'the ${isRegistration ? 'registration' : 'sign-in'} form '
+        'renders at width ${size.width}',
         (tester) async {
           for (final mode in ThemeMode.values) {
             await pumpLoginPage(
@@ -227,7 +227,7 @@ void main() {
     }
   }
 
-  testWidgets('без сессии приложение уводит на вход', (tester) async {
+  testWidgets('without a session the app goes to the sign-in screen', (tester) async {
     final auth = FakeAuthRepository();
 
     await pumpApp(tester, auth);
@@ -236,7 +236,7 @@ void main() {
     expect(auth.restoreCalls, 1);
   });
 
-  testWidgets('сохранённый refresh поднимает сессию сам', (tester) async {
+  testWidgets('a saved refresh token restores the session on its own', (tester) async {
     final auth = FakeAuthRepository(
       restored: AuthUser(
         id: 'user-1',
@@ -254,7 +254,7 @@ void main() {
     expect(find.byIcon(Icons.account_circle_outlined), findsOneWidget);
   });
 
-  testWidgets('вход по форме открывает главную', (tester) async {
+  testWidgets('signing in through the form opens the home screen', (tester) async {
     await pumpApp(tester, FakeAuthRepository());
 
     await tester.enterText(find.byType(AppTextField).first, 'user@example.com');
@@ -265,7 +265,7 @@ void main() {
     expect(find.byIcon(Icons.account_circle_outlined), findsOneWidget);
   });
 
-  testWidgets('короткий пароль форма не пропускает дальше себя', (
+  testWidgets('the form does not let a short password past itself', (
     tester,
   ) async {
     await pumpApp(tester, FakeAuthRepository());
@@ -279,7 +279,7 @@ void main() {
     expect(find.byIcon(Icons.account_circle_outlined), findsNothing);
   });
 
-  testWidgets('пароль показывается по нажатию на глаз', (tester) async {
+  testWidgets('the password shows on a tap of the eye', (tester) async {
     await pumpApp(tester, FakeAuthRepository());
 
     TextField passwordField() =>
@@ -293,7 +293,7 @@ void main() {
     expect(passwordField().obscureText, isFalse);
   });
 
-  testWidgets('без согласия с условиями регистрация не отправляется', (
+  testWidgets('without accepting the terms the registration is not submitted', (
     tester,
   ) async {
     await pumpApp(tester, FakeAuthRepository());
@@ -311,7 +311,7 @@ void main() {
     expect(submit.onPressed, isNull);
   });
 
-  testWidgets('в меню аккаунта обычному пользователю нет разделов владельца', (
+  testWidgets('a plain user gets no owner sections in the account menu', (
     tester,
   ) async {
     final auth = FakeAuthRepository(
@@ -332,7 +332,7 @@ void main() {
     expect(find.text('Пользователи'), findsNothing);
   });
 
-  testWidgets('владельцу в меню аккаунта видны «Управление» и «Пользователи»', (
+  testWidgets('the owner sees the management and users sections in the account menu', (
     tester,
   ) async {
     final auth = FakeAuthRepository(
@@ -352,7 +352,7 @@ void main() {
     expect(find.text('Пользователи'), findsOneWidget);
   });
 
-  testWidgets('выход возвращает на экран входа', (tester) async {
+  testWidgets('signing out returns to the sign-in screen', (tester) async {
     final auth = FakeAuthRepository(
       restored: AuthUser(
         id: 'user-1',

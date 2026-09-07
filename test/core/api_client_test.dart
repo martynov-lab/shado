@@ -25,7 +25,7 @@ void main() {
     return (client: client, adapter: adapter, tokens: tokens);
   }
 
-  group('разбор ошибок', () {
+  group('error parsing', () {
     /// Every spec error code must reach the caller unchanged.
     const cases = <(int, String, ApiErrorCode)>[
       (422, 'validation_error', ApiErrorCode.validationError),
@@ -46,7 +46,7 @@ void main() {
       test('$wire → $expected', () async {
         final env = build(
           (options) async =>
-              errorResponse(status, wire, message: 'сообщение сервера'),
+              errorResponse(status, wire, message: 'server message'),
         );
 
         await expectLater(
@@ -55,13 +55,13 @@ void main() {
             isA<ApiException>()
                 .having((error) => error.code, 'code', expected)
                 .having((error) => error.status, 'status', status)
-                .having((error) => error.message, 'message', 'сообщение сервера'),
+                .having((error) => error.message, 'message', 'server message'),
           ),
         );
       });
     }
 
-    test('неизвестный код не сходит за успех', () async {
+    test('an unknown code does not pass for success', () async {
       final env = build(
         (options) async => errorResponse(418, 'teapot_error', message: ''),
       );
@@ -76,7 +76,7 @@ void main() {
       );
     });
 
-    test('конфликт версий несёт актуальный урок в error.current', () async {
+    test('a version conflict carries the current lesson in error.current', () async {
       final env = build(
         (options) async => errorResponse(
           409,
@@ -90,18 +90,18 @@ void main() {
 
       try {
         await env.client.put('/v1/lessons/9f1c');
-        fail('ожидался конфликт');
+        fail('expected a conflict');
       } on ApiException catch (error) {
         expect(error.isVersionConflict, isTrue);
         expect(error.current?['version'], 4);
       }
     });
 
-    test('обрыв связи — это не ошибка API', () async {
+    test('a dropped connection is not an API error', () async {
       final env = build(
         (options) async => throw DioException.connectionError(
           requestOptions: options,
-          reason: 'нет сети',
+          reason: 'no network',
         ),
       );
 
@@ -111,11 +111,11 @@ void main() {
       );
     });
 
-    test('сетевой сбой на GET повторяется, но не бесконечно', () async {
+    test('a network failure on GET is retried, but not forever', () async {
       final env = build(
         (options) async => throw DioException.connectionError(
           requestOptions: options,
-          reason: 'нет сети',
+          reason: 'no network',
         ),
       );
 
@@ -127,11 +127,11 @@ void main() {
       expect(env.adapter.countOf('/v1/me'), 3);
     });
 
-    test('POST после сбоя не повторяется: ответ мог потеряться', () async {
+    test('a POST is not retried after a failure: the response may be lost', () async {
       final env = build(
         (options) async => throw DioException.connectionError(
           requestOptions: options,
-          reason: 'нет сети',
+          reason: 'no network',
         ),
       );
 
@@ -143,8 +143,8 @@ void main() {
     });
   });
 
-  group('заголовок Authorization', () {
-    test('подставляется, когда access есть', () async {
+  group('Authorization header', () {
+    test('is set when an access token is present', () async {
       final env = build(
         (options) async => jsonResponse(200, {'ok': true}),
         access: 'access-1',
@@ -158,7 +158,7 @@ void main() {
       );
     });
 
-    test('не подставляется на /v1/auth/*', () async {
+    test('is not set on /v1/auth/*', () async {
       final env = build(
         (options) async => jsonResponse(200, {'ok': true}),
         access: 'access-1',

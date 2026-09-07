@@ -33,7 +33,7 @@ void main() {
       // Until the token is refreshed every protected path answers 401.
       final authorization = options.headers['Authorization'];
       if (authorization != 'Bearer fresh') {
-        return errorResponse(401, 'unauthorized', message: 'токен истёк');
+        return errorResponse(401, 'unauthorized', message: 'token expired');
       }
       return jsonResponse(200, {'path': options.path});
     });
@@ -49,7 +49,7 @@ void main() {
     return (client: client, adapter: adapter, tokens: tokens);
   }
 
-  test('протухший access обновляется молча, запрос повторяется', () async {
+  test('a stale access token is refreshed silently and the request retried', () async {
     final env = buildExpiredSession();
 
     final result = await env.client.get('/v1/me');
@@ -60,7 +60,7 @@ void main() {
     expect(env.adapter.countOf('/v1/me'), 2);
   });
 
-  test('новый refresh-токен сохраняется — старый больше не работает', () async {
+  test('the new refresh token is saved and the old one stops working', () async {
     final env = buildExpiredSession();
 
     await env.client.get('/v1/me');
@@ -70,7 +70,7 @@ void main() {
     expect(env.tokens.saves, 1);
   });
 
-  test('несколько параллельных 401 обходятся одним refresh', () async {
+  test('several parallel 401s get by with a single refresh', () async {
     // The refresh is kept slow so the requests overlap.
     final env = buildExpiredSession(
       refreshDelay: const Duration(milliseconds: 50),
@@ -87,7 +87,7 @@ void main() {
     expect(env.tokens.saves, 1);
   });
 
-  test('401 на самом refresh — полный выход', () async {
+  test('a 401 on the refresh itself signs the user out', () async {
     var signedOut = false;
     final env = buildExpiredSession(
       refreshStatus: 401,
@@ -110,7 +110,7 @@ void main() {
     expect(env.adapter.countOf('/v1/auth/refresh'), 1);
   });
 
-  test('без refresh-токена обновляться нечем', () async {
+  test('without a refresh token there is nothing to refresh', () async {
     final tokens = FakeTokenStorage(access: 'stale');
     final adapter = FakeHttpAdapter(
       (options) async => errorResponse(401, 'unauthorized'),

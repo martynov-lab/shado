@@ -4,10 +4,10 @@ import 'package:shado/features/home/presentation/widgets/home_minutes_mini.dart'
 import 'package:shado/theme/theme.dart';
 
 void main() {
-  testWidgets('мини-график минут показывает подписи дней недели', (
+  testWidgets('the minutes mini chart shows the weekday labels', (
     tester,
   ) async {
-    const labels = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'];
+    const labels = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
     await tester.pumpWidget(
       MaterialApp(

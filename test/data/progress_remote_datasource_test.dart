@@ -37,7 +37,7 @@ void main() {
       (options.data as Map).cast<String, dynamic>();
 
   group('reportEvents', () {
-    test('шлёт только заданные поля', () async {
+    test('sends only the given fields', () async {
       final env = build((_) async => jsonResponse(200, summaryBody()));
 
       await env.remote.reportEvents(listenedMs: 5000, lessonId: 'l1');
@@ -51,7 +51,7 @@ void main() {
       expect(body.containsKey('completed'), isFalse);
     });
 
-    test('completed уходит отдельным полем', () async {
+    test('completed goes as its own field', () async {
       final env = build((_) async => jsonResponse(200, summaryBody()));
 
       await env.remote.reportEvents(completed: true, lessonId: 'l1');
@@ -64,7 +64,7 @@ void main() {
   });
 
   group('getHistory', () {
-    test('передаёт days и парсит дни', () async {
+    test('passes days and parses the days back', () async {
       final env = build(
         (_) async => jsonResponse(200, {
           'days': [

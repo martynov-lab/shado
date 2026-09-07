@@ -7,7 +7,7 @@ ProgressDay _day(String day, int minutes) =>
 
 void main() {
   group('weekWithGaps', () {
-    test('всегда ровно семь дней, оканчивающихся сегодняшним', () {
+    test('always exactly seven days ending with today', () {
       final week = weekWithGaps(const [], '2026-08-08');
 
       expect(week.length, 7);
@@ -15,7 +15,7 @@ void main() {
       expect(week.last.day, '2026-08-08');
     });
 
-    test('пропущенные сервером дни заполняются нулями', () {
+    test('days the server skipped are filled with zeros', () {
       final week = weekWithGaps([
         _day('2026-08-04', 5),
         _day('2026-08-08', 12),
@@ -24,20 +24,20 @@ void main() {
       expect([for (final d in week) d.listenedMinutes], [0, 0, 5, 0, 0, 0, 12]);
     });
 
-    test('данные присланных дней сохраняются на своих датах', () {
+    test('data of the sent days stays on its own dates', () {
       final week = weekWithGaps([_day('2026-08-06', 7)], '2026-08-08');
       final wednesday = week.firstWhere((d) => d.day == '2026-08-06');
 
       expect(wednesday.listenedMinutes, 7);
     });
 
-    test('дни за пределами окна отбрасываются', () {
+    test('days outside the window are dropped', () {
       final week = weekWithGaps([_day('2026-07-30', 99)], '2026-08-08');
 
       expect(week.every((d) => d.listenedMinutes == 0), isTrue);
     });
 
-    test('без даты сегодня окно строится от текущего дня', () {
+    test('without a today date the window is built from the current day', () {
       final week = weekWithGaps(const [], '');
 
       expect(week.length, 7);

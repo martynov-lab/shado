@@ -22,7 +22,7 @@ import 'package:shado/features/lessons/domain/entities/tts_voice.dart';
 /// The server response for a lesson; segments come back as they were sent.
 Map<String, dynamic> lessonJson({
   String id = 'lesson-1',
-  String title = 'Урок',
+  String title = 'Lesson',
   int durationMs = 10000,
   int version = 1,
   String audioId = 'audio-1',
@@ -57,7 +57,7 @@ Map<String, dynamic> lessonJson({
     'segments':
         segments ??
         [
-          {'index': 0, 'text': 'Раз', 'start_ms': 0, 'end_ms': durationMs},
+          {'index': 0, 'text': 'One', 'start_ms': 0, 'end_ms': durationMs},
         ],
   };
 }
@@ -182,7 +182,7 @@ class FakeRemoteDataSource implements LessonRemoteDataSource {
         version: (version ?? 0) + 1,
         accent: accent ?? 'US',
         level: (level ?? LessonLevel.b1).wire,
-        topic: topicId == null ? null : {'id': topicId, 'name': 'Тема'},
+        topic: topicId == null ? null : {'id': topicId, 'name': 'Topic'},
         segments: [for (final segment in segments) segment.toJson()],
       ),
     );
@@ -278,7 +278,7 @@ class FakeTtsRemote implements TtsRemoteDataSource {
 
   @override
   Future<TtsVoices> voices() async => const TtsVoices(
-    items: [TtsVoice(name: 'Kore', description: 'Мягкий')],
+    items: [TtsVoice(name: 'Kore', description: 'Soft')],
     defaultVoice: 'Kore',
   );
 
@@ -296,7 +296,7 @@ class FakeTtsRemote implements TtsRemoteDataSource {
         'sha256': '',
         'duration_ms': 1500,
       }),
-      text: 'Пример фразы',
+      text: 'Sample phrase',
       cached: false,
     );
   }
@@ -381,8 +381,8 @@ void main() {
         audioCache: cache,
       );
 
-  group('загрузка аудио', () {
-    test('возвращает копию в кеше: её играет экран создания', () async {
+  group('audio upload', () {
+    test('returns the cached copy: the creation screen plays it', () async {
       final repository = build(FakeRemoteDataSource());
 
       final upload = await repository.uploadAudio(filePath: '/tmp/tone.mp3');
@@ -394,8 +394,8 @@ void main() {
     });
   });
 
-  group('озвучка через ИИ', () {
-    test('качает синтез в кеш и отдаёт локальный путь, как загрузка', () async {
+  group('AI voice-over', () {
+    test('downloads the synthesis into the cache and returns a local path, like an upload', () async {
       final repository = build(FakeRemoteDataSource());
 
       final upload = await repository.synthesizeTts(text: 'Hello there');
@@ -409,7 +409,7 @@ void main() {
       expect(upload.localPath, '/cache/tts-1.wav');
     });
 
-    test('выбранные голос и акцент уходят в запрос синтеза', () async {
+    test('the chosen voice and accent go into the synthesis request', () async {
       final repository = build(FakeRemoteDataSource());
 
       await repository.synthesizeTts(
@@ -422,7 +422,7 @@ void main() {
       expect(tts.synthesisOptions.single.accent, 'AU');
     });
 
-    test('без выбора голоса поля не уходят — сервер берёт свой', () async {
+    test('with no voice chosen the fields are omitted and the server picks its own', () async {
       final repository = build(FakeRemoteDataSource());
 
       await repository.synthesizeTts(text: 'Hello there');
@@ -432,15 +432,15 @@ void main() {
     });
   });
 
-  group('создание', () {
-    test('сегменты покрывают файл целиком, обрезка на сервер не уезжает', () async {
+  group('creation', () {
+    test('segments cover the whole file and the trim never reaches the server', () async {
       final remote = FakeRemoteDataSource();
       // The lesson is marked inside the trim, but the server wants 0..10000.
       await build(remote).createLesson(
-        title: 'Урок',
+        title: 'Lesson',
         audioId: 'audio-1',
         durationMs: 10000,
-        segmentTexts: const ['Раз', 'Два'],
+        segmentTexts: const ['One', 'Two'],
         accent: 'US',
         level: LessonLevel.b1,
         boundaries: const [2000, 5000, 8000],
@@ -454,14 +454,14 @@ void main() {
       expect(segments.map((segment) => segment.index), [0, 1]);
     });
 
-    test('создание идёт без If-Match: урока ещё нет', () async {
+    test('creation goes without If-Match: the lesson does not exist yet', () async {
       final remote = FakeRemoteDataSource();
 
       await build(remote).createLesson(
-        title: 'Урок',
+        title: 'Lesson',
         audioId: 'audio-1',
         durationMs: 10000,
-        segmentTexts: const ['Раз'],
+        segmentTexts: const ['One'],
         accent: 'US',
         level: LessonLevel.b1,
       );
@@ -469,14 +469,14 @@ void main() {
       expect(remote.putVersions.single, isNull);
     });
 
-    test('is_public не уходит, если публичность не задали', () async {
+    test('is_public is not sent when the visibility was not set', () async {
       final remote = FakeRemoteDataSource();
 
       await build(remote).createLesson(
-        title: 'Урок',
+        title: 'Lesson',
         audioId: 'audio-1',
         durationMs: 10000,
-        segmentTexts: const ['Раз'],
+        segmentTexts: const ['One'],
         accent: 'US',
         level: LessonLevel.b1,
       );
@@ -484,14 +484,14 @@ void main() {
       expect(remote.putIsPublic.single, isNull);
     });
 
-    test('заданная публичность уходит на сервер', () async {
+    test('an explicit visibility goes to the server', () async {
       final remote = FakeRemoteDataSource();
 
       await build(remote).createLesson(
-        title: 'Урок',
+        title: 'Lesson',
         audioId: 'audio-1',
         durationMs: 10000,
-        segmentTexts: const ['Раз'],
+        segmentTexts: const ['One'],
         accent: 'US',
         level: LessonLevel.b1,
         isPublic: false,
@@ -500,14 +500,14 @@ void main() {
       expect(remote.putIsPublic.single, isFalse);
     });
 
-    test('созданный урок попадает в кеш с локальным путём к аудио', () async {
+    test('the created lesson lands in the cache with a local audio path', () async {
       final remote = FakeRemoteDataSource();
 
       final lesson = await build(remote).createLesson(
-        title: 'Урок',
+        title: 'Lesson',
         audioId: 'audio-1',
         durationMs: 10000,
-        segmentTexts: const ['Раз'],
+        segmentTexts: const ['One'],
         accent: 'US',
         level: LessonLevel.b1,
       );
@@ -518,14 +518,14 @@ void main() {
       expect(local.lessons[lesson.id]?.audioId, 'audio-1');
     });
 
-    test('категории уходят на сервер и возвращаются в урок', () async {
+    test('categories go to the server and come back in the lesson', () async {
       final remote = FakeRemoteDataSource();
 
       final lesson = await build(remote).createLesson(
-        title: 'Урок',
+        title: 'Lesson',
         audioId: 'audio-1',
         durationMs: 10000,
-        segmentTexts: const ['Раз'],
+        segmentTexts: const ['One'],
         accent: 'UK',
         level: LessonLevel.c1,
         topicId: 'topic-7',
@@ -540,14 +540,14 @@ void main() {
       expect(local.lessons[lesson.id]?.level, 'c1');
     });
 
-    test('тему не выбрали — поле не уезжает вовсе', () async {
+    test('with no topic chosen the field is not sent at all', () async {
       final remote = FakeRemoteDataSource();
 
       await build(remote).createLesson(
-        title: 'Урок',
+        title: 'Lesson',
         audioId: 'audio-1',
         durationMs: 10000,
-        segmentTexts: const ['Раз'],
+        segmentTexts: const ['One'],
         accent: 'US',
         level: LessonLevel.a2,
       );
@@ -557,7 +557,7 @@ void main() {
     });
   });
 
-  group('правка', () {
+  group('editing', () {
     /// The cached lesson the edit is applied on top of.
     void seedCache({int version = 3}) {
       local.lessons['lesson-1'] = LessonModel.fromDto(
@@ -569,17 +569,17 @@ void main() {
 
     Lesson lessonToSave() => Lesson(
       id: 'lesson-1',
-      title: 'Новое название',
+      title: 'New title',
       audioPath: '/cache/audio-1.mp3',
       audioId: 'audio-1',
       durationMs: 10000,
       createdAt: DateTime.utc(2026, 7, 28, 9),
       segments: const [
-        Segment(index: 0, text: 'Раз', startMs: 0, endMs: 10000),
+        Segment(index: 0, text: 'One', startMs: 0, endMs: 10000),
       ],
     );
 
-    test('правка уходит с версией из кеша', () async {
+    test('an edit goes with the version from the cache', () async {
       seedCache();
       final remote = FakeRemoteDataSource();
 
@@ -588,7 +588,7 @@ void main() {
       expect(remote.putVersions.single, 3);
     });
 
-    test('правка пересылает категории из кеша: PUT заменяет урок целиком',
+    test('an edit resends categories from the cache: PUT replaces the whole lesson',
         () async {
       seedCache();
       final remote = FakeRemoteDataSource();
@@ -601,7 +601,7 @@ void main() {
       expect(remote.putCategories.single.topicId, 'topic-1');
     });
 
-    test('конфликт версий кладёт в кеш свежий урок и не молчит', () async {
+    test('a version conflict caches the fresh lesson and does not stay silent', () async {
       seedCache();
       final remote = FakeRemoteDataSource(
         onPut: (version) => throw ApiException(
@@ -611,7 +611,7 @@ void main() {
           details: {
             'code': 'version_conflict',
             'message': 'version conflict',
-            'current': lessonJson(version: 4, title: 'С другого устройства'),
+            'current': lessonJson(version: 4, title: 'From another device'),
           },
         ),
       );
@@ -630,13 +630,13 @@ void main() {
       // On a conflict the fresh version must end up in the cache.
       final cached = local.lessons['lesson-1']!;
       expect(cached.version, 4);
-      expect(cached.title, 'С другого устройства');
+      expect(cached.title, 'From another device');
       expect(cached.audioPath, '/cache/audio-1.mp3');
     });
   });
 
-  group('синхронизация', () {
-    test('первый запуск идёт без since', () async {
+  group('synchronization', () {
+    test('the first run goes without since', () async {
       final remote = FakeRemoteDataSource(
         pages: [
           LessonPage(items: [LessonDto.fromJson(lessonJson())]),
@@ -649,7 +649,7 @@ void main() {
       expect(local.lessons, hasLength(1));
     });
 
-    test('метка — максимальный updated_at из полученного', () async {
+    test('the watermark is the maximum updated_at received', () async {
       final remote = FakeRemoteDataSource(
         pages: [
           LessonPage(
@@ -671,7 +671,7 @@ void main() {
       expect(local.watermarks['en'], '2026-07-28T12:00:00.000Z');
     });
 
-    test('метка другого языка не мешает первой синхронизации', () async {
+    test('a watermark of another language does not disturb the first sync', () async {
       local.watermarks['en'] = '2026-07-28T12:00:00.000Z';
       final remote = FakeRemoteDataSource(
         pages: [
@@ -685,7 +685,7 @@ void main() {
       expect(remote.sinceCalls.single, isNull);
     });
 
-    test('удалённый на другом устройстве урок уходит из кеша', () async {
+    test('a lesson deleted on another device leaves the cache', () async {
       local.lessons['a'] = LessonModel.fromDto(
         LessonDto.fromJson(lessonJson(id: 'a')),
         audioPath: '/cache/audio-1.mp3',
@@ -713,7 +713,7 @@ void main() {
       expect(cache.files, isEmpty);
     });
 
-    test('аудио, нужное другому уроку, при чистке остаётся', () async {
+    test('audio needed by another lesson survives the cleanup', () async {
       // One `audio_id` may belong to several lessons.
       for (final id in ['a', 'b']) {
         local.lessons[id] = LessonModel.fromDto(
@@ -729,7 +729,7 @@ void main() {
       expect(cache.files, contains('audio-1'));
     });
 
-    test('страницы обходятся по курсору', () async {
+    test('pages are walked by cursor', () async {
       final remote = FakeRemoteDataSource(
         pages: [
           LessonPage(
@@ -747,8 +747,8 @@ void main() {
     });
   });
 
-  group('открытие урока', () {
-    test('аудио докачивается один раз, потом берётся из кеша', () async {
+  group('opening a lesson', () {
+    test('audio is downloaded once and then taken from the cache', () async {
       final remote = FakeRemoteDataSource();
       final repository = build(remote);
 
@@ -759,7 +759,7 @@ void main() {
     });
   });
 
-  test('выход стирает кеш уроков и аудио', () async {
+  test('signing out wipes the lesson and audio caches', () async {
     local.lessons['a'] = LessonModel.fromDto(
       LessonDto.fromJson(lessonJson(id: 'a')),
       audioPath: '/cache/audio-1.mp3',

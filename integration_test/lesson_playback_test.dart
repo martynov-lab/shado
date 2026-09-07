@@ -155,15 +155,15 @@ void main() {
   /// A lesson of four one-second segments.
   Lesson buildLesson() => Lesson(
     id: lessonId,
-    title: 'Проверка границ',
+    title: 'Boundary check',
     audioPath: wavPath,
     durationMs: 4000,
     createdAt: DateTime.utc(2026),
     segments: const [
-      Segment(index: 0, text: 'один', startMs: 0, endMs: 1000),
-      Segment(index: 1, text: 'два', startMs: 1000, endMs: 2000),
-      Segment(index: 2, text: 'три', startMs: 2000, endMs: 3000),
-      Segment(index: 3, text: 'четыре', startMs: 3000, endMs: 4000),
+      Segment(index: 0, text: 'one', startMs: 0, endMs: 1000),
+      Segment(index: 1, text: 'two', startMs: 1000, endMs: 2000),
+      Segment(index: 2, text: 'three', startMs: 2000, endMs: 3000),
+      Segment(index: 3, text: 'four', startMs: 3000, endMs: 4000),
     ],
   );
 
@@ -203,7 +203,7 @@ void main() {
   }
 
   test(
-    'зацикленное выделение крутится внутри себя, а не с начала файла',
+    'a looped selection cycles inside itself, not from the start of the file',
     () async {
       final container = buildContainer();
       final controller = await openLesson(container);
@@ -229,18 +229,18 @@ void main() {
 
       // Drop the start-up: before the first seek the position is still zero.
       final started = trace.indexWhere((ms) => ms >= 1000);
-      expect(started, isNonNegative, reason: 'выделение так и не заиграло');
+      expect(started, isNonNegative, reason: 'the selection never started playing');
       final playing = trace.skip(started).toList();
 
       expect(
         playing.reduce(math.min),
         greaterThanOrEqualTo(1000 - toleranceMs),
-        reason: 'новый круг уехал в начало файла: $playing',
+        reason: 'a new lap ran off to the start of the file: $playing',
       );
       expect(
         playing.reduce(math.max),
         lessThanOrEqualTo(3000 + toleranceMs),
-        reason: 'выделение заехало в четвёртый кусок: $playing',
+        reason: 'the selection ran into the fourth segment: $playing',
       );
 
       // A 2000 ms loop: five seconds must fit at least two of them.
@@ -248,13 +248,13 @@ void main() {
       for (var i = 1; i < playing.length; i++) {
         if (playing[i] < playing[i - 1] - toleranceMs) wraps++;
       }
-      expect(wraps, greaterThanOrEqualTo(2), reason: 'круги: $playing');
+      expect(wraps, greaterThanOrEqualTo(2), reason: 'laps: $playing');
     },
     timeout: const Timeout(Duration(seconds: 90)),
   );
 
   test(
-    'кусок без цикла доигрывает себя и встаёт на своё начало',
+    'a segment without a loop plays itself out and rewinds to its own start',
     () async {
       final container = buildContainer();
       final controller = await openLesson(container);
@@ -268,12 +268,12 @@ void main() {
       expect(
         trace.reduce(math.max),
         greaterThanOrEqualTo(2000 - toleranceMs),
-        reason: 'конец куска обрезан: $trace',
+        reason: 'the end of the segment was cut off: $trace',
       );
       expect(
         trace.reduce(math.max),
         lessThanOrEqualTo(2000 + toleranceMs),
-        reason: 'кусок заехал в следующий: $trace',
+        reason: 'the segment ran into the next one: $trace',
       );
       expect(container.read(provider).value?.isPlaying, isFalse);
       expect(player.position.inMilliseconds, closeTo(1000, toleranceMs));
@@ -282,7 +282,7 @@ void main() {
   );
 
   test(
-    '«Следующий сегмент» сразу играет новый кусок, не доигрывая прежний',
+    '"Next segment" plays the new segment at once without finishing the old one',
     () async {
       final container = buildContainer();
       final controller = await openLesson(container);
@@ -299,12 +299,12 @@ void main() {
       expect(
         trace.reduce(math.min),
         greaterThanOrEqualTo(1000 - toleranceMs),
-        reason: 'после «Следующий» плеер вернулся в прошлый кусок: $trace',
+        reason: 'after "Next" the player fell back into the previous segment: $trace',
       );
       expect(
         trace.reduce(math.max),
         greaterThanOrEqualTo(2000 - toleranceMs),
-        reason: 'второй кусок так и не заиграл: $trace',
+        reason: 'the second segment never started playing: $trace',
       );
     },
     timeout: const Timeout(Duration(seconds: 90)),

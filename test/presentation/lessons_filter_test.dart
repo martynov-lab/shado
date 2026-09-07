@@ -48,8 +48,8 @@ class _FakeLibraryController extends LibraryController {
 }
 
 void main() {
-  const podcasts = Topic(id: 'topic-1', name: 'Подкасты');
-  const dialogs = Topic(id: 'topic-2', name: 'Диалоги');
+  const podcasts = Topic(id: 'topic-1', name: 'Podcasts');
+  const dialogs = Topic(id: 'topic-2', name: 'Dialogues');
 
   final lessons = [
     _lesson(
@@ -75,26 +75,26 @@ void main() {
   ];
 
   group('LessonsFilter.matches', () {
-    test('поиск по названию нечувствителен к регистру', () {
+    test('search by title is case insensitive', () {
       const filter = LessonsFilter(query: 'sleep');
       expect(filter.matches(lessons[0]), isTrue);
       expect(filter.matches(lessons[2]), isTrue);
       expect(filter.matches(lessons[1]), isFalse);
     });
 
-    test('фильтр по теме оставляет только выбранные', () {
+    test('the topic filter keeps only the selected ones', () {
       final filter = LessonsFilter(topicIds: {podcasts.id});
       expect(filter.matches(lessons[0]), isTrue);
       expect(filter.matches(lessons[1]), isFalse);
     });
 
-    test('фильтр по уровню оставляет только выбранные', () {
+    test('the level filter keeps only the selected ones', () {
       const filter = LessonsFilter(levels: {LessonLevel.a2});
       expect(filter.matches(lessons[1]), isTrue);
       expect(filter.matches(lessons[0]), isFalse);
     });
 
-    test('фильтр по акценту оставляет только выбранные', () {
+    test('the accent filter keeps only the selected ones', () {
       const filter = LessonsFilter(accents: {'AU'});
       expect(filter.matches(lessons[1]), isTrue);
       expect(filter.matches(lessons[0]), isFalse);
@@ -102,7 +102,7 @@ void main() {
       expect(filter.matches(lessons[2]), isFalse);
     });
 
-    test('группы фильтров складываются через И', () {
+    test('filter groups combine with AND', () {
       final filter = LessonsFilter(
         query: 'sleep',
         topicIds: {podcasts.id},
@@ -114,7 +114,7 @@ void main() {
   });
 
   group('lessonsFilterProvider', () {
-    test('toggle добавляет и убирает значение', () {
+    test('toggle adds and removes a value', () {
       final container = ProviderContainer();
       addTearDown(container.dispose);
       final notifier = container.read(lessonsFilterProvider.notifier);
@@ -126,7 +126,7 @@ void main() {
       expect(container.read(lessonsFilterProvider).topicIds, isEmpty);
     });
 
-    test('reset снимает и поиск, и фильтры — смена языка их обнуляет', () {
+    test('reset clears both the query and the filters: a language switch wipes them', () {
       final container = ProviderContainer();
       addTearDown(container.dispose);
       final notifier = container.read(lessonsFilterProvider.notifier);
@@ -138,7 +138,7 @@ void main() {
       expect(container.read(lessonsFilterProvider).isEmpty, isTrue);
     });
 
-    test('clearFilters очищает выбор, но не поиск', () {
+    test('clearFilters clears the selection but not the query', () {
       final container = ProviderContainer();
       addTearDown(container.dispose);
       final notifier = container.read(lessonsFilterProvider.notifier);
@@ -167,20 +167,20 @@ void main() {
       return container;
     }
 
-    test('без фильтров отдаёт весь список', () async {
+    test('without filters it returns the whole list', () async {
       final container = await pump();
       final result = container.read(filteredLessonsProvider).value!;
       expect(result, hasLength(3));
     });
 
-    test('поиск сужает список', () async {
+    test('the query narrows the list', () async {
       final container = await pump();
       container.read(lessonsFilterProvider.notifier).setQuery('small talk');
       final result = container.read(filteredLessonsProvider).value!;
       expect(result.map((lesson) => lesson.id), ['2']);
     });
 
-    test('фильтр по уровню сужает список', () async {
+    test('the level filter narrows the list', () async {
       final container = await pump();
       container.read(lessonsFilterProvider.notifier).toggleLevel(LessonLevel.b1);
       final result = container.read(filteredLessonsProvider).value!;
@@ -189,7 +189,7 @@ void main() {
   });
 
   // Without a query the screen shows the root, with one the whole catalog.
-  group('главный экран: корень и поиск', () {
+  group('home screen: root and search', () {
     final folder = Folder(
       id: 'f1',
       title: 'Sleep podcasts',
@@ -219,14 +219,14 @@ void main() {
       return container;
     }
 
-    test('без поиска показываем корень, а не весь кеш', () async {
+    test('without a query we show the root, not the whole cache', () async {
       final container = await pump();
 
       expect(container.read(visibleLessonsProvider).map((l) => l.id), ['2']);
       expect(container.read(visibleFoldersProvider), [folder]);
     });
 
-    test('поиск находит и урок внутри папки', () async {
+    test('search finds a lesson inside a folder too', () async {
       final container = await pump();
       container.read(lessonsFilterProvider.notifier).setQuery('sleep');
 
@@ -239,7 +239,7 @@ void main() {
       expect(container.read(visibleFoldersProvider), [folder]);
     });
 
-    test('фильтр по категории прячет папки: у них нет уровня', () async {
+    test('a category filter hides folders: they have no level', () async {
       final container = await pump();
       container.read(lessonsFilterProvider.notifier).toggleLevel(LessonLevel.c1);
 

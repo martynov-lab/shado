@@ -20,7 +20,7 @@ void main() {
       await tester.pumpAndSettle();
     }
 
-    testWidgets('каждая иконка набора рисуется из своего ассета', (
+    testWidgets('every icon of the set is drawn from its own asset', (
       tester,
     ) async {
       await pumpIcons(tester, [
@@ -31,7 +31,7 @@ void main() {
       expect(find.byType(AppIcon), findsNWidgets(AppIcons.values.length));
     });
 
-    testWidgets('обычная иконка красится, фирменная остаётся своей', (
+    testWidgets('a plain icon is tinted while a branded one keeps its colors', (
       tester,
     ) async {
       await pumpIcons(tester, const [
@@ -47,20 +47,20 @@ void main() {
       expect(pictures.last.colorFilter, isNull);
     });
 
-    testWidgets('без подписи иконка скрыта от скринридера', (tester) async {
+    testWidgets('without a label the icon is hidden from the screen reader', (tester) async {
       await pumpIcons(tester, const [
         AppIcon(AppIcons.bell),
-        AppIcon(AppIcons.trash, semanticLabel: 'Удалить'),
+        AppIcon(AppIcons.trash, semanticLabel: 'Delete'),
       ]);
 
       final pictures = tester.widgetList<SvgPicture>(find.byType(SvgPicture));
       expect(pictures.first.excludeFromSemantics, isTrue);
-      expect(pictures.last.semanticsLabel, 'Удалить');
+      expect(pictures.last.semanticsLabel, 'Delete');
     });
   });
 
   group('$AppIcons', () {
-    test('имена в коде совпадают с файлами набора', () {
+    test('the names in code match the files of the set', () {
       final files = Directory('assets/app_icons')
           .listSync()
           .whereType<File>()

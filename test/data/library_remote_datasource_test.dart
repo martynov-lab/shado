@@ -22,7 +22,7 @@ void main() {
     return (remote: ApiLibraryRemoteDataSource(client), adapter: adapter);
   }
 
-  test('лента разбирается по type: папки отдельно, уроки отдельно', () async {
+  test('the feed splits by type: folders apart, lessons apart', () async {
     final env = build(
       (_) async => jsonResponse(200, {
         'items': [
@@ -42,7 +42,7 @@ void main() {
     expect(page.nextCursor, isNull);
   });
 
-  test('незнакомый type пропускается, а не роняет экран', () async {
+  test('an unknown type is skipped instead of crashing the screen', () async {
     final env = build(
       (_) async => jsonResponse(200, {
         'items': [
@@ -58,7 +58,7 @@ void main() {
     expect(page.lessons.map((dto) => dto.id), ['l1']);
   });
 
-  test('limit и cursor уходят в запрос, since не поддержан', () async {
+  test('limit and cursor go into the request; since is not supported', () async {
     final env = build((_) async => jsonResponse(200, {'items': []}));
 
     await env.remote.list(limit: 100, cursor: 'c1');

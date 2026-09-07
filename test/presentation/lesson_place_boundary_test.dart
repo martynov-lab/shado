@@ -18,8 +18,8 @@ void main() {
     return controller;
   }
 
-  group('флажок стоит', () {
-    test('метка текста встаёт в позицию плеера', () {
+  group('checkbox on', () {
+    test('the text marker lands at the player position', () {
       final container = ProviderContainer();
       addTearDown(container.dispose);
       final controller = prime(
@@ -37,7 +37,7 @@ void main() {
       expect(state.segmentCount, 2);
     });
 
-    test('следующая метка встаёт правее, сохраняя прежние', () {
+    test('the next marker lands further right, keeping the earlier ones', () {
       final container = ProviderContainer();
       addTearDown(container.dispose);
       final controller = prime(
@@ -54,7 +54,7 @@ void main() {
       expect(state.boundaries, [0, 2000, 6000, 9000]);
     });
 
-    test('метка внутрь готовой разметки не двигает метки правее', () {
+    test('a marker inside finished markup does not move the markers to its right', () {
       final container = ProviderContainer();
       addTearDown(container.dispose);
       final controller = prime(
@@ -71,7 +71,7 @@ void main() {
       expect(state.boundaries, [0, 1500, 3000, 6000, 9000]);
     });
 
-    test('перед последней меткой новая встаёт вплотную к ней', () {
+    test('before the last marker a new one lands right next to it', () {
       final container = ProviderContainer();
       addTearDown(container.dispose);
       final controller = prime(
@@ -90,8 +90,8 @@ void main() {
     });
   });
 
-  group('флажок снят', () {
-    test('первая метка встаёт чуть правее начала, а не под ползунок', () {
+  group('checkbox off', () {
+    test('the first marker lands slightly right of the start, not under the slider', () {
       final container = ProviderContainer();
       addTearDown(container.dispose);
       final controller = prime(
@@ -106,7 +106,7 @@ void main() {
       expect(state.boundaries, [0, 200, 9000]);
     });
 
-    test('следующие метки копятся правее самой правой', () {
+    test('further markers pile up to the right of the rightmost one', () {
       final container = ProviderContainer();
       addTearDown(container.dispose);
       final controller = prime(
@@ -122,7 +122,7 @@ void main() {
       expect(state.boundaries, [0, 200, 400, 9000]);
     });
 
-    test('метка внутрь готовой разметки не двигает метки правее', () {
+    test('a marker inside finished markup does not move the markers to its right', () {
       final container = ProviderContainer();
       addTearDown(container.dispose);
       final controller = prime(

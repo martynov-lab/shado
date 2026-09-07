@@ -1,9 +1,10 @@
 # Shadowing — Design System
 
-Токены, тема и стартовый виджет, собранные из style passport. Кастомная тема
-поверх `MaterialApp`, две палитры (светлая/тёмная), адаптивность.
+Tokens, the theme and a starter widget, assembled from the style passport. A
+custom theme on top of `MaterialApp`, two palettes (light and dark), and
+adaptivity.
 
-## Что внутри
+## What is inside
 
 ```
 lib/
@@ -21,15 +22,16 @@ lib/
     app_button.dart         // the reference component, a model for the rest
 ```
 
-## Шаги внедрения
+## Adoption steps
 
-### 1. Скопировать файлы
-Перенеси папки `lib/theme/` и `lib/widgets/` в свой проект (в `lib/`).
+### 1. Copy the files
+Move the `lib/theme/` and `lib/widgets/` folders into your project (under
+`lib/`).
 
-### 2. Подключить шрифты (для локального приложения — бандлом)
-Скачай с Google Fonts (лицензия OFL, можно класть в репозиторий):
-Sora, Plus Jakarta Sans, JetBrains Mono. Положи `.ttf` в `assets/fonts/` и
-добавь в `pubspec.yaml`:
+### 2. Wire up the fonts (bundled, for a local app)
+Download them from Google Fonts (the OFL license allows keeping them in the
+repository): Sora, Plus Jakarta Sans, JetBrains Mono. Put the `.ttf` files into
+`assets/fonts/` and add them to `pubspec.yaml`:
 
 ```yaml
 flutter:
@@ -61,12 +63,13 @@ flutter:
           weight: 500
 ```
 
-Имена в `family:` уже совпадают с константами в `app_typography.dart`.
+The names in `family:` already match the constants in `app_typography.dart`.
 
-> Быстрый старт без файлов: можно вместо бандла подключить пакет `google_fonts`.
-> Но для полностью офлайн-приложения бандл надёжнее — шрифты не тянутся из сети.
+> A quick start without the files: the `google_fonts` package can be used
+> instead of bundling. For a fully offline app, though, bundling is more
+> reliable — the fonts are not pulled over the network.
 
-### 3. Подключить тему в MaterialApp
+### 3. Wire the theme into MaterialApp
 
 ```dart
 import 'package:flutter/material.dart';
@@ -80,7 +83,7 @@ MaterialApp(
 );
 ```
 
-### 4. Использовать токены
+### 4. Use the tokens
 
 ```dart
 import 'theme/theme.dart';
@@ -108,11 +111,12 @@ Container(
 final columns = context.responsive(mobile: 1, tablet: 2, desktop: 3);
 ```
 
-## Требования
-Flutter 3.27+ (используется `Color.withValues`). Если версия старше —
-замени в `app_button.dart` `withValues(alpha: x)` на `withOpacity(x)`.
+## Requirements
+Flutter 3.27+ (it uses `Color.withValues`). On an older version, replace
+`withValues(alpha: x)` with `withOpacity(x)` in `app_button.dart`.
 
-## Дальше
-`app_button.dart` — образец паттерна (цвета из `context.colors`, размеры из
-`AppSpacing`/`AppRadii`, текст из `AppText`). По этому шаблону строится
-остальная библиотека: карточки, чипы, поля, строки списка и плеер с волной.
+## What comes next
+`app_button.dart` is the pattern to follow (colors from `context.colors`, sizes
+from `AppSpacing`/`AppRadii`, text from `AppText`). The rest of the library is
+built on that template: cards, chips, fields, list rows and the player with the
+waveform.

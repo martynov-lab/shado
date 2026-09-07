@@ -84,7 +84,7 @@ void main() {
     Size(760, 1024),
     Size(1280, 800),
   ]) {
-    testWidgets('HomePage рисуется на $size без исключений', (tester) async {
+    testWidgets('HomePage renders at $size without exceptions', (tester) async {
       await pumpHome(tester, size: size);
       expect(tester.takeException(), isNull);
     });

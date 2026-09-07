@@ -68,14 +68,14 @@ void main() {
   // English with three accents; the directory drives the accent field.
   const english = Language(
     code: 'en',
-    name: 'Английский',
+    name: 'English',
     accents: [
-      Accent(code: 'US', name: 'Американский', isDefault: true),
-      Accent(code: 'UK', name: 'Британский'),
-      Accent(code: 'AU', name: 'Австралийский'),
+      Accent(code: 'US', name: 'American', isDefault: true),
+      Accent(code: 'UK', name: 'British'),
+      Accent(code: 'AU', name: 'Australian'),
     ],
   );
-  const french = Language(code: 'fr', name: 'Французский');
+  const french = Language(code: 'fr', name: 'French');
 
   Future<ProviderContainer> pumpForm(
     WidgetTester tester, {
@@ -136,7 +136,7 @@ void main() {
     await tester.pumpAndSettle();
   }
 
-  testWidgets('три списка на месте, тема подтягивается с сервера', (
+  testWidgets('the three pickers are in place and the topic comes from the server', (
     tester,
   ) async {
     await pumpForm(tester);
@@ -152,12 +152,12 @@ void main() {
     expect(find.text('Без темы'), findsWidgets);
   });
 
-  testWidgets('выбор акцента и уровня попадает в состояние формы', (
+  testWidgets('the chosen accent and level land in the form state', (
     tester,
   ) async {
     final container = await pumpForm(tester);
 
-    await choose(tester, 'accent', 'Британский');
+    await choose(tester, 'accent', 'British');
     await choose(tester, 'level', 'C1 — продвинутый');
     await choose(tester, 'topic', 'Education');
 
@@ -167,11 +167,11 @@ void main() {
     expect(state.topicId, 'topic-1');
   });
 
-  test('без акцента и уровня урок не отправляется', () {
+  test('without an accent and a level the lesson is not submitted', () {
     // Everything else is filled: the title, some text and uploaded audio.
     const filled = AddLessonFormState(
-      title: 'Урок',
-      text: 'Раз',
+      title: 'Lesson',
+      text: 'One',
       audioId: 'audio-1',
       durationMs: 10000,
     );
@@ -191,10 +191,10 @@ void main() {
     );
   });
 
-  test('язык без акцентов не требует акцента', () {
+  test('a language without accents does not require an accent', () {
     const filled = AddLessonFormState(
-      title: 'Урок',
-      text: 'Раз',
+      title: 'Lesson',
+      text: 'One',
       audioId: 'audio-1',
       durationMs: 10000,
       level: LessonLevel.b1,
@@ -203,14 +203,14 @@ void main() {
     expect(filled.isReady(needsAccent: false), isTrue);
   });
 
-  testWidgets('у языка без акцентов поля «Акцент» нет', (tester) async {
+  testWidgets('a language without accents has no accent field', (tester) async {
     await pumpForm(tester, language: french);
 
     expect(find.text('Акцент'), findsNothing);
     expect(find.text('Уровень'), findsOneWidget);
   });
 
-  testWidgets('у английского в списке акцентов есть австралийский', (
+  testWidgets('English has the Australian accent in the list', (
     tester,
   ) async {
     await pumpForm(tester);
@@ -218,13 +218,13 @@ void main() {
     await tester.tap(find.byKey(const ValueKey('dropdown-accent')));
     await tester.pumpAndSettle();
 
-    expect(find.text('Американский'), findsWidgets);
-    expect(find.text('Британский'), findsOneWidget);
-    expect(find.text('Австралийский'), findsOneWidget);
+    expect(find.text('American'), findsWidgets);
+    expect(find.text('British'), findsOneWidget);
+    expect(find.text('Australian'), findsOneWidget);
   });
 
   // The form renders in full and the create button starts locked.
-  testWidgets('на пустой форме кнопка создания заперта', (tester) async {
+  testWidgets('on an empty form the create button is locked', (tester) async {
     await pumpForm(tester);
 
     final button = tester.widget<AppButton>(
@@ -233,16 +233,16 @@ void main() {
     expect(button.onPressed, isNull);
   });
 
-  testWidgets('справочник тем не загрузился — форма остаётся рабочей', (
+  testWidgets('the topic directory failed to load and the form still works', (
     tester,
   ) async {
     final container = await pumpForm(
       tester,
-      topicsError: StateError('нет связи'),
+      topicsError: StateError('no connection'),
     );
 
     // Accent and level do not depend on the directory: they are hardcoded.
-    await choose(tester, 'accent', 'Американский');
+    await choose(tester, 'accent', 'American');
     await choose(tester, 'level', 'A2 — элементарный');
 
     final state = container.read(addLessonControllerProvider);
@@ -255,7 +255,7 @@ void main() {
     );
   });
 
-  testWidgets('удалённая тема уходит из состояния', (tester) async {
+  testWidgets('a deleted topic leaves the state', (tester) async {
     final container = ProviderContainer(
       overrides: [
         topicsProvider.overrideWith((ref) async => topics),
@@ -284,14 +284,14 @@ void main() {
   });
 
   // TTS_CLIENT_SPEC §4.1: the daily voice-over balance sits by the button.
-  testWidgets('остаток суточных озвучек виден у кнопки', (tester) async {
+  testWidgets('the daily voice-over balance shows next to the button', (tester) async {
     await pumpForm(tester);
 
     expect(find.text('Осталось озвучек сегодня: 11'), findsOneWidget);
   });
 
   // Voice-over is owner-only: others get neither the button nor the hint.
-  testWidgets('у автора не-владельца кнопки озвучки нет', (tester) async {
+  testWidgets('an author who is not the owner gets no voice-over button', (tester) async {
     await pumpForm(tester, role: UserRole.admin, text: 'Hello there');
 
     expect(find.widgetWithText(AppButton, 'Озвучить ИИ'), findsNothing);
@@ -300,7 +300,7 @@ void main() {
     expect(find.widgetWithText(AppButton, 'Выберите аудио'), findsOneWidget);
   });
 
-  testWidgets('без ограничения (limit 0) остаток не показывается', (
+  testWidgets('with no cap (limit 0) the balance is not shown', (
     tester,
   ) async {
     await pumpForm(
@@ -316,14 +316,14 @@ void main() {
   });
 
   // Different voice-over error codes give different snackbar actions.
-  testWidgets('озвучка недоступна (503) — предлагает «Повторить»', (
+  testWidgets('voice-over unavailable (503) offers a retry', (
     tester,
   ) async {
     await pumpForm(
       tester,
       ttsError: const ApiException(
         code: ApiErrorCode.ttsUnavailable,
-        message: 'сервис не настроен',
+        message: 'service is not configured',
         status: 503,
       ),
       text: 'Hello there',
@@ -338,14 +338,14 @@ void main() {
     expect(find.widgetWithText(AppButton, 'Повторить'), findsOneWidget);
   });
 
-  testWidgets('исчерпан лимит (429) — предлагает загрузить файл, без ретрая', (
+  testWidgets('the quota is exhausted (429): it offers a file upload and no retry', (
     tester,
   ) async {
     await pumpForm(
       tester,
       ttsError: const ApiException(
         code: ApiErrorCode.ttsQuotaExceeded,
-        message: 'Бесплатный лимит озвучки на этот месяц исчерпан',
+        message: 'The free voice-over quota for this month is used up',
         status: 429,
       ),
       text: 'Hello there',
@@ -354,7 +354,7 @@ void main() {
     await startSynthesis(tester);
 
     expect(
-      find.text('Бесплатный лимит озвучки на этот месяц исчерпан'),
+      find.text('The free voice-over quota for this month is used up'),
       findsOneWidget,
     );
     expect(find.widgetWithText(AppButton, 'Загрузить файл'), findsOneWidget);

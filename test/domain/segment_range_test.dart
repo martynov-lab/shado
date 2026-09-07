@@ -3,7 +3,7 @@ import 'package:shado/features/lessons/domain/entities/segment_range.dart';
 
 void main() {
   group('SegmentRange', () {
-    test('знает свою длину и содержимое', () {
+    test('knows its own length and contents', () {
       const range = SegmentRange(2, 4);
 
       expect(range.length, 3);
@@ -14,7 +14,7 @@ void main() {
       expect(range.contains(5), isFalse);
     });
 
-    test('один кусок — отрезок длиной один', () {
+    test('a single segment is a range of length one', () {
       const range = SegmentRange.single(3);
 
       expect(range.length, 1);
@@ -22,7 +22,7 @@ void main() {
       expect(range, const SegmentRange(3, 3));
     });
 
-    test('between растёт в обе стороны от точки отсчёта', () {
+    test('between grows both ways from the anchor', () {
       expect(SegmentRange.between(2, 5), const SegmentRange(2, 5));
       expect(SegmentRange.between(5, 2), const SegmentRange(2, 5));
       expect(SegmentRange.between(3, 3), const SegmentRange.single(3));
@@ -30,15 +30,15 @@ void main() {
   });
 
   group('SegmentRange.toggled', () {
-    test('без выделения выбирает один кусок', () {
+    test('with no selection it picks a single segment', () {
       expect(SegmentRange.toggled(null, 4), const SegmentRange.single(4));
     });
 
-    test('повторный тап по единственному куску снимает выделение', () {
+    test('tapping the only selected segment again clears the selection', () {
       expect(SegmentRange.toggled(const SegmentRange.single(4), 4), isNull);
     });
 
-    test('сосед расширяет выделение с любой стороны', () {
+    test('a neighbour extends the selection from either side', () {
       expect(
         SegmentRange.toggled(const SegmentRange(2, 4), 5),
         const SegmentRange(2, 5),
@@ -49,7 +49,7 @@ void main() {
       );
     });
 
-    test('тап по краю выделения снимает этот кусок', () {
+    test('a tap on the selection edge drops that segment', () {
       expect(
         SegmentRange.toggled(const SegmentRange(2, 4), 2),
         const SegmentRange(3, 4),
@@ -60,21 +60,21 @@ void main() {
       );
     });
 
-    test('кусок из середины не рвёт выделение, а начинает новое', () {
+    test('a segment from the middle starts a new selection instead of tearing it', () {
       expect(
         SegmentRange.toggled(const SegmentRange(1, 5), 3),
         const SegmentRange.single(3),
       );
     });
 
-    test('несоседний кусок начинает выделение заново', () {
+    test('a non-adjacent segment starts the selection over', () {
       expect(
         SegmentRange.toggled(const SegmentRange(2, 4), 8),
         const SegmentRange.single(8),
       );
     });
 
-    test('выделение всегда остаётся непрерывным', () {
+    test('the selection always stays contiguous', () {
       SegmentRange? selection;
       for (final index in [3, 4, 5, 1, 2, 3, 9, 8]) {
         selection = SegmentRange.toggled(selection, index);

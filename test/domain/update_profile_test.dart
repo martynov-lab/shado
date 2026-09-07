@@ -37,7 +37,7 @@ class _FakeAuthRepository implements AuthRepository {
 
 void main() {
   group('UpdateProfile', () {
-    test('слишком длинное имя отвергается до сети', () {
+    test('a name that is too long is rejected before the network', () {
       final repo = _FakeAuthRepository();
       final usecase = UpdateProfile(repo);
 
@@ -49,7 +49,7 @@ void main() {
       expect(repo.lastCall, isNull);
     });
 
-    test('цель вне диапазона 0..1440 отвергается', () {
+    test('a goal outside 0..1440 is rejected', () {
       final repo = _FakeAuthRepository();
       final usecase = UpdateProfile(repo);
 
@@ -64,13 +64,13 @@ void main() {
       expect(repo.lastCall, isNull);
     });
 
-    test('корректные поля уходят в репозиторий с обрезанным именем', () async {
+    test('valid fields reach the repository with the name trimmed', () async {
       final repo = _FakeAuthRepository();
       final usecase = UpdateProfile(repo);
 
-      await usecase(name: '  Андрей  ', studiedLanguage: 'en', dailyGoalMinutes: 15);
+      await usecase(name: '  Andrew  ', studiedLanguage: 'en', dailyGoalMinutes: 15);
 
-      expect(repo.lastCall?.name, 'Андрей');
+      expect(repo.lastCall?.name, 'Andrew');
       expect(repo.lastCall?.studiedLanguage, 'en');
       expect(repo.lastCall?.dailyGoalMinutes, 15);
     });

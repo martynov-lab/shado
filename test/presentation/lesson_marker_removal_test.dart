@@ -16,7 +16,7 @@ void main() {
     return controller;
   }
 
-  test('убирает первый разделитель и парную границу №1', () {
+  test('removes the first separator and its paired boundary #1', () {
     final container = ProviderContainer();
     addTearDown(container.dispose);
     final controller = prime(
@@ -34,7 +34,7 @@ void main() {
     expect(state.segmentCount, 2);
   });
 
-  test('вторую метку убирает, не трогая первую', () {
+  test('removes the second marker without touching the first', () {
     final container = ProviderContainer();
     addTearDown(container.dispose);
     final controller = prime(
@@ -51,7 +51,7 @@ void main() {
     expect(state.segmentCount, 2);
   });
 
-  test('номер вне диапазона ничего не меняет', () {
+  test('an ordinal out of range changes nothing', () {
     final container = ProviderContainer();
     addTearDown(container.dispose);
     final controller = prime(

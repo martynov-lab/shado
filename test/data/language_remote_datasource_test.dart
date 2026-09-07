@@ -20,22 +20,22 @@ void main() {
     return (remote: ApiLanguageRemoteDataSource(client), adapter: adapter);
   }
 
-  test('справочник разбирает языки с акцентами и без', () async {
+  test('the directory parses languages with and without accents', () async {
     final env = build(
       (_) async => jsonResponse(200, {
         'languages': [
           {
             'code': 'en',
-            'name': 'Английский',
+            'name': 'English',
             'native_name': 'English',
             'is_default': true,
             'accents': [
-              {'code': 'US', 'name': 'Американский', 'is_default': true},
-              {'code': 'UK', 'name': 'Британский'},
-              {'code': 'AU', 'name': 'Австралийский'},
+              {'code': 'US', 'name': 'American', 'is_default': true},
+              {'code': 'UK', 'name': 'British'},
+              {'code': 'AU', 'name': 'Australian'},
             ],
           },
-          {'code': 'fr', 'name': 'Французский', 'native_name': 'Français'},
+          {'code': 'fr', 'name': 'French', 'native_name': 'Français'},
         ],
       }),
     );
@@ -56,11 +56,11 @@ void main() {
     expect(languages.last.nativeName, 'Français');
   });
 
-  test('справочник читается и из обёртки items', () async {
+  test('the directory is also read from an items wrapper', () async {
     final env = build(
       (_) async => jsonResponse(200, {
         'items': [
-          {'code': 'tr', 'name': 'Турецкий'},
+          {'code': 'tr', 'name': 'Turkish'},
         ],
       }),
     );
@@ -68,6 +68,6 @@ void main() {
     final languages = await env.remote.list();
 
     expect(languages.single.code, 'tr');
-    expect(languages.single.label, 'Турецкий');
+    expect(languages.single.label, 'Turkish');
   });
 }

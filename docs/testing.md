@@ -1,59 +1,68 @@
-# Тесты
+# Tests
 
-Что и как проверяем. Код тестов подчиняется тем же правилам, что и остальной, —
+What we check and how. Test code follows the same rules as the rest —
 [code_style.md](code_style.md).
 
-1. [Виды тестов](#виды-тестов)
-2. [Где лежит файл](#где-лежит-файл)
-3. [Именование](#именование)
-4. [Подделки вместо моков](#подделки-вместо-моков)
-5. [Матчеры](#матчеры)
-6. [Юнит-тесты домена и data](#юнит-тесты-домена-и-data)
-7. [Тесты контроллеров](#тесты-контроллеров)
-8. [Виджет-тесты](#виджет-тесты)
-9. [Живой сервер и интеграция](#живой-сервер-и-интеграция)
-10. [Запуск](#запуск)
+1. [Kinds of tests](#kinds-of-tests)
+2. [Where the file goes](#where-the-file-goes)
+3. [Naming](#naming)
+4. [Fakes instead of mocks](#fakes-instead-of-mocks)
+5. [Matchers](#matchers)
+6. [Unit tests for domain and data](#unit-tests-for-domain-and-data)
+7. [Controller tests](#controller-tests)
+8. [Widget tests](#widget-tests)
+9. [Live server and integration](#live-server-and-integration)
+10. [Running](#running)
 
-## Виды тестов
+## Kinds of tests
 
-| Вид | Где | Что проверяет |
+| Kind | Where | What it checks |
 | --- | --- | --- |
-| Юнит | `test/domain/`, `test/data/`, `test/core/` | правила предметной области, маппинг, сеть, репозиторий |
-| Контроллер | `test/presentation/` | переходы состояния экрана на подделках |
-| Виджет | `test/presentation/` | разметку, жесты, что нажатие уходит куда надо |
-| Контракт | `test/live/live_contract.dart` | путь по настоящему серверу (руками) |
-| Интеграционный | `integration_test/` | платформенные части: звук, sqlite, пики |
+| Unit | `test/domain/`, `test/data/`, `test/core/` | domain rules, mapping, network, repository |
+| Controller | `test/presentation/` | screen state transitions on fakes |
+| Widget | `test/presentation/` | layout, gestures, that a tap goes where it should |
+| Contract | `test/live/live_contract.dart` | a path through the real server (run by hand) |
+| Integration | `integration_test/` | platform parts: sound, sqlite, peaks |
 
-Новая доменная логика без юнит-теста не считается сделанной. Виджет-тест
-пишем там, где есть поведение (жест, режим, состояние), а не на каждый `Text`.
+New domain logic without a unit test does not count as done. A widget test is
+written where there is behavior (a gesture, a mode, a state), not for every
+`Text`.
 
-## Где лежит файл
+## Where the file goes
 
-`test/` повторяет слои, а не дерево `lib/` дословно: `test/domain/lesson_test.dart`,
-`test/data/lesson_repository_test.dart`, `test/presentation/segment_tile_test.dart`.
-Имя файла — по тестируемому классу плюс `_test.dart`.
+`test/` mirrors the layers rather than the `lib/` tree verbatim:
+`test/domain/lesson_test.dart`, `test/data/lesson_repository_test.dart`,
+`test/presentation/segment_tile_test.dart`. The file name is the class under
+test plus `_test.dart`.
 
-Файл в `test/live/` намеренно без суффикса `_test`, чтобы обычный
-`flutter test` его не подхватывал.
+The file in `test/live/` deliberately has no `_test` suffix so that a plain
+`flutter test` does not pick it up.
 
-## Именование
+## Naming
 
-Описание теста — «действие, результат, условие», по-русски, как в остальном
-коде:
+A test description is "action, result, condition", in English, like the rest of
+the code (UI strings stay in Russian — see
+[code_style.md](code_style.md)):
 
 ```dart
-test('вне режима выбора галочки перед текстом нет', () { ... });
-test('reload сбрасывает выделение и зацикливание', () { ... });
+test('outside selection mode there is no checkbox before the text', () { ... });
+test('reload clears the selection and the loop', () { ... });
 ```
 
-Тесты одного класса собираем в `group('$SegmentRange', ...)` — с интерполяцией,
-чтобы переименование класса дошло до описания. Несколько сценариев одного метода
-— во вложенную группу `group('toggled', ...)`.
+Tests of one class are collected in `group('$SegmentRange', ...)` — with
+interpolation, so that renaming the class reaches the description. Several
+scenarios of one method go into a nested `group('toggled', ...)`.
 
-## Подделки вместо моков
+Values inside a test — lesson and folder titles, names, directory entries — are
+in English too. The exception is a string compared against the interface
+literally (`find.text('Войти')`): it must match the UI as it is written, so it
+stays in Russian.
 
-Библиотек моков (`mockito`, `mocktail`) в проекте нет и добавлять их без
-обсуждения не нужно: границы слоёв — интерфейсы, и подделка пишется руками.
+## Fakes instead of mocks
+
+There are no mock libraries (`mockito`, `mocktail`) in the project and there is
+no need to add them without a discussion: the layer boundaries are interfaces,
+and a fake is written by hand.
 
 ```dart
 class FakeLessonRepository implements LessonRepository {
@@ -68,16 +77,16 @@ class FakeLessonRepository implements LessonRepository {
 }
 ```
 
-* Класс подделки — с префиксом `Fake`.
-* Используется в одном файле — объявляем в нём же; нужен нескольким —
-  выносим в отдельный файл рядом с тестами (как `test/core/fake_http_adapter.dart`).
-* Счётчики вызовов (`syncCalls`) — обычные поля, проверяются `expect`.
-* Данные для тестов собираем приватной функцией-билдером в конце файла:
+* A fake class carries the `Fake` prefix.
+* Used in one file — declared in that file; needed by several — moved into a
+  separate file next to the tests (like `test/core/fake_http_adapter.dart`).
+* Call counters (`syncCalls`) are plain fields, checked with `expect`.
+* Test data is assembled by a private builder function at the end of the file:
   `Lesson _makeLesson({int segments = 2})`.
 
-## Матчеры
+## Matchers
 
-Второй аргумент `expect` — матчер, а не голое значение:
+The second argument of `expect` is a matcher, not a bare value:
 
 ```dart
 // bad
@@ -91,13 +100,14 @@ expect(segments, hasLength(3));
 expect(error, isA<VersionConflictFailure>());
 ```
 
-Полезные: `equals`, `isNull`/`isNotNull`, `isTrue`/`isFalse`, `hasLength`,
-`contains`, `isA<T>()`, `throwsA(isA<T>())`, `closeTo` для `double`.
+The useful ones: `equals`, `isNull`/`isNotNull`, `isTrue`/`isFalse`,
+`hasLength`, `contains`, `isA<T>()`, `throwsA(isA<T>())`, and `closeTo` for
+`double`.
 
-## Юнит-тесты домена и data
+## Unit tests for domain and data
 
-Домен тестируется без Flutter-обвязки: собрали объект, вызвали метод, проверили
-результат. Ошибки проверяем типом, а не текстом сообщения:
+The domain is tested without any Flutter scaffolding: build the object, call the
+method, check the result. Errors are checked by type, not by message text:
 
 ```dart
 expect(
@@ -106,12 +116,13 @@ expect(
 );
 ```
 
-Репозиторий и сеть проверяются на подделках источников: без реальной сети, БД и
-файлов. Для dio есть `test/core/fake_http_adapter.dart`.
+The repository and the network are checked against fake sources: no real
+network, database or files. For dio there is `test/core/fake_http_adapter.dart`.
 
-## Тесты контроллеров
+## Controller tests
 
-Контроллер поднимается в `ProviderContainer` с подменёнными зависимостями:
+The controller is brought up in a `ProviderContainer` with substituted
+dependencies:
 
 ```dart
 final container = ProviderContainer(
@@ -129,12 +140,13 @@ await controller.togglePlay(0);
 expect(container.read(lessonControllerProvider('id')).value!.isPlaying, isTrue);
 ```
 
-Подменяем на границе слоя (репозиторий или datasource), чтобы под тестом
-остался настоящий код контроллера и use case'ов.
+We substitute at a layer boundary (the repository or the datasource) so that the
+real code of the controller and the use cases stays under test.
 
-## Виджет-тесты
+## Widget tests
 
-Виджет поднимается с темой приложения и, если нужно, с `ProviderScope`:
+A widget is brought up with the app theme and, when needed, with a
+`ProviderScope`:
 
 ```dart
 Future<List<String>> pumpTile(WidgetTester tester, {required bool isSelecting}) async {
@@ -156,33 +168,33 @@ Future<List<String>> pumpTile(WidgetTester tester, {required bool isSelecting}) 
 }
 ```
 
-* Общий `pump*`-хелпер объявляем в начале `main()` — он же документирует, какие
-  параметры важны в этом файле.
-* Виджет, принимающий данные и колбэки (а не провайдеры), тестируется без
-  `ProviderScope` — ещё одна причина писать их так.
-* Ищем по смыслу: `find.text`, `find.byIcon`, `find.byType`; `find.byKey` —
-  когда иначе не отличить.
-* Golden-тестов в проекте нет: библиотеки нет, эталоны никто не сверяет.
-  Понадобятся — сначала обсуждаем зависимость.
+* The shared `pump*` helper is declared at the top of `main()` — it also
+  documents which parameters matter in this file.
+* A widget that takes data and callbacks (rather than providers) is tested
+  without a `ProviderScope` — one more reason to write them that way.
+* We search by meaning: `find.text`, `find.byIcon`, `find.byType`; `find.byKey`
+  is for when nothing else tells them apart.
+* There are no golden tests in the project: there is no library and nobody
+  reviews the references. Should they be needed, the dependency is discussed
+  first.
 
-## Живой сервер и интеграция
+## Live server and integration
 
-`test/live/live_contract.dart` ходит на настоящий сервер и запускается руками —
-в обычный прогон он не входит. `integration_test/` требует запущенной
-платформы и проверяет то, что нельзя подделать: воспроизведение, sqlite, пики.
-Ни то, ни другое не должно быть единственной проверкой логики — логика
-покрывается юнит-тестами.
+`test/live/live_contract.dart` talks to a real server and is run by hand — it is
+not part of the ordinary run. `integration_test/` requires a running platform
+and checks what cannot be faked: playback, sqlite, peaks. Neither of them should
+be the only check of a piece of logic — logic is covered by unit tests.
 
-## Запуск
+## Running
 
 ```bash
-flutter test                                   # весь обычный прогон
+flutter test                                   # the whole ordinary run
 flutter test test/presentation/segment_tile_test.dart
-flutter test --name 'режим выбора'
-flutter analyze                                # перед сдачей — обязательно
+flutter test --name 'selection mode'
+flutter analyze                                # mandatory before handing over
 flutter test integration_test/desktop_pipeline_test.dart -d windows
-flutter test test/live/live_contract.dart      # нужен живой сервер
+flutter test test/live/live_contract.dart      # needs a live server
 ```
 
-Правка кода без прогона тестов не заканчивается. Если тест падает — сообщаем об
-этом с выводом, а не «в целом работает».
+A code change is not finished until the tests have been run. If a test fails, we
+say so with the output rather than "it mostly works".

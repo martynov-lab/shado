@@ -76,8 +76,8 @@ void main() {
     await tester.sendKeyUpEvent(LogicalKeyboardKey.controlLeft);
   }
 
-  group('метки границ', () {
-    testWidgets('тянутся за верхний кружок', (tester) async {
+  group('boundary markers', () {
+    testWidgets('drag by the top handle', (tester) async {
       List<int>? reported;
       await pumpEditor(
         tester,
@@ -97,7 +97,7 @@ void main() {
       expect(reported![1], closeTo(5243, 60));
     });
 
-    testWidgets('за середину волны не тянутся', (tester) async {
+    testWidgets('do not drag by the middle of the wave', (tester) async {
       List<int>? reported;
       await pumpEditor(
         tester,
@@ -112,7 +112,7 @@ void main() {
       expect(reported, isNull);
     });
 
-    testWidgets('крайние метки не двигаются', (tester) async {
+    testWidgets('the outer markers stay put', (tester) async {
       List<int>? reported;
       await pumpEditor(
         tester,
@@ -128,8 +128,8 @@ void main() {
     });
   });
 
-  group('удаление метки', () {
-    testWidgets('двойной тап по кружку сообщает индекс метки', (tester) async {
+  group('marker removal', () {
+    testWidgets('a double tap on the handle reports the marker index', (tester) async {
       int? removed;
       await pumpEditor(
         tester,
@@ -147,7 +147,7 @@ void main() {
       expect(removed, 1);
     });
 
-    testWidgets('двойной тап мимо кружка метку не трогает', (tester) async {
+    testWidgets('a double tap away from the handle leaves the marker alone', (tester) async {
       int? removed;
       await pumpEditor(
         tester,
@@ -166,8 +166,8 @@ void main() {
     });
   });
 
-  group('масштаб и перетаскивание волны', () {
-    testWidgets('Ctrl + колесо растягивает волну вокруг курсора', (
+  group('zooming and panning the wave', () {
+    testWidgets('Ctrl + wheel zooms the wave around the cursor', (
       tester,
     ) async {
       int? seeked;
@@ -192,7 +192,7 @@ void main() {
       expect(seeked, closeTo(4500 + 100 / (width * zoom) * durationMs, 60));
     });
 
-    testWidgets('перетаскивание волны сдвигает окно', (tester) async {
+    testWidgets('dragging the wave shifts the window', (tester) async {
       int? seeked;
       await pumpEditor(
         tester,
@@ -219,7 +219,7 @@ void main() {
       );
     });
 
-    testWidgets('щипок двумя пальцами растягивает волну', (tester) async {
+    testWidgets('a two-finger pinch zooms the wave', (tester) async {
       int? seeked;
       await pumpEditor(
         tester,
@@ -241,7 +241,7 @@ void main() {
       expect(seeked, closeTo(4500 + 100 / (width * 3) * durationMs, 120));
     });
 
-    testWidgets('на растянутой волне метка ставится точнее', (tester) async {
+    testWidgets('on a zoomed wave a marker lands more precisely', (tester) async {
       List<int>? reported;
       await pumpEditor(
         tester,
@@ -266,8 +266,8 @@ void main() {
     });
   });
 
-  group('ползунок воспроизведения', () {
-    testWidgets('тап по волне переносит ползунок', (tester) async {
+  group('playback slider', () {
+    testWidgets('a tap on the wave moves the slider', (tester) async {
       int? seeked;
       await pumpEditor(
         tester,
@@ -282,7 +282,7 @@ void main() {
       expect(seeked, closeTo(6750, 40));
     });
 
-    testWidgets('тянется за нижний треугольник', (tester) async {
+    testWidgets('drags by the bottom triangle', (tester) async {
       int? seeked;
       await pumpEditor(
         tester,
@@ -302,7 +302,7 @@ void main() {
       expect(seeked, closeTo(4050, 60));
     });
 
-    testWidgets('за середину волны не тянется', (tester) async {
+    testWidgets('does not drag by the middle of the wave', (tester) async {
       int? seeked;
       await pumpEditor(
         tester,
@@ -317,7 +317,7 @@ void main() {
       expect(seeked, isNull);
     });
 
-    testWidgets('без onSeek волна ползунком не управляет', (tester) async {
+    testWidgets('without onSeek the wave does not drive the slider', (tester) async {
       int? seeked;
       await pumpEditor(tester, boundaries: const [0, 9000]);
 
@@ -327,7 +327,7 @@ void main() {
       expect(seeked, isNull);
     });
 
-    testWidgets('ручки границы и ползунка не мешают друг другу', (
+    testWidgets('the boundary and slider handles do not get in each other way', (
       tester,
     ) async {
       List<int>? reported;
@@ -356,12 +356,12 @@ void main() {
     });
   });
 
-  group('обрезка', () {
+  group('trimming', () {
     /// Grab point of the trim handle tab.
     const leftHandleX = 7.5;
     const rightHandleX = width - 7.5;
 
-    testWidgets('левая метка тянется за язычок', (tester) async {
+    testWidgets('the left marker drags by its tab', (tester) async {
       AudioTrim? reported;
       await pumpEditor(
         tester,
@@ -382,7 +382,7 @@ void main() {
       expect(reported!.startMs, closeTo(2419, 60));
     });
 
-    testWidgets('правая метка тянется за язычок', (tester) async {
+    testWidgets('the right marker drags by its tab', (tester) async {
       AudioTrim? reported;
       await pumpEditor(
         tester,
@@ -403,7 +403,7 @@ void main() {
       expect(reported!.endMs, closeTo(6581, 60));
     });
 
-    testWidgets('метки не сходятся ближе kMinTrimMs', (tester) async {
+    testWidgets('the markers never come closer than kMinTrimMs', (tester) async {
       AudioTrim? reported;
       await pumpEditor(
         tester,
@@ -423,7 +423,7 @@ void main() {
       expect(reported!.startMs, durationMs - kMinTrimMs);
     });
 
-    testWidgets('пока идёт обрезка, метки границ кусков не двигаются', (
+    testWidgets('while trimming, the segment boundary markers stay put', (
       tester,
     ) async {
       List<int>? reported;
@@ -442,7 +442,7 @@ void main() {
       expect(reported, isNull);
     });
 
-    testWidgets('обрезанная дорожка занимает окно целиком', (tester) async {
+    testWidgets('a trimmed track fills the whole window', (tester) async {
       int? seeked;
       await pumpEditor(
         tester,

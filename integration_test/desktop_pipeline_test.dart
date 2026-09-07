@@ -76,7 +76,7 @@ void main() {
         range: range,
       );
 
-  test('пики читаются и отражают перепад громкости', () async {
+  test('peaks are read and reflect the loudness drop', () async {
     const source = SoLoudWaveformDataSource();
     final peaks = await source.loadPeaks(query());
     expect(peaks.length, 200);
@@ -93,7 +93,7 @@ void main() {
     expect(cached.maxima, peaks.maxima);
   });
 
-  test('пики отрезка считаются по нему, а не по файлу целиком', () async {
+  test('range peaks are computed on the range, not on the whole file', () async {
     const source = SoLoudWaveformDataSource();
     // Each half must keep the full resolution of 200 samples.
     final loud = await source.loadPeaks(
@@ -121,7 +121,7 @@ void main() {
 
   // Only playback itself is checked here; boundaries live in
   // `lesson_playback_test.dart`.
-  test('файл открывается, играет и доигрывает до конца', () async {
+  test('the file opens, plays and reaches the end', () async {
     final player = AudioPlayer();
     addTearDown(player.dispose);
     await player.setAudioSource(AudioSource.file(wavPath));
@@ -135,13 +135,13 @@ void main() {
     expect(player.processingState, ProcessingState.completed);
   });
 
-  test('урок пишется и читается из sqflite', () async {
+  test('a lesson is written to and read from sqflite', () async {
     final db = SqfliteLessonLocalDataSource(
       databaseName: 'pipeline_test_${DateTime.now().microsecondsSinceEpoch}.db',
     );
     final lesson = LessonModel(
       id: 'test-lesson',
-      title: 'Проверка',
+      title: 'Pipeline check',
       audioId: 'test-audio',
       audioPath: wavPath,
       durationMs: 2000,
@@ -155,7 +155,7 @@ void main() {
     );
     await db.upsertLesson(lesson);
     final loaded = await db.getLesson('test-lesson');
-    expect(loaded?.title, 'Проверка');
+    expect(loaded?.title, 'Pipeline check');
     expect(loaded?.segments.length, 2);
     await db.deleteLesson('test-lesson');
     expect(await db.getLesson('test-lesson'), isNull);

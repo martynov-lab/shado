@@ -60,7 +60,7 @@ final _summary = ProgressSummary(
 );
 
 void main() {
-  testWidgets('заставка держится, пока грузится сводка прогресса', (
+  testWidgets('the splash holds while the progress summary loads', (
     tester,
   ) async {
     tester.view.physicalSize = const Size(390, 900);

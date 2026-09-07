@@ -1,32 +1,32 @@
-# Виджеты и экраны
+# Widgets and screens
 
-Как устроен слой представления. Общий стиль кода — в
-[code_style.md](code_style.md), состояние — в
+How the presentation layer is arranged. The general code style is in
+[code_style.md](code_style.md), state in
 [state_management.md](state_management.md).
 
-1. [Один виджет — один файл](#один-виджет--один-файл)
-2. [Никаких методов-билдеров](#никаких-методов-билдеров)
-3. [Какой класс виджета выбрать](#какой-класс-виджета-выбрать)
-4. [Данные и колбэки](#данные-и-колбэки)
-5. [Дизайн-система](#дизайн-система)
-6. [Компоновка](#компоновка)
-7. [Адаптивные экраны](#адаптивные-экраны)
-8. [Экран](#экран)
-9. [Навигация](#навигация)
-10. [Доступность и клавиатура](#доступность-и-клавиатура)
-11. [Форматирование данных](#форматирование-данных)
+1. [One widget — one file](#one-widget--one-file)
+2. [No builder methods](#no-builder-methods)
+3. [Which widget class to choose](#which-widget-class-to-choose)
+4. [Data and callbacks](#data-and-callbacks)
+5. [The design system](#the-design-system)
+6. [Layout](#layout)
+7. [Adaptive screens](#adaptive-screens)
+8. [A screen](#a-screen)
+9. [Navigation](#navigation)
+10. [Accessibility and the keyboard](#accessibility-and-the-keyboard)
+11. [Formatting data](#formatting-data)
 
-## Один виджет — один файл
+## One widget — one file
 
-Каждый виджет живёт в своём файле, названном по классу. Приватных вложенных
-классов-виджетов в файле экрана быть не должно.
+Every widget lives in its own file, named after the class. There must be no
+private nested widget classes inside a screen file.
 
 ```text
 # bad
 presentation/pages/lesson_page.dart
   class LessonPage
-  class _LessonView       ← вложенный виджет в том же файле
-  class _SelectionBar     ← и ещё один
+  class _LessonView       ← a nested widget in the same file
+  class _SelectionBar     ← and one more
 
 # good
 presentation/pages/lesson_page.dart      → LessonPage
@@ -34,20 +34,21 @@ presentation/widgets/lesson_view.dart    → LessonView
 presentation/widgets/selection_bar.dart  → SelectionBar
 ```
 
-Где лежит файл:
+Where the file goes:
 
-* виджет используется только этой фичей — `features/<feature>/presentation/widgets/`;
-* виджет нужен нескольким фичам и не знает о предметной области —
-  `lib/widgets/` (дизайн-система) плюс строка в барель `widgets.dart`.
+* the widget is used by this feature only —
+  `features/<feature>/presentation/widgets/`;
+* the widget is needed by several features and knows nothing about the domain —
+  `lib/widgets/` (the design system) plus a line in the `widgets.dart` barrel.
 
-Класс виджета публичный (без `_`), даже если сегодня он используется в одном
-месте: файл всё равно отдельный, а приватность здесь ничего не защищает.
+The widget class is public (no `_`) even when it is used in a single place
+today: the file is separate anyway, and privacy protects nothing here.
 
-## Никаких методов-билдеров
+## No builder methods
 
-Метод, возвращающий `Widget`, — это виджет, который забыли объявить: он не
-получает своего элемента в дереве, перестраивается вместе со всем экраном и не
-может быть `const`.
+A method returning a `Widget` is a widget somebody forgot to declare: it gets no
+element of its own in the tree, rebuilds together with the whole screen, and
+cannot be `const`.
 
 ```dart
 // bad
@@ -66,35 +67,36 @@ Widget build(BuildContext context) => const Column(
 );
 ```
 
-Это же касается локальных переменных-виджетов, собираемых в `build` условиями:
-если веток больше одной, выносим виджет в класс и передаём в него флаг.
+The same goes for local widget variables assembled in `build` by conditions:
+with more than one branch, the widget moves into a class and takes a flag.
 
-Исключение — только `builder`-колбэки чужих API (`ListView.builder`,
-`ValueListenableBuilder`, `showDialog`): там виджет строит фреймворк, и вложенная
-функция — часть контракта. Тело такого колбэка должно быть коротким: одна
-конструкция виджета, вся логика — снаружи.
+The only exception is the `builder` callbacks of third-party APIs
+(`ListView.builder`, `ValueListenableBuilder`, `showDialog`): there the
+framework builds the widget and the nested function is part of the contract. The
+body of such a callback must be short: one widget construction, with all the
+logic outside.
 
-## Какой класс виджета выбрать
+## Which widget class to choose
 
-| Что нужно | Класс |
+| What is needed | Class |
 | --- | --- |
-| Только разметка по входным данным | `StatelessWidget` |
-| Локальное UI-состояние: фокус, контроллеры, анимации, hover | `StatefulWidget` |
-| Чтение провайдеров | `ConsumerWidget` |
-| Провайдеры + локальное UI-состояние | `ConsumerStatefulWidget` |
+| Layout from input data only | `StatelessWidget` |
+| Local UI state: focus, controllers, animations, hover | `StatefulWidget` |
+| Reading providers | `ConsumerWidget` |
+| Providers plus local UI state | `ConsumerStatefulWidget` |
 
-`StatefulWidget` держит только то, что не переживает экран и никому больше не
-нужно (`FocusNode`, `TextEditingController`, `ScrollController`, флаги
-hover/pressed). Всё, что относится к данным урока, сессии, загрузке, — в
-контроллер.
+A `StatefulWidget` holds only what does not outlive the screen and is of no use
+to anyone else (`FocusNode`, `TextEditingController`, `ScrollController`,
+hover/pressed flags). Everything about lesson data, the session or loading goes
+into the controller.
 
-Всё, что создано в `State` и требует освобождения, освобождается в `dispose()`.
+Everything created in `State` that needs releasing is released in `dispose()`.
 
-## Данные и колбэки
+## Data and callbacks
 
-Виджет получает готовые данные и колбэки, а не источник данных. Провайдеры
-читаются на экране (или в `ConsumerWidget`, который отвечает за раздел), а не в
-глубине дерева.
+A widget receives ready data and callbacks, not a data source. Providers are
+read at the screen level (or in the `ConsumerWidget` that owns a section), not
+deep in the tree.
 
 ```dart
 // bad — the tile reaches into the controller and knows lessonId
@@ -124,16 +126,17 @@ class SegmentTile extends StatelessWidget {
 }
 ```
 
-Так виджет тестируется без провайдеров и переиспользуется на другом экране.
+That way the widget is tested without providers and reused on another screen.
 
-Имена колбэков — с `on` (см. [code_style.md](code_style.md#именование)).
-Значение колбэка передаём как есть, без обёртки, если ничего не добавляем:
-`onPressed: controller.clearSelection`, а не
+Callback names take `on` (see [code_style.md](code_style.md#naming)). A callback
+value is passed as is, without a wrapper, when nothing is added:
+`onPressed: controller.clearSelection`, not
 `onPressed: () => controller.clearSelection()`.
 
-## Дизайн-система
+## The design system
 
-Новый UI собирается из компонентов `lib/widgets/` и токенов `lib/theme/`:
+New UI is assembled from the components in `lib/widgets/` and the tokens in
+`lib/theme/`:
 
 ```dart
 import 'package:shado/theme/theme.dart';
@@ -159,31 +162,33 @@ Padding(
 );
 ```
 
-Правила:
+The rules:
 
-* цвет — только `context.colors`, никаких `Colors.blue` и `Color(0xFF...)` в
-  виджетах;
-* отступы и размеры — `AppSpacing`, `AppSizes`, `AppRadii`; «магические» 12, 16,
-  24 не пишем;
-* типографика — `AppText`;
-* иконки — `AppIcon(AppIcons.play)`: SVG-набор из макетов в `assets/app_icons/`.
-  Размер и цвет берутся из `IconTheme`, как у `Icon`, или задаются токенами
-  (`AppSizes.iconMd`, `context.colors.*`). Компоненты `AppIconButton`,
-  `AppChip`, `AppBadge` пока принимают `IconData` (Material Icons) — их перевод
-  на набор делается отдельной задачей, а не попутно;
-* длительности анимаций — `AppDurations` через `context.motion(...)`, чтобы
-  сработала настройка «убрать анимации»;
-* нужного компонента нет — сначала смотрим `lib/screens/design_gallery.dart` и
-  соседние `app_*.dart`, потом добавляем новый в `lib/widgets/` по образцу
-  `app_button.dart` (варианты enum'ом, состояния считаем сами, токены снаружи).
+* color comes from `context.colors` only — no `Colors.blue` or `Color(0xFF...)`
+  inside widgets;
+* spacing and sizes come from `AppSpacing`, `AppSizes`, `AppRadii`; we do not
+  write magic 12, 16, 24;
+* typography comes from `AppText`;
+* icons are `AppIcon(AppIcons.play)`: the SVG set from the mockups in
+  `assets/app_icons/`. Size and color are taken from `IconTheme`, as with
+  `Icon`, or set through tokens (`AppSizes.iconMd`, `context.colors.*`). The
+  `AppIconButton`, `AppChip` and `AppBadge` components still take `IconData`
+  (Material Icons) — moving them to the set is a task of its own, not something
+  done in passing;
+* animation durations come from `AppDurations` through `context.motion(...)`, so
+  that the "reduce animations" setting takes effect;
+* when the component you need does not exist, first look at
+  `lib/screens/design_gallery.dart` and the neighbouring `app_*.dart`, then add
+  a new one to `lib/widgets/` following `app_button.dart` (variants as an enum,
+  states computed internally, tokens from outside).
 
-Часть старых экранов ещё использует `lib/core/theme/app_theme.dart` и голый
-Material. Новый код пишем на дизайн-системе; старый переводим отдельной задачей,
-а не попутно.
+Some older screens still use `lib/core/theme/app_theme.dart` and bare Material.
+New code is written on the design system; the old code is migrated as a separate
+task, not in passing.
 
-## Компоновка
+## Layout
 
-Расположением и размером виджета управляет родитель.
+The parent controls the position and the size of a widget.
 
 ```dart
 // bad
@@ -195,19 +200,19 @@ Column(mainAxisAlignment: MainAxisAlignment.center, children: [...])
 Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [AppButton(...)])
 ```
 
-* Корнем собственного виджета не бывают `Expanded`, `Flexible` и `Padding`:
-  отступ и растяжение задаёт тот, кто его вставляет.
-* Высоту не фиксируем. Если без фиксации никак (горизонтальный список внутри
-  вертикального), высота считается с учётом масштаба текста
-  (`MediaQuery.textScalerOf(context)`), а не константой.
-* Списки — `ListView.builder`/`SliverList`, а не `Column` внутри
-  `SingleChildScrollView`, когда элементов может быть много.
+* `Expanded`, `Flexible` and `Padding` are never the root of a widget of your
+  own: padding and stretching are set by whoever inserts it.
+* We do not fix the height. When there is no way around it (a horizontal list
+  inside a vertical one), the height is computed with the text scale in mind
+  (`MediaQuery.textScalerOf(context)`), not as a constant.
+* Lists are `ListView.builder`/`SliverList`, not a `Column` inside a
+  `SingleChildScrollView`, when there may be many items.
 
-## Адаптивные экраны
+## Adaptive screens
 
-Приложение работает на телефоне, планшете и десктопе. Раскладку под платформу
-выбирает `AppAdaptiveLayout` по ширине окна — брейкпоинты заданы в
-`AppBreakpoints` (`tablet = 600`, `desktop = 1024`):
+The app runs on phones, tablets and desktops. `AppAdaptiveLayout` picks the
+layout by window width — the breakpoints are set in `AppBreakpoints`
+(`tablet = 600`, `desktop = 1024`):
 
 ```dart
 AppAdaptiveLayout(
@@ -217,28 +222,30 @@ AppAdaptiveLayout(
 );
 ```
 
-* Обязателен только `mobile` — базовая раскладка. `tablet` и `desktop`
-  необязательны и падают на ближайшую меньшую (десктоп → планшет → телефон).
-  Экрану, которому хватает одной широкой раскладки, задаём её в `tablet`, а
-  `desktop` оставляем пустым.
-* Каждая раскладка — свой виджет в отдельном файле (`<screen>_mobile_view.dart`,
-  `_tablet_view.dart`, `_desktop_view.dart`), как любой другой виджет (см.
-  [Один виджет — один файл](#один-виджет--один-файл)). `AppAdaptiveLayout` строит
-  только выбранный вариант, поэтому соседние раскладки не собираются впустую.
-* Раскладки отличаются **компоновкой** (колонки, панели, отступы), а не данными
-  и логикой: состояние и колбэки одни и те же, их раздаёт экран выше
-  `AppAdaptiveLayout`. Образец — `AuthView` и его `AuthDesktopLayout /
-  AuthTabletLayout / AuthMobileLayout`.
-* Мелкое отличие (отступ, кегль, число колонок) без отдельного виджета берём
-  через `context.responsive(mobile: ..., tablet: ..., desktop: ...)` или флаги
-  `context.isMobile / isTablet / isDesktop`.
-* Контент на десктопе не растягиваем на всю ширину — ограничиваем
-  `AppBreakpoints.maxContent`, иначе строки текста становятся нечитаемо длинными.
+* Only `mobile` is required — it is the base layout. `tablet` and `desktop` are
+  optional and fall back to the nearest smaller one (desktop → tablet → phone).
+  A screen that gets by with a single wide layout declares it in `tablet` and
+  leaves `desktop` empty.
+* Each layout is its own widget in its own file (`<screen>_mobile_view.dart`,
+  `_tablet_view.dart`, `_desktop_view.dart`), like any other widget (see
+  [One widget — one file](#one-widget--one-file)). `AppAdaptiveLayout` builds
+  only the chosen variant, so the neighbouring layouts are not built in vain.
+* Layouts differ in **composition** (columns, panels, spacing), not in data and
+  logic: the state and the callbacks are the same and are handed down by the
+  screen above `AppAdaptiveLayout`. `AuthView` with its `AuthDesktopLayout /
+  AuthTabletLayout / AuthMobileLayout` is the model to follow.
+* A small difference (padding, font size, the number of columns) without a
+  separate widget is taken through
+  `context.responsive(mobile: ..., tablet: ..., desktop: ...)` or the
+  `context.isMobile / isTablet / isDesktop` flags.
+* Content on the desktop is not stretched to the full width — it is capped by
+  `AppBreakpoints.maxContent`, otherwise the lines of text become unreadably
+  long.
 
-## Экран
+## A screen
 
-Экран — это `pages/<name>_page.dart`. Он отвечает за `Scaffold`, `AppBar`,
-подписку на состояние и раздачу данных дочерним виджетам:
+A screen is `pages/<name>_page.dart`. It is responsible for the `Scaffold`, the
+`AppBar`, subscribing to the state and handing data down to the child widgets:
 
 ```dart
 class LessonPage extends ConsumerWidget {
@@ -266,39 +273,44 @@ class LessonPage extends ConsumerWidget {
 }
 ```
 
-Тело экрана (то, что попадает в `body`) выносим отдельным виджетом — тогда его
-можно проверить тестом, не поднимая `Scaffold` и роутер.
+The body of the screen (what goes into `body`) is extracted as its own widget —
+then it can be checked by a test without bringing up a `Scaffold` and the
+router.
 
-## Навигация
+## Navigation
 
-Навигация — `go_router`, маршруты собраны в `lib/core/router/app_router.dart`.
+Navigation is `go_router`, with the routes gathered in
+`lib/core/router/app_router.dart`.
 
-* Путь пишется в kebab-case: `/add-lesson`, `/lesson/:lessonId/edit`.
-* Путь и переходы к экрану не разбрасываем строками по виджетам: у экрана
-  объявляем `static const routePath` (как у `DesignGalleryScreen`) и ходим по
-  нему.
-* Правила доступа (сессия, роль) живут в `redirect` роутера, а не в виджетах.
-* Возврат результата — типизированно: `context.push<bool>(...)`, и на стороне
-  экрана `context.pop(true)`.
+* A path is written in kebab-case: `/add-lesson`, `/lesson/:lessonId/edit`.
+* The path and the transitions to a screen are not scattered as strings across
+  widgets: the screen declares a `static const routePath` (as
+  `DesignGalleryScreen` does) and we navigate by it.
+* Access rules (the session, the role) live in the router `redirect`, not in
+  widgets.
+* Returning a result is typed: `context.push<bool>(...)`, and on the screen side
+  `context.pop(true)`.
 
-## Доступность и клавиатура
+## Accessibility and the keyboard
 
-* У иконочных кнопок — `tooltip`, у нестандартных элементов — `Semantics` с
+* Icon buttons get a `tooltip`, non-standard elements get `Semantics` with a
   `label`.
-* Область нажатия не меньше 44 логических пикселей (`AppTapTarget`).
-* Приложение работает на десктопе: если экран отвечает на клавиши, обработка
-  живёт в `Focus`/`Shortcuts` на уровне экрана, а сами действия вызывают методы
-  контроллера. В подсказках пишем горячую клавишу: «Выбрать все куски (Ctrl+A)».
+* The tap target is no smaller than 44 logical pixels (`AppTapTarget`).
+* The app runs on the desktop: when a screen responds to keys, the handling
+  lives in a `Focus`/`Shortcuts` at the screen level and the actions themselves
+  call controller methods. Hints spell the hotkey out: «Выбрать все куски
+  (Ctrl+A)».
 
-## Форматирование данных
+## Formatting data
 
-Приведение к человекочитаемому виду — работа presentation. `DateTime`,
-длительности и числа передаём в виджет как есть, форматируем внутри:
+Turning values into a human-readable form is presentation work. `DateTime`,
+durations and numbers are passed into the widget as they are and formatted
+inside:
 
 ```dart
 Text(formatPosition(segment.startMs)); // core/utils/duration_format.dart
 ```
 
-Локализации (`intl`) в проекте нет — строки интерфейса пишутся русскими
-литералами прямо в виджете. Повторяющуюся строку выносим в `static const` рядом
-с виджетом, а не копируем.
+There is no localization (`intl`) in the project — interface strings are written
+as Russian literals right inside the widget. A repeated string is extracted into
+a `static const` next to the widget rather than copied.

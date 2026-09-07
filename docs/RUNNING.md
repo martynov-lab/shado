@@ -1,42 +1,42 @@
-# Локальный запуск сервера — подробно
+# Running the server locally — in detail
 
-Всё, что нужно: Rust и сам репозиторий. Ни Postgres, ни Docker, ни ffmpeg не
-требуются — БД это файл SQLite, аудио разбирается библиотекой внутри процесса.
+All you need is Rust and the repository itself. Neither Postgres, nor Docker,
+nor ffmpeg is required — the database is a SQLite file and the audio is parsed
+by a library inside the process.
 
 ---
 
-## 1. Что поставить
+## 1. What to install
 
 ### Rust
 
 ```powershell
-winget install Rustlang.Rustup     # или скачать с https://rustup.rs
+winget install Rustlang.Rustup     # or download from https://rustup.rs
 rustup default stable
 ```
 
-Проверка (нужен 1.75+, проект собран на 1.97):
+A check (1.75+ is required, the project was built on 1.97):
 
 ```powershell
 cargo --version
 rustc --version
 ```
 
-### Компилятор C (только Windows, один раз)
+### A C compiler (Windows only, once)
 
-`libsqlite3-sys` собирает C-код, поэтому нужен линковщик MSVC. Если при первой
-сборке появится `error: linker 'link.exe' not found` — поставить
-**Visual Studio Build Tools** с рабочей нагрузкой «Разработка классических
-приложений на C++»:
+`libsqlite3-sys` builds C code, so the MSVC linker is needed. If the first build
+reports `error: linker 'link.exe' not found`, install **Visual Studio Build
+Tools** with the "Desktop development with C++" workload:
 
 ```powershell
 winget install Microsoft.VisualStudio.2022.BuildTools
 ```
 
-На macOS — `xcode-select --install`, на Linux — `build-essential`.
+On macOS it is `xcode-select --install`, on Linux `build-essential`.
 
 ---
 
-## 2. Первый запуск
+## 2. The first run
 
 ```powershell
 cd c:\Users\arovit\Projects\shado_server
@@ -44,65 +44,67 @@ Copy-Item .env.example .env
 cargo run
 ```
 
-Первая сборка занимает пару минут (277 зависимостей), дальше — секунды.
+The first build takes a couple of minutes (277 dependencies), the next ones take
+seconds.
 
-Что произойдёт при старте:
+What happens on start:
 
-1. читается `.env` и переменные окружения;
-2. создаётся файл БД `shado.db` и накатываются миграции из `migrations/`;
-3. создаётся папка `storage/` (и `storage/tmp/` под загрузки);
-4. если пользователь с `SHADO_OWNER_EMAIL` уже зарегистрирован, ему проставляется
-   роль `owner`;
-5. сервер слушает `http://127.0.0.1:8080`.
+1. `.env` and the environment variables are read;
+2. the `shado.db` database file is created and the migrations from `migrations/`
+   are applied;
+3. the `storage/` folder is created (plus `storage/tmp/` for uploads);
+4. if a user with `SHADO_OWNER_EMAIL` is already registered, they are given the
+   `owner` role;
+5. the server listens on `http://127.0.0.1:8080`.
 
-В логе будет примерно так:
+The log will look roughly like this (the server logs in Russian):
 
 ```text
 INFO shado_server: конфигурация загружена owner_email=arovitm@gmail.com storage="./storage"
 INFO shado_server: shado-server слушает на http://127.0.0.1:8080
 ```
 
-Проверка:
+A check:
 
 ```powershell
 curl.exe http://127.0.0.1:8080/healthz
 # {"status":"ok"}
 ```
 
-Остановка — `Ctrl+C`.
+`Ctrl+C` stops it.
 
-### Минимум, что стоит поправить в `.env`
+### The minimum worth fixing in `.env`
 
 ```env
-SHADO_JWT_SECRET=любая-длинная-случайная-строка
+SHADO_JWT_SECRET=any-long-random-string
 ```
 
-Без него сервер стартует с дефолтным секретом и пишет предупреждение — для
-локальной разработки это допустимо, для чего-либо ещё нет.
+Without it the server starts with a default secret and prints a warning — that
+is acceptable for local development and for nothing else.
 
 ---
 
-## 3. Переменные окружения
+## 3. Environment variables
 
-Все необязательны, у каждой есть дефолт. Читаются из `.env` и из окружения
-(окружение имеет приоритет).
+They are all optional and each has a default. They are read from `.env` and from
+the environment (the environment wins).
 
-| Переменная | По умолчанию | Смысл |
+| Variable | Default | Meaning |
 | --- | --- | --- |
-| `SHADO_BIND_ADDR` | `127.0.0.1:8080` | адрес и порт. `0.0.0.0:8080` — принимать из локальной сети |
-| `SHADO_PUBLIC_BASE_URL` | `http://127.0.0.1:8080` | база для ссылок `audio.url` в ответах |
-| `SHADO_DATABASE_URL` | `sqlite://./shado.db?mode=rwc` | путь к файлу БД |
-| `SHADO_STORAGE_DIR` | `./storage` | куда складывать аудио |
-| `SHADO_JWT_SECRET` | небезопасный дефолт + warning | подпись access-токенов |
-| `SHADO_OWNER_EMAIL` | `arovitm@gmail.com` | кому выдаётся роль `owner` |
-| `SHADO_ACCESS_TTL_SECS` | `900` (15 мин) | время жизни access-токена |
-| `SHADO_REFRESH_TTL_SECS` | `5184000` (60 дней) | время жизни refresh-токена |
-| `SHADO_MAX_UPLOAD_BYTES` | `52428800` (50 МБ) | лимит на файл |
-| `SHADO_AUTH_RATE_LIMIT` | `10` | попыток в минуту на `/v1/auth/*` (на IP и на email) |
-| `SHADO_PEAKS_RESOLUTION` | `4000` | в каком разрешении хранить огибающую |
-| `SHADO_LOG` | `info` | уровень логов, синтаксис `env_filter` |
+| `SHADO_BIND_ADDR` | `127.0.0.1:8080` | the address and the port. `0.0.0.0:8080` accepts from the local network |
+| `SHADO_PUBLIC_BASE_URL` | `http://127.0.0.1:8080` | the base for the `audio.url` links in responses |
+| `SHADO_DATABASE_URL` | `sqlite://./shado.db?mode=rwc` | the path to the database file |
+| `SHADO_STORAGE_DIR` | `./storage` | where to put the audio |
+| `SHADO_JWT_SECRET` | an insecure default plus a warning | the signature of access tokens |
+| `SHADO_OWNER_EMAIL` | `arovitm@gmail.com` | who is granted the `owner` role |
+| `SHADO_ACCESS_TTL_SECS` | `900` (15 min) | the access token lifetime |
+| `SHADO_REFRESH_TTL_SECS` | `5184000` (60 days) | the refresh token lifetime |
+| `SHADO_MAX_UPLOAD_BYTES` | `52428800` (50 MB) | the per-file limit |
+| `SHADO_AUTH_RATE_LIMIT` | `10` | attempts a minute on `/v1/auth/*` (per IP and per email) |
+| `SHADO_PEAKS_RESOLUTION` | `4000` | the resolution the envelope is stored at |
+| `SHADO_LOG` | `info` | the log level, in `env_filter` syntax |
 
-Разово, без правки `.env` (PowerShell):
+One-off, without editing `.env` (PowerShell):
 
 ```powershell
 $env:SHADO_BIND_ADDR = "0.0.0.0:8080"; cargo run
@@ -110,13 +112,14 @@ $env:SHADO_BIND_ADDR = "0.0.0.0:8080"; cargo run
 
 ---
 
-## 4. Живой сценарий целиком
+## 4. The whole live scenario
 
-Ниже — полный путь «зарегистрировался → загрузил аудио → создал урок → прочитал
-его». Команды для PowerShell; в bash то же самое с `curl` и `jq`.
+Below is the full path "registered → uploaded audio → created a lesson → read it
+back". The commands are for PowerShell; in bash it is the same with `curl` and
+`jq`.
 
-**1. Регистрация владельца.** Роль `owner` выдаётся автоматически, потому что
-email совпадает с `SHADO_OWNER_EMAIL`:
+**1. Registering the owner.** The `owner` role is granted automatically because
+the email matches `SHADO_OWNER_EMAIL`:
 
 ```powershell
 $credentials = @{ email = "arovitm@gmail.com"; password = "password123" } | ConvertTo-Json
@@ -128,50 +131,53 @@ $token = $auth.access_token
 $auth.user.role     # owner
 ```
 
-Кавычки в PowerShell при передаче JSON в нативные команды ведут себя коварно,
-поэтому здесь и дальше тело уходит через stdin (`--data-binary "@-"`), а не
-через `-d '…'`.
+Quoting in PowerShell behaves treacherously when JSON is passed to native
+commands, so here and below the body goes through stdin (`--data-binary "@-"`)
+rather than through `-d '…'`.
 
-Если пользователь уже создан, вместо `register` — `login` с тем же телом.
+If the user already exists, use `login` instead of `register` with the same body.
 
-**2. Кто я:**
+**2. Who am I:**
 
 ```powershell
 curl.exe -s http://127.0.0.1:8080/v1/me -H "Authorization: Bearer $token"
 ```
 
-**3. Загрузка аудио.** Любой mp3/m4a/wav/flac/ogg до 50 МБ. Каталог ведут
-`admin` и `owner` — с токеном обычного `user` шаги 3–5 ответят `403 forbidden`:
+**3. Uploading audio.** Any mp3/m4a/wav/flac/ogg up to 50 MB. The catalog is
+curated by `admin` and `owner` — with a plain `user` token, steps 3–5 answer
+`403 forbidden`:
 
 ```powershell
 $audio = curl.exe -s -X POST http://127.0.0.1:8080/v1/audio `
   -H "Authorization: Bearer $token" `
-  -F "file=@C:\путь\к\lesson.mp3" | ConvertFrom-Json
+  -F "file=@C:\path\to\lesson.mp3" | ConvertFrom-Json
 
 $audio.id
-$audio.duration_ms          # посчитан сервером
-$audio.peaks.resolution     # точек в огибающей
+$audio.duration_ms          # computed by the server
+$audio.peaks.resolution     # points in the envelope
 ```
 
-Повторная загрузка того же файла вернёт ту же запись и статус `200` вместо `201`.
+Re-uploading the same file returns the same record and status `200` instead of
+`201`.
 
-**4. Создание урока.** UUID генерирует клиент; разметка — сегменты встык от 0 до
-`duration_ms`. Акцент (`US`/`UK`) и уровень (`a1`..`c2`) обязательны, тема
-берётся из справочника (`curl.exe -s http://127.0.0.1:8080/v1/topics -H "Authorization: Bearer $token"`);
-не передали — будет «Other»:
+**4. Creating a lesson.** The client generates the UUID; the markup is segments
+back to back from 0 to `duration_ms`. The accent (`US`/`UK`) and the level
+(`a1`..`c2`) are required, and the topic comes from the directory
+(`curl.exe -s http://127.0.0.1:8080/v1/topics -H "Authorization: Bearer $token"`);
+if it is not passed, it will be "Other":
 
 ```powershell
 $lessonId = [guid]::NewGuid().ToString()
 $half = [int]($audio.duration_ms / 2)
 $body = @{
-  title      = "Пробный урок"
+  title      = "Trial lesson"
   audio_id   = $audio.id
   created_at = (Get-Date).ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ss.fffZ")
   accent     = "US"
   level      = "b1"
   segments   = @(
-    @{ index = 0; text = "Первый кусок";  start_ms = 0;     end_ms = $half },
-    @{ index = 1; text = "Второй кусок";  start_ms = $half; end_ms = $audio.duration_ms }
+    @{ index = 0; text = "First segment";  start_ms = 0;     end_ms = $half },
+    @{ index = 1; text = "Second segment"; start_ms = $half; end_ms = $audio.duration_ms }
   )
 } | ConvertTo-Json -Depth 5
 
@@ -182,60 +188,61 @@ $lesson = $body | curl.exe -s -X PUT "http://127.0.0.1:8080/v1/lessons/$lessonId
 $lesson.version    # 1
 ```
 
-**5. Чтение и правка:**
+**5. Reading and editing:**
 
 ```powershell
-# список
+# the list
 curl.exe -s "http://127.0.0.1:8080/v1/lessons?limit=10" -H "Authorization: Bearer $token"
 
-# фильтры складываются по «и»: акцент, уровень, тема
+# filters combine with AND: accent, level, topic
 curl.exe -s "http://127.0.0.1:8080/v1/lessons?accent=UK&level=c1" -H "Authorization: Bearer $token"
 
-# один урок, в заголовках придёт ETag: "1"
+# one lesson; the headers carry ETag: "1"
 curl.exe -s -i "http://127.0.0.1:8080/v1/lessons/$lessonId" -H "Authorization: Bearer $token"
 
-# правка требует If-Match с текущей версией; без него будет 409
+# an edit needs If-Match with the current version; without it you get a 409
 $renamed = ($body | ConvertFrom-Json)
-$renamed.title = "Урок переименован"
+$renamed.title = "Lesson renamed"
 $renamed | ConvertTo-Json -Depth 5 | curl.exe -s -X PUT "http://127.0.0.1:8080/v1/lessons/$lessonId" `
   -H "Authorization: Bearer $token" -H "Content-Type: application/json" `
   -H 'If-Match: "1"' --data-binary "@-"
 ```
 
-**6. Аудио и пики:**
+**6. Audio and peaks:**
 
 ```powershell
-# огибающая под ширину виджета
+# the envelope at the width of the widget
 curl.exe -s "http://127.0.0.1:8080/v1/audio/$($audio.id)/peaks?resolution=800" `
   -H "Authorization: Bearer $token"
 
-# файл целиком
+# the whole file
 curl.exe -s -o out.mp3 "http://127.0.0.1:8080/v1/audio/$($audio.id)/file" `
   -H "Authorization: Bearer $token"
 
-# кусок файла: ответ 206 + Content-Range
+# a slice of the file: a 206 response plus Content-Range
 curl.exe -s -i -H "Range: bytes=0-1023" "http://127.0.0.1:8080/v1/audio/$($audio.id)/file" `
   -H "Authorization: Bearer $token" | Select-Object -First 12
 ```
 
-**7. Админка (только owner):**
+**7. The admin area (owner only):**
 
 ```powershell
 curl.exe -s "http://127.0.0.1:8080/v1/admin/users?limit=50" -H "Authorization: Bearer $token"
 
-# роль: user | admin | owner. admin ведёт каталог уроков, но не видит эту админку
+# the role: user | admin | owner. admin curates the lesson catalog but does not see this admin area
 @{ role = "admin" } | ConvertTo-Json | curl.exe -s -X PATCH `
   "http://127.0.0.1:8080/v1/admin/users/<user-id>/role" `
   -H "Authorization: Bearer $token" -H "Content-Type: application/json" --data-binary "@-"
 
-# удаление: 204; уроки и аудио удалённого переходят к owner, каталог не рушится
+# deletion: 204; the lessons and audio of the deleted user pass to the owner, the catalog stays intact
 curl.exe -s -i -X DELETE "http://127.0.0.1:8080/v1/admin/users/<user-id>" `
   -H "Authorization: Bearer $token"
 ```
 
-Себя и владельца из `SHADO_OWNER_EMAIL` удалить нельзя — ответ `422`.
+Yourself and the owner from `SHADO_OWNER_EMAIL` cannot be deleted — the answer
+is `422`.
 
-**8. Темы (читают все, правит owner):**
+**8. Topics (everyone reads, the owner edits):**
 
 ```powershell
 curl.exe -s http://127.0.0.1:8080/v1/topics -H "Authorization: Bearer $token"
@@ -249,137 +256,140 @@ $topic = @{ name = "Podcasts" } | ConvertTo-Json | curl.exe -s -X POST `
   "http://127.0.0.1:8080/v1/topics/$($topic.id)" `
   -H "Authorization: Bearer $token" -H "Content-Type: application/json" --data-binary "@-"
 
-# удаление: уроки темы переезжают на «Other»
+# deletion: the lessons of the topic move to "Other"
 curl.exe -s -i -X DELETE "http://127.0.0.1:8080/v1/topics/$($topic.id)" `
   -H "Authorization: Bearer $token"
 ```
 
 ---
 
-## 5. Подключение приложения
+## 5. Connecting the app
 
-| Откуда | Какой базовый URL |
+| From where | Which base URL |
 | --- | --- |
-| Flutter на этой же машине (Windows/macOS/Linux, web) | `http://127.0.0.1:8080` |
-| Android-эмулятор | `http://10.0.2.2:8080` — это хост-машина изнутри эмулятора |
-| iOS-симулятор | `http://127.0.0.1:8080` |
-| Реальный телефон в той же Wi-Fi сети | `http://<IP машины>:8080` |
+| Flutter on the same machine (Windows/macOS/Linux, web) | `http://127.0.0.1:8080` |
+| The Android emulator | `http://10.0.2.2:8080` — that is the host machine from inside the emulator |
+| The iOS simulator | `http://127.0.0.1:8080` |
+| A real phone on the same Wi-Fi network | `http://<the machine IP>:8080` |
 
-Для реального устройства нужно ещё три вещи:
+A real device needs three more things:
 
-1. Сервер должен слушать не только loopback:
+1. The server must listen beyond loopback:
 
    ```env
    SHADO_BIND_ADDR=0.0.0.0:8080
    SHADO_PUBLIC_BASE_URL=http://192.168.1.50:8080
    ```
 
-   IP смотреть через `ipconfig` (строка IPv4 активного адаптера).
+   Look the IP up with `ipconfig` (the IPv4 line of the active adapter).
 
-2. Разрешить порт в брандмауэре Windows (один раз, из PowerShell с правами
-   администратора):
+2. Allow the port through the Windows firewall (once, from an elevated
+   PowerShell):
 
    ```powershell
    New-NetFirewallRule -DisplayName "shado-server" -Direction Inbound `
      -Protocol TCP -LocalPort 8080 -Action Allow -Profile Private
    ```
 
-3. Android по умолчанию запрещает HTTP без TLS. Для отладочной сборки —
-   `android:usesCleartextTraffic="true"` в `AndroidManifest.xml` (в debug-варианте
-   манифеста, не в release) или `network_security_config` с разрешением только на
-   адрес сервера разработки.
+3. Android forbids HTTP without TLS by default. For a debug build use
+   `android:usesCleartextTraffic="true"` in `AndroidManifest.xml` (in the debug
+   variant of the manifest, not in release) or a `network_security_config` that
+   allows the development server address only.
 
-`SHADO_PUBLIC_BASE_URL` влияет на поле `audio.url` в ответах: если оставить
-`127.0.0.1`, телефон по этой ссылке попадёт сам в себя.
+`SHADO_PUBLIC_BASE_URL` drives the `audio.url` field in the responses: leave it
+at `127.0.0.1` and the phone will follow that link into itself.
 
 ---
 
-## 6. Где лежат данные и как всё сбросить
+## 6. Where the data lives and how to wipe it
 
-| Что | Где |
+| What | Where |
 | --- | --- |
-| БД | `shado.db` (+ `shado.db-wal`, `shado.db-shm` — журнал WAL) |
-| Аудио | `storage/<кто загрузил>/<sha256>.<ext>` — путь фиксируется при загрузке и не меняется, даже если запись потом перешла к owner |
-| Незавершённые загрузки | `storage/tmp/` |
+| The database | `shado.db` (plus `shado.db-wal`, `shado.db-shm` — the WAL journal) |
+| The audio | `storage/<who uploaded it>/<sha256>.<ext>` — the path is fixed at upload time and never changes, even if the record later passes to the owner |
+| Unfinished uploads | `storage/tmp/` |
 
-Всё это в `.gitignore`. Полный сброс — остановить сервер и удалить:
+All of it is in `.gitignore`. A full reset is stopping the server and deleting:
 
 ```powershell
 Remove-Item shado.db* -Force
 Remove-Item storage -Recurse -Force
 ```
 
-При следующем `cargo run` база и папки создадутся заново. Отдельной команды
-миграции не нужно — они накатываются на старте.
+The next `cargo run` recreates the database and the folders. There is no
+separate migration command — they are applied on start.
 
-**Новую миграцию проверяйте на копии рабочей базы, а не только тестами.** Тесты
-всегда стартуют с пустой БД, а часть ограничений SQLite срабатывает только на
-таблице со строками (так, `alter table add column` с `references` и ненулевым
-значением по умолчанию проходит на пустой таблице и падает на заполненной):
+**Check a new migration against a copy of a working database, not only with
+tests.** Tests always start from an empty database, and some SQLite constraints
+only fire on a table with rows (an `alter table add column` with `references`
+and a non-null default, for instance, passes on an empty table and fails on a
+populated one):
 
 ```powershell
 Copy-Item shado.db check.db
-$env:SHADO_DATABASE_URL = "sqlite:./check.db?mode=rw"; cargo run   # ошибки миграции видно в первых строках лога
+$env:SHADO_DATABASE_URL = "sqlite:./check.db?mode=rw"; cargo run   # migration errors show in the first log lines
 ```
 
-Посмотреть содержимое БД можно любым SQLite-клиентом (DB Browser for SQLite,
-плагин SQLite в VS Code) — файл обычный.
+The database contents can be inspected with any SQLite client (DB Browser for
+SQLite, the SQLite plugin for VS Code) — the file is an ordinary one.
 
 ---
 
-## 7. Тесты и качество
+## 7. Tests and quality
 
 ```powershell
-cargo test              # 33 теста: юниты + контрактные тесты на все эндпоинты
-cargo test -- --nocapture   # с выводом
-cargo clippy --all-targets  # линт
-cargo fmt                   # форматирование
+cargo test              # 33 tests: units plus contract tests on every endpoint
+cargo test -- --nocapture   # with the output
+cargo clippy --all-targets  # the lint
+cargo fmt                   # formatting
 ```
 
-Контрактные тесты поднимают приложение целиком во временной папке и не трогают
-ни `shado.db`, ни `storage/` — их можно гонять при запущенном сервере.
+The contract tests bring the whole application up in a temporary folder and
+touch neither `shado.db` nor `storage/` — they can be run while the server is
+up.
 
 ---
 
-## 8. Сборка релизного бинарника
+## 8. Building a release binary
 
 ```powershell
 cargo build --release
 .\target\release\shado-server.exe
 ```
 
-Бинарник самодостаточный: рядом нужны только `migrations/` (они вшиты в
-бинарник на этапе компиляции) — фактически достаточно самого exe, `.env` и права
-писать в `SHADO_STORAGE_DIR`. Отдельная установка SQLite не нужна, он внутри.
+The binary is self-contained: the only thing it needs beside it is `migrations/`
+(they are baked into the binary at compile time) — in practice the exe itself,
+`.env` and write access to `SHADO_STORAGE_DIR` are enough. A separate SQLite
+installation is not needed, it is built in.
 
-Для прода добавить обратный прокси с TLS (nginx/Caddy), передавать реальный IP
-клиента в `X-Forwarded-For` (rate limiter читает его) и обязательно задать
-`SHADO_JWT_SECRET`.
+For production, add a reverse proxy with TLS (nginx/Caddy), pass the real client
+IP in `X-Forwarded-For` (the rate limiter reads it) and set `SHADO_JWT_SECRET`
+without fail.
 
 ---
 
-## 9. Частые проблемы
+## 9. Common problems
 
-| Симптом | Причина и что делать |
+| Symptom | The cause and what to do |
 | --- | --- |
-| `SHADO_JWT_SECRET не задан, используется небезопасный дефолт` | предупреждение, а не ошибка. Задать секрет в `.env` |
-| `Address already in use` при старте | порт 8080 занят. `SHADO_BIND_ADDR=127.0.0.1:8090` или найти процесс: `Get-NetTCPConnection -LocalPort 8080` |
-| `error: linker 'link.exe' not found` | нет MSVC Build Tools, см. §1 |
-| `миграции: ...` при старте | файл БД от несовместимой версии схемы. Удалить `shado.db*` (данные потеряются) |
-| `401 unauthorized` на любом запросе | нет заголовка `Authorization: Bearer …`, либо access-токен старше 15 минут → `POST /v1/auth/refresh` |
-| Все токены разом перестали работать | сменился `SHADO_JWT_SECRET`: access-токены подписаны старым ключом. Refresh-токены при этом живы — они в БД |
-| `415 unsupported_media_type` при загрузке | расширение не из списка (`mp3, m4a, aac, wav, flac, ogg`) или файл повреждён. Имя файла в multipart должно быть с расширением |
-| `413 payload_too_large` | файл больше `SHADO_MAX_UPLOAD_BYTES` |
-| `429 rate_limited` на входе | больше 10 попыток в минуту. Подождать минуту или поднять `SHADO_AUTH_RATE_LIMIT` для отладки |
-| `409 version_conflict` при `PUT` | не передан `If-Match: "<version>"` или версия устарела. Актуальный урок — в `error.current` |
-| `404 not_found` на уроке | урок мягко удалён (`deleted_at`) или его никогда не было: каталог общий, «чужих» уроков в нём нет |
-| `404 not_found` на `audio_id` при создании урока | аудио загружено другим редактором и ещё не опубликовано в живом уроке. Загрузить файл своим токеном |
-| `403 forbidden` на `POST /v1/audio`, `PUT`/`DELETE /v1/lessons` | у пользователя роль `user`. Каталог ведут `admin` и `owner` — назначить роль через админку (§4, шаг 7) |
-| `403 forbidden` на `/v1/admin/users` или `POST/PATCH/DELETE /v1/topics` | нужна роль `owner`; `admin` ни пользователей, ни справочник тем не правит |
-| `422` про `accent` или `level` при создании урока | поля обязательны: `accent` — `US`/`UK`, `level` — `a1`..`c2`. Регистр не важен, всё остальное отклоняется |
-| `404 not_found` на `topic_id` | темы с таким id нет (могли удалить). Перечитать `GET /v1/topics` |
-| Роль `user` вместо `owner` | email не совпал с `SHADO_OWNER_EMAIL` (сравнение по нормализованному адресу: trim + lowercase). Поправить `.env` и перезапустить — роль проставится на старте |
-| Телефон не видит сервер | `SHADO_BIND_ADDR` слушает только `127.0.0.1`, либо брандмауэр, либо разные сети — см. §5 |
+| `SHADO_JWT_SECRET не задан, используется небезопасный дефолт` | a warning, not an error. Set the secret in `.env` |
+| `Address already in use` on start | port 8080 is taken. Use `SHADO_BIND_ADDR=127.0.0.1:8090` or find the process: `Get-NetTCPConnection -LocalPort 8080` |
+| `error: linker 'link.exe' not found` | the MSVC Build Tools are missing, see §1 |
+| `миграции: ...` on start | the database file comes from an incompatible schema version. Delete `shado.db*` (the data is lost) |
+| `401 unauthorized` on every request | the `Authorization: Bearer …` header is missing, or the access token is older than 15 minutes → `POST /v1/auth/refresh` |
+| Every token stopped working at once | `SHADO_JWT_SECRET` changed: the access tokens are signed with the old key. The refresh tokens are still alive — they live in the database |
+| `415 unsupported_media_type` on upload | the extension is not on the list (`mp3, m4a, aac, wav, flac, ogg`) or the file is corrupted. The file name in the multipart must carry an extension |
+| `413 payload_too_large` | the file is larger than `SHADO_MAX_UPLOAD_BYTES` |
+| `429 rate_limited` on sign-in | more than 10 attempts a minute. Wait a minute or raise `SHADO_AUTH_RATE_LIMIT` for debugging |
+| `409 version_conflict` on a `PUT` | `If-Match: "<version>"` was not passed or the version is stale. The current lesson is in `error.current` |
+| `404 not_found` on a lesson | the lesson was soft deleted (`deleted_at`) or never existed: the catalog is shared and holds no "other people's" lessons |
+| `404 not_found` on an `audio_id` while creating a lesson | the audio was uploaded by another editor and is not published in a live lesson yet. Upload the file with your own token |
+| `403 forbidden` on `POST /v1/audio`, `PUT`/`DELETE /v1/lessons` | the user has the `user` role. The catalog is curated by `admin` and `owner` — grant the role through the admin area (§4, step 7) |
+| `403 forbidden` on `/v1/admin/users` or `POST/PATCH/DELETE /v1/topics` | the `owner` role is required; `admin` edits neither users nor the topic directory |
+| A `422` about `accent` or `level` while creating a lesson | the fields are required: `accent` is `US`/`UK`, `level` is `a1`..`c2`. Case does not matter, everything else is rejected |
+| `404 not_found` on a `topic_id` | there is no topic with that id (it may have been deleted). Re-read `GET /v1/topics` |
+| The `user` role instead of `owner` | the email did not match `SHADO_OWNER_EMAIL` (compared by the normalized address: trim + lowercase). Fix `.env` and restart — the role is granted on start |
+| The phone does not see the server | `SHADO_BIND_ADDR` listens on `127.0.0.1` only, or the firewall, or different networks — see §5 |
 
-Больше деталей в логе: `SHADO_LOG=debug` или точечно
+More detail is in the log: `SHADO_LOG=debug`, or targeted
 `SHADO_LOG=shado_server=debug,tower_http=debug`.

@@ -4,7 +4,7 @@ import 'package:shado/features/lessons/data/models/lesson_model.dart';
 
 Map<String, dynamic> _lessonJson({bool? isPublic}) => {
   'id': 'l1',
-  'title': 'Урок',
+  'title': 'Lesson',
   'duration_ms': 1000,
   'created_at': '2026-01-01T00:00:00Z',
   'updated_at': '2026-01-01T00:00:00Z',
@@ -16,16 +16,16 @@ Map<String, dynamic> _lessonJson({bool? isPublic}) => {
 
 void main() {
   group('LessonDto.fromJson is_public', () {
-    test('читает публичность', () {
+    test('reads the visibility', () {
       expect(LessonDto.fromJson(_lessonJson(isPublic: false)).isPublic, isFalse);
       expect(LessonDto.fromJson(_lessonJson(isPublic: true)).isPublic, isTrue);
     });
 
-    test('отсутствие поля — публичный урок', () {
+    test('a missing field means a public lesson', () {
       expect(LessonDto.fromJson(_lessonJson()).isPublic, isTrue);
     });
 
-    test('toEntity переносит публичность, isPrivate — обратная', () {
+    test('toEntity carries the visibility over and isPrivate is its inverse', () {
       final lesson = LessonDto.fromJson(
         _lessonJson(isPublic: false),
       ).toEntity(audioPath: '');
@@ -35,7 +35,7 @@ void main() {
   });
 
   group('LessonModel is_public', () {
-    test('переносит is_public из DTO и в сущность', () {
+    test('carries is_public from the DTO into the entity', () {
       final model = LessonModel.fromDto(
         LessonDto.fromJson(_lessonJson(isPublic: false)),
         audioPath: '',
@@ -44,7 +44,7 @@ void main() {
       expect(model.toEntity().isPrivate, isTrue);
     });
 
-    test('round-trip через JSON сохраняет is_public', () {
+    test('a round-trip through JSON keeps is_public', () {
       final model = LessonModel.fromDto(
         LessonDto.fromJson(_lessonJson(isPublic: false)),
         audioPath: '',
@@ -53,7 +53,7 @@ void main() {
       expect(restored.isPublic, isFalse);
     });
 
-    test('JSON без is_public читается как публичный', () {
+    test('JSON without is_public reads as public', () {
       final model = LessonModel.fromDto(
         LessonDto.fromJson(_lessonJson()),
         audioPath: '',

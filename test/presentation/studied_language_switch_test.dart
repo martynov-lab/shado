@@ -140,7 +140,7 @@ void main() {
     return (container: container, auth: auth, lessons: lessons);
   }
 
-  test('успешная смена сносит кеш и сбрасывает фильтры', () async {
+  test('a successful switch wipes the cache and resets the filters', () async {
     final env = build();
     env.container.read(lessonsFilterProvider.notifier).toggleAccent('UK');
 
@@ -155,7 +155,7 @@ void main() {
     expect(env.container.read(lessonsFilterProvider).isEmpty, isTrue);
   });
 
-  test('422 оставляет прежний язык, кеш и фильтры нетронутыми', () async {
+  test('a 422 leaves the language, the cache and the filters untouched', () async {
     final env = build(
       profileError: const ApiException(
         code: ApiErrorCode.validationError,

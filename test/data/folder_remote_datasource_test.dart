@@ -21,7 +21,7 @@ void main() {
     return (remote: ApiFolderRemoteDataSource(client), adapter: adapter);
   }
 
-  test('list читает страницу папок с курсором', () async {
+  test('list reads a page of folders with a cursor', () async {
     final env = build(
       (_) async => jsonResponse(200, {
         'items': [folderJson(id: 'f1'), folderJson(id: 'f2')],
@@ -36,28 +36,28 @@ void main() {
     expect(page.nextCursor, 'c1');
   });
 
-  test('создание — PUT по клиентскому id без If-Match', () async {
+  test('creation is a PUT on the client id without If-Match', () async {
     final env = build((_) async => jsonResponse(201, folderJson(id: 'f9')));
 
     await env.remote.putFolder(
       id: 'f9',
-      title: 'Новая',
+      title: 'New folder',
       createdAt: DateTime.utc(2026, 8, 30, 10),
     );
 
     final request = env.adapter.requests.single;
     expect(request.method, 'PUT');
     expect(request.path, '/v1/folders/f9');
-    expect((request.data as Map)['title'], 'Новая');
+    expect((request.data as Map)['title'], 'New folder');
     expect(request.headers.containsKey('If-Match'), isFalse);
   });
 
-  test('правка шлёт If-Match с версией', () async {
+  test('an edit sends If-Match with the version', () async {
     final env = build((_) async => jsonResponse(200, folderJson(id: 'f9')));
 
     await env.remote.putFolder(
       id: 'f9',
-      title: 'Другое',
+      title: 'Another title',
       createdAt: DateTime.utc(2026, 8, 30, 10),
       version: 3,
     );
@@ -65,7 +65,7 @@ void main() {
     expect(env.adapter.requests.single.headers['If-Match'], '"3"');
   });
 
-  test('добавление уроков — POST со списком id', () async {
+  test('adding lessons is a POST with a list of ids', () async {
     final env = build(
       (_) async => jsonResponse(200, folderJson(id: 'f1', lessonCount: 2)),
     );
@@ -78,7 +78,7 @@ void main() {
     expect((request.data as Map)['lesson_ids'], ['l1', 'l2']);
   });
 
-  test('удаление урока из папки — DELETE по вложенному пути', () async {
+  test('removing a lesson from a folder is a DELETE on the nested path', () async {
     final env = build((_) async => jsonResponse(204, const {}));
 
     await env.remote.removeLesson('f1', 'l1');
