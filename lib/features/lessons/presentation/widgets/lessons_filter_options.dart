@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shado/theme/theme.dart';
 import 'package:shado/widgets/widgets.dart';
 
+import '../../../languages/presentation/controllers/language_providers.dart';
 import '../../domain/entities/lesson_category.dart';
 import '../controllers/lesson_providers.dart';
 import '../controllers/lessons_filter.dart';
@@ -12,6 +13,7 @@ import '../controllers/lessons_filter.dart';
 enum LessonFilterGroup {
   topic('Тема'),
   level('Уровень'),
+  accent('Акцент'),
   status('Статус'),
   access('Доступ');
 
@@ -20,22 +22,32 @@ enum LessonFilterGroup {
   final String title;
 }
 
+/// Filter groups shown for the current language: the accent one only where
+/// the language has accents.
+final lessonFilterGroupsProvider = Provider<List<LessonFilterGroup>>((ref) {
+  final hasAccents = ref.watch(currentAccentsProvider).isNotEmpty;
+  return [
+    for (final group in LessonFilterGroup.values)
+      if (hasAccents || group != LessonFilterGroup.accent) group,
+  ];
+});
+
 /// Filter checkboxes: topics, levels and statuses; [only] shows one group.
-class LessonsFilterOptions extends StatelessWidget {
+class LessonsFilterOptions extends ConsumerWidget {
   const LessonsFilterOptions({super.key, this.only});
 
   /// `null` shows every group collapsible; otherwise one expanded group.
   final LessonFilterGroup? only;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     if (only case final group?) return _optionsFor(group);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       mainAxisSize: MainAxisSize.min,
       children: [
-        for (final group in LessonFilterGroup.values)
+        for (final group in ref.watch(lessonFilterGroupsProvider))
           _CollapsibleGroup(title: group.title, child: _optionsFor(group)),
       ],
     );
@@ -44,6 +56,7 @@ class LessonsFilterOptions extends StatelessWidget {
   Widget _optionsFor(LessonFilterGroup group) => switch (group) {
     LessonFilterGroup.topic => const _TopicOptions(),
     LessonFilterGroup.level => const _LevelOptions(),
+    LessonFilterGroup.accent => const _AccentOptions(),
     LessonFilterGroup.status => const _StatusOptions(),
     LessonFilterGroup.access => const _AccessOptions(),
   };
@@ -201,6 +214,32 @@ class _LevelOptions extends ConsumerWidget {
             label: level.label,
             selected: selected.contains(level),
             onToggle: () => notifier.toggleLevel(level),
+          ),
+      ],
+    );
+  }
+}
+
+class _AccentOptions extends ConsumerWidget {
+  const _AccentOptions();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final selected = ref.watch(
+      lessonsFilterProvider.select((filter) => filter.accents),
+    );
+    final accents = ref.watch(currentAccentsProvider);
+    final notifier = ref.read(lessonsFilterProvider.notifier);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        for (final accent in accents)
+          _OptionRow(
+            label: accent.label,
+            selected: selected.contains(accent.code),
+            onToggle: () => notifier.toggleAccent(accent.code),
           ),
       ],
     );

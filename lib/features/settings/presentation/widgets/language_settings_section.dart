@@ -4,12 +4,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shado/widgets/widgets.dart';
 
 import '../../../auth/presentation/controllers/auth_controller.dart';
-import '../controllers/settings_controller.dart';
-import '../controllers/studied_language.dart';
+import '../../../languages/presentation/controllers/language_providers.dart';
+import '../controllers/studied_language_controller.dart';
 import 'settings_row.dart';
 import 'settings_section.dart';
 import 'settings_value.dart';
 import 'studied_language_sheet.dart';
+import 'switch_language_dialog.dart';
 
 /// Language section: studied, interface and translation languages.
 class LanguageSettingsSection extends ConsumerWidget {
@@ -27,7 +28,9 @@ class LanguageSettingsSection extends ConsumerWidget {
         SettingsRow(
           icon: Icons.school_outlined,
           title: 'Изучаемый язык',
-          trailing: SettingsValue(label: studiedLanguageLabel(code)),
+          trailing: SettingsValue(
+            label: ref.watch(studiedLanguageLabelProvider),
+          ),
           onTap: () => _editLanguage(context, ref, code),
         ),
         const SettingsRow(
@@ -44,6 +47,7 @@ class LanguageSettingsSection extends ConsumerWidget {
     );
   }
 
+  /// Picks a language, warns about the catalog and switches it.
   Future<void> _editLanguage(
     BuildContext context,
     WidgetRef ref,
@@ -54,14 +58,30 @@ class LanguageSettingsSection extends ConsumerWidget {
       title: 'Изучаемый язык',
       builder: (_) => StudiedLanguageSheet(selectedCode: current),
     );
-    if (code == null || !context.mounted) return;
+    if (code == null || code == current || !context.mounted) return;
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (_) => SwitchLanguageDialog(languageLabel: _labelFor(ref, code)),
+    );
+    if (confirmed != true || !context.mounted) return;
+
     final error = await ref
-        .read(settingsControllerProvider.notifier)
-        .save(studiedLanguage: code);
+        .read(studiedLanguageControllerProvider.notifier)
+        .change(code);
     if (error != null && context.mounted) {
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(content: Text(error)));
     }
+  }
+
+  /// Language name from the directory; an unknown code is shown as is.
+  String _labelFor(WidgetRef ref, String code) {
+    final languages = ref.read(languagesProvider).value ?? const [];
+    for (final language in languages) {
+      if (language.code == code) return language.label;
+    }
+    return code;
   }
 }

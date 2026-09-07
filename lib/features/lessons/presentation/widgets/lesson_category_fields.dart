@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../languages/presentation/controllers/language_providers.dart';
 import '../../domain/entities/lesson_category.dart';
 
 /// Lesson category fields: accent, level and topic.
-class LessonCategoryFields extends StatelessWidget {
+class LessonCategoryFields extends ConsumerWidget {
   const LessonCategoryFields({
     super.key,
     required this.accent,
@@ -18,7 +19,7 @@ class LessonCategoryFields extends StatelessWidget {
   });
 
   /// Selected values; `null` when the field was never filled.
-  final LessonAccent? accent;
+  final String? accent;
   final LessonLevel? level;
 
   /// Selected topic; `null` means no topic.
@@ -30,17 +31,22 @@ class LessonCategoryFields extends StatelessWidget {
   /// An upload is running — the fields are locked.
   final bool isBusy;
 
-  final ValueChanged<LessonAccent?> onAccentChanged;
+  final ValueChanged<String?> onAccentChanged;
   final ValueChanged<LessonLevel?> onLevelChanged;
   final ValueChanged<String?> onTopicChanged;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     final available = topics.value ?? const <Topic>[];
     // The dropdown throws when the selected value is not among the items.
     final selectedTopic = available.any((topic) => topic.id == topicId)
         ? topicId
+        : null;
+    // Languages without accents have nothing to pick.
+    final accents = ref.watch(currentAccentsProvider);
+    final selectedAccent = accents.any((item) => item.code == accent)
+        ? accent
         : null;
 
     return Column(
@@ -49,22 +55,27 @@ class LessonCategoryFields extends StatelessWidget {
         Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Expanded(
-              child: DropdownButtonFormField<LessonAccent>(
-                key: const ValueKey('dropdown-accent'),
-                initialValue: accent,
-                decoration: const InputDecoration(labelText: 'Акцент'),
-                items: [
-                  for (final value in LessonAccent.values)
-                    DropdownMenuItem(
-                      value: value,
-                      child: Text(value.label, overflow: TextOverflow.ellipsis),
-                    ),
-                ],
-                onChanged: isBusy ? null : onAccentChanged,
+            if (accents.isNotEmpty) ...[
+              Expanded(
+                child: DropdownButtonFormField<String>(
+                  key: const ValueKey('dropdown-accent'),
+                  initialValue: selectedAccent,
+                  decoration: const InputDecoration(labelText: 'Акцент'),
+                  items: [
+                    for (final item in accents)
+                      DropdownMenuItem(
+                        value: item.code,
+                        child: Text(
+                          item.label,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                  ],
+                  onChanged: isBusy ? null : onAccentChanged,
+                ),
               ),
-            ),
-            const SizedBox(width: 12),
+              const SizedBox(width: 12),
+            ],
             Expanded(
               child: DropdownButtonFormField<LessonLevel>(
                 key: const ValueKey('dropdown-level'),

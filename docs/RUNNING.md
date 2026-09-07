@@ -258,11 +258,6 @@ curl.exe -s -i -X DELETE "http://127.0.0.1:8080/v1/topics/$($topic.id)" `
 
 ## 5. Подключение приложения
 
-По умолчанию приложение ходит на боевой сервер
-(`https://shado-martin.duckdns.org`) — этот раздел про то, как переключить его
-на локальный. Адрес передаётся сборке:
-`flutter run --dart-define=SHADO_API_BASE_URL=<URL из таблицы>`.
-
 | Откуда | Какой базовый URL |
 | --- | --- |
 | Flutter на этой же машине (Windows/macOS/Linux, web) | `http://127.0.0.1:8080` |

@@ -14,6 +14,7 @@ class Lesson {
     required this.segments,
     this.audioId = '',
     this.isPublic = true,
+    this.language = '',
     this.accent,
     this.level,
     this.topic,
@@ -73,8 +74,12 @@ class Lesson {
 
   bool get isPrivate => !isPublic;
 
-  /// Speaker accent and English level; `null` when unset.
-  final LessonAccent? accent;
+  /// Language code of the lesson; empty when it came from an old cache.
+  final String language;
+
+  /// Speaker accent code and level; `null` when unset or absent in the
+  /// language.
+  final String? accent;
   final LessonLevel? level;
 
   /// Topic from the server directory.
@@ -150,7 +155,8 @@ class Lesson {
     DateTime? createdAt,
     List<Segment>? segments,
     bool? isPublic,
-    LessonAccent? accent,
+    String? language,
+    String? accent,
     LessonLevel? level,
     Topic? topic,
   }) {
@@ -163,6 +169,7 @@ class Lesson {
       createdAt: createdAt ?? this.createdAt,
       segments: segments ?? this.segments,
       isPublic: isPublic ?? this.isPublic,
+      language: language ?? this.language,
       accent: accent ?? this.accent,
       level: level ?? this.level,
       topic: topic ?? this.topic,
@@ -183,6 +190,7 @@ class Lesson {
         other.durationMs == durationMs &&
         other.createdAt == createdAt &&
         other.isPublic == isPublic &&
+        other.language == language &&
         other.accent == accent &&
         other.level == level &&
         other.topic == topic;
@@ -197,6 +205,7 @@ class Lesson {
     createdAt,
     Object.hashAll(segments),
     isPublic,
+    language,
     accent,
     level,
     topic,

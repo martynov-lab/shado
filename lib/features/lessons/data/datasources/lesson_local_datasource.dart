@@ -19,10 +19,11 @@ abstract interface class LessonLocalDataSource {
   /// The `audio_id` values referenced by at least one lesson.
   Future<Set<String>> usedAudioIds();
 
-  /// Upper bound of the fetched delta; `null` when never synced.
-  Future<String?> readSyncWatermark();
+  /// Upper bound of the fetched delta for [language]; `null` when that
+  /// language was never synced.
+  Future<String?> readSyncWatermark(String language);
 
-  Future<void> writeSyncWatermark(String updatedAt);
+  Future<void> writeSyncWatermark(String language, String updatedAt);
 
   /// Wipes the whole cache.
   Future<void> clear();

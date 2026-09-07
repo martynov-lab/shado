@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/error/failures.dart';
+import '../../../auth/presentation/controllers/auth_controller.dart';
 import '../../domain/entities/lesson.dart';
 import 'lesson_providers.dart';
 import 'library_controller.dart';
@@ -13,10 +14,15 @@ class LessonsController extends AsyncNotifier<List<Lesson>> {
     return ref.read(getLessonsProvider)();
   }
 
+  /// Studied language of the profile; the delta watermark hangs on it. Read,
+  /// not watched: a language switch reloads the catalog in its own order.
+  String get _language =>
+      ref.read(authControllerProvider).user?.studiedLanguage ?? '';
+
   /// Pulls server changes; a network failure keeps known lessons visible.
   Future<void> _sync() async {
     try {
-      await ref.read(syncLessonsProvider)();
+      await ref.read(syncLessonsProvider)(language: _language);
     } on NetworkFailure {
       // The cache is enough to render the list.
     }
@@ -25,7 +31,7 @@ class LessonsController extends AsyncNotifier<List<Lesson>> {
   /// Pull-to-refresh: re-reads the delta and refreshes the list.
   Future<void> refresh() async {
     state = await AsyncValue.guard(() async {
-      await ref.read(syncLessonsProvider)();
+      await ref.read(syncLessonsProvider)(language: _language);
       return ref.read(getLessonsProvider)();
     });
   }

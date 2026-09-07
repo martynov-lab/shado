@@ -6,5 +6,7 @@ class SyncLessons {
 
   final LessonRepository _repository;
 
-  Future<void> call() => _repository.syncLessons();
+  /// [language] is the studied language the delta belongs to.
+  Future<void> call({String language = ''}) =>
+      _repository.syncLessons(language: language);
 }

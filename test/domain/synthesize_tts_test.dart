@@ -7,13 +7,19 @@ import 'package:shado/features/lessons/domain/usecases/synthesize_tts.dart';
 /// Fake repository remembering the text the voice-over was called with.
 class _FakeRepository implements LessonRepository {
   String? lastText;
+  String? lastVoice;
+  String? lastAccent;
 
   @override
   Future<AudioUpload> synthesizeTts({
     required String text,
+    String? voice,
+    String? accent,
     Object? cancel,
   }) async {
     lastText = text;
+    lastVoice = voice;
+    lastAccent = accent;
     return const AudioUpload(audioId: 'tts', durationMs: 1000, sizeBytes: 1);
   }
 
@@ -63,6 +69,17 @@ void main() {
       await SynthesizeTts(repository).call(text: 'One | Two');
 
       expect(repository.lastText, 'One Two');
+    });
+
+    test('выбранные голос и акцент доезжают до репозитория', () async {
+      final repository = _FakeRepository();
+
+      await SynthesizeTts(
+        repository,
+      ).call(text: 'One', voice: 'Kore', accent: 'AU');
+
+      expect(repository.lastVoice, 'Kore');
+      expect(repository.lastAccent, 'AU');
     });
   });
 }

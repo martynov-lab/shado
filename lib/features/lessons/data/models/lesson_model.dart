@@ -29,6 +29,9 @@ abstract class LessonModel with _$LessonModel {
     @JsonKey(name: 'audio_sha256') @Default('') String audioSha256,
     @JsonKey(name: 'audio_content_type') @Default('') String audioContentType,
 
+    /// Language code of the lesson; empty in records from an old cache.
+    @Default('') String language,
+
     /// Lesson categories as strings from the server; empty means unset.
     @Default('') String accent,
     @Default('') String level,
@@ -58,7 +61,8 @@ abstract class LessonModel with _$LessonModel {
         isPublic: dto.isPublic,
         audioSha256: dto.audio.sha256,
         audioContentType: dto.audio.contentType,
-        accent: dto.accent?.wire ?? '',
+        language: dto.language,
+        accent: dto.accent ?? '',
         level: dto.level?.wire ?? '',
         topicId: dto.topic?.id ?? '',
         topicName: dto.topic?.name ?? '',
@@ -75,7 +79,8 @@ abstract class LessonModel with _$LessonModel {
     createdAt: createdAt.toUtc(),
     segments: segments.map((segment) => segment.toEntity()).toList(),
     isPublic: isPublic,
-    accent: LessonAccent.parse(accent),
+    language: language,
+    accent: accent.isEmpty ? null : accent,
     level: LessonLevel.parse(level),
     topic: topicId.isEmpty ? null : Topic(id: topicId, name: topicName),
   );

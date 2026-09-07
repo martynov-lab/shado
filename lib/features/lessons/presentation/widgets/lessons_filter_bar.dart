@@ -11,6 +11,16 @@ import 'lessons_filter_options.dart';
 class LessonsFilterBar extends ConsumerWidget {
   const LessonsFilterBar({super.key});
 
+  /// How many values of the group are selected — the chip badge.
+  int _countFor(LessonsFilter filter, LessonFilterGroup group) =>
+      switch (group) {
+        LessonFilterGroup.topic => filter.topicIds.length,
+        LessonFilterGroup.level => filter.levels.length,
+        LessonFilterGroup.accent => filter.accents.length,
+        LessonFilterGroup.status => filter.statuses.length,
+        LessonFilterGroup.access => filter.onlyPrivate ? 1 : 0,
+      };
+
   Future<void> _open(BuildContext context, LessonFilterGroup group) {
     return showAppBottomSheet<void>(
       context: context,
@@ -24,38 +34,21 @@ class LessonsFilterBar extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final filter = ref.watch(lessonsFilterProvider);
     final notifier = ref.read(lessonsFilterProvider.notifier);
+    final groups = ref.watch(lessonFilterGroupsProvider);
 
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
       child: Row(
         children: [
-          _FilterTrigger(
-            label: LessonFilterGroup.topic.title,
-            count: filter.topicIds.length,
-            onTap: () => _open(context, LessonFilterGroup.topic),
-          ),
-          const SizedBox(width: AppSpacing.s2),
-          _FilterTrigger(
-            label: LessonFilterGroup.level.title,
-            count: filter.levels.length,
-            onTap: () => _open(context, LessonFilterGroup.level),
-          ),
-          const SizedBox(width: AppSpacing.s2),
-          _FilterTrigger(
-            label: LessonFilterGroup.status.title,
-            count: filter.statuses.length,
-            onTap: () => _open(context, LessonFilterGroup.status),
-          ),
-          const SizedBox(width: AppSpacing.s2),
-          _FilterTrigger(
-            label: LessonFilterGroup.access.title,
-            count: filter.onlyPrivate ? 1 : 0,
-            onTap: () => _open(context, LessonFilterGroup.access),
-          ),
-          if (filter.activeCount > 0) ...[
+          for (final group in groups) ...[
+            _FilterTrigger(
+              label: group.title,
+              count: _countFor(filter, group),
+              onTap: () => _open(context, group),
+            ),
             const SizedBox(width: AppSpacing.s2),
-            _ClearButton(onTap: notifier.clearFilters),
           ],
+          if (filter.activeCount > 0) _ClearButton(onTap: notifier.clearFilters),
         ],
       ),
     );

@@ -31,6 +31,7 @@ class LessonsFilter {
     this.query = '',
     this.topicIds = const {},
     this.levels = const {},
+    this.accents = const {},
     this.statuses = const {},
     this.onlyPrivate = false,
   });
@@ -38,6 +39,10 @@ class LessonsFilter {
   final String query;
   final Set<String> topicIds;
   final Set<LessonLevel> levels;
+
+  /// Accent codes of the current language; empty for languages without them.
+  final Set<String> accents;
+
   final Set<LessonFilterStatus> statuses;
 
   /// Show private lessons only.
@@ -48,12 +53,17 @@ class LessonsFilter {
       query.isEmpty &&
       topicIds.isEmpty &&
       levels.isEmpty &&
+      accents.isEmpty &&
       statuses.isEmpty &&
       !onlyPrivate;
 
   /// How many filters are selected, excluding the search query.
   int get activeCount =>
-      topicIds.length + levels.length + statuses.length + (onlyPrivate ? 1 : 0);
+      topicIds.length +
+      levels.length +
+      accents.length +
+      statuses.length +
+      (onlyPrivate ? 1 : 0);
 
   /// Whether a lesson passes the filters: OR inside a group, AND across.
   bool matches(Lesson lesson) {
@@ -67,6 +77,10 @@ class LessonsFilter {
     }
     if (levels.isNotEmpty &&
         !(lesson.level != null && levels.contains(lesson.level))) {
+      return false;
+    }
+    if (accents.isNotEmpty &&
+        !(lesson.accent != null && accents.contains(lesson.accent))) {
       return false;
     }
     if (statuses.isNotEmpty && !statuses.any((s) => _hasStatus(lesson, s))) {
@@ -89,6 +103,7 @@ class LessonsFilter {
     String? query,
     Set<String>? topicIds,
     Set<LessonLevel>? levels,
+    Set<String>? accents,
     Set<LessonFilterStatus>? statuses,
     bool? onlyPrivate,
   }) {
@@ -96,6 +111,7 @@ class LessonsFilter {
       query: query ?? this.query,
       topicIds: topicIds ?? this.topicIds,
       levels: levels ?? this.levels,
+      accents: accents ?? this.accents,
       statuses: statuses ?? this.statuses,
       onlyPrivate: onlyPrivate ?? this.onlyPrivate,
     );
@@ -115,16 +131,23 @@ class LessonsFilterNotifier extends Notifier<LessonsFilter> {
   void toggleLevel(LessonLevel level) =>
       state = state.copyWith(levels: _toggled(state.levels, level));
 
+  void toggleAccent(String code) =>
+      state = state.copyWith(accents: _toggled(state.accents, code));
+
   void toggleStatus(LessonFilterStatus status) =>
       state = state.copyWith(statuses: _toggled(state.statuses, status));
 
   void toggleOnlyPrivate() =>
       state = state.copyWith(onlyPrivate: !state.onlyPrivate);
 
+  /// Drops the query and every filter — a language switch invalidates them.
+  void reset() => state = const LessonsFilter();
+
   /// Clears the filters without touching the search query.
   void clearFilters() => state = state.copyWith(
     topicIds: const {},
     levels: const {},
+    accents: const {},
     statuses: const {},
     onlyPrivate: false,
   );

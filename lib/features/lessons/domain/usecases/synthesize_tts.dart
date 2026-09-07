@@ -9,7 +9,12 @@ class SynthesizeTts {
 
   final LessonRepository _repository;
 
-  Future<AudioUpload> call({required String text, Object? cancel}) {
+  Future<AudioUpload> call({
+    required String text,
+    String? voice,
+    String? accent,
+    Object? cancel,
+  }) {
     final prepared = prepareText(text);
     if (prepared.isEmpty) {
       throw const ValidationFailure('Введите текст, чтобы озвучить его');
@@ -20,7 +25,12 @@ class SynthesizeTts {
         'Текст длиннее $kMaxTtsChars символов — сократите его',
       );
     }
-    return _repository.synthesizeTts(text: prepared, cancel: cancel);
+    return _repository.synthesizeTts(
+      text: prepared,
+      voice: voice,
+      accent: accent,
+      cancel: cancel,
+    );
   }
 
   /// Prepares text for sending: drops delimiters and collapses spaces.

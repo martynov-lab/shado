@@ -1,3 +1,4 @@
+import 'package:dio/dio.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shado/core/network/api_exception.dart';
 import 'package:shado/features/lessons/data/datasources/audio_cache.dart';
@@ -16,6 +17,7 @@ import 'package:shado/features/lessons/domain/entities/lesson.dart';
 import 'package:shado/features/lessons/domain/entities/lesson_category.dart';
 import 'package:shado/features/lessons/domain/entities/segment.dart';
 import 'package:shado/features/lessons/domain/entities/tts_quota.dart';
+import 'package:shado/features/lessons/domain/entities/tts_voice.dart';
 
 /// The server response for a lesson; segments come back as they were sent.
 Map<String, dynamic> lessonJson({
@@ -26,7 +28,8 @@ Map<String, dynamic> lessonJson({
   String audioId = 'audio-1',
   String? deletedAt,
   String updatedAt = '2026-07-28T10:00:00.000Z',
-  String accent = 'US',
+  String language = 'en',
+  String? accent = 'US',
   String level = 'b1',
   Map<String, dynamic>? topic = const {'id': 'topic-1', 'name': 'Education'},
   List<Map<String, dynamic>>? segments,
@@ -39,6 +42,7 @@ Map<String, dynamic> lessonJson({
     'updated_at': updatedAt,
     'deleted_at': deletedAt,
     'version': version,
+    'language': language,
     'accent': accent,
     'level': level,
     'topic': topic,
@@ -60,7 +64,10 @@ Map<String, dynamic> lessonJson({
 
 class FakeLocalDataSource implements LessonLocalDataSource {
   final Map<String, LessonModel> lessons = {};
-  String? watermark;
+
+  /// Delta watermark per language code.
+  final Map<String, String> watermarks = {};
+
   bool cleared = false;
 
   @override
@@ -98,18 +105,19 @@ class FakeLocalDataSource implements LessonLocalDataSource {
       lessons.values.map((lesson) => lesson.audioId).toSet();
 
   @override
-  Future<String?> readSyncWatermark() async => watermark;
+  Future<String?> readSyncWatermark(String language) async =>
+      watermarks[language];
 
   @override
-  Future<void> writeSyncWatermark(String updatedAt) async {
-    watermark = updatedAt;
+  Future<void> writeSyncWatermark(String language, String updatedAt) async {
+    watermarks[language] = updatedAt;
   }
 
   @override
   Future<void> clear() async {
     cleared = true;
     lessons.clear();
-    watermark = null;
+    watermarks.clear();
   }
 }
 
@@ -127,7 +135,7 @@ class FakeRemoteDataSource implements LessonRemoteDataSource {
   final List<List<SegmentModel>> putSegments = [];
 
   /// Categories sent with each `PUT`.
-  final List<({LessonAccent? accent, LessonLevel? level, String? topicId})>
+  final List<({String? accent, LessonLevel? level, String? topicId})>
   putCategories = [];
 
   /// The `is_public` sent with each `PUT`; `null` means it was omitted.
@@ -155,7 +163,7 @@ class FakeRemoteDataSource implements LessonRemoteDataSource {
     required DateTime createdAt,
     required List<SegmentModel> segments,
     int? version,
-    LessonAccent? accent,
+    String? accent,
     LessonLevel? level,
     String? topicId,
     bool? isPublic,
@@ -172,7 +180,7 @@ class FakeRemoteDataSource implements LessonRemoteDataSource {
         title: title,
         audioId: audioId,
         version: (version ?? 0) + 1,
-        accent: (accent ?? LessonAccent.us).wire,
+        accent: accent ?? 'US',
         level: (level ?? LessonLevel.b1).wire,
         topic: topicId == null ? null : {'id': topicId, 'name': 'Тема'},
         segments: [for (final segment in segments) segment.toJson()],
@@ -245,12 +253,20 @@ class FakeAudioRemote implements AudioRemoteDataSource {
 class FakeTtsRemote implements TtsRemoteDataSource {
   final List<String> synthesized = [];
 
+  /// Voice and accent of each synthesis request.
+  final List<({String? voice, String? accent})> synthesisOptions = [];
+
+  final List<({String voice, String? accent})> previews = [];
+
   @override
   Future<AudioDto> synthesize({
     required String text,
-    Object? cancelToken,
+    String? voice,
+    String? accent,
+    CancelToken? cancelToken,
   }) async {
     synthesized.add(text);
+    synthesisOptions.add((voice: voice, accent: accent));
     return AudioDto.fromJson({
       'id': 'tts-1',
       'content_type': 'audio/wav',
@@ -258,6 +274,31 @@ class FakeTtsRemote implements TtsRemoteDataSource {
       'sha256': 'def',
       'duration_ms': 4200,
     });
+  }
+
+  @override
+  Future<TtsVoices> voices() async => const TtsVoices(
+    items: [TtsVoice(name: 'Kore', description: 'Мягкий')],
+    defaultVoice: 'Kore',
+  );
+
+  @override
+  Future<TtsPreviewResponse> preview({
+    required String voice,
+    String? accent,
+  }) async {
+    previews.add((voice: voice, accent: accent));
+    return (
+      audio: AudioDto.fromJson({
+        'id': 'tts-sample-1',
+        'content_type': 'audio/wav',
+        'size_bytes': 100,
+        'sha256': '',
+        'duration_ms': 1500,
+      }),
+      text: 'Пример фразы',
+      cached: false,
+    );
   }
 
   @override
@@ -367,6 +408,28 @@ void main() {
       // Gemini TTS returns wav, so the file lands in the cache as .wav.
       expect(upload.localPath, '/cache/tts-1.wav');
     });
+
+    test('выбранные голос и акцент уходят в запрос синтеза', () async {
+      final repository = build(FakeRemoteDataSource());
+
+      await repository.synthesizeTts(
+        text: 'Hello there',
+        voice: 'Kore',
+        accent: 'AU',
+      );
+
+      expect(tts.synthesisOptions.single.voice, 'Kore');
+      expect(tts.synthesisOptions.single.accent, 'AU');
+    });
+
+    test('без выбора голоса поля не уходят — сервер берёт свой', () async {
+      final repository = build(FakeRemoteDataSource());
+
+      await repository.synthesizeTts(text: 'Hello there');
+
+      expect(tts.synthesisOptions.single.voice, isNull);
+      expect(tts.synthesisOptions.single.accent, isNull);
+    });
   });
 
   group('создание', () {
@@ -378,7 +441,7 @@ void main() {
         audioId: 'audio-1',
         durationMs: 10000,
         segmentTexts: const ['Раз', 'Два'],
-        accent: LessonAccent.us,
+        accent: 'US',
         level: LessonLevel.b1,
         boundaries: const [2000, 5000, 8000],
       );
@@ -399,7 +462,7 @@ void main() {
         audioId: 'audio-1',
         durationMs: 10000,
         segmentTexts: const ['Раз'],
-        accent: LessonAccent.us,
+        accent: 'US',
         level: LessonLevel.b1,
       );
 
@@ -414,7 +477,7 @@ void main() {
         audioId: 'audio-1',
         durationMs: 10000,
         segmentTexts: const ['Раз'],
-        accent: LessonAccent.us,
+        accent: 'US',
         level: LessonLevel.b1,
       );
 
@@ -429,7 +492,7 @@ void main() {
         audioId: 'audio-1',
         durationMs: 10000,
         segmentTexts: const ['Раз'],
-        accent: LessonAccent.us,
+        accent: 'US',
         level: LessonLevel.b1,
         isPublic: false,
       );
@@ -445,7 +508,7 @@ void main() {
         audioId: 'audio-1',
         durationMs: 10000,
         segmentTexts: const ['Раз'],
-        accent: LessonAccent.us,
+        accent: 'US',
         level: LessonLevel.b1,
       );
 
@@ -463,15 +526,15 @@ void main() {
         audioId: 'audio-1',
         durationMs: 10000,
         segmentTexts: const ['Раз'],
-        accent: LessonAccent.uk,
+        accent: 'UK',
         level: LessonLevel.c1,
         topicId: 'topic-7',
       );
 
-      expect(remote.putCategories.single.accent, LessonAccent.uk);
+      expect(remote.putCategories.single.accent, 'UK');
       expect(remote.putCategories.single.level, LessonLevel.c1);
       expect(remote.putCategories.single.topicId, 'topic-7');
-      expect(lesson.accent, LessonAccent.uk);
+      expect(lesson.accent, 'UK');
       expect(lesson.topic?.id, 'topic-7');
       // Categories live in the cache: a `PUT` without them would drop them.
       expect(local.lessons[lesson.id]?.level, 'c1');
@@ -485,7 +548,7 @@ void main() {
         audioId: 'audio-1',
         durationMs: 10000,
         segmentTexts: const ['Раз'],
-        accent: LessonAccent.us,
+        accent: 'US',
         level: LessonLevel.a2,
       );
 
@@ -533,7 +596,7 @@ void main() {
       // `PUT` replaces the whole lesson, so categories are resent as is.
       await build(remote).updateLesson(lessonToSave());
 
-      expect(remote.putCategories.single.accent, LessonAccent.us);
+      expect(remote.putCategories.single.accent, 'US');
       expect(remote.putCategories.single.level, LessonLevel.b1);
       expect(remote.putCategories.single.topicId, 'topic-1');
     });
@@ -602,9 +665,24 @@ void main() {
         ],
       );
 
-      await build(remote).syncLessons();
+      await build(remote).syncLessons(language: 'en');
 
-      expect(local.watermark, '2026-07-28T12:00:00.000Z');
+      // The watermark hangs on the language, not on the catalog as a whole.
+      expect(local.watermarks['en'], '2026-07-28T12:00:00.000Z');
+    });
+
+    test('метка другого языка не мешает первой синхронизации', () async {
+      local.watermarks['en'] = '2026-07-28T12:00:00.000Z';
+      final remote = FakeRemoteDataSource(
+        pages: [
+          LessonPage(items: [LessonDto.fromJson(lessonJson(id: 'a'))]),
+        ],
+      );
+
+      await build(remote).syncLessons(language: 'fr');
+
+      // A fresh language starts without `since` — the whole catalog arrives.
+      expect(remote.sinceCalls.single, isNull);
     });
 
     test('удалённый на другом устройстве урок уходит из кеша', () async {
@@ -612,7 +690,7 @@ void main() {
         LessonDto.fromJson(lessonJson(id: 'a')),
         audioPath: '/cache/audio-1.mp3',
       );
-      local.watermark = '2026-07-28T09:00:00.000Z';
+      local.watermarks[''] = '2026-07-28T09:00:00.000Z';
       cache.files.add('audio-1');
 
       final remote = FakeRemoteDataSource(

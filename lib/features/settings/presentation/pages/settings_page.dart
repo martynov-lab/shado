@@ -5,8 +5,8 @@ import 'package:shado/widgets/widgets.dart';
 
 import '../../../auth/domain/entities/auth_user.dart';
 import '../../../auth/presentation/controllers/auth_controller.dart';
+import '../../../languages/presentation/controllers/language_providers.dart';
 import '../controllers/settings_controller.dart';
-import '../controllers/studied_language.dart';
 import '../widgets/settings_mobile_view.dart';
 import '../widgets/settings_tablet_view.dart';
 import '../widgets/settings_text_edit_sheet.dart';
@@ -25,7 +25,7 @@ class SettingsPage extends ConsumerWidget {
     final name = _displayName(user, email);
     final languageLabel = user?.studiedLanguage == null
         ? null
-        : studiedLanguageLabel(user!.studiedLanguage);
+        : ref.watch(studiedLanguageLabelProvider);
 
     return AppAdaptiveLayout(
       mobile: (context) => SettingsMobileView(

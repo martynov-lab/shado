@@ -30,7 +30,7 @@ abstract interface class LessonRemoteDataSource {
     required DateTime createdAt,
     required List<SegmentModel> segments,
     int? version,
-    LessonAccent? accent,
+    String? accent,
     LessonLevel? level,
     String? topicId,
     bool? isPublic,
@@ -73,7 +73,7 @@ class ApiLessonRemoteDataSource implements LessonRemoteDataSource {
     required DateTime createdAt,
     required List<SegmentModel> segments,
     int? version,
-    LessonAccent? accent,
+    String? accent,
     LessonLevel? level,
     String? topicId,
     bool? isPublic,
@@ -84,7 +84,9 @@ class ApiLessonRemoteDataSource implements LessonRemoteDataSource {
         'title': title,
         'audio_id': audioId,
         'created_at': createdAt.toUtc().toIso8601String(),
-        'accent': ?accent?.wire,
+        // The server takes the language from the profile — only the accent
+        // goes with the lesson.
+        'accent': ?accent,
         'level': ?level?.wire,
         // Without a topic the key is omitted and the server picks the default.
         'topic_id': ?topicId,

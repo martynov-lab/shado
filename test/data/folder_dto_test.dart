@@ -12,11 +12,13 @@ void main() {
       'created_at': '2026-08-30T10:00:00.000Z',
       'updated_at': '2026-08-30T10:12:03.000Z',
       'version': 2,
+      'language': 'en',
       'lesson_count': 3,
     });
 
     expect(dto.id, 'f1');
     expect(dto.title, 'TED-разговорный');
+    expect(dto.language, 'en');
     expect(dto.lessonCount, 3);
     expect(dto.lessons, isEmpty);
     expect(dto.isDeleted, isFalse);

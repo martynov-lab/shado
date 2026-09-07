@@ -11,6 +11,7 @@ class FolderDto {
     required this.version,
     required this.lessonCount,
     this.isPublic = true,
+    this.language = '',
     this.deletedAt,
     this.lessons = const [],
   });
@@ -25,6 +26,7 @@ class FolderDto {
         : _parseTime(json['deleted_at']),
     version: (json['version'] as num?)?.toInt() ?? 1,
     isPublic: json['is_public'] as bool? ?? true,
+    language: json['language'] as String? ?? '',
     lessonCount: (json['lesson_count'] as num?)?.toInt() ?? 0,
     lessons: [
       for (final lesson in (json['lessons'] as List<dynamic>? ?? const []))
@@ -42,6 +44,10 @@ class FolderDto {
 
   final int version;
   final bool isPublic;
+
+  /// Language code of the folder; a folder holds one language only.
+  final String language;
+
   final int lessonCount;
   final List<LessonDto> lessons;
 
@@ -55,6 +61,7 @@ class FolderDto {
     updatedAt: updatedAt,
     version: version,
     isPublic: isPublic,
+    language: language,
     lessonCount: lessonCount,
     lessons: [for (final lesson in lessons) lesson.toEntity(audioPath: '')],
   );

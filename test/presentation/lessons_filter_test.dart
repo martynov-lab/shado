@@ -14,6 +14,7 @@ Lesson _lesson({
   required String title,
   Topic? topic,
   LessonLevel? level,
+  String? accent,
 }) => Lesson(
   id: id,
   title: title,
@@ -23,6 +24,7 @@ Lesson _lesson({
   segments: const [Segment(index: 0, text: 'x', startMs: 0, endMs: 1000)],
   topic: topic,
   level: level,
+  accent: accent,
 );
 
 /// Replaces the list data source without the network or the database.
@@ -50,9 +52,26 @@ void main() {
   const dialogs = Topic(id: 'topic-2', name: 'Диалоги');
 
   final lessons = [
-    _lesson(id: '1', title: 'Six-Minute English: Sleep', topic: podcasts, level: LessonLevel.b1),
-    _lesson(id: '2', title: 'Everyday small talk', topic: dialogs, level: LessonLevel.a2),
-    _lesson(id: '3', title: 'Deep sleep habits', topic: podcasts, level: LessonLevel.c1),
+    _lesson(
+      id: '1',
+      title: 'Six-Minute English: Sleep',
+      topic: podcasts,
+      level: LessonLevel.b1,
+      accent: 'UK',
+    ),
+    _lesson(
+      id: '2',
+      title: 'Everyday small talk',
+      topic: dialogs,
+      level: LessonLevel.a2,
+      accent: 'AU',
+    ),
+    _lesson(
+      id: '3',
+      title: 'Deep sleep habits',
+      topic: podcasts,
+      level: LessonLevel.c1,
+    ),
   ];
 
   group('LessonsFilter.matches', () {
@@ -73,6 +92,14 @@ void main() {
       const filter = LessonsFilter(levels: {LessonLevel.a2});
       expect(filter.matches(lessons[1]), isTrue);
       expect(filter.matches(lessons[0]), isFalse);
+    });
+
+    test('фильтр по акценту оставляет только выбранные', () {
+      const filter = LessonsFilter(accents: {'AU'});
+      expect(filter.matches(lessons[1]), isTrue);
+      expect(filter.matches(lessons[0]), isFalse);
+      // A lesson of a language without accents never matches the filter.
+      expect(filter.matches(lessons[2]), isFalse);
     });
 
     test('группы фильтров складываются через И', () {
@@ -97,6 +124,18 @@ void main() {
 
       notifier.toggleTopic(podcasts.id);
       expect(container.read(lessonsFilterProvider).topicIds, isEmpty);
+    });
+
+    test('reset снимает и поиск, и фильтры — смена языка их обнуляет', () {
+      final container = ProviderContainer();
+      addTearDown(container.dispose);
+      final notifier = container.read(lessonsFilterProvider.notifier);
+
+      notifier.setQuery('sleep');
+      notifier.toggleAccent('UK');
+      notifier.reset();
+
+      expect(container.read(lessonsFilterProvider).isEmpty, isTrue);
     });
 
     test('clearFilters очищает выбор, но не поиск', () {

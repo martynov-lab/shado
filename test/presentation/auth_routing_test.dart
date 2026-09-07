@@ -13,6 +13,7 @@ import 'package:shado/features/lessons/domain/entities/audio_upload.dart';
 import 'package:shado/features/lessons/domain/entities/lesson.dart';
 import 'package:shado/features/lessons/domain/entities/lesson_category.dart';
 import 'package:shado/features/lessons/domain/entities/tts_quota.dart';
+import 'package:shado/features/lessons/domain/entities/tts_voice.dart';
 import 'package:shado/features/lessons/domain/repositories/lesson_repository.dart';
 import 'package:shado/features/lessons/presentation/controllers/lesson_providers.dart';
 import 'package:shado/theme/theme.dart';
@@ -82,7 +83,7 @@ class FakeLessonRepository implements LessonRepository {
   Future<List<Lesson>> getLessons() async => const [];
 
   @override
-  Future<void> syncLessons() async {}
+  Future<void> syncLessons({String language = ''}) async {}
 
   @override
   Future<Lesson?> getLesson(String id) async => null;
@@ -97,8 +98,19 @@ class FakeLessonRepository implements LessonRepository {
   @override
   Future<AudioUpload> synthesizeTts({
     required String text,
+    String? voice,
+    String? accent,
     Object? cancel,
   }) async => const AudioUpload(audioId: 'a', durationMs: 1, sizeBytes: 1);
+
+  @override
+  Future<TtsVoices> ttsVoices() async => const TtsVoices();
+
+  @override
+  Future<TtsPreview> previewTtsVoice({
+    required String voice,
+    String? accent,
+  }) async => const TtsPreview(localPath: '');
 
   @override
   Future<TtsQuota> ttsQuota() async =>
@@ -113,7 +125,7 @@ class FakeLessonRepository implements LessonRepository {
     required String audioId,
     required int durationMs,
     required List<String> segmentTexts,
-    required LessonAccent accent,
+    required String? accent,
     required LessonLevel level,
     String? topicId,
     List<int>? boundaries,

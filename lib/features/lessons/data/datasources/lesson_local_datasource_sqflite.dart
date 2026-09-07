@@ -20,7 +20,10 @@ class SqfliteLessonLocalDataSource implements LessonLocalDataSource {
 
   /// Table of cache service values.
   static const String _metaTable = 'sync_meta';
-  static const String _watermarkKey = 'lessons_updated_at';
+
+  /// Delta watermark key; a shared one would half-load a switched catalog.
+  static String _watermarkKey(String language) =>
+      language.isEmpty ? 'lessons_updated_at' : 'lessons_updated_at_$language';
 
   final String _databaseName;
   Database? _database;
@@ -44,7 +47,7 @@ class SqfliteLessonLocalDataSource implements LessonLocalDataSource {
       final path = p.join(await _databaseDirectory(), _databaseName);
       final db = await openDatabase(
         path,
-        version: 4,
+        version: 5,
         onCreate: (db, version) => _createSchema(db),
         onUpgrade: (db, oldVersion, newVersion) async {
           // The cache is recreated, not migrated; `syncLessons` refills it.
@@ -76,6 +79,7 @@ class SqfliteLessonLocalDataSource implements LessonLocalDataSource {
         updated_at TEXT NOT NULL,
         version INTEGER NOT NULL DEFAULT 1,
         is_public INTEGER NOT NULL DEFAULT 1,
+        language TEXT NOT NULL DEFAULT '',
         accent TEXT NOT NULL DEFAULT '',
         level TEXT NOT NULL DEFAULT '',
         topic_id TEXT NOT NULL DEFAULT '',
@@ -200,13 +204,13 @@ class SqfliteLessonLocalDataSource implements LessonLocalDataSource {
   }
 
   @override
-  Future<String?> readSyncWatermark() async {
+  Future<String?> readSyncWatermark(String language) async {
     try {
       final db = await _db();
       final rows = await db.query(
         _metaTable,
         where: 'key = ?',
-        whereArgs: [_watermarkKey],
+        whereArgs: [_watermarkKey(language)],
         limit: 1,
       );
       if (rows.isEmpty) return null;
@@ -222,11 +226,11 @@ class SqfliteLessonLocalDataSource implements LessonLocalDataSource {
   }
 
   @override
-  Future<void> writeSyncWatermark(String updatedAt) async {
+  Future<void> writeSyncWatermark(String language, String updatedAt) async {
     try {
       final db = await _db();
       await db.insert(_metaTable, {
-        'key': _watermarkKey,
+        'key': _watermarkKey(language),
         'value': updatedAt,
       }, conflictAlgorithm: ConflictAlgorithm.replace);
     } on Failure {
@@ -264,6 +268,7 @@ class SqfliteLessonLocalDataSource implements LessonLocalDataSource {
     'updated_at': lesson.updatedAt.toUtc().toIso8601String(),
     'version': lesson.version,
     'is_public': lesson.isPublic ? 1 : 0,
+    'language': lesson.language,
     'accent': lesson.accent,
     'level': lesson.level,
     'topic_id': lesson.topicId,
@@ -287,6 +292,7 @@ class SqfliteLessonLocalDataSource implements LessonLocalDataSource {
       updatedAt: DateTime.parse(row['updated_at']! as String).toUtc(),
       version: row['version'] as int? ?? 1,
       isPublic: (row['is_public'] as int? ?? 1) != 0,
+      language: row['language'] as String? ?? '',
       accent: row['accent'] as String? ?? '',
       level: row['level'] as String? ?? '',
       topicId: row['topic_id'] as String? ?? '',

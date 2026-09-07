@@ -87,9 +87,7 @@ presentation приложения не меняются — при одном у
 **Озвучка через ИИ (Gemini TTS).** Кнопка «Озвучить через ИИ» на экране
 создания урока: текст уходит на `POST /v1/tts/synthesize`, ответ обрабатывается
 как загрузка аудио (кеш по `audio_id`, волна по `peaks`, файл через
-`GET /v1/audio/{id}/file`). Доступна **только owner** — остальным авторам
-(`user-pro`, `admin`) сервер отвечает `403`, поэтому кнопку и остаток лимита им
-не показываем. Полное описание — [`TTS_CLIENT_SPEC.md`](./TTS_CLIENT_SPEC.md).
+`GET /v1/audio/{id}/file`). Полное описание — [`TTS_CLIENT_SPEC.md`](./TTS_CLIENT_SPEC.md).
 
 ---
 
@@ -118,7 +116,7 @@ class AuthInterceptor extends Interceptor {
 
   final Dio _dio;
   final TokenStorage _tokens;
-  Future<String?>? _refreshing; // one refresh for all parallel requests
+  Future<String?>? _refreshing; // один refresh на все параллельные запросы
 
   @override
   void onRequest(RequestOptions options, RequestInterceptorHandler handler) {
@@ -135,7 +133,7 @@ class AuthInterceptor extends Interceptor {
     if (err.response?.statusCode != 401 || isAuthCall) return handler.next(err);
 
     final access = await (_refreshing ??= _refresh().whenComplete(() => _refreshing = null));
-    if (access == null) return handler.next(err); // AuthRepository initiates the sign-out
+    if (access == null) return handler.next(err); // выход инициирует AuthRepository
 
     final options = err.requestOptions..headers['Authorization'] = 'Bearer $access';
     try {
@@ -154,7 +152,7 @@ class AuthInterceptor extends Interceptor {
         data: {'refresh_token': refresh},
         options: Options(extra: {'skipAuth': true}),
       );
-      await _tokens.save(response.data); // stores the new refresh, updates access
+      await _tokens.save(response.data); // пишет новый refresh, обновляет access
       return response.data['access_token'] as String;
     } on DioException {
       await _tokens.clear();

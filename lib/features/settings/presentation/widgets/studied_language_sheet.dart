@@ -1,85 +1,50 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:shado/theme/theme.dart';
-import 'package:shado/widgets/widgets.dart';
 
-import '../controllers/studied_language.dart';
+import '../../../languages/domain/entities/language.dart';
+import '../../../languages/presentation/controllers/language_providers.dart';
+import 'studied_language_row.dart';
 
 /// Studied language picker sheet; returns the selected code.
-class StudiedLanguageSheet extends StatelessWidget {
+class StudiedLanguageSheet extends ConsumerWidget {
   const StudiedLanguageSheet({super.key, required this.selectedCode});
 
   /// Current code; the matching item is highlighted.
   final String? selectedCode;
 
   @override
-  Widget build(BuildContext context) {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        for (final language in StudiedLanguage.values)
-          _LanguageRow(
-            label: language.label,
-            selected: language.code == selectedCode,
-            onTap: () => Navigator.of(context).pop(language.code),
-          ),
-      ],
-    );
-  }
-}
+  Widget build(BuildContext context, WidgetRef ref) {
+    final languages = ref.watch(languagesProvider);
 
-class _LanguageRow extends StatelessWidget {
-  const _LanguageRow({
-    required this.label,
-    required this.selected,
-    required this.onTap,
-  });
-
-  final String label;
-  final bool selected;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final colors = context.colors;
-
-    return Semantics(
-      button: true,
-      selected: selected,
-      label: label,
-      excludeSemantics: true,
-      child: Material(
-        type: MaterialType.transparency,
-        child: InkWell(
-          onTap: onTap,
-          borderRadius: AppRadii.rMd,
-          child: Padding(
-            padding: const EdgeInsets.symmetric(
-              horizontal: AppSpacing.s3,
-              vertical: AppSpacing.s3,
+    return switch (languages) {
+      AsyncData(:final value) when value.isNotEmpty => Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          for (final Language language in value)
+            StudiedLanguageRow(
+              label: language.label,
+              note: language.nativeName == language.name
+                  ? null
+                  : language.nativeName,
+              selected: language.code == selectedCode,
+              onTap: () => Navigator.of(context).pop(language.code),
             ),
-            child: Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    label,
-                    style: AppText.body.copyWith(
-                      color: selected ? colors.primary : colors.text,
-                    ),
-                  ),
-                ),
-                if (selected)
-                  AppIcon(
-                    AppIcons.check,
-                    size: AppSizes.iconMd,
-                    color: colors.primary,
-                  ),
-              ],
-            ),
-          ),
+        ],
+      ),
+      AsyncError() => Padding(
+        padding: const EdgeInsets.all(AppSpacing.s3),
+        child: Text(
+          'Список языков не загрузился — проверьте связь и попробуйте снова',
+          style: AppText.body.copyWith(color: context.colors.text3),
         ),
       ),
-    );
+      _ => const Padding(
+        padding: EdgeInsets.all(AppSpacing.s6),
+        child: Center(child: CircularProgressIndicator(strokeWidth: 2)),
+      ),
+    };
   }
 }

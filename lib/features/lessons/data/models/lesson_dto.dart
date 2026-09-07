@@ -16,6 +16,7 @@ class LessonDto {
     required this.segments,
     this.isPublic = true,
     this.deletedAt,
+    this.language = '',
     this.accent,
     this.level,
     this.topic,
@@ -33,7 +34,10 @@ class LessonDto {
     version: (json['version'] as num?)?.toInt() ?? 1,
     // Without the field the lesson counts as public.
     isPublic: json['is_public'] as bool? ?? true,
-    accent: LessonAccent.parse(json['accent'] as String?),
+    language: json['language'] as String? ?? '',
+    // Accent is a code from the language directory; languages without accents
+    // send `null`.
+    accent: _nullIfEmpty(json['accent'] as String?),
     level: LessonLevel.parse(json['level'] as String?),
     // The topic arrives as a `{id, name}` object.
     topic: json['topic'] is Map
@@ -61,8 +65,11 @@ class LessonDto {
   /// Lesson visibility; a private one is visible to its author only.
   final bool isPublic;
 
+  /// Language code the lesson belongs to.
+  final String language;
+
   /// Lesson categories; `null` when the server sent an empty or unknown value.
-  final LessonAccent? accent;
+  final String? accent;
   final LessonLevel? level;
   final Topic? topic;
 
@@ -80,10 +87,14 @@ class LessonDto {
     createdAt: createdAt,
     segments: segments.map((segment) => segment.toEntity()).toList(),
     isPublic: isPublic,
+    language: language,
     accent: accent,
     level: level,
     topic: topic,
   );
+
+  static String? _nullIfEmpty(String? raw) =>
+      raw == null || raw.isEmpty ? null : raw;
 
   static DateTime _parseTime(Object? raw) =>
       DateTime.tryParse(raw as String? ?? '')?.toUtc() ??

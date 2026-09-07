@@ -1,29 +1,14 @@
-/// Speaker accent, English level and lesson topic.
+/// Speaker accent, language level and lesson topic.
 library;
 
-/// Speaker accent; [wire] goes to the server, [label] is shown in the UI.
-enum LessonAccent {
-  us('US', 'Американский'),
-  uk('UK', 'Британский');
+/// Accent codes of English and their labels; other languages have no accents.
+const Map<String, String> kEnglishAccents = {
+  'US': 'Американский',
+  'UK': 'Британский',
+  'AU': 'Австралийский',
+};
 
-  const LessonAccent(this.wire, this.label);
-
-  /// JSON value — uppercase `US` / `UK`.
-  final String wire;
-
-  final String label;
-
-  /// Parses an accent; `null` when it is missing or unknown.
-  static LessonAccent? parse(String? raw) {
-    if (raw == null) return null;
-    for (final accent in values) {
-      if (accent.wire == raw) return accent;
-    }
-    return null;
-  }
-}
-
-/// English level on the CEFR scale.
+/// Language level on the CEFR scale.
 enum LessonLevel {
   a1('a1', 'A1 — начальный'),
   a2('a2', 'A2 — элементарный'),

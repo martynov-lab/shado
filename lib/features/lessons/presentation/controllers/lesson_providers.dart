@@ -15,6 +15,7 @@ import '../../data/datasources/waveform_datasource_soloud.dart';
 import '../../data/repositories/lesson_repository_impl.dart';
 import '../../domain/entities/lesson_category.dart';
 import '../../domain/entities/tts_quota.dart';
+import '../../domain/entities/tts_voice.dart';
 import '../../domain/repositories/lesson_repository.dart';
 import '../../domain/usecases/create_lesson.dart';
 import '../../domain/usecases/delete_lesson.dart';
@@ -22,6 +23,8 @@ import '../../domain/usecases/get_lesson.dart';
 import '../../domain/usecases/get_lessons.dart';
 import '../../domain/usecases/get_topics.dart';
 import '../../domain/usecases/get_tts_quota.dart';
+import '../../domain/usecases/get_tts_voices.dart';
+import '../../domain/usecases/preview_tts_voice.dart';
 import '../../domain/usecases/synthesize_tts.dart';
 import '../../domain/usecases/sync_lessons.dart';
 import '../../domain/usecases/update_lesson_content.dart';
@@ -107,6 +110,19 @@ final synthesizeTtsProvider = Provider<SynthesizeTts>(
 
 final getTtsQuotaProvider = Provider<GetTtsQuota>(
   (ref) => GetTtsQuota(ref.watch(lessonRepositoryProvider)),
+);
+
+final getTtsVoicesProvider = Provider<GetTtsVoices>(
+  (ref) => GetTtsVoices(ref.watch(lessonRepositoryProvider)),
+);
+
+final previewTtsVoiceProvider = Provider<PreviewTtsVoice>(
+  (ref) => PreviewTtsVoice(ref.watch(lessonRepositoryProvider)),
+);
+
+/// Voice directory for the voice-over sheet; requested when it opens.
+final ttsVoicesProvider = FutureProvider.autoDispose<TtsVoices>(
+  (ref) => ref.watch(getTtsVoicesProvider)(),
 );
 
 /// Remaining free voice-overs shown next to the AI voice-over button.

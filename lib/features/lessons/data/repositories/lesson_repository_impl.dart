@@ -1,6 +1,8 @@
 import 'dart:io';
 
 import 'package:dio/dio.dart';
+import 'package:path/path.dart' as p;
+import 'package:path_provider/path_provider.dart';
 import 'package:uuid/uuid.dart';
 
 import '../../../../core/error/failures.dart';
@@ -11,6 +13,7 @@ import '../../domain/entities/lesson.dart';
 import '../../domain/entities/lesson_category.dart';
 import '../../domain/entities/segment_boundaries.dart';
 import '../../domain/entities/tts_quota.dart';
+import '../../domain/entities/tts_voice.dart';
 import '../../domain/repositories/lesson_repository.dart';
 import '../datasources/audio_cache.dart';
 import '../datasources/audio_remote_datasource.dart';
@@ -48,6 +51,9 @@ class LessonRepositoryImpl implements LessonRepository {
   /// Lesson list page size.
   static const int _pageLimit = 100;
 
+  /// Temporary directory for voice samples.
+  static const String _sampleDirName = 'tts_samples';
+
   final LessonLocalDataSource _local;
   final LessonRemoteDataSource _remote;
   final AudioRemoteDataSource _audio;
@@ -63,8 +69,8 @@ class LessonRepositoryImpl implements LessonRepository {
   }
 
   @override
-  Future<void> syncLessons() async {
-    final since = await _local.readSyncWatermark();
+  Future<void> syncLessons({String language = ''}) async {
+    final since = await _local.readSyncWatermark(language);
     final fresh = <LessonModel>[];
     final removed = <String>[];
     var watermark = since;
@@ -100,7 +106,9 @@ class LessonRepositoryImpl implements LessonRepository {
     await _local.deleteLessons(removed);
     await _local.upsertAll(fresh);
     // The watermark is the max `updated_at` of the response, not device time.
-    if (watermark != null) await _local.writeSyncWatermark(watermark);
+    if (watermark != null) {
+      await _local.writeSyncWatermark(language, watermark);
+    }
     await _tidyAudioCache();
   }
 
@@ -156,10 +164,14 @@ class LessonRepositoryImpl implements LessonRepository {
   @override
   Future<AudioUpload> synthesizeTts({
     required String text,
+    String? voice,
+    String? accent,
     Object? cancel,
   }) async {
     final dto = await _tts.synthesize(
       text: text,
+      voice: voice,
+      accent: accent,
       cancelToken: cancel is CancelToken ? cancel : null,
     );
     // Synthesis returns a link only — download the file into the cache.
@@ -169,6 +181,22 @@ class LessonRepositoryImpl implements LessonRepository {
       durationMs: dto.durationMs,
       sizeBytes: dto.sizeBytes,
       localPath: localPath,
+    );
+  }
+
+  @override
+  Future<TtsVoices> ttsVoices() => _tts.voices();
+
+  @override
+  Future<TtsPreview> previewTtsVoice({
+    required String voice,
+    String? accent,
+  }) async {
+    final response = await _tts.preview(voice: voice, accent: accent);
+    return TtsPreview(
+      localPath: await _downloadSample(response.audio),
+      text: response.text,
+      cached: response.cached,
     );
   }
 
@@ -184,7 +212,7 @@ class LessonRepositoryImpl implements LessonRepository {
     required String audioId,
     required int durationMs,
     required List<String> segmentTexts,
-    required LessonAccent accent,
+    required String? accent,
     required LessonLevel level,
     String? topicId,
     List<int>? boundaries,
@@ -238,7 +266,7 @@ class LessonRepositoryImpl implements LessonRepository {
         // Version from the cache: the edit applies on top of the last seen one.
         version: cached.version,
         // `PUT` replaces the whole lesson — categories are resent as is.
-        accent: lesson.accent ?? LessonAccent.parse(cached.accent),
+        accent: lesson.accent ?? _nullIfEmpty(cached.accent),
         level: lesson.level ?? LessonLevel.parse(cached.level),
         topicId: lesson.topic?.id ?? _nullIfEmpty(cached.topicId),
         isPublic: isPublic,
@@ -312,6 +340,21 @@ class LessonRepositoryImpl implements LessonRepository {
       throw const AudioFailure(
         'Скачанный файл повреждён — попробуйте открыть урок ещё раз',
       );
+    }
+    return target;
+  }
+
+  /// Downloads a voice sample into the temporary directory: it is a service
+  /// phrase and has no place in the lesson audio cache.
+  Future<String> _downloadSample(AudioDto audio) async {
+    final dir = Directory(
+      p.join((await getTemporaryDirectory()).path, _sampleDirName),
+    );
+    if (!await dir.exists()) await dir.create(recursive: true);
+    final target = p.join(dir.path, '${audio.id}.${audio.fileExtension}');
+    // The same voice repeats often — a downloaded sample is enough.
+    if (!await File(target).exists()) {
+      await _audio.download(audioId: audio.id, targetPath: target);
     }
     return target;
   }

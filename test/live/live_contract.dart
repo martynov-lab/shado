@@ -138,7 +138,7 @@ void main() {
         title: 'Живой урок',
         audioId: audioId,
         createdAt: DateTime.now().toUtc(),
-        accent: LessonAccent.us,
+        accent: 'US',
         level: LessonLevel.b1,
         segments: [
           SegmentModel(
@@ -160,7 +160,7 @@ void main() {
       expect(created.version, 1);
       expect(created.segments, hasLength(2));
       expect(created.audio.id, audioId);
-      expect(created.accent, LessonAccent.us);
+      expect(created.accent, 'US');
       expect(created.level, LessonLevel.b1);
       // No topic was passed, so the server must supply its own.
       expect(created.topic, isNotNull);
@@ -179,7 +179,7 @@ void main() {
           audioId: audioId,
           createdAt: DateTime.now().toUtc(),
           // Checks the rejection caused by a missing `If-Match`.
-          accent: LessonAccent.us,
+          accent: 'US',
           level: LessonLevel.b1,
           segments: [
             SegmentModel(index: 0, text: 'Раз', startMs: 0, endMs: durationMs),
@@ -199,7 +199,7 @@ void main() {
         audioId: audioId,
         createdAt: DateTime.now().toUtc(),
         // `PUT` replaces the whole lesson: categories are resent on edits too.
-        accent: LessonAccent.uk,
+        accent: 'UK',
         level: LessonLevel.c1,
         segments: [
           SegmentModel(index: 0, text: 'Один', startMs: 0, endMs: durationMs),
@@ -210,7 +210,7 @@ void main() {
       expect(updated.version, 2);
       expect(updated.title, 'Правленый урок');
       expect(updated.segments, hasLength(1));
-      expect(updated.accent, LessonAccent.uk);
+      expect(updated.accent, 'UK');
       expect(updated.level, LessonLevel.c1);
     });
 

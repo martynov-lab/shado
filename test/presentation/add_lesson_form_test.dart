@@ -7,6 +7,9 @@ import 'package:shado/features/auth/presentation/controllers/auth_controller.dar
 import 'package:shado/features/lessons/domain/entities/audio_upload.dart';
 import 'package:shado/features/lessons/domain/entities/lesson_category.dart';
 import 'package:shado/features/lessons/domain/entities/tts_quota.dart';
+import 'package:shado/features/lessons/domain/entities/tts_voice.dart';
+import 'package:shado/features/languages/domain/entities/language.dart';
+import 'package:shado/features/languages/presentation/controllers/language_providers.dart';
 import 'package:shado/features/lessons/domain/usecases/synthesize_tts.dart';
 import 'package:shado/features/lessons/presentation/controllers/add_lesson_controller.dart';
 import 'package:shado/features/lessons/presentation/controllers/lesson_providers.dart';
@@ -16,9 +19,10 @@ import 'package:shado/widgets/widgets.dart';
 
 /// A session with the given role, which drives voice-over and privacy.
 class _FakeAuthController extends AuthController {
-  _FakeAuthController(this.role);
+  _FakeAuthController(this.role, this.languageCode);
 
   final UserRole role;
+  final String languageCode;
 
   @override
   AuthState build() => AuthState(
@@ -28,6 +32,7 @@ class _FakeAuthController extends AuthController {
       email: 'author@example.com',
       role: role,
       createdAt: DateTime.utc(2026),
+      studiedLanguage: languageCode,
     ),
   );
 }
@@ -39,8 +44,12 @@ class _FailingTts implements SynthesizeTts {
   final Object error;
 
   @override
-  Future<AudioUpload> call({required String text, Object? cancel}) async =>
-      throw error;
+  Future<AudioUpload> call({
+    required String text,
+    String? voice,
+    String? accent,
+    Object? cancel,
+  }) async => throw error;
 }
 
 /// Lesson creation screen: accent, level and topic pickers.
@@ -57,6 +66,18 @@ void main() {
     minute: TtsQuotaWindow(used: 0, limit: 2, remaining: 2),
   );
 
+  // English with three accents; the directory drives the accent field.
+  const english = Language(
+    code: 'en',
+    name: 'Английский',
+    accents: [
+      Accent(code: 'US', name: 'Американский', isDefault: true),
+      Accent(code: 'UK', name: 'Британский'),
+      Accent(code: 'AU', name: 'Австралийский'),
+    ],
+  );
+  const french = Language(code: 'fr', name: 'Французский');
+
   Future<ProviderContainer> pumpForm(
     WidgetTester tester, {
     List<Topic> available = topics,
@@ -65,10 +86,20 @@ void main() {
     TtsQuota quota = defaultQuota,
     String? text,
     UserRole role = UserRole.owner,
+    Language language = english,
   }) async {
     final container = ProviderContainer(
       overrides: [
-        authControllerProvider.overrideWith(() => _FakeAuthController(role)),
+        authControllerProvider.overrideWith(
+          () => _FakeAuthController(role, language.code),
+        ),
+        languagesProvider.overrideWith((ref) async => [language]),
+        ttsVoicesProvider.overrideWith(
+          (ref) async => const TtsVoices(
+            items: [TtsVoice(name: 'Kore', description: 'Мягкий')],
+            defaultVoice: 'Kore',
+          ),
+        ),
         topicsProvider.overrideWith((ref) async {
           if (topicsError != null) throw topicsError;
           return available;
@@ -91,6 +122,14 @@ void main() {
     );
     await tester.pumpAndSettle();
     return container;
+  }
+
+  /// Presses the voice-over button and confirms the voice in the sheet.
+  Future<void> startSynthesis(WidgetTester tester) async {
+    await tester.tap(find.widgetWithText(AppButton, 'Озвучить ИИ'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.widgetWithText(AppButton, 'Озвучить'));
+    await tester.pumpAndSettle();
   }
 
   /// Opens the list and picks the item labeled [label].
@@ -132,7 +171,7 @@ void main() {
     await choose(tester, 'topic', 'Education');
 
     final state = container.read(addLessonControllerProvider);
-    expect(state.accent, LessonAccent.uk);
+    expect(state.accent, 'UK');
     expect(state.level, LessonLevel.c1);
     expect(state.topicId, 'topic-1');
   });
@@ -146,16 +185,51 @@ void main() {
       durationMs: 10000,
     );
 
-    expect(filled.canSubmit, isFalse);
+    expect(filled.isReady(needsAccent: true), isFalse);
     // An accent alone is not enough: the server demands a level too.
-    expect(filled.copyWith(accent: LessonAccent.us).canSubmit, isFalse);
-    expect(filled.copyWith(level: LessonLevel.b1).canSubmit, isFalse);
+    expect(filled.copyWith(accent: 'US').isReady(needsAccent: true), isFalse);
+    expect(
+      filled.copyWith(level: LessonLevel.b1).isReady(needsAccent: true),
+      isFalse,
+    );
     expect(
       filled
-          .copyWith(accent: LessonAccent.us, level: LessonLevel.b1)
-          .canSubmit,
+          .copyWith(accent: 'US', level: LessonLevel.b1)
+          .isReady(needsAccent: true),
       isTrue,
     );
+  });
+
+  test('язык без акцентов не требует акцента', () {
+    const filled = AddLessonFormState(
+      title: 'Урок',
+      text: 'Раз',
+      audioId: 'audio-1',
+      durationMs: 10000,
+      level: LessonLevel.b1,
+    );
+
+    expect(filled.isReady(needsAccent: false), isTrue);
+  });
+
+  testWidgets('у языка без акцентов поля «Акцент» нет', (tester) async {
+    await pumpForm(tester, language: french);
+
+    expect(find.text('Акцент'), findsNothing);
+    expect(find.text('Уровень'), findsOneWidget);
+  });
+
+  testWidgets('у английского в списке акцентов есть австралийский', (
+    tester,
+  ) async {
+    await pumpForm(tester);
+
+    await tester.tap(find.byKey(const ValueKey('dropdown-accent')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Американский'), findsWidgets);
+    expect(find.text('Британский'), findsOneWidget);
+    expect(find.text('Австралийский'), findsOneWidget);
   });
 
   // The form renders in full and the create button starts locked.
@@ -181,7 +255,7 @@ void main() {
     await choose(tester, 'level', 'A2 — элементарный');
 
     final state = container.read(addLessonControllerProvider);
-    expect(state.accent, LessonAccent.us);
+    expect(state.accent, 'US');
     expect(state.level, LessonLevel.a2);
     expect(state.topicId, isNull);
     expect(
@@ -264,8 +338,7 @@ void main() {
       text: 'Hello there',
     );
 
-    await tester.tap(find.widgetWithText(AppButton, 'Озвучить ИИ'));
-    await tester.pumpAndSettle();
+    await startSynthesis(tester);
 
     expect(
       find.text('Озвучка временно недоступна. Попробуйте позже.'),
@@ -287,8 +360,7 @@ void main() {
       text: 'Hello there',
     );
 
-    await tester.tap(find.widgetWithText(AppButton, 'Озвучить ИИ'));
-    await tester.pumpAndSettle();
+    await startSynthesis(tester);
 
     expect(
       find.text('Бесплатный лимит озвучки на этот месяц исчерпан'),

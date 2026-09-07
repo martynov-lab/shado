@@ -28,8 +28,9 @@ class CreateLessonParams {
   /// File duration as reported by the server.
   final int durationMs;
 
-  /// Accent and level are required choices.
-  final LessonAccent accent;
+  /// Accent code from the language directory; `null` for languages without
+  /// accents. The level is a required choice.
+  final String? accent;
   final LessonLevel level;
 
   /// Topic from the directory; `null` lets the server pick the default.

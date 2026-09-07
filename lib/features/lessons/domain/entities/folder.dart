@@ -10,11 +10,15 @@ class Folder {
     required this.version,
     required this.lessonCount,
     this.isPublic = true,
+    this.language = '',
     this.lessons = const [],
   });
 
   final String id;
   final String title;
+
+  /// Language code of the folder; a folder holds one language only.
+  final String language;
 
   /// Folder visibility; a private one is visible to its author only.
   final bool isPublic;
@@ -40,12 +44,13 @@ class Folder {
           other.id == id &&
           other.title == title &&
           other.isPublic == isPublic &&
+          other.language == language &&
           other.version == version &&
           other.lessonCount == lessonCount;
 
   @override
   int get hashCode =>
-      Object.hash(id, title, isPublic, version, lessonCount);
+      Object.hash(id, title, isPublic, language, version, lessonCount);
 
   @override
   String toString() => 'Folder($id, "$title", $lessonCount уроков)';

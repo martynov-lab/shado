@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/constants/app_constants.dart';
 import '../../../auth/domain/entities/auth_user.dart';
 import '../../../auth/presentation/controllers/auth_controller.dart';
+import '../../../languages/presentation/controllers/language_providers.dart';
 import '../../domain/entities/audio_trim.dart';
 import '../../domain/entities/lesson.dart';
 import '../../domain/entities/lesson_category.dart';
@@ -15,6 +16,7 @@ import '../widgets/segment_splitter/segment_boundary_math.dart' as marks;
 import 'lesson_providers.dart';
 import 'lessons_controller.dart';
 import 'library_controller.dart';
+import 'tts_voice_controller.dart';
 
 /// State of the lesson creation form.
 class AddLessonFormState {
@@ -43,7 +45,7 @@ class AddLessonFormState {
   final String text;
 
   /// Accent and level are required; `null` means not chosen yet.
-  final LessonAccent? accent;
+  final String? accent;
   final LessonLevel? level;
 
   /// Topic from the directory; `null` lets the server pick the default.
@@ -96,7 +98,9 @@ class AddLessonFormState {
   /// What the waveform window shows: the whole file when trimming, else [trim].
   AudioTrim get view => isTrimming ? AudioTrim.full(durationMs) : trim;
 
-  bool get canSubmit =>
+  /// Whether the lesson can be created; [needsAccent] is set for languages
+  /// that have accents — without one the server answers `422`.
+  bool isReady({required bool needsAccent}) =>
       !isSubmitting &&
       !isUploading &&
       // An unfinished trim must be applied or cancelled first.
@@ -104,14 +108,13 @@ class AddLessonFormState {
       title.trim().isNotEmpty &&
       segmentCount > 0 &&
       audioId != null &&
-      // Without an accent and a level the server answers `422`.
-      accent != null &&
+      (!needsAccent || accent != null) &&
       level != null;
 
   AddLessonFormState copyWith({
     String? title,
     String? text,
-    LessonAccent? accent,
+    String? accent,
     LessonLevel? level,
     String? topicId,
     bool clearTopic = false,
@@ -213,7 +216,7 @@ class AddLessonController extends Notifier<AddLessonFormState> {
     );
   }
 
-  void setAccent(LessonAccent? accent) =>
+  void setAccent(String? accent) =>
       state = state.copyWith(accent: accent);
 
   void setLevel(LessonLevel? level) => state = state.copyWith(level: level);
@@ -358,8 +361,13 @@ class AddLessonController extends Notifier<AddLessonFormState> {
     );
 
     try {
+      final selection = ref.read(ttsVoiceControllerProvider);
       final upload = await ref.read(synthesizeTtsProvider)(
         text: state.text,
+        voice: selection.voice,
+        accent: ref
+            .read(ttsVoiceControllerProvider.notifier)
+            .accentForRequest(),
         cancel: cancelToken,
       );
       if (_uploadCancel != cancelToken) return true;
@@ -409,9 +417,11 @@ class AddLessonController extends Notifier<AddLessonFormState> {
     if (audioId == null) {
       throw StateError('Файл ещё не загружен');
     }
-    final accent = state.accent;
+    // A language without accents sends no accent at all.
+    final needsAccent = ref.read(currentAccentsProvider).isNotEmpty;
+    final accent = needsAccent ? state.accent : null;
     final level = state.level;
-    if (accent == null || level == null) {
+    if ((needsAccent && accent == null) || level == null) {
       throw StateError('Акцент и уровень не выбраны');
     }
     state = state.copyWith(isSubmitting: true);
@@ -450,6 +460,15 @@ class AddLessonController extends Notifier<AddLessonFormState> {
     };
   }
 }
+
+/// Whether the create button is unlocked; the accent counts only for
+/// languages that have accents.
+final addLessonCanSubmitProvider = Provider<bool>((ref) {
+  final needsAccent = ref.watch(currentAccentsProvider).isNotEmpty;
+  return ref
+      .watch(addLessonControllerProvider)
+      .isReady(needsAccent: needsAccent);
+});
 
 final addLessonControllerProvider =
     NotifierProvider<AddLessonController, AddLessonFormState>(
