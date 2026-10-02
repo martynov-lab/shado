@@ -15,6 +15,7 @@ class LessonsListEntryTile extends StatelessWidget {
     required this.entry,
     required this.onOpen,
     required this.onDelete,
+    required this.onToggleDownload,
     this.onOpenFolder,
     this.onCreateFolder,
   });
@@ -22,6 +23,7 @@ class LessonsListEntryTile extends StatelessWidget {
   final LessonsListEntry entry;
   final ValueChanged<Lesson> onOpen;
   final ValueChanged<Lesson> onDelete;
+  final ValueChanged<Lesson> onToggleDownload;
   final ValueChanged<Folder>? onOpenFolder;
   final VoidCallback? onCreateFolder;
 
@@ -40,6 +42,11 @@ class LessonsListEntryTile extends StatelessWidget {
         canDelete: item.canModify,
         onTap: () => onOpen(item.lesson),
         onDelete: () => onDelete(item.lesson),
+        download: item.download,
+        onToggleDownload: item.canToggleDownload
+            ? () => onToggleDownload(item.lesson)
+            : null,
+        isAvailable: item.isAvailable,
       ),
     };
   }

@@ -3,9 +3,12 @@ import 'package:flutter/material.dart';
 import 'package:shado/theme/theme.dart';
 import 'package:shado/widgets/widgets.dart';
 
+import '../../domain/entities/lesson_download.dart';
 import '../screens/lesson/lesson_state.dart';
+import 'lesson_download_button.dart';
 
-/// Lesson screen header: back, the title with a subtitle and the edit button.
+/// Lesson screen header: back, the title with a subtitle, the download and
+/// edit buttons.
 class LessonHeader extends StatelessWidget {
   const LessonHeader({
     super.key,
@@ -13,6 +16,8 @@ class LessonHeader extends StatelessWidget {
     required this.canEdit,
     required this.onBack,
     required this.onEdit,
+    required this.download,
+    required this.onToggleDownload,
   });
 
   final LessonState state;
@@ -22,6 +27,12 @@ class LessonHeader extends StatelessWidget {
 
   final VoidCallback onBack;
   final VoidCallback onEdit;
+
+  /// Offline availability shown by the download button.
+  final LessonDownload download;
+
+  /// `null` disables the download button.
+  final VoidCallback? onToggleDownload;
 
   @override
   Widget build(BuildContext context) {
@@ -56,6 +67,8 @@ class LessonHeader extends StatelessWidget {
             ],
           ),
         ),
+        const SizedBox(width: AppSpacing.s3),
+        LessonDownloadButton(download: download, onPressed: onToggleDownload),
         if (canEdit) ...[
           const SizedBox(width: AppSpacing.s3),
           AppIconButton(

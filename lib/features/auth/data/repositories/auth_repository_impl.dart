@@ -4,6 +4,7 @@ import '../../../../core/network/api_exception.dart';
 import '../../../../core/storage/token_storage.dart';
 import '../../domain/entities/auth_user.dart';
 import '../../domain/repositories/auth_repository.dart';
+import '../datasources/auth_local_datasource.dart';
 import '../datasources/auth_remote_datasource.dart';
 
 /// Session on top of the API and secure storage; cache cleanup is done by
@@ -11,13 +12,16 @@ import '../datasources/auth_remote_datasource.dart';
 class AuthRepositoryImpl implements AuthRepository {
   AuthRepositoryImpl({
     required AuthRemoteDataSource remote,
+    required AuthLocalDataSource local,
     required TokenStorage tokens,
     required Future<void> Function() onSignedOut,
   }) : _remote = remote,
+       _local = local,
        _tokens = tokens,
        _onSignedOut = onSignedOut;
 
   final AuthRemoteDataSource _remote;
+  final AuthLocalDataSource _local;
   final TokenStorage _tokens;
   final Future<void> Function() _onSignedOut;
 
@@ -43,7 +47,7 @@ class AuthRepositoryImpl implements AuthRepository {
       name: name,
     );
     await _tokens.save(session.tokens);
-    return _currentUser = session.user;
+    return _remember(session.user);
   }
 
   @override
@@ -56,18 +60,16 @@ class AuthRepositoryImpl implements AuthRepository {
       password: password,
     );
     await _tokens.save(session.tokens);
-    return _currentUser = session.user;
+    return _remember(session.user);
   }
 
   @override
   Future<AuthUser?> restoreSession() async {
-    final refresh = await _tokens.readRefreshToken();
-    if (refresh == null) return null;
+    if (await _tokens.readRefreshToken() == null) return null;
     try {
-      final tokens = await _remote.refresh(refresh);
-      await _tokens.save(tokens);
-      return _currentUser = await _remote.me();
-    } on ApiException {
+      return _remember(await _remote.me());
+    } on ApiException catch (error) {
+      if (!error.isUnauthorized) rethrow;
       // The server rejected the token — the session is gone.
       await _forget();
       return null;
@@ -75,8 +77,14 @@ class AuthRepositoryImpl implements AuthRepository {
   }
 
   @override
+  Future<AuthUser?> restoreOfflineSession() async {
+    if (await _tokens.readRefreshToken() == null) return null;
+    return _currentUser = await _local.readUser();
+  }
+
+  @override
   Future<AuthUser> refreshCurrentUser() async {
-    return _currentUser = await _remote.me();
+    return _remember(await _remote.me());
   }
 
   @override
@@ -85,10 +93,12 @@ class AuthRepositoryImpl implements AuthRepository {
     String? studiedLanguage,
     int? dailyGoalMinutes,
   }) async {
-    return _currentUser = await _remote.updateProfile(
-      name: name,
-      studiedLanguage: studiedLanguage,
-      dailyGoalMinutes: dailyGoalMinutes,
+    return _remember(
+      await _remote.updateProfile(
+        name: name,
+        studiedLanguage: studiedLanguage,
+        dailyGoalMinutes: dailyGoalMinutes,
+      ),
     );
   }
 
@@ -111,9 +121,15 @@ class AuthRepositoryImpl implements AuthRepository {
     if (!_expired.isClosed) _expired.add(null);
   }
 
+  Future<AuthUser> _remember(AuthUser user) async {
+    await _local.saveUser(user);
+    return _currentUser = user;
+  }
+
   Future<void> _forget() async {
     _currentUser = null;
     await _tokens.clear();
+    await _local.clear();
     await _onSignedOut();
   }
 

@@ -10,17 +10,25 @@ enum AuthStatus {
 
 /// The current session: its status and the signed-in user.
 class UserSession {
-  const UserSession({this.status = AuthStatus.unknown, this.user});
+  const UserSession({
+    this.status = AuthStatus.unknown,
+    this.user,
+    this.isOffline = false,
+  });
 
   const UserSession.signedOut()
     : status = AuthStatus.unauthenticated,
-      user = null;
+      user = null,
+      isOffline = false;
 
-  const UserSession.signedIn(AuthUser this.user)
+  const UserSession.signedIn(AuthUser this.user, {this.isOffline = false})
     : status = AuthStatus.authenticated;
 
   final AuthStatus status;
   final AuthUser? user;
+
+  /// Restored from the device without the server; checked again once online.
+  final bool isOffline;
 
   bool get isAuthenticated => status == AuthStatus.authenticated;
 

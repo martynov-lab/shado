@@ -6,7 +6,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:shado/core/async/async_state.dart';
 import 'package:shado/core/elementary/stream_value_notifier.dart';
+import 'package:shado/core/network/network_status.dart';
 import 'package:shado/di/auth_providers.dart';
+import 'package:shado/di/core_providers.dart';
 import 'package:shado/di/folder_providers.dart';
 import 'package:shado/di/language_providers.dart';
 import 'package:shado/di/lesson_providers.dart';
@@ -20,9 +22,11 @@ import '../../../../progress/domain/usecases/get_lesson_progress.dart';
 import '../../../domain/entities/folder.dart';
 import '../../../domain/entities/lesson.dart';
 import '../../../domain/entities/lesson_category.dart';
+import '../../../domain/entities/lesson_download.dart';
 import '../../../domain/entities/library_root.dart';
 import '../../../domain/lesson_visibility.dart';
 import '../../../domain/services/lesson_catalog_service.dart';
+import '../../../domain/services/lesson_download_service.dart';
 import '../../../domain/usecases/create_folder.dart';
 import '../../../domain/usecases/get_topics.dart';
 
@@ -35,7 +39,9 @@ class LessonsModel extends ElementaryModel {
       _languages = container.read(languageServiceProvider),
       _getTopics = container.read(getTopicsProvider),
       _createFolder = container.read(createFolderProvider),
-      _getLessonProgress = container.read(getLessonProgressProvider);
+      _getLessonProgress = container.read(getLessonProgressProvider),
+      _downloadService = container.read(lessonDownloadServiceProvider),
+      _network = container.read(networkStatusProvider);
 
   final LessonCatalogService _catalog;
   final AuthService _auth;
@@ -43,6 +49,8 @@ class LessonsModel extends ElementaryModel {
   final GetTopics _getTopics;
   final CreateFolder _createFolder;
   final GetLessonProgress _getLessonProgress;
+  final LessonDownloadService _downloadService;
+  final NetworkStatus _network;
 
   late final ValueNotifier<AsyncState<LibraryRoot>> _library = ValueNotifier(
     switch (_catalog.library) {
@@ -62,6 +70,12 @@ class LessonsModel extends ElementaryModel {
     _languages.currentAccents,
     _languages.currentChanges.map((language) => language?.accents ?? const []),
   );
+  late final StreamValueNotifier<Map<String, LessonDownload>> _downloads =
+      StreamValueNotifier(_downloadService.downloads, _downloadService.changes);
+  late final StreamValueNotifier<bool> _isOnline = StreamValueNotifier(
+    _network.isOnline,
+    _network.changes,
+  );
   StreamSubscription<LibraryRoot>? _librarySubscription;
   bool _isDisposed = false;
 
@@ -75,6 +89,11 @@ class LessonsModel extends ElementaryModel {
   /// Accents of the studied language for the accent filter.
   ValueListenable<List<Accent>> get accents => _accents;
 
+  /// Downloaded and downloading lessons by id.
+  ValueListenable<Map<String, LessonDownload>> get downloads => _downloads;
+
+  ValueListenable<bool> get isOnline => _isOnline;
+
   /// Fires after the studied language changed.
   Stream<void> get catalogResets => _catalog.resets;
 
@@ -87,6 +106,7 @@ class LessonsModel extends ElementaryModel {
     unawaited(_track(_catalog.loadLibrary()));
     _catalog.loadLessons().ignore();
     _languages.loadForCurrent();
+    _downloadService.load().ignore();
   }
 
   Future<void> retryLibrary() {
@@ -120,6 +140,14 @@ class LessonsModel extends ElementaryModel {
 
   Future<void> deleteLesson(String id) => _catalog.deleteLesson(id);
 
+  /// Downloads the lesson, or removes the download of a downloaded one.
+  Future<void> toggleDownload(String id) =>
+      switch (_downloadService.stateOf(id)) {
+        NotDownloaded() => _downloadService.download(id),
+        Downloaded() => _downloadService.remove(id),
+        Downloading() => Future.value(),
+      };
+
   /// Creates a folder in the root; the role decides whether it is public.
   Future<Folder> createFolder(String title) async {
     final folder = await _createFolder(
@@ -138,6 +166,8 @@ class LessonsModel extends ElementaryModel {
     _lessons.dispose();
     _role.dispose();
     _accents.dispose();
+    _downloads.dispose();
+    _isOnline.dispose();
     super.dispose();
   }
 

@@ -1,7 +1,13 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:shado/core/error/failures.dart';
 import 'package:shado/features/lessons/data/datasources/folder_remote_datasource.dart';
 import 'package:shado/features/lessons/data/models/folder_dto.dart';
+import 'package:shado/features/lessons/data/models/lesson_dto.dart';
+import 'package:shado/features/lessons/data/models/lesson_model.dart';
+import 'package:shado/features/lessons/domain/entities/folder.dart';
 import 'package:shado/features/lessons/data/repositories/folder_repository_impl.dart';
+
+import 'lesson_repository_test.dart' show FakeLocalDataSource, lessonJson;
 
 /// The server response for a folder.
 Map<String, dynamic> folderJson({
@@ -32,6 +38,9 @@ class FakeFolderRemote implements FolderRemoteDataSource {
   final List<({String folderId, String lessonId})> removed = [];
   final List<String> fetched = [];
 
+  /// Fails every request as if there were no network.
+  bool offline = false;
+
   @override
   Future<FolderPage> list({String? since, int? limit, String? cursor}) async {
     if (_page >= pages.length) return const FolderPage(items: []);
@@ -40,6 +49,7 @@ class FakeFolderRemote implements FolderRemoteDataSource {
 
   @override
   Future<FolderDto> getFolder(String id) async {
+    if (offline) throw const NetworkFailure('offline');
     fetched.add(id);
     return FolderDto.fromJson(folderJson(id: id, version: 5, lessonCount: 1));
   }
@@ -80,7 +90,10 @@ class FakeFolderRemote implements FolderRemoteDataSource {
 void main() {
   test('creation generates an id and goes without If-Match', () async {
     final remote = FakeFolderRemote();
-    final repository = FolderRepositoryImpl(remoteDataSource: remote);
+    final repository = FolderRepositoryImpl(
+      remoteDataSource: remote,
+      localDataSource: FakeLocalDataSource(),
+    );
 
     final folder = await repository.createFolder(title: 'New folder', isPublic: false);
 
@@ -94,7 +107,10 @@ void main() {
 
   test('an edit goes with the version (If-Match)', () async {
     final remote = FakeFolderRemote();
-    final repository = FolderRepositoryImpl(remoteDataSource: remote);
+    final repository = FolderRepositoryImpl(
+      remoteDataSource: remote,
+      localDataSource: FakeLocalDataSource(),
+    );
 
     await repository.updateFolder(id: 'f1', title: 'Another title', version: 4);
 
@@ -112,7 +128,10 @@ void main() {
         FolderPage(items: [FolderDto.fromJson(folderJson(id: 'b'))]),
       ],
     );
-    final repository = FolderRepositoryImpl(remoteDataSource: remote);
+    final repository = FolderRepositoryImpl(
+      remoteDataSource: remote,
+      localDataSource: FakeLocalDataSource(),
+    );
 
     final folders = await repository.getFolders();
 
@@ -121,7 +140,10 @@ void main() {
 
   test('adding lessons returns the updated folder', () async {
     final remote = FakeFolderRemote();
-    final repository = FolderRepositoryImpl(remoteDataSource: remote);
+    final repository = FolderRepositoryImpl(
+      remoteDataSource: remote,
+      localDataSource: FakeLocalDataSource(),
+    );
 
     final folder = await repository.addLessons('f1', ['l1', 'l2']);
 
@@ -131,7 +153,10 @@ void main() {
 
   test('removing a lesson re-reads the folder: the server answers 204 with no body', () async {
     final remote = FakeFolderRemote();
-    final repository = FolderRepositoryImpl(remoteDataSource: remote);
+    final repository = FolderRepositoryImpl(
+      remoteDataSource: remote,
+      localDataSource: FakeLocalDataSource(),
+    );
 
     final folder = await repository.removeLesson('f1', 'l1');
 
@@ -139,5 +164,67 @@ void main() {
     // After the deletion the folder is re-read to get a fresh content list.
     expect(remote.fetched.single, 'f1');
     expect(folder.version, 5);
+  });
+
+  group('offline', () {
+    test('an opened folder is saved', () async {
+      final local = FakeLocalDataSource();
+      final repository = FolderRepositoryImpl(
+        remoteDataSource: FakeFolderRemote(),
+        localDataSource: local,
+      );
+
+      await repository.getFolder('f1');
+
+      expect(local.folders.keys, equals(['f1']));
+    });
+
+    test('a saved folder opens offline with lessons from the cache', () async {
+      final local = FakeLocalDataSource();
+      final lesson = LessonModel.fromDto(
+        LessonDto.fromJson(lessonJson(id: 'l1')),
+        audioPath: '',
+      );
+      local.lessons['l1'] = lesson;
+      local.folders['f1'] = Folder(
+        id: 'f1',
+        title: 'Folder',
+        createdAt: DateTime.utc(2026),
+        updatedAt: DateTime.utc(2026),
+        version: 1,
+        lessonCount: 1,
+        lessons: [lesson.toEntity()],
+      );
+      final repository = FolderRepositoryImpl(
+        remoteDataSource: FakeFolderRemote()..offline = true,
+        localDataSource: local,
+      );
+
+      final folder = await repository.getFolder('f1');
+
+      expect(folder.lessons.map((lesson) => lesson.id), equals(['l1']));
+    });
+
+    test('an unsaved folder throws the network failure offline', () async {
+      final repository = FolderRepositoryImpl(
+        remoteDataSource: FakeFolderRemote()..offline = true,
+        localDataSource: FakeLocalDataSource(),
+      );
+
+      expect(repository.getFolder('f1'), throwsA(isA<NetworkFailure>()));
+    });
+
+    test('a deleted folder leaves the saved copy', () async {
+      final local = FakeLocalDataSource();
+      final repository = FolderRepositoryImpl(
+        remoteDataSource: FakeFolderRemote(),
+        localDataSource: local,
+      );
+      await repository.getFolder('f1');
+
+      await repository.deleteFolder('f1');
+
+      expect(local.folders, isEmpty);
+    });
   });
 }

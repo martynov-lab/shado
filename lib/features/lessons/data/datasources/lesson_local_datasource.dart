@@ -1,3 +1,4 @@
+import '../../domain/entities/folder.dart';
 import '../models/lesson_model.dart';
 
 /// Local read cache of lessons.
@@ -18,6 +19,31 @@ abstract interface class LessonLocalDataSource {
 
   /// The `audio_id` values referenced by at least one lesson.
   Future<Set<String>> usedAudioIds();
+
+  /// Ids of lessons the user downloaded for offline study.
+  Future<Set<String>> downloadedIds();
+
+  Future<void> markDownloaded(String id);
+
+  Future<void> unmarkDownloaded(String id);
+
+  /// Library root as last fetched: its folders and unfiled lesson ids;
+  /// `null` when it was never fetched.
+  Future<({List<Folder> folders, List<String> lessonIds})?> readLibrary();
+
+  Future<void> writeLibrary({
+    required List<Folder> folders,
+    required List<String> lessonIds,
+  });
+
+  /// Folder as last opened with the ids of its lessons; `null` when it was
+  /// never opened.
+  Future<({Folder folder, List<String> lessonIds})?> readFolder(String id);
+
+  /// Saves the folder with the ids of its [Folder.lessons].
+  Future<void> writeFolder(Folder folder);
+
+  Future<void> deleteFolder(String id);
 
   /// Upper bound of the fetched delta for [language]; `null` when that
   /// language was never synced.

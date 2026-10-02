@@ -72,6 +72,8 @@ class LessonsPage extends ElementaryWidget<LessonsWidgetModel> {
               onResetFilters: wm.clearFilters,
               onOpen: wm.openLesson,
               onDelete: (lesson) => unawaited(wm.deleteLesson(lesson)),
+              onToggleDownload: (lesson) =>
+                  unawaited(wm.toggleDownload(lesson)),
               onRefresh: wm.refresh,
               onOpenFolder: wm.openFolder,
               onCreateFolder: onCreateFolder,
@@ -85,6 +87,8 @@ class LessonsPage extends ElementaryWidget<LessonsWidgetModel> {
               onResetFilters: wm.clearFilters,
               onOpen: wm.openLesson,
               onDelete: (lesson) => unawaited(wm.deleteLesson(lesson)),
+              onToggleDownload: (lesson) =>
+                  unawaited(wm.toggleDownload(lesson)),
               onRefresh: wm.refresh,
               onOpenFolder: wm.openFolder,
               onCreateFolder: onCreateFolder,
@@ -98,6 +102,8 @@ class LessonsPage extends ElementaryWidget<LessonsWidgetModel> {
               onResetFilters: wm.clearFilters,
               onOpen: wm.openLesson,
               onDelete: (lesson) => unawaited(wm.deleteLesson(lesson)),
+              onToggleDownload: (lesson) =>
+                  unawaited(wm.toggleDownload(lesson)),
               onRefresh: wm.refresh,
               onOpenFolder: wm.openFolder,
               onCreateFolder: onCreateFolder,

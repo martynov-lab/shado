@@ -42,6 +42,9 @@ class AppBootstrap extends ChangeNotifier {
   void _onSession(UserSession session) {
     if (!session.isAuthenticated) {
       _isWarm = false;
+    } else if (session.isOffline) {
+      // Offline there is nothing to fetch — open the cached screens at once.
+      _isWarm = true;
     } else if (!_isWarm && !_isWarming) {
       unawaited(_warmUp());
     }

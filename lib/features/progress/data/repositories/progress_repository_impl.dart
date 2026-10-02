@@ -1,9 +1,12 @@
+import '../../../../core/error/failures.dart';
 import '../../domain/entities/pending_events.dart';
 import '../../domain/entities/progress_summary.dart';
 import '../../domain/repositories/progress_repository.dart';
 import '../datasources/progress_local_datasource.dart';
 import '../datasources/progress_remote_datasource.dart';
 
+/// Progress: counters on the device, the server summary with its last copy
+/// kept for offline starts.
 class ProgressRepositoryImpl implements ProgressRepository {
   const ProgressRepositoryImpl({
     required ProgressLocalDataSource local,
@@ -45,19 +48,45 @@ class ProgressRepositoryImpl implements ProgressRepository {
     int? segmentRepeats,
     String? lessonId,
     bool? completed,
-  }) => _remote.reportEvents(
-    listenedMs: listenedMs,
-    segmentRepeats: segmentRepeats,
-    lessonId: lessonId,
-    completed: completed,
-  );
+  }) async {
+    final summary = await _remote.reportEvents(
+      listenedMs: listenedMs,
+      segmentRepeats: segmentRepeats,
+      lessonId: lessonId,
+      completed: completed,
+    );
+    await _local.saveSummary(summary);
+    return summary;
+  }
 
   @override
-  Future<ProgressSummary> getSummary() => _remote.getSummary();
+  Future<ProgressSummary> getSummary() async {
+    final ProgressSummary summary;
+    try {
+      summary = await _remote.getSummary();
+    } on NetworkFailure {
+      // Offline: the last summary received, if there is one.
+      final cached = await _local.readSummary();
+      if (cached == null) rethrow;
+      return cached;
+    }
+    await _local.saveSummary(summary);
+    return summary;
+  }
 
   @override
-  Future<List<ProgressDay>> getHistory({int days = 70}) =>
-      _remote.getHistory(days: days);
+  Future<List<ProgressDay>> getHistory({int days = 70}) async {
+    final List<ProgressDay> history;
+    try {
+      history = await _remote.getHistory(days: days);
+    } on NetworkFailure {
+      final cached = await _local.readHistory();
+      if (cached == null) rethrow;
+      return cached;
+    }
+    await _local.saveHistory(history);
+    return history;
+  }
 
   @override
   Future<void> clear() => _local.clear();

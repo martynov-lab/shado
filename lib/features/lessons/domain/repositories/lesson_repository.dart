@@ -18,6 +18,19 @@ abstract interface class LessonRepository {
   /// The whole lesson with its audio already downloaded.
   Future<Lesson?> getLesson(String id);
 
+  /// Ids of lessons kept on the device for offline study.
+  Future<Set<String>> downloadedLessonIds();
+
+  /// Fetches the lesson with its audio and keeps it for offline study;
+  /// [onProgress] tracks the audio transfer.
+  Future<void> downloadLesson(
+    String id, {
+    void Function(int received, int total)? onProgress,
+  });
+
+  /// Lets the lesson audio be evicted from the cache again.
+  Future<void> removeDownload(String id);
+
   /// Uploads a file; [onProgress] tracks it and [cancel] aborts it.
   Future<AudioUpload> uploadAudio({
     required String filePath,

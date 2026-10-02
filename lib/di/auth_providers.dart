@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shado/di/core_providers.dart';
 import 'package:shado/di/lesson_providers.dart';
 import 'package:shado/di/progress_providers.dart';
+import 'package:shado/features/auth/data/datasources/auth_local_datasource.dart';
 import 'package:shado/features/auth/data/datasources/auth_remote_datasource.dart';
 import 'package:shado/features/auth/data/repositories/auth_repository_impl.dart';
 import 'package:shado/features/auth/domain/repositories/auth_repository.dart';
@@ -15,10 +16,15 @@ final authRemoteDataSourceProvider = Provider<AuthRemoteDataSource>(
   (ref) => ApiAuthRemoteDataSource(ref.watch(apiClientProvider)),
 );
 
+final authLocalDataSourceProvider = Provider<AuthLocalDataSource>(
+  (ref) => SecureAuthLocalDataSource(),
+);
+
 /// Session repository, wired here to cache cleanup and the network layer.
 final authRepositoryProvider = Provider<AuthRepository>((ref) {
   final repository = AuthRepositoryImpl(
     remote: ref.watch(authRemoteDataSourceProvider),
+    local: ref.watch(authLocalDataSourceProvider),
     tokens: ref.watch(tokenStorageProvider),
     // Signing out clears the lesson cache and local progress.
     onSignedOut: () async {
@@ -62,6 +68,7 @@ final authServiceProvider = Provider<AuthService>((ref) {
     signOut: ref.watch(signOutProvider),
     getCurrentUser: ref.watch(getCurrentUserProvider),
     updateProfile: ref.watch(updateProfileProvider),
+    network: ref.watch(networkMonitorProvider),
   );
   unawaited(service.restore());
   ref.onDispose(service.dispose);

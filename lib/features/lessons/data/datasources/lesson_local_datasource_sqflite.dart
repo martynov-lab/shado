@@ -7,6 +7,7 @@ import 'package:sqflite/sqflite.dart';
 
 import '../../../../core/error/failures.dart';
 import '../../../../core/platform/platform_setup.dart';
+import '../../domain/entities/folder.dart';
 import '../models/lesson_model.dart';
 import '../models/segment_model.dart';
 import 'lesson_local_datasource.dart';
@@ -20,6 +21,17 @@ class SqfliteLessonLocalDataSource implements LessonLocalDataSource {
 
   /// Table of cache service values.
   static const String _metaTable = 'sync_meta';
+
+  /// Lessons the user downloaded for offline study.
+  static const String _downloadsTable = 'downloads';
+
+  /// Folders as last fetched; `lesson_ids` is set once the folder was opened.
+  static const String _foldersTable = 'folders';
+
+  /// Library root items in server order.
+  static const String _libraryTable = 'library_root';
+  static const String _folderKind = 'folder';
+  static const String _lessonKind = 'lesson';
 
   /// Delta watermark key; a shared one would half-load a switched catalog.
   static String _watermarkKey(String language) =>
@@ -47,7 +59,7 @@ class SqfliteLessonLocalDataSource implements LessonLocalDataSource {
       final path = p.join(await _databaseDirectory(), _databaseName);
       final db = await openDatabase(
         path,
-        version: 5,
+        version: 7,
         onCreate: (db, version) => _createSchema(db),
         onUpgrade: (db, oldVersion, newVersion) async {
           // The cache is recreated, not migrated; `syncLessons` refills it.
@@ -55,6 +67,9 @@ class SqfliteLessonLocalDataSource implements LessonLocalDataSource {
           await _createSchema(db);
           // Reset the sync watermark too, otherwise only a delta would arrive.
           await db.delete(_metaTable);
+          await db.delete(_downloadsTable);
+          await db.delete(_foldersTable);
+          await db.delete(_libraryTable);
         },
       );
       _database = db;
@@ -94,6 +109,32 @@ class SqfliteLessonLocalDataSource implements LessonLocalDataSource {
       CREATE TABLE IF NOT EXISTS $_metaTable (
         key TEXT PRIMARY KEY,
         value TEXT NOT NULL
+      )
+    ''');
+    await db.execute('''
+      CREATE TABLE IF NOT EXISTS $_downloadsTable (
+        lesson_id TEXT PRIMARY KEY,
+        downloaded_at TEXT NOT NULL
+      )
+    ''');
+    await db.execute('''
+      CREATE TABLE IF NOT EXISTS $_foldersTable (
+        id TEXT PRIMARY KEY,
+        title TEXT NOT NULL,
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL,
+        version INTEGER NOT NULL,
+        is_public INTEGER NOT NULL,
+        language TEXT NOT NULL,
+        lesson_count INTEGER NOT NULL,
+        lesson_ids TEXT
+      )
+    ''');
+    await db.execute('''
+      CREATE TABLE IF NOT EXISTS $_libraryTable (
+        position INTEGER PRIMARY KEY,
+        kind TEXT NOT NULL,
+        item_id TEXT NOT NULL
       )
     ''');
   }
@@ -191,6 +232,11 @@ class SqfliteLessonLocalDataSource implements LessonLocalDataSource {
       final db = await _db();
       final placeholders = List.filled(list.length, '?').join(', ');
       await db.delete(_table, where: 'id IN ($placeholders)', whereArgs: list);
+      await db.delete(
+        _downloadsTable,
+        where: 'lesson_id IN ($placeholders)',
+        whereArgs: list,
+      );
     } on Failure {
       rethrow;
     } catch (error, stackTrace) {
@@ -219,6 +265,198 @@ class SqfliteLessonLocalDataSource implements LessonLocalDataSource {
     } catch (error, stackTrace) {
       Error.throwWithStackTrace(
         StorageFailure('Failed to read the lesson cache', cause: error),
+        stackTrace,
+      );
+    }
+  }
+
+  @override
+  Future<Set<String>> downloadedIds() async {
+    try {
+      final db = await _db();
+      final rows = await db.query(_downloadsTable, columns: ['lesson_id']);
+      return {
+        for (final row in rows)
+          if (row['lesson_id'] case final String id) id,
+      };
+    } on Failure {
+      rethrow;
+    } catch (error, stackTrace) {
+      Error.throwWithStackTrace(
+        StorageFailure('Failed to read the downloaded lessons', cause: error),
+        stackTrace,
+      );
+    }
+  }
+
+  @override
+  Future<void> markDownloaded(String id) async {
+    try {
+      final db = await _db();
+      await db.insert(_downloadsTable, {
+        'lesson_id': id,
+        'downloaded_at': DateTime.now().toUtc().toIso8601String(),
+      }, conflictAlgorithm: ConflictAlgorithm.replace);
+    } on Failure {
+      rethrow;
+    } catch (error, stackTrace) {
+      Error.throwWithStackTrace(
+        StorageFailure('Failed to mark the lesson downloaded', cause: error),
+        stackTrace,
+      );
+    }
+  }
+
+  @override
+  Future<void> unmarkDownloaded(String id) async {
+    try {
+      final db = await _db();
+      await db.delete(_downloadsTable, where: 'lesson_id = ?', whereArgs: [id]);
+    } on Failure {
+      rethrow;
+    } catch (error, stackTrace) {
+      Error.throwWithStackTrace(
+        StorageFailure('Failed to remove the download mark', cause: error),
+        stackTrace,
+      );
+    }
+  }
+
+  @override
+  Future<({List<Folder> folders, List<String> lessonIds})?>
+  readLibrary() async {
+    try {
+      final db = await _db();
+      final items = await db.query(_libraryTable, orderBy: 'position');
+      if (items.isEmpty) return null;
+      final folders = {
+        for (final row in await db.query(_foldersTable))
+          row['id']! as String: _folderFromRow(row),
+      };
+      return (
+        folders: [
+          for (final item in items)
+            if (item['kind'] == _folderKind)
+              ?folders[item['item_id']! as String],
+        ],
+        lessonIds: [
+          for (final item in items)
+            if (item['kind'] == _lessonKind) item['item_id']! as String,
+        ],
+      );
+    } on Failure {
+      rethrow;
+    } catch (error, stackTrace) {
+      Error.throwWithStackTrace(
+        StorageFailure('Failed to read the saved library', cause: error),
+        stackTrace,
+      );
+    }
+  }
+
+  @override
+  Future<void> writeLibrary({
+    required List<Folder> folders,
+    required List<String> lessonIds,
+  }) async {
+    try {
+      final db = await _db();
+      await db.transaction((txn) async {
+        await txn.delete(_libraryTable);
+        var position = 0;
+        for (final folder in folders) {
+          await _upsertFolderMeta(txn, folder);
+          await txn.insert(_libraryTable, {
+            'position': position++,
+            'kind': _folderKind,
+            'item_id': folder.id,
+          });
+        }
+        for (final id in lessonIds) {
+          await txn.insert(_libraryTable, {
+            'position': position++,
+            'kind': _lessonKind,
+            'item_id': id,
+          });
+        }
+      });
+    } on Failure {
+      rethrow;
+    } catch (error, stackTrace) {
+      Error.throwWithStackTrace(
+        StorageFailure('Failed to save the library', cause: error),
+        stackTrace,
+      );
+    }
+  }
+
+  @override
+  Future<({Folder folder, List<String> lessonIds})?> readFolder(
+    String id,
+  ) async {
+    try {
+      final db = await _db();
+      final rows = await db.query(
+        _foldersTable,
+        where: 'id = ? AND lesson_ids IS NOT NULL',
+        whereArgs: [id],
+        limit: 1,
+      );
+      if (rows.isEmpty) return null;
+      final row = rows.first;
+      return (
+        folder: _folderFromRow(row),
+        lessonIds: [
+          for (final lessonId
+              in jsonDecode(row['lesson_ids']! as String) as List)
+            lessonId as String,
+        ],
+      );
+    } on Failure {
+      rethrow;
+    } catch (error, stackTrace) {
+      Error.throwWithStackTrace(
+        StorageFailure('Failed to read folder $id', cause: error),
+        stackTrace,
+      );
+    }
+  }
+
+  @override
+  Future<void> writeFolder(Folder folder) async {
+    try {
+      final db = await _db();
+      await db.insert(_foldersTable, {
+        ..._folderMetaRow(folder),
+        'lesson_ids': jsonEncode([
+          for (final lesson in folder.lessons) lesson.id,
+        ]),
+      }, conflictAlgorithm: ConflictAlgorithm.replace);
+    } on Failure {
+      rethrow;
+    } catch (error, stackTrace) {
+      Error.throwWithStackTrace(
+        StorageFailure('Failed to save the folder', cause: error),
+        stackTrace,
+      );
+    }
+  }
+
+  @override
+  Future<void> deleteFolder(String id) async {
+    try {
+      final db = await _db();
+      await db.delete(_foldersTable, where: 'id = ?', whereArgs: [id]);
+      await db.delete(
+        _libraryTable,
+        where: 'kind = ? AND item_id = ?',
+        whereArgs: [_folderKind, id],
+      );
+    } on Failure {
+      rethrow;
+    } catch (error, stackTrace) {
+      Error.throwWithStackTrace(
+        StorageFailure('Failed to delete the saved folder', cause: error),
         stackTrace,
       );
     }
@@ -270,6 +508,9 @@ class SqfliteLessonLocalDataSource implements LessonLocalDataSource {
       final db = await _db();
       await db.delete(_table);
       await db.delete(_metaTable);
+      await db.delete(_downloadsTable);
+      await db.delete(_foldersTable);
+      await db.delete(_libraryTable);
     } on Failure {
       rethrow;
     } catch (error, stackTrace) {
@@ -279,6 +520,40 @@ class SqfliteLessonLocalDataSource implements LessonLocalDataSource {
       );
     }
   }
+
+  /// Updates folder fields and keeps its saved lesson ids.
+  Future<void> _upsertFolderMeta(DatabaseExecutor db, Folder folder) async {
+    final row = _folderMetaRow(folder);
+    final updated = await db.update(
+      _foldersTable,
+      row,
+      where: 'id = ?',
+      whereArgs: [folder.id],
+    );
+    if (updated == 0) await db.insert(_foldersTable, row);
+  }
+
+  Map<String, Object?> _folderMetaRow(Folder folder) => {
+    'id': folder.id,
+    'title': folder.title,
+    'created_at': folder.createdAt.toUtc().toIso8601String(),
+    'updated_at': folder.updatedAt.toUtc().toIso8601String(),
+    'version': folder.version,
+    'is_public': folder.isPublic ? 1 : 0,
+    'language': folder.language,
+    'lesson_count': folder.lessonCount,
+  };
+
+  Folder _folderFromRow(Map<String, Object?> row) => Folder(
+    id: row['id']! as String,
+    title: row['title']! as String,
+    createdAt: DateTime.parse(row['created_at']! as String).toUtc(),
+    updatedAt: DateTime.parse(row['updated_at']! as String).toUtc(),
+    version: row['version']! as int,
+    isPublic: (row['is_public']! as int) != 0,
+    language: row['language']! as String,
+    lessonCount: row['lesson_count']! as int,
+  );
 
   Map<String, Object?> _toRow(LessonModel lesson) => {
     'id': lesson.id,

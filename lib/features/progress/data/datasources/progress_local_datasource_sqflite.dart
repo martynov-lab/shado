@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
@@ -7,6 +8,7 @@ import 'package:sqflite/sqflite.dart';
 import '../../../../core/error/failures.dart';
 import '../../../../core/platform/platform_setup.dart';
 import '../../domain/entities/pending_events.dart';
+import '../../domain/entities/progress_summary.dart';
 import 'progress_local_datasource.dart';
 
 /// Sqflite implementation backed by a separate `progress.db`; migrations are
@@ -18,6 +20,11 @@ class SqfliteProgressLocalDataSource implements ProgressLocalDataSource {
   static const String _repsTable = 'segment_reps';
   static const String _lessonTable = 'lesson_progress';
   static const String _pendingTable = 'pending';
+
+  /// Last server responses as JSON, shown while offline.
+  static const String _snapshotsTable = 'snapshots';
+  static const String _summaryKey = 'summary';
+  static const String _historyKey = 'history';
 
   final String _databaseName;
   Database? _database;
@@ -42,7 +49,7 @@ class SqfliteProgressLocalDataSource implements ProgressLocalDataSource {
       final path = p.join(await _databaseDirectory(), _databaseName);
       final db = await openDatabase(
         path,
-        version: 1,
+        version: 2,
         onCreate: (db, version) => _createSchema(db),
         // Additive only: existing data is left untouched.
         onUpgrade: (db, oldVersion, newVersion) => _createSchema(db),
@@ -78,6 +85,12 @@ class SqfliteProgressLocalDataSource implements ProgressLocalDataSource {
         id INTEGER PRIMARY KEY,
         listened_ms INTEGER NOT NULL DEFAULT 0,
         segment_repeats INTEGER NOT NULL DEFAULT 0
+      )
+    ''');
+    await db.execute('''
+      CREATE TABLE IF NOT EXISTS $_snapshotsTable (
+        key TEXT PRIMARY KEY,
+        json TEXT NOT NULL
       )
     ''');
     // A single accumulator row: created once, updated afterwards.
@@ -229,11 +242,36 @@ class SqfliteProgressLocalDataSource implements ProgressLocalDataSource {
   }
 
   @override
+  Future<ProgressSummary?> readSummary() async {
+    final json = await _readSnapshot(_summaryKey);
+    return json is Map<String, dynamic> ? ProgressSummary.fromJson(json) : null;
+  }
+
+  @override
+  Future<void> saveSummary(ProgressSummary summary) =>
+      _writeSnapshot(_summaryKey, summary.toJson());
+
+  @override
+  Future<List<ProgressDay>?> readHistory() async {
+    final json = await _readSnapshot(_historyKey);
+    if (json is! List<dynamic>) return null;
+    return [
+      for (final day in json)
+        ProgressDay.fromJson(Map<String, dynamic>.from(day as Map)),
+    ];
+  }
+
+  @override
+  Future<void> saveHistory(List<ProgressDay> days) =>
+      _writeSnapshot(_historyKey, [for (final day in days) day.toJson()]);
+
+  @override
   Future<void> clear() async {
     try {
       final db = await _db();
       await db.delete(_repsTable);
       await db.delete(_lessonTable);
+      await db.delete(_snapshotsTable);
       await db.update(_pendingTable, {
         'listened_ms': 0,
         'segment_repeats': 0,
@@ -241,6 +279,41 @@ class SqfliteProgressLocalDataSource implements ProgressLocalDataSource {
     } catch (error, stackTrace) {
       Error.throwWithStackTrace(
         StorageFailure('Failed to clear the progress', cause: error),
+        stackTrace,
+      );
+    }
+  }
+
+  /// Decoded JSON stored under [key]; `null` when absent.
+  Future<Object?> _readSnapshot(String key) async {
+    try {
+      final db = await _db();
+      final rows = await db.query(
+        _snapshotsTable,
+        where: 'key = ?',
+        whereArgs: [key],
+        limit: 1,
+      );
+      if (rows.isEmpty) return null;
+      return jsonDecode(rows.first['json']! as String);
+    } catch (error, stackTrace) {
+      Error.throwWithStackTrace(
+        StorageFailure('Failed to read the saved progress', cause: error),
+        stackTrace,
+      );
+    }
+  }
+
+  Future<void> _writeSnapshot(String key, Object json) async {
+    try {
+      final db = await _db();
+      await db.insert(_snapshotsTable, {
+        'key': key,
+        'json': jsonEncode(json),
+      }, conflictAlgorithm: ConflictAlgorithm.replace);
+    } catch (error, stackTrace) {
+      Error.throwWithStackTrace(
+        StorageFailure('Failed to save the progress', cause: error),
         stackTrace,
       );
     }

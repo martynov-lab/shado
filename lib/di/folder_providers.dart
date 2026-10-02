@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:shado/di/core_providers.dart';
+import 'package:shado/di/lesson_providers.dart';
 import 'package:shado/features/lessons/data/datasources/folder_remote_datasource.dart';
 import 'package:shado/features/lessons/data/repositories/folder_repository_impl.dart';
 import 'package:shado/features/lessons/domain/repositories/folder_repository.dart';
@@ -20,6 +21,7 @@ final folderRemoteDataSourceProvider = Provider<FolderRemoteDataSource>(
 final folderRepositoryProvider = Provider<FolderRepository>(
   (ref) => FolderRepositoryImpl(
     remoteDataSource: ref.watch(folderRemoteDataSourceProvider),
+    localDataSource: ref.watch(lessonLocalDataSourceProvider),
   ),
 );
 

@@ -96,11 +96,22 @@ class LessonsFilterGroupOptions extends StatelessWidget {
             ),
         ],
       ),
-      // The server returns only the viewer's own private lessons.
-      LessonFilterGroup.access => LessonsFilterOptionRow(
-        label: 'My private',
-        selected: filter.onlyPrivate,
-        onToggle: () => onChanged(filter.toggleOnlyPrivate()),
+      LessonFilterGroup.access => Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // The server returns only the viewer's own private lessons.
+          LessonsFilterOptionRow(
+            label: 'My private',
+            selected: filter.onlyPrivate,
+            onToggle: () => onChanged(filter.toggleOnlyPrivate()),
+          ),
+          LessonsFilterOptionRow(
+            label: 'Downloaded',
+            selected: filter.onlyDownloaded,
+            onToggle: () => onChanged(filter.toggleOnlyDownloaded()),
+          ),
+        ],
       ),
     };
   }

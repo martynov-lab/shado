@@ -68,6 +68,17 @@ class AuthUser {
 
   bool get isOwner => role.isOwner;
 
+  /// The server JSON shape, readable back by [AuthUser.fromJson].
+  Map<String, dynamic> toJson() => {
+    'id': id,
+    'email': email,
+    'role': role.wire,
+    'created_at': createdAt.toIso8601String(),
+    'name': ?name,
+    'studied_language': ?studiedLanguage,
+    'daily_goal_minutes': ?dailyGoalMinutes,
+  };
+
   AuthUser copyWith({
     String? name,
     String? studiedLanguage,

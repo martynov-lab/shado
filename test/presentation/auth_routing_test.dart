@@ -66,6 +66,9 @@ class FakeAuthRepository implements AuthRepository {
   }
 
   @override
+  Future<AuthUser?> restoreOfflineSession() async => _current = restored;
+
+  @override
   Future<AuthUser> refreshCurrentUser() async => _current!;
 
   @override
@@ -88,6 +91,20 @@ class FakeLessonRepository implements LessonRepository {
   // The fake does nothing here.
   // ignore: no-empty-block
   Future<void> syncLessons({String language = ''}) async {}
+
+  @override
+  Future<Set<String>> downloadedLessonIds() async => const {};
+
+  @override
+  Future<void> downloadLesson(
+    String id, {
+    void Function(int received, int total)? onProgress,
+  }) => Future.value();
+
+  @override
+  // The fake does nothing here.
+  // ignore: no-empty-block
+  Future<void> removeDownload(String id) async {}
 
   @override
   Future<Lesson?> getLesson(String id) async => null;

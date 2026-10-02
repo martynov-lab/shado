@@ -1,8 +1,12 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shado/app.dart';
+import 'package:shado/core/network/network_monitor.dart';
 import 'package:shado/di/auth_providers.dart';
+import 'package:shado/di/core_providers.dart';
 import 'package:shado/di/language_providers.dart';
 import 'package:shado/di/lesson_providers.dart';
 import 'package:shado/di/library_providers.dart';
@@ -12,7 +16,9 @@ import 'package:shado/features/auth/domain/entities/auth_user.dart';
 import 'package:shado/features/lessons/domain/entities/library_root.dart';
 import 'package:shado/features/lessons/domain/repositories/library_repository.dart';
 import 'package:shado/features/lessons/presentation/widgets/empty_lessons_view.dart';
+import 'package:shado/features/progress/data/datasources/progress_local_datasource.dart';
 import 'package:shado/features/progress/data/datasources/progress_remote_datasource.dart';
+import 'package:shado/features/progress/domain/entities/pending_events.dart';
 import 'package:shado/features/progress/domain/entities/progress_summary.dart';
 import 'package:shado/features/settings/data/datasources/settings_remote_datasource.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -21,9 +27,66 @@ import 'fake_auth_repository.dart';
 import 'fake_language_repository.dart';
 import 'fake_lesson_repository.dart';
 
+/// Network status driven by the test; starts as [online].
+class _FakeNetworkMonitor implements NetworkMonitor {
+  _FakeNetworkMonitor({this.online = true});
+
+  final bool online;
+  final StreamController<bool> changes = StreamController.broadcast();
+
+  @override
+  Stream<bool> get onlineChanges => changes.stream;
+
+  @override
+  Future<bool> isOnline() async => online;
+}
+
 class _EmptyLibrary implements LibraryRepository {
   @override
   Future<LibraryRoot> getRoot() async => LibraryRoot.empty;
+}
+
+/// Progress on the device without a database: nothing studied yet.
+class _EmptyProgressLocal implements ProgressLocalDataSource {
+  ProgressSummary? _summary;
+  List<ProgressDay>? _history;
+
+  @override
+  Future<void> bumpSegment(String lessonId, int segmentIndex) => Future.value();
+
+  @override
+  Future<void> addListened(int ms) => Future.value();
+
+  @override
+  Future<Map<int, int>> readReps(String lessonId) async => const {};
+
+  @override
+  Future<PendingEvents> readPending() async => PendingEvents.empty;
+
+  @override
+  Future<void> subtractPending(int listenedMs, int segmentRepeats) =>
+      Future.value();
+
+  @override
+  Future<bool> isCompletedSent(String lessonId) async => false;
+
+  @override
+  Future<void> markCompletedSent(String lessonId) => Future.value();
+
+  @override
+  Future<ProgressSummary?> readSummary() async => _summary;
+
+  @override
+  Future<void> saveSummary(ProgressSummary summary) async => _summary = summary;
+
+  @override
+  Future<List<ProgressDay>?> readHistory() async => _history;
+
+  @override
+  Future<void> saveHistory(List<ProgressDay> days) async => _history = days;
+
+  @override
+  Future<void> clear() => Future.value();
 }
 
 class _FakeProgressRemote implements ProgressRemoteDataSource {
@@ -58,6 +121,7 @@ void main() {
   Future<FakeAuthRepository> pumpApp(
     WidgetTester tester, {
     AuthUser? user,
+    NetworkMonitor? network,
   }) async {
     tester.view
       ..physicalSize = const Size(390, 900)
@@ -77,8 +141,14 @@ void main() {
           progressRemoteDataSourceProvider.overrideWithValue(
             _FakeProgressRemote(),
           ),
+          progressLocalDataSourceProvider.overrideWithValue(
+            _EmptyProgressLocal(),
+          ),
           settingsRemoteDataSourceProvider.overrideWithValue(
             _FakeServerSettings(),
+          ),
+          networkMonitorProvider.overrideWithValue(
+            network ?? _FakeNetworkMonitor(),
           ),
         ],
         child: const ShadoApp(),
@@ -136,5 +206,32 @@ void main() {
     await tester.tap(find.text('Sign out'));
     await tester.pumpAndSettle();
     expect(find.text('Welcome back'), findsOneWidget);
+  });
+
+  testWidgets('offline the banner shows and the add section hides', (
+    tester,
+  ) async {
+    final network = _FakeNetworkMonitor(online: false);
+    addTearDown(network.changes.close);
+    await pumpApp(
+      tester,
+      user: testUser(role: UserRole.owner),
+      network: network,
+    );
+
+    expect(
+      find.text('Offline — downloaded lessons are available'),
+      findsOneWidget,
+    );
+    expect(find.bySemanticsLabel('Add'), findsNothing);
+
+    network.changes.add(true);
+    await tester.pumpAndSettle();
+
+    expect(
+      find.text('Offline — downloaded lessons are available'),
+      findsNothing,
+    );
+    expect(find.bySemanticsLabel('Add'), findsWidgets);
   });
 }

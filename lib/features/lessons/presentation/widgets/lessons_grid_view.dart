@@ -15,6 +15,7 @@ class LessonsGridView extends StatelessWidget {
     required this.items,
     required this.onOpen,
     required this.onDelete,
+    required this.onToggleDownload,
     required this.onRefresh,
     this.folders = const [],
     this.onOpenFolder,
@@ -23,6 +24,7 @@ class LessonsGridView extends StatelessWidget {
   final List<LessonListItem> items;
   final ValueChanged<Lesson> onOpen;
   final ValueChanged<Lesson> onDelete;
+  final ValueChanged<Lesson> onToggleDownload;
   final Future<void> Function() onRefresh;
 
   final List<Folder> folders;
@@ -58,6 +60,11 @@ class LessonsGridView extends StatelessWidget {
             canDelete: item.canModify,
             onTap: () => onOpen(item.lesson),
             onDelete: () => onDelete(item.lesson),
+            download: item.download,
+            onToggleDownload: item.canToggleDownload
+                ? () => onToggleDownload(item.lesson)
+                : null,
+            isAvailable: item.isAvailable,
           );
         },
       ),

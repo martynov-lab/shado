@@ -10,13 +10,16 @@ import 'package:shado/di/progress_providers.dart';
 import 'package:shado/features/progress/domain/services/progress_reporter.dart';
 import 'package:shado/theme/theme.dart';
 
-/// What the app root needs: the router, the theme choice and the progress
-/// reporter.
+/// What the app root needs: the router, the theme choice, the progress
+/// reporter and the sync after a reconnect.
 class AppModel extends ElementaryModel {
   AppModel(ProviderContainer container)
     : router = container.read(appRouterProvider),
       _theme = container.read(themeControllerProvider),
-      _reporter = container.read(progressReporterProvider);
+      _reporter = container.read(progressReporterProvider) {
+    // Starts the sync after reconnects for the app lifetime.
+    container.read(reconnectSyncProvider);
+  }
 
   final GoRouter router;
   final ThemeController _theme;

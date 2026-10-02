@@ -29,8 +29,9 @@ abstract interface class AudioCache {
   /// Removes everything not listed in [audioIds] from the cache.
   Future<void> retainOnly(Set<String> audioIds);
 
-  /// Shrinks the cache to [maxBytes], evicting least recently used files.
-  Future<void> trimToSize(int maxBytes);
+  /// Shrinks the cache to [maxBytes], evicting least recently used files;
+  /// files of [keep] are neither evicted nor counted.
+  Future<void> trimToSize(int maxBytes, {Set<String> keep});
 
   /// Wipes the whole cache.
   Future<void> clear();
@@ -146,13 +147,14 @@ class FileAudioCache implements AudioCache {
   }
 
   @override
-  Future<void> trimToSize(int maxBytes) async {
+  Future<void> trimToSize(int maxBytes, {Set<String> keep = const {}}) async {
     try {
       final dir = await directory();
       final files = <({File file, DateTime accessed, int size})>[];
       var total = 0;
       await for (final entity in dir.list(followLinks: false)) {
         if (entity is! File) continue;
+        if (keep.contains(_audioIdOf(entity.path))) continue;
         final stat = await entity.stat();
         total += stat.size;
         files.add((file: entity, accessed: stat.accessed, size: stat.size));

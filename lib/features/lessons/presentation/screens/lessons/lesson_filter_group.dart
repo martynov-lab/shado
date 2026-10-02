@@ -18,6 +18,6 @@ enum LessonFilterGroup {
     level => filter.levels.length,
     accent => filter.accents.length,
     status => filter.statuses.length,
-    access => filter.onlyPrivate ? 1 : 0,
+    access => (filter.onlyPrivate ? 1 : 0) + (filter.onlyDownloaded ? 1 : 0),
   };
 }

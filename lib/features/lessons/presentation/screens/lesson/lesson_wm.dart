@@ -8,9 +8,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import 'package:shado/core/async/async_state.dart';
+import 'package:shado/core/error/failures.dart';
 import 'package:shado/widgets/widgets.dart';
 
 import '../../../../settings/presentation/widgets/playback_speed_sheet.dart';
+import '../../../domain/entities/lesson_download.dart';
 import '../../../domain/lesson_permissions.dart';
 import '../../widgets/lesson_segments_panel.dart';
 import '../edit_lesson/edit_lesson_page.dart';
@@ -40,7 +42,11 @@ class LessonWidgetModel extends WidgetModel<LessonPage, LessonModel> {
   );
   final ValueNotifier<double> _playedFraction = ValueNotifier(0);
   late final ValueNotifier<bool> _canEdit = ValueNotifier(_currentCanEdit());
-  late final Listenable _editSources = Listenable.merge([_state, model.role]);
+  late final Listenable _editSources = Listenable.merge([
+    _state,
+    model.role,
+    model.isOnline,
+  ]);
   late final LessonPlayback _playback = model.createPlayback(
     onChanged: _onPlaybackChanged,
     onPosition: _onPosition,
@@ -52,8 +58,31 @@ class LessonWidgetModel extends WidgetModel<LessonPage, LessonModel> {
   /// Played part of the shown range, `0..1`; `0` while stopped.
   ValueListenable<double> get playedFraction => _playedFraction;
 
-  /// The edit button follows the role; the server still checks the rights.
+  /// The edit button follows the role and needs the network; the server
+  /// still checks the rights.
   ValueListenable<bool> get canEdit => _canEdit;
+
+  ValueListenable<LessonDownload> get download => model.download;
+
+  ValueListenable<bool> get isOnline => model.isOnline;
+
+  /// Offline a lesson can't be downloaded, only its download removed.
+  bool get canToggleDownload =>
+      model.isOnline.value || model.download.value is! NotDownloaded;
+
+  /// What to tell the user when the lesson failed to open.
+  String errorText(Object error) => switch (error) {
+    NetworkFailure() =>
+      'No connection. Download the lesson to study it offline.',
+    Failure(:final message) => message,
+    _ => '$error',
+  };
+
+  /// Opens the lesson again after it failed to load.
+  Future<void> retry() {
+    _state.value = const AsyncPending();
+    return _open();
+  }
 
   @override
   void initWidgetModel() {
@@ -86,6 +115,19 @@ class LessonWidgetModel extends WidgetModel<LessonPage, LessonModel> {
     _state.value = const AsyncPending();
     await _open();
     if (!_isDisposed) pageFocus.requestFocus();
+  }
+
+  /// Downloads the lesson for offline study or removes the download.
+  Future<void> toggleDownload() async {
+    final context = this.context;
+    try {
+      await model.toggleDownload();
+    } catch (error) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to download the lesson: $error')),
+      );
+    }
   }
 
   Future<void> pickSpeed() async {
@@ -214,6 +256,8 @@ class LessonWidgetModel extends WidgetModel<LessonPage, LessonModel> {
 
   bool _currentCanEdit() {
     final lesson = _state.value.value?.lesson;
-    return lesson != null && canModifyLesson(model.role.value, lesson);
+    return lesson != null &&
+        model.isOnline.value &&
+        canModifyLesson(model.role.value, lesson);
   }
 }

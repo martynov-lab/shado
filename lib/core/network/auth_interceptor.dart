@@ -2,8 +2,9 @@ import 'package:dio/dio.dart';
 
 import '../storage/token_storage.dart';
 
-/// Adds `Authorization` and refreshes a stale access token with a single
-/// request shared by all concurrent 401s.
+/// Adds `Authorization` and refreshes the access token with a single request
+/// shared by every caller: the server revokes the whole session when a used
+/// refresh token comes again.
 class AuthInterceptor extends Interceptor {
   AuthInterceptor({
     required Dio dio,
@@ -24,12 +25,23 @@ class AuthInterceptor extends Interceptor {
 
   Future<String?>? _refreshing;
 
+  /// Without an access token (a start or an offline session) one is fetched
+  /// before the request.
   @override
-  void onRequest(RequestOptions options, RequestInterceptorHandler handler) {
-    final access = _tokens.accessToken;
-    if (access != null && options.extra[skipAuthKey] != true) {
-      options.headers['Authorization'] = 'Bearer $access';
+  Future<void> onRequest(
+    RequestOptions options,
+    RequestInterceptorHandler handler,
+  ) async {
+    if (options.extra[skipAuthKey] == true) return handler.next(options);
+    var access = _tokens.accessToken;
+    if (access == null && await _tokens.readRefreshToken() != null) {
+      try {
+        access = await _sharedRefresh();
+      } on DioException catch (error) {
+        return handler.reject(_asFailureOf(options, error));
+      }
     }
+    if (access != null) options.headers['Authorization'] = 'Bearer $access';
     handler.next(options);
   }
 
@@ -46,9 +58,13 @@ class AuthInterceptor extends Interceptor {
       return handler.next(err);
     }
 
-    final access = await (_refreshing ??= _refresh().whenComplete(() {
-      _refreshing = null;
-    }));
+    final String? access;
+    try {
+      access = await _sharedRefresh();
+    } on DioException catch (error) {
+      // The refresh failed without a verdict: report that, not the 401.
+      return handler.next(_asFailureOf(err.requestOptions, error));
+    }
     if (access == null) return handler.next(err);
 
     final options = err.requestOptions
@@ -60,7 +76,11 @@ class AuthInterceptor extends Interceptor {
     }
   }
 
-  /// Exchanges the refresh token for a new pair; `null` when it failed.
+  Future<String?> _sharedRefresh() =>
+      _refreshing ??= _refresh().whenComplete(() => _refreshing = null);
+
+  /// Exchanges the refresh token for a new pair; `null` when there is none or
+  /// the server rejected it. Other failures are thrown.
   Future<String?> _refresh() async {
     final refresh = await _tokens.readRefreshToken();
     if (refresh == null) return null;
@@ -74,12 +94,24 @@ class AuthInterceptor extends Interceptor {
       await _tokens.save(tokens);
       return tokens.accessToken;
     } on DioException catch (error) {
-      // A server rejection ends the session; a network drop does not.
-      if (error.response != null) {
-        await _tokens.clear();
-        await _onSessionExpired();
-      }
+      // Only a 401 ends the session; a network drop or a server error does not.
+      if (error.response?.statusCode != 401) rethrow;
+      await _tokens.clear();
+      await _onSessionExpired();
       return null;
     }
   }
+
+  /// The refresh failure reported for [options], so retries and messages
+  /// follow the original request.
+  static DioException _asFailureOf(
+    RequestOptions options,
+    DioException error,
+  ) => DioException(
+    requestOptions: options,
+    response: error.response,
+    type: error.type,
+    error: error.error,
+    message: error.message,
+  );
 }

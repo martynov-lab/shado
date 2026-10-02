@@ -17,6 +17,12 @@ class ProgressDay {
   final int listenedMs;
   final int segmentRepeats;
 
+  Map<String, dynamic> toJson() => {
+    'day': day,
+    'listened_ms': listenedMs,
+    'segment_repeats': segmentRepeats,
+  };
+
   int get listenedMinutes => listenedMs ~/ 60000;
 }
 
@@ -37,6 +43,12 @@ class ProgressTotals {
   final int listenedMs;
   final int segmentRepeats;
   final int lessonsCompleted;
+
+  Map<String, dynamic> toJson() => {
+    'listened_ms': listenedMs,
+    'segment_repeats': segmentRepeats,
+    'lessons_completed': lessonsCompleted,
+  };
 
   int get listenedMinutes => listenedMs ~/ 60000;
 }
@@ -101,4 +113,15 @@ class ProgressSummary {
 
   /// Daily goal from the profile; `null` when unset.
   final int? dailyGoalMinutes;
+
+  /// The server JSON shape, readable back by [ProgressSummary.fromJson].
+  Map<String, dynamic> toJson() => {
+    'today': today.toJson(),
+    'totals': totals.toJson(),
+    'week_minutes': weekMinutes,
+    'week': [for (final day in week) day.toJson()],
+    'recent_lesson_ids': recentLessonIds,
+    'completion_reps': completionReps,
+    'daily_goal_minutes': ?dailyGoalMinutes,
+  };
 }

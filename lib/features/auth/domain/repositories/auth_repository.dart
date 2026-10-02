@@ -19,6 +19,10 @@ abstract interface class AuthRepository {
   /// Restores a session from the refresh token; `null` needs the login screen.
   Future<AuthUser?> restoreSession();
 
+  /// The user saved on the device when the server can't be reached; `null`
+  /// without a stored session.
+  Future<AuthUser?> restoreOfflineSession();
+
   /// Re-reads the current user from the server.
   Future<AuthUser> refreshCurrentUser();
 

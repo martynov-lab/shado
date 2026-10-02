@@ -129,10 +129,25 @@ class LessonRepositoryImpl implements LessonRepository {
       return _cachedPlayable(id);
     }
 
-    final audioPath = await _ensureAudioFile(dto.audio);
-    final model = LessonModel.fromDto(dto, audioPath: audioPath);
-    await _local.upsertLesson(model);
-    return model.toEntity();
+    return (await _store(dto)).toEntity();
+  }
+
+  @override
+  Future<Set<String>> downloadedLessonIds() => _local.downloadedIds();
+
+  @override
+  Future<void> downloadLesson(
+    String id, {
+    void Function(int received, int total)? onProgress,
+  }) async {
+    await _store(await _remote.getLesson(id), onProgress: onProgress);
+    await _local.markDownloaded(id);
+  }
+
+  @override
+  Future<void> removeDownload(String id) async {
+    await _local.unmarkDownloaded(id);
+    await _tidyAudioCache();
   }
 
   @override
@@ -325,8 +340,22 @@ class LessonRepositoryImpl implements LessonRepository {
     ];
   }
 
+  /// Puts the lesson with its downloaded audio into the cache.
+  Future<LessonModel> _store(
+    LessonDto dto, {
+    void Function(int received, int total)? onProgress,
+  }) async {
+    final audioPath = await _ensureAudioFile(dto.audio, onProgress: onProgress);
+    final model = LessonModel.fromDto(dto, audioPath: audioPath);
+    await _local.upsertLesson(model);
+    return model;
+  }
+
   /// Path to the audio file: downloads a missing one and verifies `sha256`.
-  Future<String> _ensureAudioFile(AudioDto audio) async {
+  Future<String> _ensureAudioFile(
+    AudioDto audio, {
+    void Function(int received, int total)? onProgress,
+  }) async {
     final existing = await _cache.find(audio.id);
     if (existing != null) {
       if (await _cache.verify(existing, audio.sha256)) return existing;
@@ -334,7 +363,11 @@ class LessonRepositoryImpl implements LessonRepository {
     }
 
     final target = await _cache.pathFor(audio.id, audio.fileExtension);
-    await _audio.download(audioId: audio.id, targetPath: target);
+    await _audio.download(
+      audioId: audio.id,
+      targetPath: target,
+      onProgress: onProgress,
+    );
     if (!await _cache.verify(target, audio.sha256)) {
       await _cache.remove(audio.id);
       throw const AudioFailure(
@@ -360,9 +393,13 @@ class LessonRepositoryImpl implements LessonRepository {
   }
 
   /// Cached lesson when its audio is already downloaded.
-  Future<Lesson?> _cachedPlayable(String id) async {
+  Future<Lesson> _cachedPlayable(String id) async {
     final cached = await _local.getLesson(id);
-    if (cached == null) return null;
+    if (cached == null) {
+      throw const NetworkFailure(
+        'No connection to the server, and this lesson is not downloaded yet',
+      );
+    }
     if (!cached.hasAudioFile || !await File(cached.audioPath).exists()) {
       throw const NetworkFailure(
         'No connection to the server, and this lesson audio is not downloaded yet',
@@ -376,11 +413,21 @@ class LessonRepositoryImpl implements LessonRepository {
     await _tidyAudioCache();
   }
 
-  /// Drops files no lesson refers to and shrinks the cache.
+  /// Drops files no lesson refers to and shrinks the cache; downloaded
+  /// lessons keep their audio.
   Future<void> _tidyAudioCache() async {
     final used = await _local.usedAudioIds();
     await _cache.retainOnly(used);
-    await _cache.trimToSize(_maxCacheBytes);
+    await _cache.trimToSize(_maxCacheBytes, keep: await _downloadedAudioIds());
+  }
+
+  Future<Set<String>> _downloadedAudioIds() async {
+    final downloaded = await _local.downloadedIds();
+    if (downloaded.isEmpty) return const {};
+    return {
+      for (final lesson in await _local.getLessons())
+        if (downloaded.contains(lesson.id)) lesson.audioId,
+    };
   }
 
   /// An empty cached string means the value is absent.

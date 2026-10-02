@@ -25,6 +25,20 @@ class FakeLessonRepository implements LessonRepository {
   Future<void> syncLessons({String language = ''}) async {}
 
   @override
+  Future<Set<String>> downloadedLessonIds() async => const {};
+
+  @override
+  Future<void> downloadLesson(
+    String id, {
+    void Function(int received, int total)? onProgress,
+  }) => Future.value();
+
+  @override
+  // The fake does nothing here.
+  // ignore: no-empty-block
+  Future<void> removeDownload(String id) async {}
+
+  @override
   Future<Lesson?> getLesson(String id) async => null;
 
   @override

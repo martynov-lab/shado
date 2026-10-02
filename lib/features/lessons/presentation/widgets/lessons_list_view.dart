@@ -15,6 +15,7 @@ class LessonsListView extends StatelessWidget {
     required this.items,
     required this.onOpen,
     required this.onDelete,
+    required this.onToggleDownload,
     required this.onRefresh,
     this.folders = const [],
     this.onOpenFolder,
@@ -25,6 +26,9 @@ class LessonsListView extends StatelessWidget {
   final List<LessonListItem> items;
   final ValueChanged<Lesson> onOpen;
   final ValueChanged<Lesson> onDelete;
+
+  /// Downloads the lesson for offline study or removes the download.
+  final ValueChanged<Lesson> onToggleDownload;
   final Future<void> Function() onRefresh;
 
   /// Folders shown above the lesson list.
@@ -53,6 +57,7 @@ class LessonsListView extends StatelessWidget {
           entry: entries[index],
           onOpen: onOpen,
           onDelete: onDelete,
+          onToggleDownload: onToggleDownload,
           onOpenFolder: onOpenFolder,
           onCreateFolder: onCreateFolder,
         ),

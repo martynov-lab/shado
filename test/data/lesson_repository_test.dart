@@ -1,5 +1,6 @@
 import 'package:dio/dio.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:shado/core/error/failures.dart';
 import 'package:shado/core/network/api_exception.dart';
 import 'package:shado/features/lessons/data/datasources/audio_cache.dart';
 import 'package:shado/features/lessons/data/datasources/audio_remote_datasource.dart';
@@ -12,6 +13,7 @@ import 'package:shado/features/lessons/data/models/lesson_dto.dart';
 import 'package:shado/features/lessons/data/models/lesson_model.dart';
 import 'package:shado/features/lessons/data/models/segment_model.dart';
 import 'package:shado/features/lessons/data/repositories/lesson_repository_impl.dart';
+import 'package:shado/features/lessons/domain/entities/folder.dart';
 import 'package:shado/features/lessons/domain/entities/lesson.dart';
 import 'package:shado/features/lessons/domain/entities/lesson_category.dart';
 import 'package:shado/features/lessons/domain/entities/segment.dart';
@@ -68,6 +70,15 @@ class FakeLocalDataSource implements LessonLocalDataSource {
   /// Delta watermark per language code.
   final Map<String, String> watermarks = {};
 
+  /// Ids of lessons kept for offline study.
+  final Set<String> downloaded = {};
+
+  /// The saved library root.
+  ({List<Folder> folders, List<String> lessonIds})? library;
+
+  /// Opened folders by id.
+  final Map<String, Folder> folders = {};
+
   bool cleared = false;
 
   @override
@@ -97,12 +108,49 @@ class FakeLocalDataSource implements LessonLocalDataSource {
   Future<void> deleteLessons(Iterable<String> ids) async {
     for (final id in ids) {
       lessons.remove(id);
+      downloaded.remove(id);
     }
   }
 
   @override
   Future<Set<String>> usedAudioIds() async =>
       lessons.values.map((lesson) => lesson.audioId).toSet();
+
+  @override
+  Future<Set<String>> downloadedIds() async => Set.of(downloaded);
+
+  @override
+  Future<void> markDownloaded(String id) async => downloaded.add(id);
+
+  @override
+  Future<void> unmarkDownloaded(String id) async => downloaded.remove(id);
+
+  @override
+  Future<({List<Folder> folders, List<String> lessonIds})?>
+  readLibrary() async => library;
+
+  @override
+  Future<void> writeLibrary({
+    required List<Folder> folders,
+    required List<String> lessonIds,
+  }) async => library = (folders: folders, lessonIds: lessonIds);
+
+  @override
+  Future<({Folder folder, List<String> lessonIds})?> readFolder(
+    String id,
+  ) async => switch (folders[id]) {
+    final folder? => (
+      folder: folder,
+      lessonIds: [for (final lesson in folder.lessons) lesson.id],
+    ),
+    null => null,
+  };
+
+  @override
+  Future<void> writeFolder(Folder folder) async => folders[folder.id] = folder;
+
+  @override
+  Future<void> deleteFolder(String id) async => folders.remove(id);
 
   @override
   Future<String?> readSyncWatermark(String language) async =>
@@ -151,9 +199,14 @@ class FakeRemoteDataSource implements LessonRemoteDataSource {
     return pages[_page++];
   }
 
+  /// Fails `getLesson` as if there were no network.
+  bool offline = false;
+
   @override
-  Future<LessonDto> getLesson(String id) async =>
-      LessonDto.fromJson(lessonJson(id: id));
+  Future<LessonDto> getLesson(String id) async {
+    if (offline) throw const NetworkFailure('offline');
+    return LessonDto.fromJson(lessonJson(id: id));
+  }
 
   @override
   Future<LessonDto> putLesson({
@@ -312,6 +365,9 @@ const _window = TtsQuotaWindow(used: 0, limit: 14, remaining: 14);
 class FakeAudioCache implements AudioCache {
   final Set<String> files = {};
   final List<Set<String>> retained = [];
+
+  /// Audio ids protected from eviction on each trim.
+  final List<Set<String>> kept = [];
   bool cleared = false;
 
   @override
@@ -347,9 +403,8 @@ class FakeAudioCache implements AudioCache {
   }
 
   @override
-  // The fake does nothing here.
-  // ignore: no-empty-block
-  Future<void> trimToSize(int maxBytes) async {}
+  Future<void> trimToSize(int maxBytes, {Set<String> keep = const {}}) async =>
+      kept.add(keep);
 
   @override
   Future<void> clear() async {
@@ -758,6 +813,67 @@ void main() {
       await repository.getLesson('lesson-1');
 
       expect(audio.downloads, 1);
+    });
+
+    test('offline a lesson missing from the cache fails as no network', () async {
+      final repository = build(FakeRemoteDataSource()..offline = true);
+
+      expect(repository.getLesson('lesson-1'), throwsA(isA<NetworkFailure>()));
+    });
+  });
+
+  group('offline downloads', () {
+    test('a download caches the lesson with its audio and marks it', () async {
+      final repository = build(FakeRemoteDataSource());
+
+      await repository.downloadLesson('lesson-1');
+
+      expect(local.lessons.keys, contains('lesson-1'));
+      expect(cache.files, contains('audio-1'));
+      expect(await repository.downloadedLessonIds(), equals({'lesson-1'}));
+    });
+
+    test('audio of a downloaded lesson is protected from eviction', () async {
+      final repository = build(FakeRemoteDataSource());
+      await repository.downloadLesson('lesson-1');
+
+      await repository.syncLessons();
+
+      expect(cache.kept.last, equals({'audio-1'}));
+    });
+
+    test('a removed download lets the audio be evicted again', () async {
+      final repository = build(FakeRemoteDataSource());
+      await repository.downloadLesson('lesson-1');
+
+      await repository.removeDownload('lesson-1');
+
+      expect(await repository.downloadedLessonIds(), isEmpty);
+      expect(cache.kept.last, isEmpty);
+    });
+
+    test('a lesson deleted on the server loses its download', () async {
+      local.watermarks[''] = '2026-07-28T09:00:00.000Z';
+      final remote = FakeRemoteDataSource(
+        pages: [
+          LessonPage(
+            items: [
+              LessonDto.fromJson(
+                lessonJson(
+                  id: 'lesson-1',
+                  deletedAt: '2026-07-28T13:00:00.000Z',
+                ),
+              ),
+            ],
+          ),
+        ],
+      );
+      final repository = build(remote);
+      await repository.downloadLesson('lesson-1');
+
+      await repository.syncLessons();
+
+      expect(await repository.downloadedLessonIds(), isEmpty);
     });
   });
 

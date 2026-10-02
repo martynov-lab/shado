@@ -1,4 +1,5 @@
 import '../../domain/entities/pending_events.dart';
+import '../../domain/entities/progress_summary.dart';
 
 /// Local progress counters in a separate database; minutes and repeats must
 /// not be lost, so migrations here are additive only.
@@ -22,6 +23,17 @@ abstract interface class ProgressLocalDataSource {
   Future<bool> isCompletedSent(String lessonId);
 
   Future<void> markCompletedSent(String lessonId);
+
+  /// The last summary received from the server; `null` before the first one.
+  Future<ProgressSummary?> readSummary();
+
+  Future<void> saveSummary(ProgressSummary summary);
+
+  /// The last daily history received from the server; `null` before the
+  /// first one.
+  Future<List<ProgressDay>?> readHistory();
+
+  Future<void> saveHistory(List<ProgressDay> days);
 
   /// Wipes all progress on sign-out.
   Future<void> clear();

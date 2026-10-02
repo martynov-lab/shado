@@ -30,6 +30,7 @@ class LessonsFilter {
     this.accents = const {},
     this.statuses = const {},
     this.onlyPrivate = false,
+    this.onlyDownloaded = false,
   });
 
   final String query;
@@ -44,6 +45,9 @@ class LessonsFilter {
   /// Show private lessons only.
   final bool onlyPrivate;
 
+  /// Show lessons downloaded for offline study only.
+  final bool onlyDownloaded;
+
   /// Whether the filter is empty: no query and no selected values.
   bool get isEmpty =>
       query.isEmpty &&
@@ -51,7 +55,8 @@ class LessonsFilter {
       levels.isEmpty &&
       accents.isEmpty &&
       statuses.isEmpty &&
-      !onlyPrivate;
+      !onlyPrivate &&
+      !onlyDownloaded;
 
   /// How many filters are selected, excluding the search query.
   int get activeCount =>
@@ -59,10 +64,12 @@ class LessonsFilter {
       levels.length +
       accents.length +
       statuses.length +
-      (onlyPrivate ? 1 : 0);
+      (onlyPrivate ? 1 : 0) +
+      (onlyDownloaded ? 1 : 0);
 
-  /// Whether a lesson passes the filters: OR inside a group, AND across.
-  bool matches(Lesson lesson) {
+  /// Whether a lesson passes the filters: OR inside a group, AND across;
+  /// [downloadedIds] are the lessons kept for offline study.
+  bool matches(Lesson lesson, {Set<String> downloadedIds = const {}}) {
     if (query.isNotEmpty &&
         !lesson.title.toLowerCase().contains(query.toLowerCase())) {
       return false;
@@ -85,6 +92,9 @@ class LessonsFilter {
     if (onlyPrivate && lesson.isPublic) {
       return false;
     }
+    if (onlyDownloaded && !downloadedIds.contains(lesson.id)) {
+      return false;
+    }
     return true;
   }
 
@@ -96,11 +106,14 @@ class LessonsFilter {
   };
 
   /// Lessons of [lessons] that pass the filter.
-  List<Lesson> apply(List<Lesson> lessons) => isEmpty
+  List<Lesson> apply(
+    List<Lesson> lessons, {
+    Set<String> downloadedIds = const {},
+  }) => isEmpty
       ? lessons
       : [
           for (final lesson in lessons)
-            if (matches(lesson)) lesson,
+            if (matches(lesson, downloadedIds: downloadedIds)) lesson,
         ];
 
   /// Without a query or filters the screen shows the library root; with them
@@ -108,7 +121,8 @@ class LessonsFilter {
   List<Lesson> visibleLessons({
     required List<Lesson> catalog,
     required List<Lesson> rootLessons,
-  }) => isEmpty ? rootLessons : apply(catalog);
+    Set<String> downloadedIds = const {},
+  }) => isEmpty ? rootLessons : apply(catalog, downloadedIds: downloadedIds);
 
   /// Folders are matched by title and hidden while category filters are on:
   /// they have no topic or level.
@@ -138,6 +152,9 @@ class LessonsFilter {
 
   LessonsFilter toggleOnlyPrivate() => copyWith(onlyPrivate: !onlyPrivate);
 
+  LessonsFilter toggleOnlyDownloaded() =>
+      copyWith(onlyDownloaded: !onlyDownloaded);
+
   /// Drops the selected filters but keeps the search query.
   LessonsFilter cleared() => LessonsFilter(query: query);
 
@@ -148,6 +165,7 @@ class LessonsFilter {
     Set<String>? accents,
     Set<LessonFilterStatus>? statuses,
     bool? onlyPrivate,
+    bool? onlyDownloaded,
   }) {
     return LessonsFilter(
       query: query ?? this.query,
@@ -156,6 +174,7 @@ class LessonsFilter {
       accents: accents ?? this.accents,
       statuses: statuses ?? this.statuses,
       onlyPrivate: onlyPrivate ?? this.onlyPrivate,
+      onlyDownloaded: onlyDownloaded ?? this.onlyDownloaded,
     );
   }
 

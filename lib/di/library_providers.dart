@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:shado/di/core_providers.dart';
+import 'package:shado/di/lesson_providers.dart';
 import 'package:shado/features/lessons/data/datasources/library_remote_datasource.dart';
 import 'package:shado/features/lessons/data/repositories/library_repository_impl.dart';
 import 'package:shado/features/lessons/domain/repositories/library_repository.dart';
@@ -14,6 +15,7 @@ final libraryRemoteDataSourceProvider = Provider<LibraryRemoteDataSource>(
 final libraryRepositoryProvider = Provider<LibraryRepository>(
   (ref) => LibraryRepositoryImpl(
     remoteDataSource: ref.watch(libraryRemoteDataSourceProvider),
+    localDataSource: ref.watch(lessonLocalDataSourceProvider),
   ),
 );
 

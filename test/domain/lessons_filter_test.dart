@@ -125,6 +125,20 @@ void main() {
       ).apply(lessons);
       expect(result.map((lesson) => lesson.id), equals(['1']));
     });
+
+    test('the downloaded filter keeps only downloaded lessons', () {
+      final result = const LessonsFilter(
+        onlyDownloaded: true,
+      ).apply(lessons, downloadedIds: {'2', '3'});
+      expect(result.map((lesson) => lesson.id), equals(['2', '3']));
+    });
+
+    test('the downloaded filter counts as an active filter', () {
+      const filter = LessonsFilter(onlyDownloaded: true);
+      expect(filter.isEmpty, isFalse);
+      expect(filter.activeCount, equals(1));
+      expect(filter.cleared().onlyDownloaded, isFalse);
+    });
   });
 
   // Without a query the screen shows the root, with one the whole catalog.

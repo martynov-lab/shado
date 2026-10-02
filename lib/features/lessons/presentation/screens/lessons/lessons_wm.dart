@@ -13,6 +13,7 @@ import '../../../../languages/domain/entities/language.dart';
 import '../../../domain/entities/folder.dart';
 import '../../../domain/entities/lesson.dart';
 import '../../../domain/entities/lesson_category.dart';
+import '../../../domain/entities/lesson_download.dart';
 import '../../../domain/entities/lessons_filter.dart';
 import '../../../domain/lesson_permissions.dart';
 import '../../widgets/delete_lesson_dialog.dart';
@@ -54,6 +55,8 @@ class LessonsWidgetModel extends WidgetModel<LessonsPage, LessonsModel> {
     model.library,
     model.lessons,
     model.role,
+    model.downloads,
+    model.isOnline,
     _filter,
     _progress,
   ]);
@@ -67,7 +70,7 @@ class LessonsWidgetModel extends WidgetModel<LessonsPage, LessonsModel> {
   /// The accent group appears only for languages with accents.
   ValueListenable<List<LessonFilterGroup>> get groups => _groups;
 
-  /// Only authors may create folders.
+  /// Only authors may create folders, and only online.
   ValueListenable<bool> get canAuthor => _canAuthor;
 
   @override
@@ -76,6 +79,7 @@ class LessonsWidgetModel extends WidgetModel<LessonsPage, LessonsModel> {
     _contentSources.addListener(_onContentSourcesChanged);
     model.accents.addListener(_onAccentsChanged);
     model.role.addListener(_onRoleChanged);
+    model.isOnline.addListener(_onRoleChanged);
     model.lessons.addListener(_onLessonsChanged);
     _resetSubscription = model.catalogResets.listen(
       (_) => _filter.value = const LessonsFilter(),
@@ -89,6 +93,7 @@ class LessonsWidgetModel extends WidgetModel<LessonsPage, LessonsModel> {
     _contentSources.removeListener(_onContentSourcesChanged);
     model.accents.removeListener(_onAccentsChanged);
     model.role.removeListener(_onRoleChanged);
+    model.isOnline.removeListener(_onRoleChanged);
     model.lessons.removeListener(_onLessonsChanged);
     _resetSubscription?.cancel();
     _filter.dispose();
@@ -141,6 +146,19 @@ class LessonsWidgetModel extends WidgetModel<LessonsPage, LessonsModel> {
     await model.deleteLesson(lesson.id);
   }
 
+  /// Downloads the lesson for offline study or removes the download.
+  Future<void> toggleDownload(Lesson lesson) async {
+    final context = this.context;
+    try {
+      await model.toggleDownload(lesson.id);
+    } catch (error) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to download the lesson: $error')),
+      );
+    }
+  }
+
   /// Creates a folder and opens it.
   Future<void> createFolder() async {
     final context = this.context;
@@ -173,17 +191,30 @@ class LessonsWidgetModel extends WidgetModel<LessonsPage, LessonsModel> {
     final filter = _filter.value;
     final role = model.role.value;
     final progress = _progress.value;
+    final downloads = model.downloads.value;
+    final isOnline = model.isOnline.value;
+    final downloadedIds = {
+      for (final MapEntry(:key, :value) in downloads.entries)
+        if (value is Downloaded) key,
+    };
     return model.library.value.mapValue(
       (library) => LessonsContent(
         items: [
           for (final lesson in filter.visibleLessons(
             catalog: model.lessons.value,
             rootLessons: library.lessons,
+            downloadedIds: downloadedIds,
           ))
             LessonListItem(
               lesson: lesson,
               progress: progress[lesson.id] ?? 0,
-              canModify: canModifyLesson(role, lesson),
+              canModify: isOnline && canModifyLesson(role, lesson),
+              download: downloads[lesson.id] ?? const NotDownloaded(),
+              isAvailable:
+                  isOnline ||
+                  downloadedIds.contains(lesson.id) ||
+                  lesson.audioPath.isNotEmpty,
+              canToggleDownload: isOnline || downloads.containsKey(lesson.id),
             ),
         ],
         folders: filter.visibleFolders(library.folders),
@@ -200,7 +231,8 @@ class LessonsWidgetModel extends WidgetModel<LessonsPage, LessonsModel> {
     ];
   }
 
-  bool _currentCanAuthor() => canCreateLessons(model.role.value);
+  bool _currentCanAuthor() =>
+      model.isOnline.value && canCreateLessons(model.role.value);
 
   Future<void> _loadTopics() async {
     final topics = await AsyncState.guard(model.loadTopics);

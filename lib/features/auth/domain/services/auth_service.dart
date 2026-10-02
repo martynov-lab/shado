@@ -1,12 +1,14 @@
 import 'dart:async';
 
-import '../../../../core/error/failures.dart';
+import '../../../../core/network/network_monitor.dart';
+import '../entities/auth_user.dart';
 import '../entities/user_session.dart';
 import '../repositories/auth_repository.dart';
 import '../usecases/sign_in.dart';
 
 /// The session of the whole app: who is signed in and with which role.
 /// Call [restore] once at startup; until then the status is `unknown`.
+/// Offline the saved session is opened and checked again once online.
 class AuthService {
   AuthService({
     required AuthRepository repository,
@@ -15,12 +17,14 @@ class AuthService {
     required SignOut signOut,
     required GetCurrentUser getCurrentUser,
     required UpdateProfile updateProfile,
+    required NetworkMonitor network,
   }) : _repository = repository,
        _signIn = signIn,
        _signUp = signUp,
        _signOut = signOut,
        _getCurrentUser = getCurrentUser,
-       _updateProfile = updateProfile;
+       _updateProfile = updateProfile,
+       _network = network;
 
   final AuthRepository _repository;
   final SignIn _signIn;
@@ -28,19 +32,22 @@ class AuthService {
   final SignOut _signOut;
   final GetCurrentUser _getCurrentUser;
   final UpdateProfile _updateProfile;
+  final NetworkMonitor _network;
   final StreamController<UserSession> _changes = StreamController.broadcast();
 
   UserSession _session = const UserSession();
   StreamSubscription<void>? _expiredSubscription;
+  StreamSubscription<bool>? _onlineSubscription;
   Future<void>? _restoring;
+  bool _revalidating = false;
   bool _restoreFailedOffline = false;
 
   UserSession get session => _session;
 
   Stream<UserSession> get changes => _changes.stream;
 
-  /// The server was unreachable at startup, so the user has to sign in
-  /// again once the connection is back.
+  /// The server was unreachable at startup and no session is saved on the
+  /// device, so the user has to sign in once the connection is back.
   bool get restoreFailedOffline => _restoreFailedOffline;
 
   /// Checks the stored refresh token and starts listening for the server
@@ -101,6 +108,7 @@ class AuthService {
 
   void dispose() {
     _expiredSubscription?.cancel();
+    _onlineSubscription?.cancel();
     _changes.close();
   }
 
@@ -108,6 +116,9 @@ class AuthService {
     _expiredSubscription = _repository.sessionExpired.listen(
       (_) => _apply(const UserSession.signedOut()),
     );
+    _onlineSubscription = _network.onlineChanges
+        .where((online) => online)
+        .listen((_) => unawaited(_revalidate()));
     try {
       final user = await _repository.restoreSession();
       _apply(
@@ -115,11 +126,42 @@ class AuthService {
             ? const UserSession.signedOut()
             : UserSession.signedIn(user),
       );
-    } on NetworkFailure {
+    } catch (_) {
+      await _restoreOffline();
+    }
+  }
+
+  /// Opens the session saved on the device; without one the login is needed.
+  Future<void> _restoreOffline() async {
+    AuthUser? user;
+    try {
+      user = await _repository.restoreOfflineSession();
+    } catch (_) {
+      user = null;
+    }
+    if (user == null) {
       _restoreFailedOffline = true;
       _apply(const UserSession.signedOut());
+    } else {
+      _apply(UserSession.signedIn(user, isOffline: true));
+    }
+  }
+
+  /// Confirms an offline session with the server once the network is back.
+  Future<void> _revalidate() async {
+    if (!_session.isOffline || _revalidating) return;
+    _revalidating = true;
+    try {
+      final user = await _repository.restoreSession();
+      _apply(
+        user == null
+            ? const UserSession.signedOut()
+            : UserSession.signedIn(user),
+      );
     } catch (_) {
-      _apply(const UserSession.signedOut());
+      // Still unreachable: the offline session stays.
+    } finally {
+      _revalidating = false;
     }
   }
 

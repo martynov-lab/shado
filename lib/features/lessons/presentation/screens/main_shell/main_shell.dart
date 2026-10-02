@@ -8,6 +8,7 @@ import 'package:shado/widgets/widgets.dart';
 import '../../widgets/main_shell_bottom_nav.dart';
 import '../../widgets/main_shell_rail.dart';
 import '../../widgets/main_shell_sidebar.dart';
+import '../../widgets/offline_banner.dart';
 import 'main_shell_destination.dart';
 import 'main_shell_wm.dart';
 
@@ -38,43 +39,65 @@ class MainShell extends ElementaryWidget<MainShellWidgetModel> {
   @override
   Widget build(MainShellWidgetModel wm) {
     return ListenableBuilder(
-      listenable: Listenable.merge([wm.shell, wm.canAuthor, wm.email]),
-      builder: (context, _) => Scaffold(
-        backgroundColor: context.colors.bg,
-        body: AppAdaptiveLayout(
-          mobile: (_) => Column(
-            children: [
-              Expanded(child: wm.shell.value),
-              MainShellBottomNav(
-                currentIndex: wm.currentIndex,
-                onSelected: wm.select,
-                canAdd: wm.canAuthor.value,
+      listenable: Listenable.merge([
+        wm.shell,
+        wm.canAuthor,
+        wm.email,
+        wm.isOnline,
+      ]),
+      builder: (context, _) {
+        final isOnline = wm.isOnline.value;
+        final canAdd = wm.canAuthor.value && isOnline;
+        final content = Column(
+          children: [
+            if (!isOnline) const OfflineBanner(),
+            // The banner already takes the top inset.
+            Expanded(
+              child: MediaQuery.removePadding(
+                context: context,
+                removeTop: !isOnline,
+                child: wm.shell.value,
               ),
-            ],
+            ),
+          ],
+        );
+        return Scaffold(
+          backgroundColor: context.colors.bg,
+          body: AppAdaptiveLayout(
+            mobile: (_) => Column(
+              children: [
+                Expanded(child: content),
+                MainShellBottomNav(
+                  currentIndex: wm.currentIndex,
+                  onSelected: wm.select,
+                  canAdd: canAdd,
+                ),
+              ],
+            ),
+            tablet: (_) => Row(
+              children: [
+                MainShellRail(
+                  currentIndex: wm.currentIndex,
+                  onSelected: wm.select,
+                  canAdd: canAdd,
+                ),
+                Expanded(child: content),
+              ],
+            ),
+            desktop: (_) => Row(
+              children: [
+                MainShellSidebar(
+                  currentIndex: wm.currentIndex,
+                  onSelected: wm.select,
+                  canAdd: canAdd,
+                  email: wm.email.value,
+                ),
+                Expanded(child: content),
+              ],
+            ),
           ),
-          tablet: (_) => Row(
-            children: [
-              MainShellRail(
-                currentIndex: wm.currentIndex,
-                onSelected: wm.select,
-                canAdd: wm.canAuthor.value,
-              ),
-              Expanded(child: wm.shell.value),
-            ],
-          ),
-          desktop: (_) => Row(
-            children: [
-              MainShellSidebar(
-                currentIndex: wm.currentIndex,
-                onSelected: wm.select,
-                canAdd: wm.canAuthor.value,
-                email: wm.email.value,
-              ),
-              Expanded(child: wm.shell.value),
-            ],
-          ),
-        ),
-      ),
+        );
+      },
     );
   }
 }

@@ -17,6 +17,7 @@ import '../../widgets/lesson_segments_button.dart';
 import '../../widgets/lesson_segments_panel.dart';
 import '../../widgets/lesson_transcript_panel.dart';
 import '../../widgets/lesson_wide_layout.dart';
+import '../../widgets/lessons_error_view.dart';
 import 'lesson_wm.dart';
 
 /// The lesson: segment text, the player and the segment list.
@@ -38,14 +39,34 @@ class LessonPage extends ElementaryWidget<LessonWidgetModel> {
       autofocus: true,
       onKeyEvent: wm.handleKey,
       child: ListenableBuilder(
-        listenable: Listenable.merge([wm.state, wm.canEdit]),
+        listenable: Listenable.merge([
+          wm.state,
+          wm.canEdit,
+          wm.download,
+          wm.isOnline,
+        ]),
         builder: (context, _) => Scaffold(
           backgroundColor: context.colors.bg,
           body: switch (wm.state.value) {
-            AsyncFailed(:final error) => Center(
-              child: Padding(
-                padding: const EdgeInsets.all(AppSpacing.s8),
-                child: Text('$error', textAlign: TextAlign.center),
+            AsyncFailed(:final error) => SafeArea(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.all(AppSpacing.s2),
+                    child: AppIconButton(
+                      icon: Icons.arrow_back_rounded,
+                      semanticLabel: 'Back',
+                      onPressed: wm.back,
+                    ),
+                  ),
+                  Expanded(
+                    child: LessonsErrorView(
+                      message: wm.errorText(error),
+                      onRetryPressed: () => unawaited(wm.retry()),
+                    ),
+                  ),
+                ],
               ),
             ),
             AsyncReady(value: final state) => Stack(
@@ -57,6 +78,10 @@ class LessonPage extends ElementaryWidget<LessonWidgetModel> {
                       canEdit: wm.canEdit.value,
                       onBack: wm.back,
                       onEdit: () => unawaited(wm.edit()),
+                      download: wm.download.value,
+                      onToggleDownload: wm.canToggleDownload
+                          ? () => unawaited(wm.toggleDownload())
+                          : null,
                     ),
                     transcript: LessonTranscriptPanel(text: state.playerText),
                     segmentsButton: LessonSegmentsButton(
@@ -86,6 +111,10 @@ class LessonPage extends ElementaryWidget<LessonWidgetModel> {
                       canEdit: wm.canEdit.value,
                       onBack: wm.back,
                       onEdit: () => unawaited(wm.edit()),
+                      download: wm.download.value,
+                      onToggleDownload: wm.canToggleDownload
+                          ? () => unawaited(wm.toggleDownload())
+                          : null,
                     ),
                     transcript: LessonTranscriptPanel(text: state.playerText),
                     player: LessonPlayerPanel(

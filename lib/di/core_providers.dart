@@ -4,12 +4,25 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:shado/core/audio/shadowing_audio_handler.dart';
 import 'package:shado/core/network/api_client.dart';
+import 'package:shado/core/network/connectivity_network_monitor.dart';
+import 'package:shado/core/network/network_monitor.dart';
+import 'package:shado/core/network/network_status.dart';
 import 'package:shado/core/storage/token_storage.dart';
 import 'package:shado/theme/theme.dart';
 
 final tokenStorageProvider = Provider<TokenStorage>(
   (ref) => SecureTokenStorage(),
 );
+
+final networkMonitorProvider = Provider<NetworkMonitor>(
+  (ref) => ConnectivityNetworkMonitor(),
+);
+
+final networkStatusProvider = Provider<NetworkStatus>((ref) {
+  final status = NetworkStatus(ref.watch(networkMonitorProvider));
+  ref.onDispose(status.dispose);
+  return status;
+});
 
 /// One API client for the whole app, with a shared `Dio` and interceptor.
 final apiClientProvider = Provider<ApiClient>(

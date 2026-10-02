@@ -24,6 +24,7 @@ import 'package:shado/features/lessons/domain/repositories/topic_repository.dart
 import 'package:shado/features/lessons/domain/repositories/tts_voice_settings_repository.dart';
 import 'package:shado/features/lessons/domain/repositories/waveform_repository.dart';
 import 'package:shado/features/lessons/domain/services/lesson_catalog_service.dart';
+import 'package:shado/features/lessons/domain/services/lesson_download_service.dart';
 import 'package:shado/features/lessons/domain/services/tts_voice_service.dart';
 import 'package:shado/features/lessons/domain/usecases/create_lesson.dart';
 import 'package:shado/features/lessons/domain/usecases/delete_lesson.dart';
@@ -143,6 +144,15 @@ final lessonCatalogServiceProvider = Provider<LessonCatalogService>((ref) {
     deleteLesson: ref.watch(deleteLessonProvider),
     getLibrary: ref.watch(getLibraryProvider),
     auth: ref.watch(authServiceProvider),
+  );
+  ref.onDispose(service.dispose);
+  return service;
+});
+
+final lessonDownloadServiceProvider = Provider<LessonDownloadService>((ref) {
+  final service = LessonDownloadService(
+    repository: ref.watch(lessonRepositoryProvider),
+    catalogChanges: ref.watch(lessonCatalogServiceProvider).lessonChanges,
   );
   ref.onDispose(service.dispose);
   return service;

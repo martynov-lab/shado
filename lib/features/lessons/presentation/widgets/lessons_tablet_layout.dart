@@ -23,6 +23,7 @@ class LessonsTabletLayout extends StatelessWidget {
     required this.onResetFilters,
     required this.onOpen,
     required this.onDelete,
+    required this.onToggleDownload,
     required this.onRefresh,
     this.folders = const [],
     this.onOpenFolder,
@@ -33,6 +34,9 @@ class LessonsTabletLayout extends StatelessWidget {
   final bool emptyLibrary;
   final ValueChanged<Lesson> onOpen;
   final ValueChanged<Lesson> onDelete;
+
+  /// Downloads the lesson for offline study or removes the download.
+  final ValueChanged<Lesson> onToggleDownload;
   final Future<void> Function() onRefresh;
   final Widget searchField;
 
@@ -73,6 +77,7 @@ class LessonsTabletLayout extends StatelessWidget {
                       folders: folders,
                       onOpen: onOpen,
                       onDelete: onDelete,
+                      onToggleDownload: onToggleDownload,
                       onRefresh: onRefresh,
                       onOpenFolder: onOpenFolder,
                     ),
