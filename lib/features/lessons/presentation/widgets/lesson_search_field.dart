@@ -15,6 +15,7 @@ class LessonSearchField extends StatefulWidget {
 
 class _LessonSearchFieldState extends State<LessonSearchField> {
   final _controller = TextEditingController();
+  bool _hasText = false;
 
   @override
   void dispose() {
@@ -25,7 +26,7 @@ class _LessonSearchFieldState extends State<LessonSearchField> {
   void _onChanged(String value) {
     widget.onChanged(value);
     // The clear button appears and disappears with the text.
-    setState(() {});
+    setState(() => _hasText = value.isNotEmpty);
   }
 
   void _clear() {
@@ -35,14 +36,12 @@ class _LessonSearchFieldState extends State<LessonSearchField> {
 
   @override
   Widget build(BuildContext context) {
-    final hasText = _controller.text.isNotEmpty;
-
     return AppTextField(
       controller: _controller,
       hint: 'Search lessons…',
       prefixIcon: AppIcons.search,
-      suffixIcon: hasText ? AppIcons.close : null,
-      onSuffixPressed: hasText ? _clear : null,
+      suffixIcon: _hasText ? AppIcons.close : null,
+      onSuffixPressed: _hasText ? _clear : null,
       suffixSemanticLabel: 'Clear search',
       textInputAction: TextInputAction.search,
       onChanged: _onChanged,

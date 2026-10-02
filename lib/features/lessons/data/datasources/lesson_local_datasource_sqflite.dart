@@ -59,9 +59,12 @@ class SqfliteLessonLocalDataSource implements LessonLocalDataSource {
       );
       _database = db;
       return db;
-    } catch (error) {
+    } catch (error, stackTrace) {
       _opening = null;
-      throw StorageFailure('Failed to open the database', cause: error);
+      Error.throwWithStackTrace(
+        StorageFailure('Failed to open the database', cause: error),
+        stackTrace,
+      );
     }
   }
 
@@ -104,8 +107,11 @@ class SqfliteLessonLocalDataSource implements LessonLocalDataSource {
       return rows.map(_fromRow).toList(growable: false);
     } on Failure {
       rethrow;
-    } catch (error) {
-      throw StorageFailure('Failed to read the lesson list', cause: error);
+    } catch (error, stackTrace) {
+      Error.throwWithStackTrace(
+        StorageFailure('Failed to read the lesson list', cause: error),
+        stackTrace,
+      );
     }
   }
 
@@ -123,8 +129,11 @@ class SqfliteLessonLocalDataSource implements LessonLocalDataSource {
       return _fromRow(rows.first);
     } on Failure {
       rethrow;
-    } catch (error) {
-      throw StorageFailure('Failed to read lesson $id', cause: error);
+    } catch (error, stackTrace) {
+      Error.throwWithStackTrace(
+        StorageFailure('Failed to read lesson $id', cause: error),
+        stackTrace,
+      );
     }
   }
 
@@ -139,8 +148,11 @@ class SqfliteLessonLocalDataSource implements LessonLocalDataSource {
       );
     } on Failure {
       rethrow;
-    } catch (error) {
-      throw StorageFailure('Failed to save the lesson', cause: error);
+    } catch (error, stackTrace) {
+      Error.throwWithStackTrace(
+        StorageFailure('Failed to save the lesson', cause: error),
+        stackTrace,
+      );
     }
   }
 
@@ -160,8 +172,11 @@ class SqfliteLessonLocalDataSource implements LessonLocalDataSource {
       await batch.commit(noResult: true);
     } on Failure {
       rethrow;
-    } catch (error) {
-      throw StorageFailure('Failed to save the lessons', cause: error);
+    } catch (error, stackTrace) {
+      Error.throwWithStackTrace(
+        StorageFailure('Failed to save the lessons', cause: error),
+        stackTrace,
+      );
     }
   }
 
@@ -178,8 +193,11 @@ class SqfliteLessonLocalDataSource implements LessonLocalDataSource {
       await db.delete(_table, where: 'id IN ($placeholders)', whereArgs: list);
     } on Failure {
       rethrow;
-    } catch (error) {
-      throw StorageFailure('Failed to delete the lessons', cause: error);
+    } catch (error, stackTrace) {
+      Error.throwWithStackTrace(
+        StorageFailure('Failed to delete the lessons', cause: error),
+        stackTrace,
+      );
     }
   }
 
@@ -198,8 +216,11 @@ class SqfliteLessonLocalDataSource implements LessonLocalDataSource {
       };
     } on Failure {
       rethrow;
-    } catch (error) {
-      throw StorageFailure('Failed to read the lesson cache', cause: error);
+    } catch (error, stackTrace) {
+      Error.throwWithStackTrace(
+        StorageFailure('Failed to read the lesson cache', cause: error),
+        stackTrace,
+      );
     }
   }
 
@@ -217,10 +238,10 @@ class SqfliteLessonLocalDataSource implements LessonLocalDataSource {
       return rows.first['value'] as String?;
     } on Failure {
       rethrow;
-    } catch (error) {
-      throw StorageFailure(
-        'Failed to read the sync marker',
-        cause: error,
+    } catch (error, stackTrace) {
+      Error.throwWithStackTrace(
+        StorageFailure('Failed to read the sync marker', cause: error),
+        stackTrace,
       );
     }
   }
@@ -235,10 +256,10 @@ class SqfliteLessonLocalDataSource implements LessonLocalDataSource {
       }, conflictAlgorithm: ConflictAlgorithm.replace);
     } on Failure {
       rethrow;
-    } catch (error) {
-      throw StorageFailure(
-        'Failed to save the sync marker',
-        cause: error,
+    } catch (error, stackTrace) {
+      Error.throwWithStackTrace(
+        StorageFailure('Failed to save the sync marker', cause: error),
+        stackTrace,
       );
     }
   }
@@ -251,8 +272,11 @@ class SqfliteLessonLocalDataSource implements LessonLocalDataSource {
       await db.delete(_metaTable);
     } on Failure {
       rethrow;
-    } catch (error) {
-      throw StorageFailure('Failed to clear the lesson cache', cause: error);
+    } catch (error, stackTrace) {
+      Error.throwWithStackTrace(
+        StorageFailure('Failed to clear the lesson cache', cause: error),
+        stackTrace,
+      );
     }
   }
 

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:shado/theme/theme.dart';
 import 'package:shado/widgets/widgets.dart';
 
+import 'lesson_file_chip_shell.dart';
 import 'upload_progress.dart';
 
 /// Audio chip: file picking or voice-over, upload progress and the file name.
@@ -51,7 +52,7 @@ class LessonFileChip extends StatelessWidget {
     final colors = context.colors;
 
     if (isUploading) {
-      return _Shell(
+      return LessonFileChipShell(
         child: UploadProgress(
           progress: uploadProgress,
           onCancelPressed: onCancelUpload,
@@ -95,7 +96,7 @@ class LessonFileChip extends StatelessWidget {
       );
     }
 
-    return _Shell(
+    return LessonFileChipShell(
       child: Row(
         children: [
           Container(
@@ -148,33 +149,6 @@ class LessonFileChip extends StatelessWidget {
           ),
         ],
       ),
-    );
-  }
-}
-
-/// Shared chip frame: a soft surface with a dashed-looking outline.
-class _Shell extends StatelessWidget {
-  const _Shell({required this.child});
-
-  final Widget child;
-
-  @override
-  Widget build(BuildContext context) {
-    final colors = context.colors;
-    return Container(
-      padding: const EdgeInsets.symmetric(
-        horizontal: AppSpacing.s4,
-        vertical: AppSpacing.s3,
-      ),
-      decoration: BoxDecoration(
-        color: colors.surface2,
-        borderRadius: AppRadii.rMd,
-        border: Border.all(
-          color: colors.borderStrong,
-          width: AppSizes.borderThin,
-        ),
-      ),
-      child: child,
     );
   }
 }

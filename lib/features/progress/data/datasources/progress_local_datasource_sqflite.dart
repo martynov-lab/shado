@@ -49,9 +49,12 @@ class SqfliteProgressLocalDataSource implements ProgressLocalDataSource {
       );
       _database = db;
       return db;
-    } catch (error) {
+    } catch (error, stackTrace) {
       _opening = null;
-      throw StorageFailure('Failed to open the progress database', cause: error);
+      Error.throwWithStackTrace(
+        StorageFailure('Failed to open the progress database', cause: error),
+        stackTrace,
+      );
     }
   }
 
@@ -103,8 +106,11 @@ class SqfliteProgressLocalDataSource implements ProgressLocalDataSource {
           'WHERE id = 1',
         );
       });
-    } catch (error) {
-      throw StorageFailure('Failed to record the segment repeat', cause: error);
+    } catch (error, stackTrace) {
+      Error.throwWithStackTrace(
+        StorageFailure('Failed to record the segment repeat', cause: error),
+        stackTrace,
+      );
     }
   }
 
@@ -117,8 +123,11 @@ class SqfliteProgressLocalDataSource implements ProgressLocalDataSource {
         'UPDATE $_pendingTable SET listened_ms = listened_ms + ? WHERE id = 1',
         [ms],
       );
-    } catch (error) {
-      throw StorageFailure('Failed to record the minutes', cause: error);
+    } catch (error, stackTrace) {
+      Error.throwWithStackTrace(
+        StorageFailure('Failed to record the minutes', cause: error),
+        stackTrace,
+      );
     }
   }
 
@@ -136,8 +145,11 @@ class SqfliteProgressLocalDataSource implements ProgressLocalDataSource {
         for (final row in rows)
           row['segment_index']! as int: row['reps']! as int,
       };
-    } catch (error) {
-      throw StorageFailure('Failed to read the repeats', cause: error);
+    } catch (error, stackTrace) {
+      Error.throwWithStackTrace(
+        StorageFailure('Failed to read the repeats', cause: error),
+        stackTrace,
+      );
     }
   }
 
@@ -151,8 +163,11 @@ class SqfliteProgressLocalDataSource implements ProgressLocalDataSource {
         listenedMs: rows.first['listened_ms'] as int? ?? 0,
         segmentRepeats: rows.first['segment_repeats'] as int? ?? 0,
       );
-    } catch (error) {
-      throw StorageFailure('Failed to read the delta', cause: error);
+    } catch (error, stackTrace) {
+      Error.throwWithStackTrace(
+        StorageFailure('Failed to read the delta', cause: error),
+        stackTrace,
+      );
     }
   }
 
@@ -168,8 +183,11 @@ class SqfliteProgressLocalDataSource implements ProgressLocalDataSource {
         'WHERE id = 1',
         [listenedMs, segmentRepeats],
       );
-    } catch (error) {
-      throw StorageFailure('Failed to update the delta', cause: error);
+    } catch (error, stackTrace) {
+      Error.throwWithStackTrace(
+        StorageFailure('Failed to update the delta', cause: error),
+        stackTrace,
+      );
     }
   }
 
@@ -186,8 +204,11 @@ class SqfliteProgressLocalDataSource implements ProgressLocalDataSource {
       );
       if (rows.isEmpty) return false;
       return (rows.first['completed_sent'] as int? ?? 0) != 0;
-    } catch (error) {
-      throw StorageFailure('Failed to read the completed flag', cause: error);
+    } catch (error, stackTrace) {
+      Error.throwWithStackTrace(
+        StorageFailure('Failed to read the completed flag', cause: error),
+        stackTrace,
+      );
     }
   }
 
@@ -199,8 +220,11 @@ class SqfliteProgressLocalDataSource implements ProgressLocalDataSource {
         'lesson_id': lessonId,
         'completed_sent': 1,
       }, conflictAlgorithm: ConflictAlgorithm.replace);
-    } catch (error) {
-      throw StorageFailure('Failed to mark as completed', cause: error);
+    } catch (error, stackTrace) {
+      Error.throwWithStackTrace(
+        StorageFailure('Failed to mark as completed', cause: error),
+        stackTrace,
+      );
     }
   }
 
@@ -214,8 +238,11 @@ class SqfliteProgressLocalDataSource implements ProgressLocalDataSource {
         'listened_ms': 0,
         'segment_repeats': 0,
       }, where: 'id = 1');
-    } catch (error) {
-      throw StorageFailure('Failed to clear the progress', cause: error);
+    } catch (error, stackTrace) {
+      Error.throwWithStackTrace(
+        StorageFailure('Failed to clear the progress', cause: error),
+        stackTrace,
+      );
     }
   }
 }

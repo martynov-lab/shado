@@ -38,17 +38,23 @@ class _GalleryButtonsSectionState extends State<GalleryButtonsSection> {
             AppButton(
               label: 'Listen',
               icon: Icons.play_arrow_rounded,
+              // TODO: demo controls have no actions yet.
+              // ignore: no-empty-block
               onPressed: () {},
             ),
             AppButton(
               label: 'Repeat',
               variant: AppButtonVariant.secondary,
               icon: Icons.replay_rounded,
+              // TODO: demo controls have no actions yet.
+              // ignore: no-empty-block
               onPressed: () {},
             ),
             AppButton(
               label: 'Cancel',
               variant: AppButtonVariant.ghost,
+              // TODO: demo controls have no actions yet.
+              // ignore: no-empty-block
               onPressed: () {},
             ),
           ],
@@ -56,8 +62,14 @@ class _GalleryButtonsSectionState extends State<GalleryButtonsSection> {
         const GalleryLabel('Sizes'),
         GalleryWrap(
           children: [
+            // TODO: demo controls have no actions yet.
+            // ignore: no-empty-block
             AppButton(label: 'Small', size: AppButtonSize.sm, onPressed: () {}),
+            // TODO: demo controls have no actions yet.
+            // ignore: no-empty-block
             AppButton(label: 'Medium', onPressed: () {}),
+            // TODO: demo controls have no actions yet.
+            // ignore: no-empty-block
             AppButton(label: 'Large', size: AppButtonSize.lg, onPressed: () {}),
           ],
         ),
@@ -86,6 +98,8 @@ class _GalleryButtonsSectionState extends State<GalleryButtonsSection> {
           icon: Icons.headphones_rounded,
           size: AppButtonSize.lg,
           expand: true,
+          // TODO: demo controls have no actions yet.
+          // ignore: no-empty-block
           onPressed: () {},
         ),
         const GalleryLabel('Icon buttons — round and square'),
@@ -96,17 +110,23 @@ class _GalleryButtonsSectionState extends State<GalleryButtonsSection> {
               semanticLabel: 'Play',
               variant: AppButtonVariant.primary,
               size: AppButtonSize.lg,
+              // TODO: demo controls have no actions yet.
+              // ignore: no-empty-block
               onPressed: () {},
             ),
             AppIconButton(
               icon: Icons.pause_rounded,
               semanticLabel: 'Pause',
               variant: AppButtonVariant.secondary,
+              // TODO: demo controls have no actions yet.
+              // ignore: no-empty-block
               onPressed: () {},
             ),
             AppIconButton(
               icon: Icons.mic_rounded,
               semanticLabel: 'Record',
+              // TODO: demo controls have no actions yet.
+              // ignore: no-empty-block
               onPressed: () {},
             ),
             AppIconButton(
@@ -114,6 +134,8 @@ class _GalleryButtonsSectionState extends State<GalleryButtonsSection> {
               semanticLabel: 'Trim',
               shape: AppIconButtonShape.square,
               variant: AppButtonVariant.secondary,
+              // TODO: demo controls have no actions yet.
+              // ignore: no-empty-block
               onPressed: () {},
             ),
             AppIconButton(
@@ -121,6 +143,8 @@ class _GalleryButtonsSectionState extends State<GalleryButtonsSection> {
               semanticLabel: 'Settings',
               shape: AppIconButtonShape.square,
               size: AppButtonSize.sm,
+              // TODO: demo controls have no actions yet.
+              // ignore: no-empty-block
               onPressed: () {},
             ),
             const AppIconButton(

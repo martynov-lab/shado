@@ -165,8 +165,8 @@ class ApiClient {
   Future<R> _guard<R>(Future<R> Function() request) async {
     try {
       return await request();
-    } on DioException catch (error) {
-      throw mapError(error);
+    } on DioException catch (error, stackTrace) {
+      Error.throwWithStackTrace(mapError(error), stackTrace);
     }
   }
 

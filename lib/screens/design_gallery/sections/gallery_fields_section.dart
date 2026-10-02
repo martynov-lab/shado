@@ -56,6 +56,8 @@ class _GalleryFieldsSectionState extends State<GalleryFieldsSection> {
           suffixSemanticLabel: 'Show password',
           obscureText: true,
           helperText: 'Stored only on the device',
+          // TODO: demo controls have no actions yet.
+          // ignore: no-empty-block
           onSuffixPressed: () {},
         ),
         const SizedBox(height: AppSpacing.s5),

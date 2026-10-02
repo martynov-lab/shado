@@ -85,6 +85,8 @@ class FakeLessonRepository implements LessonRepository {
   Future<List<Lesson>> getLessons() async => const [];
 
   @override
+  // The fake does nothing here.
+  // ignore: no-empty-block
   Future<void> syncLessons({String language = ''}) async {}
 
   @override
@@ -135,12 +137,18 @@ class FakeLessonRepository implements LessonRepository {
   }) async => throw UnimplementedError();
 
   @override
+  // The fake does nothing here.
+  // ignore: no-empty-block
   Future<void> updateLesson(Lesson lesson, {bool? isPublic}) async {}
 
   @override
+  // The fake does nothing here.
+  // ignore: no-empty-block
   Future<void> deleteLesson(String id) async {}
 
   @override
+  // The fake does nothing here.
+  // ignore: no-empty-block
   Future<void> clearCache() async {}
 }
 

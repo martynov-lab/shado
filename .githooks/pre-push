@@ -1,0 +1,8 @@
+#!/bin/sh
+# Static analysis and tests before a push.
+set -e
+
+flutter analyze
+dcm analyze --fatal-style --fatal-warnings lib test
+dcm check-unused-files --fatal-unused lib
+flutter test

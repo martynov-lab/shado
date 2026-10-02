@@ -43,5 +43,46 @@ linter:
     # avoid_print: false  # Uncomment to disable the `avoid_print` rule
     # prefer_single_quotes: true  # Uncomment to enable the `prefer_single_quotes` rule
 
+# DCM (https://dcm.dev): run with `dcm analyze lib test`.
+dcm:
+  rules:
+    - prefer-single-widget-per-file
+    - avoid-returning-widgets
+    - avoid-passing-async-when-sync-expected
+    - avoid-throw-in-catch-block
+    - no-empty-block
+    - prefer-commenting-analyzer-ignores
+    # Off rules available on the Free plan; the number is the current violation count.
+    # - member-ordering # 833
+    # - no-magic-number # 686
+    # - newline-before-return # 339
+    # - prefer-static-class # 192
+    # - prefer-moving-to-variable # 132
+    # - avoid-non-null-assertion # 125
+    # - avoid-late-keyword # 71
+    # - prefer-match-file-name # 66
+    # - avoid-dynamic # 26
+    # - avoid-top-level-members-in-tests # 23
+    # - avoid-nested-conditional-expressions # 17
+    # - binary-expression-operand-order # 16
+    # - prefer-correct-edge-insets-constructor # 12
+    # - prefer-immutable-bloc-state # 10 (no bloc in the project)
+    # - avoid-substring # 9
+    # - prefer-extracting-callbacks # 8
+    # - prefer-sealed-bloc-state # 6 (no bloc in the project)
+    # - prefer-first # 6
+    # - double-literal-format # 4
+    # - avoid-wrapping-in-padding # 3
+    # - avoid-unused-parameters # 3
+    # - prefer-const-border-radius # 2
+    # - prefer-async-await # 2
+    # - avoid-shrink-wrap-in-lists # 2
+    # - avoid-passing-self-as-argument # 2
+    # - avoid-incomplete-copy-with # 2
+    # - prefer-sealed-bloc-events # 1 (no bloc in the project)
+    # - prefer-correct-test-file-name # 1
+    # - avoid-duplicate-test-assertions # 1
+    # - always-remove-listener # 1
+
 # Additional information about this file can be found at
 # https://dart.dev/guides/language/analysis-options

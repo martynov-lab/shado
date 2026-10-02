@@ -54,6 +54,8 @@ void main() {
               positionMs: positionMs,
               showCursor: onSeek != null,
               height: height,
+              // The callback is not under test.
+              // ignore: no-empty-block
               onBoundariesChanged: onBoundariesChanged ?? (_) {},
               onBoundaryRemoved: onBoundaryRemoved,
               onSeek: onSeek,
@@ -432,6 +434,8 @@ void main() {
         boundaries: const [0, 3000, 6000, 9000],
         trim: full,
         onBoundariesChanged: (value) => reported = value,
+        // The callback is not under test.
+        // ignore: no-empty-block
         onTrimChanged: (_) {},
       );
 

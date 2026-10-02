@@ -29,6 +29,8 @@ class GalleryListsSection extends StatelessWidget {
                   trailingTime: '04:17',
                   selected: true,
                   semanticLabel: 'Lesson 1, Small talk at the airport, playing',
+                  // TODO: demo controls have no actions yet.
+                  // ignore: no-empty-block
                   onTap: () {},
                 ),
                 AppListRow(
@@ -36,6 +38,8 @@ class GalleryListsSection extends StatelessWidget {
                   title: 'Ordering coffee',
                   subtitle: 'Everyday conversation · 8 segments',
                   trailingTime: '02:48',
+                  // TODO: demo controls have no actions yet.
+                  // ignore: no-empty-block
                   onTap: () {},
                 ),
                 AppListRow(
@@ -46,6 +50,8 @@ class GalleryListsSection extends StatelessWidget {
                     label: 'New',
                     variant: AppBadgeVariant.fresh,
                   ),
+                  // TODO: demo controls have no actions yet.
+                  // ignore: no-empty-block
                   onTap: () {},
                 ),
               ],
@@ -53,6 +59,8 @@ class GalleryListsSection extends StatelessWidget {
           ),
           const SizedBox(height: AppSpacing.s5),
           AppCard(
+            // TODO: demo controls have no actions yet.
+            // ignore: no-empty-block
             onTap: () {},
             semanticLabel: 'Progress card',
             child: Column(

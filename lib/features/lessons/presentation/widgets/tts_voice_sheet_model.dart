@@ -47,13 +47,10 @@ class TtsVoiceSheetModel extends ElementaryModel {
   ValueListenable<List<Accent>> get accents => _accents;
 
   /// Fires when a sample finishes or is stopped.
-  Stream<void> get sampleStopped => _player.playerStateStream
-      .where(
-        (state) =>
-            state.processingState == ProcessingState.completed ||
-            !state.playing,
-      )
-      .map((_) {});
+  Stream<void> get sampleStopped => _player.playerStateStream.where(
+    (state) =>
+        state.processingState == ProcessingState.completed || !state.playing,
+  );
 
   @override
   void init() {

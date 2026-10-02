@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:elementary/elementary.dart';
 import 'package:flutter/material.dart';
 
@@ -54,13 +56,13 @@ class LessonPage extends ElementaryWidget<LessonWidgetModel> {
                       state: state,
                       canEdit: wm.canEdit.value,
                       onBack: wm.back,
-                      onEdit: wm.edit,
+                      onEdit: () => unawaited(wm.edit()),
                     ),
                     transcript: LessonTranscriptPanel(text: state.playerText),
                     segmentsButton: LessonSegmentsButton(
                       currentIndex: state.currentIndex,
                       count: state.lesson.segmentCount,
-                      onTap: wm.openSegments,
+                      onTap: () => unawaited(wm.openSegments()),
                     ),
                     player: LessonPlayerPanel(
                       state: state,
@@ -74,7 +76,7 @@ class LessonPage extends ElementaryWidget<LessonWidgetModel> {
                       onPrevious: wm.previous,
                       onTogglePlay: wm.togglePlayCurrent,
                       onNext: wm.next,
-                      onPickSpeed: wm.pickSpeed,
+                      onPickSpeed: () => unawaited(wm.pickSpeed()),
                       onToggleLoop: wm.toggleLoop,
                     ),
                   ),
@@ -83,7 +85,7 @@ class LessonPage extends ElementaryWidget<LessonWidgetModel> {
                       state: state,
                       canEdit: wm.canEdit.value,
                       onBack: wm.back,
-                      onEdit: wm.edit,
+                      onEdit: () => unawaited(wm.edit()),
                     ),
                     transcript: LessonTranscriptPanel(text: state.playerText),
                     player: LessonPlayerPanel(
@@ -98,7 +100,7 @@ class LessonPage extends ElementaryWidget<LessonWidgetModel> {
                       onPrevious: wm.previous,
                       onTogglePlay: wm.togglePlayCurrent,
                       onNext: wm.next,
-                      onPickSpeed: wm.pickSpeed,
+                      onPickSpeed: () => unawaited(wm.pickSpeed()),
                       onToggleLoop: wm.toggleLoop,
                     ),
                     segments: LessonSegmentsPanel(

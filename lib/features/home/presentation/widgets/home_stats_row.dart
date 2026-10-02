@@ -20,6 +20,11 @@ class HomeStatsRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final tiles = [
+      for (final (caption, value, unit, delta) in stats)
+        HomeStat(caption: caption, value: value, unit: unit, delta: delta),
+    ];
+
     if (scrollable) {
       return SingleChildScrollView(
         scrollDirection: Axis.horizontal,
@@ -27,9 +32,9 @@ class HomeStatsRow extends StatelessWidget {
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              for (var i = 0; i < stats.length; i++) ...[
+              for (var i = 0; i < tiles.length; i++) ...[
                 if (i > 0) const SizedBox(width: AppSpacing.s3),
-                SizedBox(width: _tileWidth, child: _tile(stats[i])),
+                SizedBox(width: _tileWidth, child: tiles[i]),
               ],
             ],
           ),
@@ -42,19 +47,12 @@ class HomeStatsRow extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          for (var i = 0; i < stats.length; i++) ...[
+          for (var i = 0; i < tiles.length; i++) ...[
             if (i > 0) const SizedBox(width: AppSpacing.s3),
-            Expanded(child: _tile(stats[i])),
+            Expanded(child: tiles[i]),
           ],
         ],
       ),
     );
   }
-
-  HomeStat _tile((String, String, String?, String) stat) => HomeStat(
-    caption: stat.$1,
-    value: stat.$2,
-    unit: stat.$3,
-    delta: stat.$4,
-  );
 }

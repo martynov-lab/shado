@@ -84,6 +84,8 @@ class _FakeProgressRepository implements ProgressRepository {
   Future<List<ProgressDay>> getHistory({int days = 70}) async => const [];
 
   @override
+  // The fake does nothing here.
+  // ignore: no-empty-block
   Future<void> clear() async {}
 }
 

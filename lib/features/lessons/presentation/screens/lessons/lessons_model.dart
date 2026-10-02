@@ -99,8 +99,16 @@ class LessonsModel extends ElementaryModel {
   Future<void> refresh() async {
     await Future.wait([
       _track(_catalog.refreshLibrary()),
-      _catalog.refreshLessons().then((_) {}, onError: (Object _) {}),
+      _refreshLessonsQuietly(),
     ]);
+  }
+
+  Future<void> _refreshLessonsQuietly() async {
+    try {
+      await _catalog.refreshLessons();
+    } on Object catch (_) {
+      // The cached lessons stay.
+    }
   }
 
   Future<List<Topic>> loadTopics() => _getTopics();

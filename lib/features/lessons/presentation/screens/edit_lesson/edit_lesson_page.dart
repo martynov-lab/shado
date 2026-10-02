@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:elementary/elementary.dart';
 import 'package:flutter/material.dart';
 
@@ -40,7 +42,9 @@ class EditLessonPage extends ElementaryWidget<EditLessonWidgetModel> {
                   onBack: wm.close,
                   onCancel: wm.close,
                   primaryLabel: 'Save',
-                  onPrimary: (state?.canSave ?? false) ? wm.save : null,
+                  onPrimary: (state?.canSave ?? false)
+                      ? () => unawaited(wm.save())
+                      : null,
                   primaryLoading: state?.isSaving ?? false,
                 ),
                 Expanded(

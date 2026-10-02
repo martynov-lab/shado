@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:elementary/elementary.dart';
 import 'package:flutter/material.dart';
 
@@ -17,7 +19,7 @@ class AccountMenu extends ElementaryWidget<AccountMenuWidgetModel> {
         return PopupMenuButton<AccountMenuAction>(
           tooltip: email.isEmpty ? 'Account' : email,
           icon: const Icon(Icons.account_circle_outlined),
-          onSelected: wm.select,
+          onSelected: (action) => unawaited(wm.select(action)),
           itemBuilder: (_) => [
             if (email.isNotEmpty)
               PopupMenuItem(

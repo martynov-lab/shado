@@ -221,7 +221,7 @@ class AddLessonWidgetModel extends WidgetModel<AddLessonPage, AddLessonModel> {
           message: 'Voiceover is temporarily unavailable. Try again later.',
           variant: AppSnackbarVariant.warning,
           actionLabel: 'Retry',
-          onAction: _runSynthesis,
+          onAction: () => unawaited(_runSynthesis()),
         );
       case ApiErrorCode.ttsQuotaExceeded:
         showAppSnackbar(
@@ -229,7 +229,7 @@ class AddLessonWidgetModel extends WidgetModel<AddLessonPage, AddLessonModel> {
           message: error.message,
           variant: AppSnackbarVariant.warning,
           actionLabel: 'Upload a file',
-          onAction: pickAudio,
+          onAction: () => unawaited(pickAudio()),
         );
       case _:
         _showMessage('Failed to voice the text: ${error.message}');

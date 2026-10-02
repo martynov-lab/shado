@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shado/features/lessons/presentation/widgets/segment_splitter/marked_text_controller.dart';
 import 'package:shado/features/lessons/presentation/widgets/segment_splitter/segment_marker.dart';
+import 'package:shado/features/lessons/presentation/widgets/segment_splitter/segment_marker_chip.dart';
 import 'package:shado/features/lessons/presentation/widgets/segment_splitter/segment_splitter_field.dart';
 import 'package:shado/theme/theme.dart';
 import 'package:shado/widgets/widgets.dart';
@@ -24,8 +25,14 @@ void main() {
             child: SegmentSplitterField(
               controller: controller,
               segmentCount: segmentCount,
+              // The callback is not under test.
+              // ignore: no-empty-block
               onChanged: onChanged ?? (_) {},
+              // The callback is not under test.
+              // ignore: no-empty-block
               onMarkerInserted: onMarkerInserted ?? (_, _) {},
+              // The callback is not under test.
+              // ignore: no-empty-block
               onMarkerRemoved: onMarkerRemoved ?? (_) {},
             ),
           ),

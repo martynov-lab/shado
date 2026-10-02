@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
 import 'package:shado/core/async/async_state.dart';
@@ -55,7 +57,7 @@ class UsersAdminSection extends StatelessWidget {
           child: switch (users) {
             AsyncFailed(:final error) => AdminErrorView(
               error: error,
-              onRetryPressed: onRefresh,
+              onRetryPressed: () => unawaited(onRefresh()),
             ),
             AsyncReady(value: final data) when data.users.isEmpty => const Center(
               child: Text('No one found'),

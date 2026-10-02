@@ -60,8 +60,11 @@ class FileAudioCache implements AudioCache {
         if (_audioIdOf(entity.path) == audioId) return entity.path;
       }
       return null;
-    } catch (error) {
-      throw AudioFailure('Failed to read the audio cache', cause: error);
+    } catch (error, stackTrace) {
+      Error.throwWithStackTrace(
+        AudioFailure('Failed to read the audio cache', cause: error),
+        stackTrace,
+      );
     }
   }
 
@@ -83,8 +86,11 @@ class FileAudioCache implements AudioCache {
       if (p.equals(sourcePath, target)) return target;
       await File(sourcePath).copy(target);
       return target;
-    } catch (error) {
-      throw AudioFailure('Failed to save audio to the cache', cause: error);
+    } catch (error, stackTrace) {
+      Error.throwWithStackTrace(
+        AudioFailure('Failed to save audio to the cache', cause: error),
+        stackTrace,
+      );
     }
   }
 
@@ -113,8 +119,11 @@ class FileAudioCache implements AudioCache {
     if (path == null) return;
     try {
       await File(path).delete();
-    } catch (error) {
-      throw AudioFailure('Failed to remove audio from the cache', cause: error);
+    } catch (error, stackTrace) {
+      Error.throwWithStackTrace(
+        AudioFailure('Failed to remove audio from the cache', cause: error),
+        stackTrace,
+      );
     }
   }
 
@@ -128,8 +137,11 @@ class FileAudioCache implements AudioCache {
         if (id == null || audioIds.contains(id)) continue;
         await entity.delete();
       }
-    } catch (error) {
-      throw AudioFailure('Failed to clear the audio cache', cause: error);
+    } catch (error, stackTrace) {
+      Error.throwWithStackTrace(
+        AudioFailure('Failed to clear the audio cache', cause: error),
+        stackTrace,
+      );
     }
   }
 
@@ -153,8 +165,11 @@ class FileAudioCache implements AudioCache {
         await entry.file.delete();
         total -= entry.size;
       }
-    } catch (error) {
-      throw AudioFailure('Failed to shrink the audio cache', cause: error);
+    } catch (error, stackTrace) {
+      Error.throwWithStackTrace(
+        AudioFailure('Failed to shrink the audio cache', cause: error),
+        stackTrace,
+      );
     }
   }
 

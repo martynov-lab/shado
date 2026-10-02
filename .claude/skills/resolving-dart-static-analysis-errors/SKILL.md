@@ -1,9 +1,9 @@
 ---
 name: resolving-dart-static-analysis-errors
 description: >-
-  Fixing flutter analyze and linter errors in Shado: null safety, generics,
+  Fixing flutter analyze, linter and DCM errors in Shado: null safety, generics,
   overrides, errors after freezed/json_serializable code generation.
-  Use when going through analyzer diagnostics and after build_runner.
+  Use when going through analyzer or DCM diagnostics and after build_runner.
 ---
 
 # Analyzer errors
@@ -19,7 +19,9 @@ generated files). Code rules —
       `dart run build_runner build --force-jit` (on a conflict — `--delete-conflicting-outputs`)
 - [ ] `dart fix --apply` for mechanical fixes
 - [ ] The rest — by hand (below)
-- [ ] Verify: `flutter analyze` and `flutter test`
+- [ ] `dcm analyze --fatal-style --fatal-warnings lib test` and
+      `dcm check-unused-files --fatal-unused lib`
+- [ ] Verify: `flutter analyze`, the DCM commands and `flutter test`
 
 ## Common diagnostics
 
@@ -48,6 +50,20 @@ someone else's dead code — name it in the reply.
 
 Suppression is a last resort, only with a comment on why it is there. Do not
 disable a rule in `analysis_options.yaml` for the sake of one file.
+
+The same goes for DCM: `// ignore: <rule-id>` right above the line with the
+reason on the line above it (`prefer-commenting-analyzer-ignores` checks
+this), never `ignore_for_file`. A missing feature gets a `// TODO:` as the
+reason.
+
+## DCM
+
+Version 1.39.2 on the Free plan. Rules are listed explicitly in the `dcm:`
+section of `analysis_options.yaml`: presets and per-rule options (`exclude`)
+are silently ignored on Free. Off rules are commented out with their
+violation count. Turning a rule on or off is a project decision — only on
+request; violations of an enabled rule are fixed in code, not suppressed to
+get through.
 
 ## Code generation
 

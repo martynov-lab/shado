@@ -10,6 +10,7 @@ export 'package:shado/widgets/app_card.dart';
 export 'package:shado/widgets/app_checkbox.dart';
 export 'package:shado/widgets/app_chip.dart';
 export 'package:shado/widgets/app_dropdown.dart';
+export 'package:shado/widgets/app_dropdown_item_button.dart';
 export 'package:shado/widgets/app_field_suffix_button.dart';
 export 'package:shado/widgets/app_filter_chip.dart';
 export 'package:shado/widgets/app_focus_ring.dart';

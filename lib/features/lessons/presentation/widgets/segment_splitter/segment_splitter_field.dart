@@ -10,13 +10,10 @@ import '../../../../../core/constants/app_constants.dart';
 import 'marked_text_controller.dart';
 import 'segment_boundary_math.dart';
 import 'segment_marker.dart';
-
-/// Marker drag payload; a `null` [fromMarkerIndex] means a new marker.
-class _MarkerDrag {
-  const _MarkerDrag(this.fromMarkerIndex);
-
-  final int? fromMarkerIndex;
-}
+import 'segment_marker_drag.dart';
+import 'segment_marker_pin.dart';
+import 'segment_marker_source.dart';
+import 'segment_needle_slot.dart';
 
 /// A marker in the text and its exact place in the field.
 typedef _MarkerHit = ({int index, Rect rect});
@@ -102,7 +99,7 @@ class _SegmentSplitterFieldState extends State<SegmentSplitterField> {
       children: [
         Row(
           children: [
-            _buildSource(),
+            SegmentMarkerSource(enabled: widget.enabled, onTap: _startPlacing),
             const SizedBox(width: AppSpacing.s3),
             Expanded(
               child: Text(
@@ -126,7 +123,7 @@ class _SegmentSplitterFieldState extends State<SegmentSplitterField> {
           cursor: _placing ? SystemMouseCursors.none : MouseCursor.defer,
           onHover: _placing ? _onHover : null,
           onExit: _placing ? (_) => _setCursor(null) : null,
-          child: DragTarget<_MarkerDrag>(
+          child: DragTarget<SegmentMarkerDrag>(
             onMove: (details) => _updateIndicator(details.offset),
             onLeave: (_) => _setIndicator(null),
             onAcceptWithDetails: (details) =>
@@ -177,12 +174,36 @@ class _SegmentSplitterFieldState extends State<SegmentSplitterField> {
                   ),
                   // Needles are interactive outside placement mode and dimmed
                   // inside it.
-                  if (widget.enabled && !_placing) ..._buildPins(colors),
+                  // Markers come in order, so a marker number is its index in
+                  // the list.
+                  if (widget.enabled && !_placing)
+                    for (final (position, marker) in _markers.indexed)
+                      SegmentNeedleSlot(
+                        rect: marker.rect,
+                        color: colors.primary,
+                        hitWidth: _pinHitWidth,
+                        pin: SegmentMarkerPin(
+                          markerIndex: marker.index,
+                          number: position + 1,
+                          height: marker.rect.height,
+                          color: colors.primary,
+                          ringColor: colors.surface2,
+                          onDelete: () => widget.onMarkerRemoved(position + 1),
+                        ),
+                      ),
                   if (widget.enabled && _placing)
                     for (final marker in _markers)
-                      _needleAt(marker.rect, colors.primary, opacity: 0.4),
+                      SegmentNeedleSlot(
+                        rect: marker.rect,
+                        color: colors.primary,
+                        opacity: 0.4,
+                      ),
                   if (_indicatorRect case final rect?)
-                    _needleAt(rect, colors.primary, opacity: 0.5),
+                    SegmentNeedleSlot(
+                      rect: rect,
+                      color: colors.primary,
+                      opacity: 0.5,
+                    ),
                   if (_placing && _cursorPos != null)
                     Positioned(
                       left: _cursorPos!.dx - kNeedleCircle / 2,
@@ -211,66 +232,6 @@ class _SegmentSplitterFieldState extends State<SegmentSplitterField> {
           ),
         ),
       ],
-    );
-  }
-
-  /// Source chip: a tap enters placement mode, a drag drops a marker.
-  Widget _buildSource() {
-    if (!widget.enabled) return const SegmentMarkerChip(enabled: false);
-    return GestureDetector(
-      onTap: _startPlacing,
-      child: Draggable<_MarkerDrag>(
-        data: const _MarkerDrag(null),
-        dragAnchorStrategy: pointerDragAnchorStrategy,
-        feedback: const SegmentMarkerGhost(),
-        childWhenDragging: const SegmentMarkerChip(enabled: false),
-        child: const SegmentMarkerChip(),
-      ),
-    );
-  }
-
-  List<Widget> _buildPins(AppColors colors) {
-    return [
-      // Markers come in order, so a marker number is its index in the list.
-      for (final (position, marker) in _markers.indexed)
-        _needleAt(
-          marker.rect,
-          colors.primary,
-          hitWidth: _pinHitWidth,
-          pin: _MarkerPin(
-            markerIndex: marker.index,
-            number: position + 1,
-            height: marker.rect.height,
-            color: colors.primary,
-            ringColor: colors.surface2,
-            onDelete: () => widget.onMarkerRemoved(position + 1),
-          ),
-        ),
-    ];
-  }
-
-  /// Positions a needle or its handle by the marker caret rectangle.
-  Widget _needleAt(
-    Rect rect,
-    Color color, {
-    double opacity = 1,
-    double hitWidth = kNeedleCircle,
-    Widget? pin,
-  }) {
-    return Positioned(
-      left: rect.left - hitWidth / 2,
-      top: rect.top,
-      width: hitWidth,
-      height: rect.height,
-      child:
-          pin ??
-          IgnorePointer(
-            child: SegmentMarkerNeedle(
-              height: rect.height,
-              color: color,
-              opacity: opacity,
-            ),
-          ),
     );
   }
 
@@ -355,7 +316,7 @@ class _SegmentSplitterFieldState extends State<SegmentSplitterField> {
     _setIndicator(offset == null ? null : _caretRect(offset));
   }
 
-  void _onAccept(_MarkerDrag drag, Offset globalPosition) {
+  void _onAccept(SegmentMarkerDrag drag, Offset globalPosition) {
     final offset = _offsetForPoint(globalPosition);
     _setIndicator(null);
     if (offset == null) return;
@@ -386,50 +347,5 @@ class _SegmentSplitterFieldState extends State<SegmentSplitterField> {
     } else {
       widget.onChanged(text);
     }
-  }
-}
-
-/// Needle handle over the text: a drag moves the marker, a tap removes it.
-class _MarkerPin extends StatelessWidget {
-  const _MarkerPin({
-    required this.markerIndex,
-    required this.number,
-    required this.height,
-    required this.color,
-    required this.ringColor,
-    required this.onDelete,
-  });
-
-  /// Index of the marker character in the text.
-  final int markerIndex;
-
-  /// Marker number shown inside the dot.
-  final int number;
-  final double height;
-  final Color color;
-  final Color ringColor;
-  final VoidCallback onDelete;
-
-  @override
-  Widget build(BuildContext context) {
-    return Draggable<_MarkerDrag>(
-      data: _MarkerDrag(markerIndex),
-      dragAnchorStrategy: pointerDragAnchorStrategy,
-      feedback: SegmentMarkerNeedle(height: height, color: color),
-      childWhenDragging: const SizedBox.shrink(),
-      onDraggableCanceled: (_, _) => onDelete(),
-      child: GestureDetector(
-        behavior: HitTestBehavior.opaque,
-        onTap: onDelete,
-        child: Center(
-          child: SegmentMarkerNeedle(
-            height: height,
-            color: color,
-            ringColor: ringColor,
-            number: number,
-          ),
-        ),
-      ),
-    );
   }
 }

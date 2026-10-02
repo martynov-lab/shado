@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
 import 'package:shado/screens/design_gallery/gallery_speed.dart';
@@ -40,7 +42,7 @@ class _GalleryOverlaysSectionState extends State<GalleryOverlaysSection> {
               label: 'Modal sheet',
               icon: Icons.vertical_align_bottom_rounded,
               variant: AppButtonVariant.secondary,
-              onPressed: _showSheet,
+              onPressed: () => unawaited(_showSheet()),
             ),
           ],
         ),
@@ -55,6 +57,8 @@ class _GalleryOverlaysSectionState extends State<GalleryOverlaysSection> {
                 context,
                 message: 'Draft saved',
                 actionLabel: 'Open',
+                // TODO: demo controls have no actions yet.
+                // ignore: no-empty-block
                 onAction: () {},
               ),
             ),
@@ -87,6 +91,8 @@ class _GalleryOverlaysSectionState extends State<GalleryOverlaysSection> {
                 message: 'Failed to read the audio file',
                 variant: AppSnackbarVariant.danger,
                 actionLabel: 'Try again',
+                // TODO: demo controls have no actions yet.
+                // ignore: no-empty-block
                 onAction: () {},
               ),
             ),

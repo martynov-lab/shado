@@ -347,6 +347,8 @@ class FakeAudioCache implements AudioCache {
   }
 
   @override
+  // The fake does nothing here.
+  // ignore: no-empty-block
   Future<void> trimToSize(int maxBytes) async {}
 
   @override

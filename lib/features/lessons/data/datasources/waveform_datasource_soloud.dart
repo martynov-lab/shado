@@ -43,6 +43,8 @@ class SoLoudWaveformDataSource implements WaveformDataSource {
 
     final Float32List envelope;
     try {
+      // SoLoud has no stable API for reading samples yet.
+      // ignore: experimental_member_use
       envelope = await SoLoud.instance.readSamplesFromFile(
         audioPath,
         resolution,
@@ -51,8 +53,11 @@ class SoLoudWaveformDataSource implements WaveformDataSource {
         endTime: range == null ? -1 : range.endMs / 1000,
         average: true,
       );
-    } catch (error) {
-      throw AudioFailure('Failed to build the waveform', cause: error);
+    } catch (error, stackTrace) {
+      Error.throwWithStackTrace(
+        AudioFailure('Failed to build the waveform', cause: error),
+        stackTrace,
+      );
     }
 
     final normalized = _normalize(envelope);

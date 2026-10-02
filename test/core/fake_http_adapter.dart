@@ -27,6 +27,8 @@ class FakeHttpAdapter implements HttpClientAdapter {
   }
 
   @override
+  // The fake does nothing here.
+  // ignore: no-empty-block
   void close({bool force = false}) {}
 }
 

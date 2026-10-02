@@ -28,17 +28,25 @@ class _GalleryChipsSectionState extends State<GalleryChipsSection> {
         const GalleryLabel('Chips — primary and soft fill'),
         GalleryWrap(
           children: [
+            // TODO: demo controls have no actions yet.
+            // ignore: no-empty-block
             AppChip(label: 'Selected', selected: true, onTap: () {}),
             AppChip(
               label: 'Selected soft',
               selected: true,
               style: AppChipStyle.onSoft,
+              // TODO: demo controls have no actions yet.
+              // ignore: no-empty-block
               onTap: () {},
             ),
+            // TODO: demo controls have no actions yet.
+            // ignore: no-empty-block
             AppChip(label: 'Not selected', onTap: () {}),
             AppChip(
               label: 'With icon',
               icon: Icons.local_fire_department_rounded,
+              // TODO: demo controls have no actions yet.
+              // ignore: no-empty-block
               onTap: () {},
             ),
             const AppChip(label: 'Plain label'),

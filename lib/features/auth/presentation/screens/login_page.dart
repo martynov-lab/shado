@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:elementary/elementary.dart';
 import 'package:flutter/material.dart';
 
@@ -44,7 +46,7 @@ class LoginPage extends ElementaryWidget<LoginWidgetModel> {
               submitLabel: wm.submitLabel,
               onObscureToggled: wm.togglePasswordVisibility,
               onTermsChanged: wm.setTermsAccepted,
-              onSubmitPressed: wm.submit,
+              onSubmitPressed: () => unawaited(wm.submit()),
               onSwitchPressed: form.isBusy ? null : wm.switchMode,
             ),
           ),

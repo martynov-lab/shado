@@ -77,8 +77,11 @@ class JustWaveformDataSource implements WaveformDataSource {
         (event) => event.waveform != null,
       );
       return result.waveform!;
-    } catch (error) {
-      throw AudioFailure('Failed to build the waveform', cause: error);
+    } catch (error, stackTrace) {
+      Error.throwWithStackTrace(
+        AudioFailure('Failed to build the waveform', cause: error),
+        stackTrace,
+      );
     } finally {
       if (!cache) {
         try {

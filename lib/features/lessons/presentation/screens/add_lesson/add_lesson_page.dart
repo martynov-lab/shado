@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:elementary/elementary.dart';
 import 'package:flutter/material.dart';
 
@@ -51,7 +53,9 @@ class AddLessonPage extends ElementaryWidget<AddLessonWidgetModel> {
                   title: 'New lesson',
                   onBack: wm.back,
                   primaryLabel: 'Create lesson',
-                  onPrimary: wm.canSubmit.value ? wm.submit : null,
+                  onPrimary: wm.canSubmit.value
+                      ? () => unawaited(wm.submit())
+                      : null,
                   primaryLoading: state.isSubmitting,
                 ),
                 Expanded(
@@ -70,7 +74,9 @@ class AddLessonPage extends ElementaryWidget<AddLessonWidgetModel> {
                           isUploading: state.isUploading,
                           uploadProgress: state.uploadProgress,
                           isSynthesizing: state.isSynthesizing,
-                          onPick: isBusy ? null : wm.pickAudio,
+                          onPick: isBusy
+                              ? null
+                              : () => unawaited(wm.pickAudio()),
                           onCancelUpload: wm.cancelUpload,
                           canSynthesize: isOwner,
                           // There is nothing to voice over for empty text.
@@ -78,7 +84,7 @@ class AddLessonPage extends ElementaryWidget<AddLessonWidgetModel> {
                               isBusy ||
                                   SynthesizeTts.prepareText(state.text).isEmpty
                               ? null
-                              : wm.synthesize,
+                              : () => unawaited(wm.synthesize()),
                           helper:
                               'Supported: ${allowedAudioExtensions.join(', ')}, '
                               'up to ${AppConfig.maxUploadBytes ~/ (1024 * 1024)} MB',

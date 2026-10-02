@@ -47,9 +47,9 @@ Platforms: Android, iOS, Windows, Linux.
 9. **Changes are surgical.** Change only what was asked; do not "improve"
    neighboring code. Name unrelated issues you notice in words, do not touch
    them.
-10. **Done = verified.** After a code change: `flutter analyze` and
-   `flutter test` (or at least the affected test files). A failing test is
-   reported plainly, not as "mostly works".
+10. **Done = verified.** After a code change: `flutter analyze`, the two DCM
+   commands below and `flutter test` (or at least the affected test files).
+   A failing test is reported plainly, not as "mostly works".
 11. **No new dependencies in `pubspec.yaml` without asking.**
 
 ## Documents
@@ -75,10 +75,15 @@ Step-by-step scenarios live in `.claude/skills/`: a new screen
 flutter pub get
 dart run build_runner build --force-jit   # freezed + json_serializable
 flutter analyze
+dcm analyze --fatal-style --fatal-warnings lib test   # DCM rules from analysis_options.yaml
+dcm check-unused-files --fatal-unused lib
 flutter test
 flutter test test/domain/lesson_test.dart
 flutter run --dart-define=SHADO_API_BASE_URL=http://10.0.2.2:8080
 ```
+
+`.githooks/pre-push` runs the analysis and tests before a push; enable it once
+with `git config core.hooksPath .githooks`.
 
 `test/live/live_contract.dart` requires a live server and is deliberately not
 picked up by a regular `flutter test`. `integration_test/` requires a running

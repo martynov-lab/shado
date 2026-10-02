@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:elementary/elementary.dart';
 import 'package:flutter/material.dart';
 
@@ -37,10 +39,11 @@ class FolderPage extends ElementaryWidget<FolderWidgetModel> {
               canModify: wm.canModify.value,
               onBack: wm.back,
               onOpenLesson: wm.openLesson,
-              onRename: wm.rename,
-              onDelete: wm.delete,
-              onAddLessons: wm.addLessons,
-              onRemoveLesson: wm.removeLesson,
+              onRename: () => unawaited(wm.rename()),
+              onDelete: () => unawaited(wm.delete()),
+              onAddLessons: () => unawaited(wm.addLessons()),
+              onRemoveLesson: (lessonId) =>
+                  unawaited(wm.removeLesson(lessonId)),
               onRefresh: wm.refresh,
             ),
             _ => const Center(child: CircularProgressIndicator()),

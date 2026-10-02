@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:elementary/elementary.dart';
 import 'package:flutter/material.dart';
 
@@ -23,7 +25,7 @@ class ProgressPage extends ElementaryWidget<ProgressWidgetModel> {
       builder: (_, overview, _) => switch (overview) {
         AsyncFailed(:final error) => ProgressErrorView(
           message: '$error',
-          onRetry: wm.retry,
+          onRetry: () => unawaited(wm.retry()),
         ),
         AsyncReady(:final value) => AppAdaptiveLayout(
           mobile: (_) =>

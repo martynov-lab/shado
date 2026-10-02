@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:elementary/elementary.dart';
 import 'package:flutter/material.dart';
 
@@ -24,7 +26,7 @@ class AdminUsersPage extends ElementaryWidget<AdminUsersWidgetModel> {
             scrollController: wm.scrollController,
             onSearchChanged: wm.search,
             onRefresh: wm.refresh,
-            onRoleChanged: wm.setRole,
+            onRoleChanged: (user, role) => unawaited(wm.setRole(user, role)),
           ),
         ),
       ),

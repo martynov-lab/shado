@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:elementary/elementary.dart';
 import 'package:flutter/material.dart';
 
@@ -26,14 +28,14 @@ class SettingsPage extends ElementaryWidget<SettingsWidgetModel> {
         name: profile.name,
         email: profile.email,
         languageLabel: profile.languageLabel,
-        onEdit: wm.editName,
+        onEdit: () => unawaited(wm.editName()),
       ),
     );
     final playback = ValueListenableBuilder(
       valueListenable: wm.playbackSettings,
       builder: (_, settings, _) => PlaybackSettingsSection(
         settings: settings,
-        onEditSpeed: wm.editDefaultSpeed,
+        onEditSpeed: () => unawaited(wm.editDefaultSpeed()),
         onRepeatsChanged: wm.setRepeatsInCycle,
         onPauseChanged: wm.setPauseBetweenRepeats,
         onCountdownChanged: wm.setCountdownEnabled,
@@ -43,7 +45,7 @@ class SettingsPage extends ElementaryWidget<SettingsWidgetModel> {
       valueListenable: wm.dailyGoalMinutes,
       builder: (_, goal, _) => LearningSettingsSection(
         dailyGoalMinutes: goal,
-        onEditGoal: wm.editDailyGoal,
+        onEditGoal: () => unawaited(wm.editDailyGoal()),
       ),
     );
     final language = ListenableBuilder(
@@ -55,8 +57,8 @@ class SettingsPage extends ElementaryWidget<SettingsWidgetModel> {
       builder: (_, _) => LanguageSettingsSection(
         studiedLanguageLabel: wm.studiedLanguageLabel.value,
         ttsVoiceLabel: wm.isOwner.value ? wm.ttsVoiceLabel.value : null,
-        onEditLanguage: wm.editStudiedLanguage,
-        onEditVoice: wm.editTtsVoice,
+        onEditLanguage: () => unawaited(wm.editStudiedLanguage()),
+        onEditVoice: () => unawaited(wm.editTtsVoice()),
       ),
     );
 

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:elementary/elementary.dart';
 import 'package:flutter/material.dart';
 
@@ -37,7 +39,7 @@ class LessonsPage extends ElementaryWidget<LessonsWidgetModel> {
         final filterBar = LessonsFilterBar(
           filter: filter,
           groups: wm.groups.value,
-          onOpenGroup: wm.openFilterGroup,
+          onOpenGroup: (group) => unawaited(wm.openFilterGroup(group)),
           onClear: wm.clearFilters,
         );
         final filterPanel = LessonsFilterPanel(
@@ -51,12 +53,14 @@ class LessonsPage extends ElementaryWidget<LessonsWidgetModel> {
             onChanged: wm.setFilter,
           ),
         );
-        final onCreateFolder = wm.canAuthor.value ? wm.createFolder : null;
+        final onCreateFolder = wm.canAuthor.value
+            ? () => unawaited(wm.createFolder())
+            : null;
 
         return switch (wm.content.value) {
           AsyncFailed(:final error) => LessonsErrorView(
             message: '$error',
-            onRetryPressed: wm.retry,
+            onRetryPressed: () => unawaited(wm.retry()),
           ),
           AsyncReady(value: final content) => AppAdaptiveLayout(
             mobile: (_) => LessonsMobileLayout(
@@ -67,7 +71,7 @@ class LessonsPage extends ElementaryWidget<LessonsWidgetModel> {
               filters: filterBar,
               onResetFilters: wm.clearFilters,
               onOpen: wm.openLesson,
-              onDelete: wm.deleteLesson,
+              onDelete: (lesson) => unawaited(wm.deleteLesson(lesson)),
               onRefresh: wm.refresh,
               onOpenFolder: wm.openFolder,
               onCreateFolder: onCreateFolder,
@@ -80,7 +84,7 @@ class LessonsPage extends ElementaryWidget<LessonsWidgetModel> {
               filters: filterBar,
               onResetFilters: wm.clearFilters,
               onOpen: wm.openLesson,
-              onDelete: wm.deleteLesson,
+              onDelete: (lesson) => unawaited(wm.deleteLesson(lesson)),
               onRefresh: wm.refresh,
               onOpenFolder: wm.openFolder,
               onCreateFolder: onCreateFolder,
@@ -93,7 +97,7 @@ class LessonsPage extends ElementaryWidget<LessonsWidgetModel> {
               filters: filterPanel,
               onResetFilters: wm.clearFilters,
               onOpen: wm.openLesson,
-              onDelete: wm.deleteLesson,
+              onDelete: (lesson) => unawaited(wm.deleteLesson(lesson)),
               onRefresh: wm.refresh,
               onOpenFolder: wm.openFolder,
               onCreateFolder: onCreateFolder,

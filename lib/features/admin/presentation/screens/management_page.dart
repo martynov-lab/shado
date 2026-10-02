@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:elementary/elementary.dart';
 import 'package:flutter/material.dart';
 
@@ -27,7 +29,7 @@ class ManagementPage extends ElementaryWidget<ManagementWidgetModel> {
                 valueListenable: wm.completionReps,
                 builder: (_, reps, _) => CompletionThresholdSection(
                   reps: reps,
-                  onEdit: wm.editCompletionReps,
+                  onEdit: () => unawaited(wm.editCompletionReps()),
                 ),
               ),
             ),
@@ -36,10 +38,10 @@ class ManagementPage extends ElementaryWidget<ManagementWidgetModel> {
                 valueListenable: wm.topics,
                 builder: (_, topics, _) => TopicsAdminSection(
                   topics: topics,
-                  onAdd: wm.createTopic,
-                  onRename: wm.renameTopic,
-                  onDelete: wm.deleteTopic,
-                  onRetry: wm.reloadTopics,
+                  onAdd: () => unawaited(wm.createTopic()),
+                  onRename: (topic) => unawaited(wm.renameTopic(topic)),
+                  onDelete: (topic) => unawaited(wm.deleteTopic(topic)),
+                  onRetry: () => unawaited(wm.reloadTopics()),
                 ),
               ),
             ),

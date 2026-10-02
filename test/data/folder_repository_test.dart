@@ -59,6 +59,8 @@ class FakeFolderRemote implements FolderRemoteDataSource {
   }
 
   @override
+  // The fake does nothing here.
+  // ignore: no-empty-block
   Future<void> deleteFolder(String id) async {}
 
   @override
