@@ -27,17 +27,17 @@ class AuthTermsCheckbox extends StatelessWidget {
         AppCheckbox(
           value: value,
           onChanged: onChanged,
-          semanticLabel: 'Принимаю условия использования',
+          semanticLabel: 'I accept the terms of use',
         ),
         Expanded(
           child: Text.rich(
             TextSpan(
               style: AppText.caption.copyWith(color: colors.text2),
               children: [
-                const TextSpan(text: 'Принимаю '),
-                TextSpan(text: 'условия использования', style: linkStyle),
-                const TextSpan(text: ' и '),
-                TextSpan(text: 'политику конфиденциальности', style: linkStyle),
+                const TextSpan(text: 'I accept the '),
+                TextSpan(text: 'terms of use', style: linkStyle),
+                const TextSpan(text: ' and the '),
+                TextSpan(text: 'privacy policy', style: linkStyle),
               ],
             ),
           ),

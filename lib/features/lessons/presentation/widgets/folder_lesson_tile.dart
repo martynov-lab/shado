@@ -63,7 +63,7 @@ class FolderLessonTile extends StatelessWidget {
                               AppIcons.lock,
                               size: AppSizes.iconSm,
                               color: colors.text2,
-                              semanticLabel: 'Приватный',
+                              semanticLabel: 'Private',
                             ),
                           ],
                         ],
@@ -87,7 +87,7 @@ class FolderLessonTile extends StatelessWidget {
                   const SizedBox(width: AppSpacing.s1),
                   AppIconButton(
                     icon: Icons.close,
-                    semanticLabel: 'Убрать из папки',
+                    semanticLabel: 'Remove from folder',
                     size: AppButtonSize.sm,
                     onPressed: onRemove,
                   ),

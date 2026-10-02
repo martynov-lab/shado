@@ -1,17 +1,17 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:shado/theme/theme.dart';
 import 'package:shado/widgets/widgets.dart';
 
-import '../controllers/lessons_filter.dart';
 
 /// Shown when no lesson matches the search and filters.
-class LessonsNoResults extends ConsumerWidget {
-  const LessonsNoResults({super.key});
+class LessonsNoResults extends StatelessWidget {
+  const LessonsNoResults({super.key, required this.onResetFilters});
+
+  final VoidCallback onResetFilters;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     final colors = context.colors;
 
     return Center(
@@ -20,23 +20,27 @@ class LessonsNoResults extends ConsumerWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            AppIcon(AppIcons.search, size: AppSizes.iconLg, color: colors.text3),
+            AppIcon(
+              AppIcons.search,
+              size: AppSizes.iconLg,
+              color: colors.text3,
+            ),
             const SizedBox(height: AppSpacing.s3),
             Text(
-              'Ничего не найдено',
+              'Nothing found',
               style: AppText.title.copyWith(color: colors.text),
             ),
             const SizedBox(height: AppSpacing.s2),
             Text(
-              'Измените запрос или сбросьте фильтры.',
+              'Change the query or reset the filters.',
               textAlign: TextAlign.center,
               style: AppText.body.copyWith(color: colors.text2),
             ),
             const SizedBox(height: AppSpacing.s4),
             AppButton(
-              label: 'Сбросить фильтры',
+              label: 'Reset filters',
               variant: AppButtonVariant.secondary,
-              onPressed: ref.read(lessonsFilterProvider.notifier).clearFilters,
+              onPressed: onResetFilters,
             ),
           ],
         ),

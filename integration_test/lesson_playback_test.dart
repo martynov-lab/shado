@@ -4,24 +4,28 @@ import 'dart:io';
 import 'dart:math' as math;
 import 'dart:typed_data';
 
+import 'package:flutter/foundation.dart' show ValueNotifier;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
 import 'package:just_audio/just_audio.dart';
 import 'package:path/path.dart' as p;
 import 'package:shado/core/platform/platform_setup.dart';
+import 'package:shado/di/lesson_providers.dart';
+import 'package:shado/di/progress_providers.dart';
+import 'package:shado/di/settings_providers.dart';
 import 'package:shado/features/lessons/domain/entities/audio_upload.dart';
 import 'package:shado/features/lessons/domain/entities/lesson.dart';
 import 'package:shado/features/lessons/domain/entities/lesson_category.dart';
 import 'package:shado/features/lessons/domain/entities/segment.dart';
+import 'package:shado/features/lessons/domain/entities/segment_range.dart';
 import 'package:shado/features/lessons/domain/entities/tts_quota.dart';
 import 'package:shado/features/lessons/domain/entities/tts_voice.dart';
-import 'package:shado/features/lessons/domain/entities/segment_range.dart';
 import 'package:shado/features/lessons/domain/repositories/lesson_repository.dart';
-import 'package:shado/features/lessons/presentation/controllers/lesson_controller.dart';
-import 'package:shado/features/lessons/presentation/controllers/lesson_providers.dart';
+import 'package:shado/features/lessons/presentation/screens/lesson/lesson_playback.dart';
+import 'package:shado/features/lessons/presentation/screens/lesson/lesson_state.dart';
 import 'package:shado/features/settings/domain/entities/playback_settings.dart';
-import 'package:shado/features/settings/presentation/controllers/playback_settings_controller.dart';
+import 'package:shado/features/settings/domain/repositories/playback_settings_repository.dart';
 
 /// A flat tone of [seconds] seconds; only the positions matter.
 File _writeTestWav(String path, {int seconds = 4}) {
@@ -123,13 +127,16 @@ class _OneLessonRepository implements LessonRepository {
 }
 
 /// Fixed settings: an endless loop with no pause and no countdown.
-class _FixedPlaybackSettings extends PlaybackSettingsController {
+class _FixedPlaybackSettings implements PlaybackSettingsRepository {
   @override
-  Future<PlaybackSettings> build() async => const PlaybackSettings(
+  Future<PlaybackSettings> load() async => const PlaybackSettings(
     repeatsInCycle: 1000,
     pauseBetweenRepeats: false,
     countdownEnabled: false,
   );
+
+  @override
+  Future<void> save(PlaybackSettings settings) async {}
 }
 
 void main() {
@@ -167,13 +174,29 @@ void main() {
     ],
   );
 
-  /// A ready lesson controller with a live player.
-  Future<LessonController> openLesson(ProviderContainer container) async {
-    final provider = lessonControllerProvider(lessonId);
-    // autoDispose: with no listener the controller and player close at once.
-    container.listen(provider, (_, _) {});
-    await container.read(provider.future);
-    return container.read(provider.notifier);
+  /// The lesson opened on a live player; `state` keeps the latest screen state.
+  Future<
+    ({
+      LessonPlayback playback,
+      AudioPlayer player,
+      ValueNotifier<LessonState?> state,
+    })
+  >
+  openLesson(ProviderContainer container) async {
+    final player = AudioPlayer();
+    final state = ValueNotifier<LessonState?>(null);
+    final playback = LessonPlayback(
+      lessonId: lessonId,
+      player: player,
+      reporter: container.read(progressReporterProvider),
+      settings: container.read(playbackSettingsServiceProvider),
+      threshold: container.read(completionThresholdServiceProvider),
+      onChanged: (value) => state.value = value,
+      onPosition: (_) {},
+    );
+    addTearDown(playback.dispose);
+    await playback.open(await container.read(getLessonProvider)(lessonId));
+    return (playback: playback, player: player, state: state);
   }
 
   ProviderContainer buildContainer() {
@@ -182,8 +205,8 @@ void main() {
         lessonRepositoryProvider.overrideWithValue(
           _OneLessonRepository(buildLesson()),
         ),
-        playbackSettingsControllerProvider.overrideWith(
-          _FixedPlaybackSettings.new,
+        playbackSettingsRepositoryProvider.overrideWithValue(
+          _FixedPlaybackSettings(),
         ),
       ],
     );
@@ -206,22 +229,19 @@ void main() {
     'a looped selection cycles inside itself, not from the start of the file',
     () async {
       final container = buildContainer();
-      final controller = await openLesson(container);
-      final provider = lessonControllerProvider(lessonId);
+      final lesson = await openLesson(container);
+      final controller = lesson.playback;
 
       // The very case: the second and third segments (1000..3000 ms).
       controller.toggleSelection(1);
       controller.toggleSelection(2);
-      expect(
-        container.read(provider).value?.selection,
-        const SegmentRange(1, 2),
-      );
+      expect(lesson.state.value?.selection, const SegmentRange(1, 2));
 
       // The loaded range loops as a single fragment.
       controller.toggleLoop();
       controller.finishSelecting();
       await controller.togglePlayCurrent();
-      final player = container.read(lessonAudioPlayerProvider(lessonId));
+      final player = lesson.player;
 
       // Two 2000 ms loops with room for the start-up.
       final trace = await tracePositions(player, 5200);
@@ -257,9 +277,9 @@ void main() {
     'a segment without a loop plays itself out and rewinds to its own start',
     () async {
       final container = buildContainer();
-      final controller = await openLesson(container);
-      final provider = lessonControllerProvider(lessonId);
-      final player = container.read(lessonAudioPlayerProvider(lessonId));
+      final lesson = await openLesson(container);
+      final controller = lesson.playback;
+      final player = lesson.player;
 
       // The second segment: 1000..2000 ms.
       await controller.togglePlay(1);
@@ -275,7 +295,7 @@ void main() {
         lessThanOrEqualTo(2000 + toleranceMs),
         reason: 'the segment ran into the next one: $trace',
       );
-      expect(container.read(provider).value?.isPlaying, isFalse);
+      expect(lesson.state.value?.isPlaying, isFalse);
       expect(player.position.inMilliseconds, closeTo(1000, toleranceMs));
     },
     timeout: const Timeout(Duration(seconds: 90)),
@@ -285,8 +305,9 @@ void main() {
     '"Next segment" plays the new segment at once without finishing the old one',
     () async {
       final container = buildContainer();
-      final controller = await openLesson(container);
-      final player = container.read(lessonAudioPlayerProvider(lessonId));
+      final lesson = await openLesson(container);
+      final controller = lesson.playback;
+      final player = lesson.player;
 
       // Play the first segment (0..1000) and let it run for a bit.
       await controller.togglePlay(0);

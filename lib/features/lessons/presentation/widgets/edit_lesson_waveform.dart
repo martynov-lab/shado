@@ -1,19 +1,18 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:shado/core/utils/duration_format.dart';
 
 import '../../domain/entities/audio_trim.dart';
-import '../controllers/edit_lesson_controller.dart';
+import '../screens/edit_lesson/edit_lesson_state.dart';
 import 'marker_at_playhead_checkbox.dart';
 import 'waveform_card.dart';
 
 /// Waveform with a playhead and a play button on the editor screen.
-class EditLessonWaveform extends ConsumerWidget {
+class EditLessonWaveform extends StatelessWidget {
   const EditLessonWaveform({
     super.key,
-    required this.lessonId,
     required this.state,
+    required this.playheadMs,
     required this.onPlayPressed,
     required this.onSeek,
     required this.onBoundariesChanged,
@@ -25,10 +24,10 @@ class EditLessonWaveform extends ConsumerWidget {
     required this.onTrimCancel,
   });
 
-  /// Needed only to subscribe to the position of its own player.
-  final String lessonId;
-
   final EditLessonState state;
+
+  /// Playhead in file milliseconds.
+  final int playheadMs;
 
   final VoidCallback onPlayPressed;
   final ValueChanged<int> onSeek;
@@ -43,13 +42,7 @@ class EditLessonWaveform extends ConsumerWidget {
   final VoidCallback onTrimCancel;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    // While playing, the player drives the playhead.
-    final position = ref.watch(editPlaybackPositionProvider(lessonId)).value;
-    final playheadMs = state.isPlaying
-        ? (position?.inMilliseconds ?? state.playheadMs)
-        : state.playheadMs;
-
+  Widget build(BuildContext context) {
     // Time is shown from the left edge of what is currently in the window.
     final view = state.view;
 
@@ -78,7 +71,7 @@ class EditLessonWaveform extends ConsumerWidget {
         Row(
           children: [
             IconButton.filled(
-              tooltip: state.isPlaying ? 'Пауза' : 'Играть с ползунка',
+              tooltip: state.isPlaying ? 'Pause' : 'Play from playhead',
               onPressed: onPlayPressed,
               icon: Icon(state.isPlaying ? Icons.pause : Icons.play_arrow),
             ),

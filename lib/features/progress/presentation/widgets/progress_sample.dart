@@ -3,44 +3,44 @@ import 'package:shado/widgets/widgets.dart';
 /// Demo data for the progress screen.
 abstract final class ProgressSample {
   static const int streakDays = 12;
-  static const String streakHint = 'Лучшая серия — 21 день. Не пропускай сегодня!';
-  static const String streakHintShort = 'Лучшая серия — 21 день';
+  static const String streakHint = 'Best streak — 21 days. Do not skip today!';
+  static const String streakHintShort = 'Best streak — 21 days';
 
   /// Daily minutes as a percentage of the maximum.
   static const List<int> weekMinutes = [40, 65, 52, 88, 30, 58, 72];
-  static const List<String> weekDays = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'];
+  static const List<String> weekDays = ['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su'];
   static const int todayIndex = 6;
 
   static const String levelFrom = 'B1';
   static const String levelTo = 'B2';
   static const double levelRatio = 0.64;
-  static const String levelHint = 'Осталось ~40 уроков до следующего уровня';
-  static const String levelHintShort = '~40 уроков до B2';
+  static const String levelHint = '~40 lessons left to the next level';
+  static const String levelHintShort = '~40 lessons to B2';
 
   static const double weekGoalRatio = 0.70;
-  static const String weekGoalValue = '126 / 180 мин';
-  static const String weekGoalRemaining = 'осталось 54 мин';
+  static const String weekGoalValue = '126 / 180 min';
+  static const String weekGoalRemaining = '54 min left';
 
   /// Stat tile sets.
   static const List<(String, String, String?, String)> weekStats = [
-    ('За неделю', '126', 'мин', '+18%'),
-    ('Повторов', '240', null, '+32'),
-    ('Уроков', '14', null, '4 активных'),
+    ('This week', '126', 'min', '+18%'),
+    ('Repeats', '240', null, '+32'),
+    ('Lessons', '14', null, '4 active'),
   ];
 
   static const List<(String, String, String?, String)> weekStatsWide = [
-    ('За неделю', '126', 'мин', '+18% к прошлой'),
-    ('Повторов', '240', null, '+32 сегодня'),
-    ('Уроков', '14', null, '4 активных'),
-    ('Ср. в день', '18', 'мин', 'цель 15'),
+    ('This week', '126', 'min', '+18% vs last'),
+    ('Repeats', '240', null, '+32 today'),
+    ('Lessons', '14', null, '4 active'),
+    ('Daily avg', '18', 'min', 'goal 15'),
   ];
 
   /// Achievements: icon, label and a locked flag.
   static const List<(AppIcons, String, bool)> achievements = [
-    (AppIcons.flame, 'Серия 7', false),
-    (AppIcons.check, '100 повторов', false),
-    (AppIcons.lock, 'Серия 30', true),
-    (AppIcons.lock, '10 уроков', true),
+    (AppIcons.flame, 'Streak 7', false),
+    (AppIcons.check, '100 repeats', false),
+    (AppIcons.lock, 'Streak 30', true),
+    (AppIcons.lock, '10 lessons', true),
   ];
 
   /// Ten weeks of activity: 70 cells with minutes per day.

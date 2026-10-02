@@ -1,49 +1,49 @@
 ---
 name: dart-pattern-matching
 description: >-
-  Паттерн-матчинг Dart 3 в Shado: switch-выражения, sealed-классы, разбор
-  AsyncValue, деструктуризация записей и коллекций, guard-условия,
-  исчерпываемость. Использовать при рефакторинге ветвлений и разборе структур.
+  Dart 3 pattern matching in Shado: switch expressions, sealed classes,
+  handling AsyncState, destructuring records and collections, guard clauses,
+  exhaustiveness. Use when refactoring branching and taking structures apart.
 ---
 
-# Паттерн-матчинг
+# Pattern matching
 
-Стиль кода — [docs/code_style.md](../../../docs/code_style.md).
+Code style — [docs/code_style.md](../../../docs/code_style.md).
 
-## Что выбрать
+## What to choose
 
-| Задача | Средство |
+| Task | Tool |
 | --- | --- |
-| Вернуть значение по варианту | `switch`-выражение |
-| Сделать побочный эффект | `switch`-инструкция |
-| Разобрать `AsyncValue` | `switch` по `AsyncData`/`AsyncError`/`AsyncLoading` |
-| Тип-специфичное поведение | `sealed` + объектные паттерны |
-| Несколько значений из функции | запись `(a, b)` и деструктуризация |
-| Диапазоны и доп. условия | реляционные паттерны и `when` |
-| Общее тело для нескольких веток | логическое «или» `\|\|` |
+| Return a value per variant | a `switch` expression |
+| Perform a side effect | a `switch` statement |
+| Handle an `AsyncState` | a `switch` over `AsyncReady`/`AsyncFailed`/`AsyncPending` |
+| Type-specific behavior | `sealed` + object patterns |
+| Several values from a function | a record `(a, b)` and destructuring |
+| Ranges and extra conditions | relational patterns and `when` |
+| A shared body for several cases | logical "or" `\|\|` |
 
-## Правила
+## Rules
 
-* По `sealed`-типу и `enum` switch исчерпывающий, без `default`: новый вариант
-  должен ломать сборку, а не поведение.
-* `when` — только для условий, которые нельзя выразить паттерном.
-* В `if`-цепочке из трёх и более веток по одному значению — переходим на switch.
-* Читаемость важнее краткости: вложенность паттернов глубже двух уровней
-  разбираем на шаги.
+* A switch over a `sealed` type or an `enum` is exhaustive, without `default`:
+  a new variant must break the build, not the behavior.
+* `when` — only for conditions that cannot be expressed as a pattern.
+* An `if` chain of three or more branches on one value becomes a switch.
+* Readability beats brevity: patterns nested deeper than two levels are split
+  into steps.
 
-## Примеры
+## Examples
 
-Состояние экрана:
+Screen state:
 
 ```dart
 body: switch (state) {
-  AsyncLoading() => const Center(child: CircularProgressIndicator()),
-  AsyncError(:final error) => LessonLoadError(error: error),
-  AsyncData(:final value) => LessonView(state: value),
+  AsyncPending() => const Center(child: CircularProgressIndicator()),
+  AsyncFailed(:final error) => LessonLoadError(error: error),
+  AsyncReady(:final value) => LessonView(state: value),
 },
 ```
 
-Варианты компонента:
+Component variants:
 
 ```dart
 Color foreground(AppColors c) => switch (this) {
@@ -61,7 +61,7 @@ Color background(AppColors c, {bool hovered = false, bool pressed = false}) =>
     };
 ```
 
-Несколько значений сразу:
+Several values at once:
 
 ```dart
 final (double height, double padding, TextStyle style) = switch (size) {
@@ -71,7 +71,7 @@ final (double height, double padding, TextStyle style) = switch (size) {
 };
 ```
 
-Разбор JSON там, где нет DTO (в самих DTO — `json_serializable` и явные касты):
+Parsing JSON where there is no DTO (DTOs themselves use `json_serializable` and explicit casts):
 
 ```dart
 if (payload case {'topic': {'id': final String id, 'name': final String name}}) {
@@ -79,7 +79,7 @@ if (payload case {'topic': {'id': final String id, 'name': final String name}}) 
 }
 ```
 
-Обработка клавиш:
+Key handling:
 
 ```dart
 switch (event.logicalKey) {
@@ -92,7 +92,8 @@ switch (event.logicalKey) {
 }
 ```
 
-## Проверка
+## Verification
 
-Исчерпываемость проверяет анализатор: после правки sealed-иерархии или enum'а —
-`flutter analyze` (скилл `resolving-dart-static-analysis-errors`).
+The analyzer checks exhaustiveness: after changing a sealed hierarchy or an
+enum, run `flutter analyze` (the `resolving-dart-static-analysis-errors`
+skill).

@@ -68,13 +68,13 @@ class UpdateProfile {
     final trimmedName = name?.trim();
     if (trimmedName != null && trimmedName.length > kMaxNameLength) {
       throw const ValidationFailure(
-        'Имя не длиннее $kMaxNameLength символов',
+        'Name must be at most $kMaxNameLength characters',
       );
     }
     if (dailyGoalMinutes != null &&
         (dailyGoalMinutes < 0 || dailyGoalMinutes > kMaxDailyGoalMinutes)) {
       throw const ValidationFailure(
-        'Дневная цель — от 0 до $kMaxDailyGoalMinutes минут',
+        'Daily goal must be from 0 to $kMaxDailyGoalMinutes minutes',
       );
     }
     return _repository.updateProfile(
@@ -89,14 +89,14 @@ class UpdateProfile {
 void validateCredentials({required String email, required String password}) {
   final normalized = email.trim();
   if (normalized.isEmpty) {
-    throw const ValidationFailure('Введите email');
+    throw const ValidationFailure('Enter your email');
   }
   if (!isValidEmail(normalized)) {
-    throw const ValidationFailure('Похоже, в email опечатка');
+    throw const ValidationFailure('The email looks mistyped');
   }
   if (password.length < kMinPasswordLength) {
     throw const ValidationFailure(
-      'Пароль должен быть не короче $kMinPasswordLength символов',
+      'Password must be at least $kMinPasswordLength characters',
     );
   }
 }

@@ -1,25 +1,22 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:shado/theme/theme.dart';
 
-import '../controllers/lesson_providers.dart';
+/// Caption with the voice-overs left today.
+class TtsQuotaHint extends StatelessWidget {
+  const TtsQuotaHint({super.key, required this.remaining});
 
-/// Caption with today remaining voice-overs; hidden on error or no limit.
-class TtsQuotaHint extends ConsumerWidget {
-  const TtsQuotaHint({super.key});
+  /// `null` hides the caption: no limit or the quota is unknown.
+  final int? remaining;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final day = ref.watch(ttsQuotaProvider).value?.day;
-    final remaining = day?.remaining;
-    if (day == null || day.isUnlimited || remaining == null) {
-      return const SizedBox.shrink();
-    }
+  Widget build(BuildContext context) {
+    final remaining = this.remaining;
+    if (remaining == null) return const SizedBox.shrink();
     return Padding(
       padding: const EdgeInsets.only(top: AppSpacing.s2),
       child: Text(
-        'Осталось озвучек сегодня: $remaining',
+        'Voiceovers left today: $remaining',
         style: AppText.caption.copyWith(color: context.colors.text3),
       ),
     );

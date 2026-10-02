@@ -8,18 +8,18 @@ class DeleteTopicDialog extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => AlertDialog(
-    title: const Text('Удалить тему?'),
+    title: const Text('Delete topic?'),
     content: Text(
-      'Уроки темы «$topicName» переедут на «Other», а сама тема исчезнет.',
+      'Lessons of the topic "$topicName" will move to "Other", and the topic will be removed.',
     ),
     actions: [
       TextButton(
         onPressed: () => Navigator.of(context).pop(false),
-        child: const Text('Отмена'),
+        child: const Text('Cancel'),
       ),
       FilledButton(
         onPressed: () => Navigator.of(context).pop(true),
-        child: const Text('Удалить'),
+        child: const Text('Delete'),
       ),
     ],
   );

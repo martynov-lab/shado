@@ -45,7 +45,7 @@ class StreakHeroCard extends StatelessWidget {
                         style: AppText.displayLg.copyWith(color: onGrad),
                       ),
                       TextSpan(
-                        text: ' дней подряд',
+                        text: ' days in a row',
                         style: AppText.title.copyWith(
                           color: onGrad.withValues(alpha: 0.85),
                         ),

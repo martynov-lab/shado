@@ -4,19 +4,21 @@ import 'package:shado/theme/theme.dart';
 
 import '../../domain/entities/folder.dart';
 import '../../domain/entities/lesson.dart';
+import '../screens/lessons/lesson_list_item.dart';
 import 'empty_lessons_view.dart';
-import 'lessons_filter_panel.dart';
 import 'lessons_header.dart';
 import 'lessons_list_view.dart';
 import 'lessons_no_results.dart';
-import 'lesson_search_field.dart';
 
 /// Desktop lesson list: a row column and a filter panel on the right.
 class LessonsDesktopLayout extends StatelessWidget {
   const LessonsDesktopLayout({
     super.key,
-    required this.lessons,
+    required this.items,
     required this.emptyLibrary,
+    required this.searchField,
+    required this.filters,
+    required this.onResetFilters,
     required this.onOpen,
     required this.onDelete,
     required this.onRefresh,
@@ -25,14 +27,20 @@ class LessonsDesktopLayout extends StatelessWidget {
     this.onCreateFolder,
   });
 
-  final List<Lesson> lessons;
+  final List<LessonListItem> items;
   final bool emptyLibrary;
-  final void Function(Lesson) onOpen;
-  final void Function(Lesson) onDelete;
+  final ValueChanged<Lesson> onOpen;
+  final ValueChanged<Lesson> onDelete;
   final Future<void> Function() onRefresh;
+  final Widget searchField;
+
+  /// The filter chips on narrow screens, the filter panel on desktop.
+  final Widget filters;
+
+  final VoidCallback onResetFilters;
 
   final List<Folder> folders;
-  final void Function(Folder)? onOpenFolder;
+  final ValueChanged<Folder>? onOpenFolder;
   final VoidCallback? onCreateFolder;
 
   @override
@@ -49,22 +57,22 @@ class LessonsDesktopLayout extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   LessonsHeader(
-                    count: lessons.length,
+                    count: items.length,
                     trailing: emptyLibrary
                         ? null
-                        : const SizedBox(
+                        : SizedBox(
                             width: 280,
-                            child: LessonSearchField(),
+                            child: searchField,
                           ),
                   ),
                   const SizedBox(height: AppSpacing.s5),
                   Expanded(
                     child: emptyLibrary
                         ? const EmptyLessonsView()
-                        : lessons.isEmpty && folders.isEmpty
-                        ? const LessonsNoResults()
+                        : items.isEmpty && folders.isEmpty
+                        ? LessonsNoResults(onResetFilters: onResetFilters)
                         : LessonsListView(
-                            lessons: lessons,
+                            items: items,
                             folders: folders,
                             onOpen: onOpen,
                             onDelete: onDelete,
@@ -78,7 +86,7 @@ class LessonsDesktopLayout extends StatelessWidget {
             ),
           ),
         ),
-        if (!emptyLibrary) const LessonsFilterPanel(),
+        if (!emptyLibrary) filters,
       ],
     );
   }

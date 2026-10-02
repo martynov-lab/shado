@@ -49,8 +49,8 @@
 		<true/>
 		<key>UIViewControllerBasedStatusBarAppearance</key>
 		<false/>
-		<!-- Фоновый режим аудио: без него iOS не отдаёт медиа-события гарнитуры
-		     (в т.ч. двойной/тройной клик EarPods) и глушит звук при свёрнутом окне. -->
+		<!-- Background audio mode: without it iOS does not deliver headset media events
+		     (including EarPods double/triple clicks) and mutes sound when minimized. -->
 		<key>UIBackgroundModes</key>
 		<array>
 			<string>audio</string>

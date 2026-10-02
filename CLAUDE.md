@@ -1,64 +1,75 @@
 # CLAUDE.md
 
-Инструкции для Claude Code по работе с этим репозиторием. Здесь — только
-инварианты, которые действуют всегда. Подробности — в `docs/` (ссылки ниже).
+Instructions for Claude Code on working with this repository. Only the
+invariants that always apply live here. Details are in `docs/` (links below).
 
-## Проект
+## Project
 
-Shado — Flutter-приложение для изучения английского по технике shadowing.
-Что делает продукт и как устроены данные — в [README.md](README.md).
+Shado is a Flutter app for learning English with the shadowing technique.
+What the product does and how the data is organized — see [README.md](README.md).
 
-Стек: Flutter, Dart SDK `^3.10.7` (dot shorthand и паттерны доступны),
-**Riverpod 3** (состояние и DI), go_router,
+Stack: Flutter, Dart SDK `^3.10.7` (dot shorthand and patterns are available),
+**Riverpod 3** (DI and shared services), **Elementary** (screens), go_router,
 freezed + json_serializable, dio, sqflite, just_audio.
-Платформы: Android, iOS, Windows, Linux.
+Platforms: Android, iOS, Windows, Linux.
 
-## Инварианты
+## Invariants
 
-1. **Чистая архитектура, feature-first.** Зависимости направлены внутрь:
-   `presentation → domain ← data`. Домен не знает ни о Flutter, ни о сети, ни о
-   БД.
-2. **Состояние — только Riverpod.** Никаких других менеджеров состояния
-   (Elementary, bloc, GetX) — их не добавляем без отдельного решения.
-3. **Один виджет — один файл.** Вложенные виджеты не живут приватными классами
-   в файле экрана: каждый выносится в свой файл в `widgets/`.
-4. **Виджеты не строятся методами.** Никаких `Widget _buildHeader()` — вместо
-   метода отдельный класс виджета, встроенный в родителя.
-5. **Логика — не в виджете.** Бизнес-логика в `domain` (use case) и `data`,
-   логика экрана — в контроллере (`presentation/controllers`). В `build`
-   остаётся только разметка.
-6. **UI собирается из дизайн-системы.** Компоненты — `lib/widgets/`, токены —
-   `lib/theme/` (`context.colors`, `AppSpacing`, `AppRadii`, `AppText`).
-   Цифры отступов и литералы цветов в виджетах не пишем.
-7. **Комментарии и идентификаторы — по-английски**, строки UI — по-русски.
-   Комментарий — одна строка (две — предел) и называет функционал: что делает
-   класс, метод, поле. Без рассуждений, обоснований, разбора альтернатив,
-   примеров и пересказа кода. Очевидное не комментируем.
-8. **Правки хирургические.** Меняем только то, что просили; соседний код не
-   «улучшаем». Замеченное постороннее — называем словами, не трогаем руками.
-9. **Готово = проверено.** После правки кода: `flutter analyze` и
-   `flutter test` (или хотя бы затронутые файлы тестов). Падающий тест —
-   говорим об этом прямо, а не «в основном работает».
-10. **Не добавляем зависимости в `pubspec.yaml` без спроса.**
+1. **Clean architecture, feature-first.** Dependencies point inward:
+   `presentation → domain ← data`. The domain knows nothing about Flutter, the
+   network or the database.
+2. **Riverpod for DI and shared services, Elementary for screens.** A screen
+   is Widget + WidgetModel + Model (see
+   [state_management.md](docs/state_management.md#screens-elementary)).
+   Shared state lives in domain services. No other state managers (bloc,
+   GetX) without a separate decision. All providers live in
+   `lib/di/`.
+3. **One widget — one file.** No private widget classes next to the main
+   one, layout variants included (`_TwoColumnSections`): each moves to its own
+   file in `widgets/`.
+4. **Widgets do not get the WidgetModel.** Only the page's `build(wm)` reads
+   the WM: it subscribes with `ValueListenableBuilder` and passes values and
+   callbacks down. Layout widgets (views, columns) take finished sections as
+   `Widget` parameters.
+5. **Widgets are not built by methods.** No `Widget _buildHeader()` — instead
+   of a method, a separate widget class embedded in the parent.
+6. **Logic is not in the widget.** Business logic lives in `domain` (use case)
+   and `data`, screen logic — in the WidgetModel. Only markup stays in
+   `build`.
+7. **UI is assembled from the design system.** Components — `lib/widgets/`,
+   tokens — `lib/theme/` (`context.colors`, `AppSpacing`, `AppRadii`,
+   `AppText`). No raw padding numbers or color literals in widgets.
+8. **Everything is in English** — comments, identifiers and UI strings.
+   A comment is one line (two at most) and names the functionality: what the
+   class, method or field does. No reasoning, justifications, comparison of
+   alternatives, examples or retelling of the code. The obvious is not
+   commented.
+9. **Changes are surgical.** Change only what was asked; do not "improve"
+   neighboring code. Name unrelated issues you notice in words, do not touch
+   them.
+10. **Done = verified.** After a code change: `flutter analyze` and
+   `flutter test` (or at least the affected test files). A failing test is
+   reported plainly, not as "mostly works".
+11. **No new dependencies in `pubspec.yaml` without asking.**
 
-## Документы
+## Documents
 
-| Документ | О чём |
+| Document | About |
 | --- | --- |
-| [docs/code_style.md](docs/code_style.md) | Именование, импорты, типизация, модели, ошибки |
-| [docs/ui_guidelines.md](docs/ui_guidelines.md) | Виджеты, экраны, компоновка, дизайн-система, навигация |
-| [docs/state_management.md](docs/state_management.md) | Riverpod: провайдеры, контроллеры, состояние, DI |
-| [docs/testing.md](docs/testing.md) | Виды тестов, именование, подделки, запуск |
-| [docs/CLIENT_SPEC.md](docs/CLIENT_SPEC.md) | Контракт с сервером |
-| [docs/RUNNING.md](docs/RUNNING.md) | Запуск на разных платформах |
+| [docs/code_style.md](docs/code_style.md) | Naming, imports, typing, models, errors |
+| [docs/ui_guidelines.md](docs/ui_guidelines.md) | Widgets, screens, layout, design system, navigation |
+| [docs/state_management.md](docs/state_management.md) | Screens (Elementary), services, DI (Riverpod) |
+| [docs/testing.md](docs/testing.md) | Kinds of tests, naming, fakes, running |
+| [docs/CLIENT_SPEC.md](docs/CLIENT_SPEC.md) | The contract with the server |
+| [docs/RUNNING.md](docs/RUNNING.md) | Running on different platforms |
 
-Пошаговые сценарии лежат в `.claude/skills/`: новый экран
-(`adding-a-screen`), состояние (`riverpod-state`), тесты
-(`writing-flutter-tests`), ошибки анализатора
-(`resolving-dart-static-analysis-errors`), паттерн-матчинг
+Step-by-step scenarios live in `.claude/skills/`: a new screen
+(`adding-a-screen`), services and DI (`services-and-di`), tests
+(`writing-flutter-tests`), analyzer errors
+(`resolving-dart-static-analysis-errors`), pattern matching
 (`dart-pattern-matching`).
 
-## Команды
+## Commands
 
 ```bash
 flutter pub get
@@ -69,17 +80,17 @@ flutter test test/domain/lesson_test.dart
 flutter run --dart-define=SHADO_API_BASE_URL=http://10.0.2.2:8080
 ```
 
-`test/live/live_contract.dart` требует живого сервера и намеренно не
-подхватывается обычным `flutter test`. `integration_test/` требует запущенной
-платформы (`-d windows`).
+`test/live/live_contract.dart` requires a live server and is deliberately not
+picked up by a regular `flutter test`. `integration_test/` requires a running
+platform (`-d windows`).
 
-## Как работать над задачей
+## How to work on a task
 
-1. Сначала прочитать соседний код той же фичи и повторить его приёмы —
-   единообразие важнее личных предпочтений.
-2. Если у задачи несколько прочтений — назвать их и спросить, а не выбирать
-   молча. Если решение очевидно — принять его и сказать какое.
-3. Минимальный код, решающий задачу. Без «заготовок на будущее», лишних
-   абстракций и обработки невозможных случаев.
-4. Успех формулировать проверяемо: «добавить валидацию» → «тест на неверный
-   ввод падает до правки и проходит после».
+1. First read the neighboring code of the same feature and follow its patterns
+   — consistency beats personal preference.
+2. If a task has several readings, name them and ask instead of choosing
+   silently. If the solution is obvious, take it and say which one.
+3. The minimal code that solves the task. No "groundwork for the future",
+   extra abstractions or handling of impossible cases.
+4. State success verifiably: "add validation" → "a test with invalid input
+   fails before the change and passes after".

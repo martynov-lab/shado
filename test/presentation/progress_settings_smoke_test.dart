@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:shado/di/progress_providers.dart';
 import 'package:shado/features/progress/data/datasources/progress_remote_datasource.dart';
 import 'package:shado/features/progress/domain/entities/progress_summary.dart';
-import 'package:shado/features/progress/presentation/controllers/progress_providers.dart';
-import 'package:shado/features/progress/presentation/pages/progress_page.dart';
-import 'package:shado/features/settings/presentation/pages/settings_page.dart';
+import 'package:shado/features/progress/presentation/screens/progress_page.dart';
+import 'package:shado/features/settings/presentation/screens/settings_page.dart';
 import 'package:shado/theme/theme.dart';
 
 /// Progress offline: summary and history return instantly, without dio.

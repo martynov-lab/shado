@@ -61,7 +61,7 @@ class FileAudioCache implements AudioCache {
       }
       return null;
     } catch (error) {
-      throw AudioFailure('Не удалось прочитать кеш аудио', cause: error);
+      throw AudioFailure('Failed to read the audio cache', cause: error);
     }
   }
 
@@ -84,7 +84,7 @@ class FileAudioCache implements AudioCache {
       await File(sourcePath).copy(target);
       return target;
     } catch (error) {
-      throw AudioFailure('Не удалось сохранить аудио в кеш', cause: error);
+      throw AudioFailure('Failed to save audio to the cache', cause: error);
     }
   }
 
@@ -114,7 +114,7 @@ class FileAudioCache implements AudioCache {
     try {
       await File(path).delete();
     } catch (error) {
-      throw AudioFailure('Не удалось удалить аудио из кеша', cause: error);
+      throw AudioFailure('Failed to remove audio from the cache', cause: error);
     }
   }
 
@@ -129,7 +129,7 @@ class FileAudioCache implements AudioCache {
         await entity.delete();
       }
     } catch (error) {
-      throw AudioFailure('Не удалось почистить кеш аудио', cause: error);
+      throw AudioFailure('Failed to clear the audio cache', cause: error);
     }
   }
 
@@ -154,7 +154,7 @@ class FileAudioCache implements AudioCache {
         total -= entry.size;
       }
     } catch (error) {
-      throw AudioFailure('Не удалось ужать кеш аудио', cause: error);
+      throw AudioFailure('Failed to shrink the audio cache', cause: error);
     }
   }
 

@@ -11,7 +11,7 @@ class CreateFolder {
   Future<Folder> call({required String title, bool? isPublic}) {
     final trimmed = title.trim();
     if (trimmed.isEmpty) {
-      throw const ValidationFailure('Введите название папки');
+      throw const ValidationFailure('Enter a folder name');
     }
     return _repository.createFolder(title: trimmed, isPublic: isPublic);
   }

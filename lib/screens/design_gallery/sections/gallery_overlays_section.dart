@@ -20,7 +20,7 @@ class _GalleryOverlaysSectionState extends State<GalleryOverlaysSection> {
 
   Future<void> _showSheet() => showAppBottomSheet<void>(
     context: context,
-    title: 'Скорость воспроизведения',
+    title: 'Playback speed',
     builder: (context) => GallerySpeedSheet(
       initialSpeed: _speed,
       onSpeedChanged: (speed) => setState(() => _speed = speed),
@@ -29,64 +29,64 @@ class _GalleryOverlaysSectionState extends State<GalleryOverlaysSection> {
 
   @override
   Widget build(BuildContext context) => GallerySection(
-    title: 'Оверлеи',
-    caption: 'Модальный лист и всплывающие сообщения',
+    title: 'Overlays',
+    caption: 'Modal sheet and toast messages',
     child: Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         GalleryWrap(
           children: [
             AppButton(
-              label: 'Модальный лист',
+              label: 'Modal sheet',
               icon: Icons.vertical_align_bottom_rounded,
               variant: AppButtonVariant.secondary,
               onPressed: _showSheet,
             ),
           ],
         ),
-        const GalleryLabel('Сообщения'),
+        const GalleryLabel('Messages'),
         GalleryWrap(
           children: [
             AppButton(
-              label: 'Обычное',
+              label: 'Regular',
               size: AppButtonSize.sm,
               variant: AppButtonVariant.ghost,
               onPressed: () => showAppSnackbar(
                 context,
-                message: 'Черновик сохранён',
-                actionLabel: 'Открыть',
+                message: 'Draft saved',
+                actionLabel: 'Open',
                 onAction: () {},
               ),
             ),
             AppButton(
-              label: 'Успех',
+              label: 'Success',
               size: AppButtonSize.sm,
               variant: AppButtonVariant.ghost,
               onPressed: () => showAppSnackbar(
                 context,
-                message: 'Урок сохранён',
+                message: 'Lesson saved',
                 variant: AppSnackbarVariant.success,
               ),
             ),
             AppButton(
-              label: 'Внимание',
+              label: 'Warning',
               size: AppButtonSize.sm,
               variant: AppButtonVariant.ghost,
               onPressed: () => showAppSnackbar(
                 context,
-                message: 'Микрофон занят другим приложением',
+                message: 'The microphone is busy with another app',
                 variant: AppSnackbarVariant.warning,
               ),
             ),
             AppButton(
-              label: 'Ошибка',
+              label: 'Error',
               size: AppButtonSize.sm,
               variant: AppButtonVariant.ghost,
               onPressed: () => showAppSnackbar(
                 context,
-                message: 'Не удалось прочитать аудиофайл',
+                message: 'Failed to read the audio file',
                 variant: AppSnackbarVariant.danger,
-                actionLabel: 'Ещё раз',
+                actionLabel: 'Try again',
                 onAction: () {},
               ),
             ),

@@ -14,37 +14,37 @@ class GalleryChipsSection extends StatefulWidget {
 }
 
 class _GalleryChipsSectionState extends State<GalleryChipsSection> {
-  static const _tags = ['Идиомы', 'Произношение', 'Аудирование', 'Бизнес'];
+  static const _tags = ['Idioms', 'Pronunciation', 'Listening', 'Business'];
 
-  final Set<String> _filters = {'Идиомы'};
+  final Set<String> _filters = {'Idioms'};
 
   @override
   Widget build(BuildContext context) => GallerySection(
-    title: 'Чипы и бейджи',
-    caption: 'Ярлыки, фильтры и статусы',
+    title: 'Chips and badges',
+    caption: 'Labels, filters and statuses',
     child: Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const GalleryLabel('Чипы — заливка primary и мягкая'),
+        const GalleryLabel('Chips — primary and soft fill'),
         GalleryWrap(
           children: [
-            AppChip(label: 'Выбран', selected: true, onTap: () {}),
+            AppChip(label: 'Selected', selected: true, onTap: () {}),
             AppChip(
-              label: 'Выбран мягко',
+              label: 'Selected soft',
               selected: true,
               style: AppChipStyle.onSoft,
               onTap: () {},
             ),
-            AppChip(label: 'Не выбран', onTap: () {}),
+            AppChip(label: 'Not selected', onTap: () {}),
             AppChip(
-              label: 'С иконкой',
+              label: 'With icon',
               icon: Icons.local_fire_department_rounded,
               onTap: () {},
             ),
-            const AppChip(label: 'Просто ярлык'),
+            const AppChip(label: 'Plain label'),
           ],
         ),
-        const GalleryLabel('Фильтры — множественный выбор'),
+        const GalleryLabel('Filters — multiple choice'),
         GalleryWrap(
           children: [
             for (final tag in _tags)
@@ -61,17 +61,17 @@ class _GalleryChipsSectionState extends State<GalleryChipsSection> {
               ),
           ],
         ),
-        const GalleryLabel('Бейджи'),
+        const GalleryLabel('Badges'),
         const GalleryWrap(
           children: [
-            AppBadge(label: 'Новый', icon: Icons.auto_awesome_rounded),
+            AppBadge(label: 'New', icon: Icons.auto_awesome_rounded),
             AppBadge(
-              label: 'Пора повторить',
+              label: 'Time to review',
               variant: AppBadgeVariant.due,
               icon: Icons.schedule_rounded,
             ),
             AppBadge(
-              label: 'Серия 7 дней',
+              label: '7-day streak',
               variant: AppBadgeVariant.hot,
               icon: Icons.local_fire_department_rounded,
             ),

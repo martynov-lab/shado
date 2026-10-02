@@ -8,19 +8,19 @@ class DeleteFolderDialog extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => AlertDialog(
-    title: const Text('Удалить папку?'),
+    title: const Text('Delete folder?'),
     content: Text(
-      '«$folderTitle» будет удалена. Уроки останутся в каталоге — снимется '
-      'только группировка.',
+      '"$folderTitle" will be deleted. The lessons stay in the catalog — only '
+      'the grouping is removed.',
     ),
     actions: [
       TextButton(
         onPressed: () => Navigator.of(context).pop(false),
-        child: const Text('Отмена'),
+        child: const Text('Cancel'),
       ),
       FilledButton(
         onPressed: () => Navigator.of(context).pop(true),
-        child: const Text('Удалить'),
+        child: const Text('Delete'),
       ),
     ],
   );

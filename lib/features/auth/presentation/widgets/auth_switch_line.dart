@@ -22,12 +22,12 @@ class AuthSwitchLine extends StatelessWidget {
       children: [
         Flexible(
           child: Text(
-            isRegistration ? 'Уже есть аккаунт?' : 'Нет аккаунта?',
+            isRegistration ? 'Already have an account?' : 'No account?',
             style: AppText.caption.copyWith(color: context.colors.text3),
           ),
         ),
         AuthLink(
-          label: isRegistration ? 'Войти' : 'Зарегистрироваться',
+          label: isRegistration ? 'Sign in' : 'Sign up',
           onPressed: onPressed,
         ),
       ],

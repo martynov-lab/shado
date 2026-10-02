@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 
 import 'package:shado/theme/theme.dart';
-import 'package:shado/widgets/widgets.dart';
 
 import '../../../lessons/presentation/widgets/account_menu.dart';
+import 'home_streak_chip.dart';
 
 /// Home header: greeting, streak chip and the account menu.
 class HomeGreeting extends StatelessWidget {
@@ -28,7 +28,7 @@ class HomeGreeting extends StatelessWidget {
   final bool showAccount;
 
   /// Caption under the greeting.
-  static const String _subtitle = 'Продолжим тренировку слуха?';
+  static const String _subtitle = 'Ready to keep training your ear?';
 
   @override
   Widget build(BuildContext context) {
@@ -43,7 +43,7 @@ class HomeGreeting extends StatelessWidget {
             children: [
               Text.rich(
                 TextSpan(
-                  text: 'Привет, ',
+                  text: 'Hi, ',
                   style: AppText.h2.copyWith(color: colors.text),
                   children: [
                     TextSpan(
@@ -64,46 +64,11 @@ class HomeGreeting extends StatelessWidget {
           ),
         ),
         if (showStreak) ...[
-          _StreakChip(days: streakDays),
+          HomeStreakChip(days: streakDays),
           const SizedBox(width: AppSpacing.s2),
         ],
         if (showAccount) const AccountMenu(),
       ],
-    );
-  }
-}
-
-/// Streak chip: a flame icon and the number of days in a row.
-class _StreakChip extends StatelessWidget {
-  const _StreakChip({required this.days});
-
-  final int days;
-
-  @override
-  Widget build(BuildContext context) {
-    final colors = context.colors;
-
-    return Container(
-      padding: const EdgeInsets.symmetric(
-        horizontal: AppSpacing.s3,
-        vertical: AppSpacing.s2,
-      ),
-      decoration: BoxDecoration(
-        color: colors.surface,
-        borderRadius: AppRadii.rPill,
-        border: Border.all(color: colors.border, width: AppSizes.borderThin),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          AppIcon(AppIcons.flame, size: AppSizes.iconSm, color: colors.warning),
-          const SizedBox(width: AppSpacing.s2),
-          Text(
-            '$days дней',
-            style: AppText.label.copyWith(color: colors.text),
-          ),
-        ],
-      ),
     );
   }
 }

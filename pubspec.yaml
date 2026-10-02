@@ -1,7 +1,7 @@
 name: shado
 description: "An application for learning English using the shadowing technique"
 publish_to: 'none'
-version: 0.0.12
+version: 0.0.14
 
 environment:
   sdk: ^3.10.7
@@ -32,6 +32,7 @@ dependencies:
   shared_preferences: ^2.5.0
   flutter_svg: ^2.3.0
   audio_service: ^0.18.19
+  elementary: ^3.2.1
 
 dependency_overrides:
   path_provider_foundation: 2.5.1
@@ -47,21 +48,21 @@ dev_dependencies:
   json_serializable: ">=6.9.0 <6.12.0"
   flutter_lints: ^6.0.0
 
-  # Генераторы бренд-ассетов: запускаются вручную, в рантайме не участвуют.
-  # Иконки — dart run flutter_launcher_icons; сплеш — dart run flutter_native_splash:create.
+  # Brand asset generators: run manually, not used at runtime.
+  # Icons — dart run flutter_launcher_icons; splash — dart run flutter_native_splash:create.
   flutter_launcher_icons: ^0.14.1
   flutter_native_splash: ^2.4.1
 
 flutter:
   uses-material-design: true
 
-  # Иконки набора Shadowing — SVG-ассеты (см. lib/widgets/app_icon.dart).
-  # Имя файла = значение в AppIcons, поэтому папка подключается целиком.
+  # Shadowing icon set — SVG assets (see lib/widgets/app_icon.dart).
+  # File name = AppIcons value, so the whole folder is included.
   assets:
     - assets/app_icons/
 
-  # Шрифты кладём бандлом, а не через google_fonts: приложение должно
-  # открываться и рисоваться одинаково без сети.
+  # Fonts are bundled rather than loaded via google_fonts: the app must
+  # open and render the same way offline.
   fonts:
     - family: Sora
       fonts:
@@ -89,15 +90,15 @@ flutter:
         - asset: assets/fonts/JetBrainsMono-Medium.ttf
           weight: 500
 
-# Иконка приложения — из вектора на фирменном градиенте (violet → magenta → pink).
-# Перегенерировать: dart run flutter_launcher_icons
+# App icon — from a vector on the brand gradient (violet → magenta → pink).
+# Regenerate: dart run flutter_launcher_icons
 flutter_launcher_icons:
   image_path: "assets/branding/app_icon_1024.png"
   android: "ic_launcher"
   ios: true
   remove_alpha_ios: true
   min_sdk_android: 21
-  # Адаптивная иконка Android: фон-градиент + белый знак-волна.
+  # Android adaptive icon: gradient background + white wave mark.
   adaptive_icon_background: "assets/branding/adaptive_background.png"
   adaptive_icon_foreground: "assets/branding/adaptive_foreground.png"
   adaptive_icon_monochrome: "assets/branding/adaptive_foreground.png" # themed icons, Android 13+
@@ -111,8 +112,8 @@ flutter_launcher_icons:
     image_path: "assets/branding/app_icon_1024.png"
     icon_size: 256
 
-# Нативный сплеш: знак на тёмном фоне #100E18, показывается до движка.
-# Перегенерировать: dart run flutter_native_splash:create
+# Native splash: the mark on a dark #100E18 background, shown before the engine.
+# Regenerate: dart run flutter_native_splash:create
 flutter_native_splash:
   color: "#100E18"
   color_dark: "#100E18"
@@ -121,8 +122,8 @@ flutter_native_splash:
   fullscreen: true
   android: true
   ios: true
-  web: false # для web сплеш рисуем Flutter-виджетом (SplashPage)
-  # Android 12+: система рисует иконку в круге на цветном фоне.
+  web: false # on web the splash is drawn by a Flutter widget (SplashPage)
+  # Android 12+: the system draws the icon in a circle on a colored background.
   android_12:
     image: assets/branding/splash_icon_android12.png
     color: "#100E18"

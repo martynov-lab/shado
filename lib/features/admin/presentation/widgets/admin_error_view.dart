@@ -28,15 +28,15 @@ class AdminErrorView extends StatelessWidget {
           children: [
             Text(
               isForbidden
-                  ? 'Раздел доступен только владельцу'
-                  : 'Не удалось получить список: $error',
+                  ? 'This section is available to the owner only'
+                  : 'Failed to load the list: $error',
               textAlign: TextAlign.center,
             ),
             if (!isForbidden) ...[
               const SizedBox(height: 16),
               FilledButton(
                 onPressed: onRetryPressed,
-                child: const Text('Повторить'),
+                child: const Text('Retry'),
               ),
             ],
           ],

@@ -101,7 +101,7 @@ class SegmentBoundaries {
   /// [kMinSegmentGapMs].
   static List<int> normalize(List<int> boundaries, AudioTrim trim) {
     if (boundaries.length < 2) {
-      throw const ValidationFailure('Границ должно быть не меньше двух');
+      throw const ValidationFailure('There must be at least two boundaries');
     }
     final count = boundaries.length - 1;
     // On a short range the gap does not fit — split it evenly.

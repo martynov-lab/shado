@@ -1,58 +1,50 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:shado/theme/theme.dart';
 import 'package:shado/widgets/widgets.dart';
 
 import '../../../../core/utils/duration_format.dart';
-import '../../../auth/presentation/controllers/auth_controller.dart';
-import '../../../progress/presentation/controllers/progress_providers.dart';
 import '../../domain/entities/lesson.dart';
-import '../controllers/lesson_permissions.dart';
-import '../controllers/lessons_filter.dart';
+import '../../domain/entities/lessons_filter.dart';
 import 'lesson_cover.dart';
 import 'lesson_labels.dart';
 import 'lesson_progress_bar.dart';
 
 /// Lesson list row; a swipe or a long press deletes the lesson.
-class LessonListRow extends ConsumerStatefulWidget {
+class LessonListRow extends StatefulWidget {
   const LessonListRow({
     super.key,
     required this.lesson,
+    required this.progress,
+    required this.canDelete,
     required this.onTap,
     required this.onDelete,
   });
 
   final Lesson lesson;
+
+  /// How much of the lesson is done, `0..1`.
+  final double progress;
+
+  /// Swipe and long press delete only for users allowed to.
+  final bool canDelete;
+
   final VoidCallback onTap;
   final VoidCallback onDelete;
 
   @override
-  ConsumerState<LessonListRow> createState() => _LessonListRowState();
+  State<LessonListRow> createState() => _LessonListRowState();
 }
 
-class _LessonListRowState extends ConsumerState<LessonListRow> {
+class _LessonListRowState extends State<LessonListRow> {
   bool _hovered = false;
 
   @override
   Widget build(BuildContext context) {
     final colors = context.colors;
     final lesson = widget.lesson;
-    final role = ref.watch(
-      authControllerProvider.select((auth) => auth.user?.role),
-    );
-    // Swipe and long press delete a lesson — only for users allowed to.
-    final canDelete = canModifyLesson(role, lesson);
-    final progress =
-        ref
-            .watch(
-              lessonProgressProvider((
-                lessonId: lesson.id,
-                segmentCount: lesson.segmentCount,
-              )),
-            )
-            .value ??
-        0.0;
+    final canDelete = widget.canDelete;
+    final progress = widget.progress;
 
     return Dismissible(
       key: ValueKey('lesson-${lesson.id}'),
@@ -111,7 +103,9 @@ class _LessonListRowState extends ConsumerState<LessonListRow> {
                             Expanded(
                               child: Text(
                                 lesson.title,
-                                style: AppText.title.copyWith(color: colors.text),
+                                style: AppText.title.copyWith(
+                                  color: colors.text,
+                                ),
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
                               ),
@@ -122,7 +116,7 @@ class _LessonListRowState extends ConsumerState<LessonListRow> {
                                 AppIcons.lock,
                                 size: AppSizes.iconSm,
                                 color: colors.text2,
-                                semanticLabel: 'Приватный',
+                                semanticLabel: 'Private',
                               ),
                             ],
                             if (lessonIsNew(lesson)) ...[

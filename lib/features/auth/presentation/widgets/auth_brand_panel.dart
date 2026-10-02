@@ -28,14 +28,14 @@ class AuthBrandPanel extends StatelessWidget {
           const Spacer(),
           Text(
             isRegistration
-                ? 'Освой естественный ритм английской речи'
-                : 'Говори по-английски, повторяя за носителями',
+                ? 'Master the natural rhythm of spoken English'
+                : 'Speak English by repeating after native speakers',
             style: AppText.h1.copyWith(color: colors.primaryOn),
           ),
           const SizedBox(height: AppSpacing.s3),
           Text(
-            'Техника shadowing: разбей дорожку на короткие сегменты, слушай '
-            'и повторяй, копируя интонацию.',
+            'The shadowing technique: split a track into short segments, listen '
+            'and repeat, copying the intonation.',
             style: AppText.body.copyWith(color: colors.primaryOn),
           ),
           const SizedBox(height: AppSpacing.s5),
@@ -43,17 +43,17 @@ class AuthBrandPanel extends StatelessWidget {
           const SizedBox(height: AppSpacing.s5),
           const AuthBrandFeature(
             icon: AppIcons.headphones,
-            label: 'Локальная библиотека уроков — без сети',
+            label: 'Local lesson library — works offline',
           ),
           const SizedBox(height: AppSpacing.s3),
           const AuthBrandFeature(
             icon: AppIcons.waveform,
-            label: 'Ручная разбивка речи на сегменты',
+            label: 'Manual splitting of speech into segments',
           ),
           const SizedBox(height: AppSpacing.s3),
           const AuthBrandFeature(
             icon: AppIcons.flame,
-            label: 'Серии и прогресс, чтобы не бросать',
+            label: 'Streaks and progress to keep you going',
           ),
         ],
       ),

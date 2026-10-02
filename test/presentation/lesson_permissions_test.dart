@@ -2,7 +2,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:shado/features/auth/domain/entities/auth_user.dart';
 import 'package:shado/features/lessons/domain/entities/lesson.dart';
 import 'package:shado/features/lessons/domain/entities/segment.dart';
-import 'package:shado/features/lessons/presentation/controllers/lesson_permissions.dart';
+import 'package:shado/features/lessons/domain/lesson_permissions.dart';
 
 Lesson _lesson({required bool isPublic}) => Lesson(
   id: 'l1',

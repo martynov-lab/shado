@@ -1,52 +1,54 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:shado/core/network/api_exception.dart';
+import 'package:shado/di/auth_providers.dart';
+import 'package:shado/di/language_providers.dart';
 import 'package:shado/features/auth/domain/entities/auth_user.dart';
-import 'package:shado/features/auth/presentation/controllers/auth_controller.dart';
 import 'package:shado/features/languages/domain/entities/language.dart';
-import 'package:shado/features/languages/presentation/controllers/language_providers.dart';
-import 'package:shado/features/settings/presentation/widgets/language_settings_section.dart';
+import 'package:shado/features/settings/presentation/screens/settings_page.dart';
 import 'package:shado/theme/theme.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
-/// A session with the given role and the English profile.
-class _FakeAuthController extends AuthController {
-  _FakeAuthController(this.role);
+import 'fake_auth_repository.dart';
+import 'fake_language_repository.dart';
 
-  final UserRole role;
-
-  @override
-  AuthState build() => AuthState(
-    status: AuthStatus.authenticated,
-    user: AuthUser(
-      id: 'user-1',
-      email: 'user@example.com',
-      role: role,
-      createdAt: DateTime.utc(2026),
-      studiedLanguage: 'en',
-    ),
-  );
-}
-
-/// The voice-over voice is an owner-only setting inside the language block.
+/// The language block of the settings screen.
 void main() {
   const english = Language(
     code: 'en',
     name: 'English',
     accents: [Accent(code: 'US', name: 'American', isDefault: true)],
   );
+  const french = Language(code: 'fr', name: 'French');
 
-  Future<void> pumpSection(WidgetTester tester, UserRole role) async {
+  setUp(() => SharedPreferences.setMockInitialValues({}));
+
+  Future<void> pumpSettings(
+    WidgetTester tester,
+    UserRole role, {
+    Object? profileError,
+  }) async {
+    tester.view.physicalSize = const Size(1280, 2000);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
-          authControllerProvider.overrideWith(() => _FakeAuthController(role)),
-          languagesProvider.overrideWith((ref) async => [english]),
+          authRepositoryProvider.overrideWithValue(
+            FakeAuthRepository(
+              user: testUser(role: role),
+              profileError: profileError,
+            ),
+          ),
+          languageRepositoryProvider.overrideWithValue(
+            const FakeLanguageRepository([english, french]),
+          ),
         ],
         child: MaterialApp(
           theme: AppTheme.light(),
-          home: const Scaffold(
-            body: SingleChildScrollView(child: LanguageSettingsSection()),
-          ),
+          home: const Scaffold(body: SettingsPage()),
         ),
       ),
     );
@@ -54,18 +56,42 @@ void main() {
   }
 
   testWidgets('the owner sees the voice-over voice picker', (tester) async {
-    await pumpSection(tester, UserRole.owner);
+    await pumpSettings(tester, UserRole.owner);
 
-    expect(find.text('Изучаемый язык'), findsOneWidget);
-    expect(find.text('Голос озвучки ИИ'), findsOneWidget);
+    expect(find.text('Studied language'), findsOneWidget);
+    expect(find.text('AI voiceover voice'), findsOneWidget);
     // Nothing is picked yet, so the server decides.
-    expect(find.text('По умолчанию'), findsOneWidget);
+    expect(find.text('Default'), findsOneWidget);
   });
 
   testWidgets('a plain user does not see the voice-over voice', (tester) async {
-    await pumpSection(tester, UserRole.user);
+    await pumpSettings(tester, UserRole.user);
 
-    expect(find.text('Изучаемый язык'), findsOneWidget);
-    expect(find.text('Голос озвучки ИИ'), findsNothing);
+    expect(find.text('Studied language'), findsOneWidget);
+    expect(find.text('AI voiceover voice'), findsNothing);
+  });
+
+  testWidgets('a language rejected by the server is reported', (tester) async {
+    await pumpSettings(
+      tester,
+      UserRole.user,
+      profileError: const ApiException(
+        code: ApiErrorCode.validationError,
+        message: 'unknown language',
+        status: 422,
+      ),
+    );
+
+    await tester.tap(find.text('Studied language'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('French'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Switch'));
+    await tester.pumpAndSettle();
+
+    expect(
+      find.text('The server did not accept the language — choose another one'),
+      findsOneWidget,
+    );
   });
 }

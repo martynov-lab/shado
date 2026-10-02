@@ -55,7 +55,7 @@ class _SettingsTextEditSheetState extends State<SettingsTextEditSheet> {
           ),
           const SizedBox(height: AppSpacing.s5),
           AppButton(
-            label: 'Сохранить',
+            label: 'Save',
             size: AppButtonSize.lg,
             expand: true,
             onPressed: _submit,

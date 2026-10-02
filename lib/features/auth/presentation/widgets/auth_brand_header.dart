@@ -23,8 +23,8 @@ class AuthBrandHeader extends StatelessWidget {
           const SizedBox(height: AppSpacing.s4),
           Text(
             isRegistration
-                ? 'Слушай. Повторяй.\nНачни говорить свободнее.'
-                : 'Слушай. Повторяй.\nПродолжай тренировку.',
+                ? 'Listen. Repeat.\nStart speaking more fluently.'
+                : 'Listen. Repeat.\nKeep practicing.',
             style: AppText.h2.copyWith(color: context.colors.primaryOn),
           ),
         ],

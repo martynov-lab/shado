@@ -17,12 +17,12 @@ class SynthesizeTts {
   }) {
     final prepared = prepareText(text);
     if (prepared.isEmpty) {
-      throw const ValidationFailure('Введите текст, чтобы озвучить его');
+      throw const ValidationFailure('Enter text to voice it');
     }
     // Check the length before sending so the voice-over quota is not wasted.
     if (prepared.length > kMaxTtsChars) {
       throw ValidationFailure(
-        'Текст длиннее $kMaxTtsChars символов — сократите его',
+        'The text is longer than $kMaxTtsChars characters — shorten it',
       );
     }
     return _repository.synthesizeTts(

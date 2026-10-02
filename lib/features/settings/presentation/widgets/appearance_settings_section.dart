@@ -10,7 +10,7 @@ class AppearanceSettingsSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return const SettingsSection(
-      title: 'Оформление',
+      title: 'Appearance',
       rows: [SettingsThemeRow()],
     );
   }

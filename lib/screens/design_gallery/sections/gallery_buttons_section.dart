@@ -27,33 +27,33 @@ class _GalleryButtonsSectionState extends State<GalleryButtonsSection> {
 
   @override
   Widget build(BuildContext context) => GallerySection(
-    title: 'Кнопки',
-    caption: 'Варианты, размеры, загрузка и выключенное состояние',
+    title: 'Buttons',
+    caption: 'Variants, sizes, loading and disabled state',
     child: Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const GalleryLabel('Варианты'),
+        const GalleryLabel('Variants'),
         GalleryWrap(
           children: [
             AppButton(
-              label: 'Слушать',
+              label: 'Listen',
               icon: Icons.play_arrow_rounded,
               onPressed: () {},
             ),
             AppButton(
-              label: 'Повторить',
+              label: 'Repeat',
               variant: AppButtonVariant.secondary,
               icon: Icons.replay_rounded,
               onPressed: () {},
             ),
             AppButton(
-              label: 'Отмена',
+              label: 'Cancel',
               variant: AppButtonVariant.ghost,
               onPressed: () {},
             ),
           ],
         ),
-        const GalleryLabel('Размеры'),
+        const GalleryLabel('Sizes'),
         GalleryWrap(
           children: [
             AppButton(label: 'Small', size: AppButtonSize.sm, onPressed: () {}),
@@ -61,71 +61,71 @@ class _GalleryButtonsSectionState extends State<GalleryButtonsSection> {
             AppButton(label: 'Large', size: AppButtonSize.lg, onPressed: () {}),
           ],
         ),
-        const GalleryLabel('Состояния'),
+        const GalleryLabel('States'),
         GalleryWrap(
           children: [
             AppButton(
-              label: _loading ? 'Загружаю' : 'Запустить загрузку',
+              label: _loading ? 'Loading' : 'Start loading',
               loading: _loading,
               onPressed: _fakeLoad,
             ),
-            const AppButton(label: 'Выключена'),
+            const AppButton(label: 'Disabled'),
             const AppButton(
-              label: 'Выключена',
+              label: 'Disabled',
               variant: AppButtonVariant.secondary,
             ),
             const AppButton(
-              label: 'Выключена',
+              label: 'Disabled',
               variant: AppButtonVariant.ghost,
             ),
           ],
         ),
-        const GalleryLabel('Во всю ширину'),
+        const GalleryLabel('Full width'),
         AppButton(
-          label: 'Начать урок',
+          label: 'Start lesson',
           icon: Icons.headphones_rounded,
           size: AppButtonSize.lg,
           expand: true,
           onPressed: () {},
         ),
-        const GalleryLabel('Иконочные — круглые и квадратные'),
+        const GalleryLabel('Icon buttons — round and square'),
         GalleryWrap(
           children: [
             AppIconButton(
               icon: Icons.play_arrow_rounded,
-              semanticLabel: 'Воспроизвести',
+              semanticLabel: 'Play',
               variant: AppButtonVariant.primary,
               size: AppButtonSize.lg,
               onPressed: () {},
             ),
             AppIconButton(
               icon: Icons.pause_rounded,
-              semanticLabel: 'Пауза',
+              semanticLabel: 'Pause',
               variant: AppButtonVariant.secondary,
               onPressed: () {},
             ),
             AppIconButton(
               icon: Icons.mic_rounded,
-              semanticLabel: 'Записать',
+              semanticLabel: 'Record',
               onPressed: () {},
             ),
             AppIconButton(
               icon: Icons.cut_rounded,
-              semanticLabel: 'Обрезать',
+              semanticLabel: 'Trim',
               shape: AppIconButtonShape.square,
               variant: AppButtonVariant.secondary,
               onPressed: () {},
             ),
             AppIconButton(
               icon: Icons.tune_rounded,
-              semanticLabel: 'Настройки',
+              semanticLabel: 'Settings',
               shape: AppIconButtonShape.square,
               size: AppButtonSize.sm,
               onPressed: () {},
             ),
             const AppIconButton(
               icon: Icons.delete_outline_rounded,
-              semanticLabel: 'Удалить',
+              semanticLabel: 'Delete',
               shape: AppIconButtonShape.square,
             ),
           ],

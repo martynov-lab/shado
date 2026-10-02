@@ -1,289 +1,47 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import 'package:shado/theme/theme.dart';
-import 'package:shado/widgets/widgets.dart';
+import 'package:shado/core/async/async_state.dart';
 
-import '../../../languages/presentation/controllers/language_providers.dart';
+import '../../../languages/domain/entities/language.dart';
 import '../../domain/entities/lesson_category.dart';
-import '../controllers/lesson_providers.dart';
-import '../controllers/lessons_filter.dart';
+import '../../domain/entities/lessons_filter.dart';
+import '../screens/lessons/lesson_filter_group.dart';
+import 'lessons_filter_group_options.dart';
+import 'lessons_filter_group_section.dart';
 
-/// A filter group of the lesson list.
-enum LessonFilterGroup {
-  topic('Тема'),
-  level('Уровень'),
-  accent('Акцент'),
-  status('Статус'),
-  access('Доступ');
-
-  const LessonFilterGroup(this.title);
-
-  final String title;
-}
-
-/// Filter groups shown for the current language: the accent one only where
-/// the language has accents.
-final lessonFilterGroupsProvider = Provider<List<LessonFilterGroup>>((ref) {
-  final hasAccents = ref.watch(currentAccentsProvider).isNotEmpty;
-  return [
-    for (final group in LessonFilterGroup.values)
-      if (hasAccents || group != LessonFilterGroup.accent) group,
-  ];
-});
-
-/// Filter checkboxes: topics, levels and statuses; [only] shows one group.
-class LessonsFilterOptions extends ConsumerWidget {
-  const LessonsFilterOptions({super.key, this.only});
-
-  /// `null` shows every group collapsible; otherwise one expanded group.
-  final LessonFilterGroup? only;
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    if (only case final group?) return _optionsFor(group);
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        for (final group in ref.watch(lessonFilterGroupsProvider))
-          _CollapsibleGroup(title: group.title, child: _optionsFor(group)),
-      ],
-    );
-  }
-
-  Widget _optionsFor(LessonFilterGroup group) => switch (group) {
-    LessonFilterGroup.topic => const _TopicOptions(),
-    LessonFilterGroup.level => const _LevelOptions(),
-    LessonFilterGroup.accent => const _AccentOptions(),
-    LessonFilterGroup.status => const _StatusOptions(),
-    LessonFilterGroup.access => const _AccessOptions(),
-  };
-}
-
-/// Collapsible filter section; collapsed by default.
-class _CollapsibleGroup extends StatefulWidget {
-  const _CollapsibleGroup({required this.title, required this.child});
-
-  final String title;
-  final Widget child;
-
-  @override
-  State<_CollapsibleGroup> createState() => _CollapsibleGroupState();
-}
-
-class _CollapsibleGroupState extends State<_CollapsibleGroup> {
-  bool _expanded = false;
-
-  @override
-  Widget build(BuildContext context) {
-    final colors = context.colors;
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Semantics(
-          button: true,
-          expanded: _expanded,
-          label: widget.title,
-          excludeSemantics: true,
-          child: Material(
-            type: MaterialType.transparency,
-            child: InkWell(
-              onTap: () => setState(() => _expanded = !_expanded),
-              borderRadius: AppRadii.rSm,
-              child: Padding(
-                padding: const EdgeInsets.symmetric(vertical: AppSpacing.s2),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: Text(
-                        widget.title,
-                        style: AppText.label.copyWith(color: colors.text),
-                      ),
-                    ),
-                    AnimatedRotation(
-                      turns: _expanded ? 0.5 : 0,
-                      duration: context.motion(AppDurations.fast),
-                      child: AppIcon(
-                        AppIcons.chevronDown,
-                        size: AppSizes.iconSm,
-                        color: colors.text3,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ),
-        ),
-        if (_expanded)
-          Padding(
-            padding: const EdgeInsets.only(bottom: AppSpacing.s2),
-            child: widget.child,
-          ),
-      ],
-    );
-  }
-}
-
-class _OptionRow extends StatelessWidget {
-  const _OptionRow({
-    required this.label,
-    required this.selected,
-    required this.onToggle,
+/// Every filter group, each one collapsible.
+class LessonsFilterOptions extends StatelessWidget {
+  const LessonsFilterOptions({
+    super.key,
+    required this.groups,
+    required this.filter,
+    required this.topics,
+    required this.accents,
+    required this.onChanged,
   });
 
-  final String label;
-  final bool selected;
-  final VoidCallback onToggle;
+  final List<LessonFilterGroup> groups;
+  final LessonsFilter filter;
+  final AsyncState<List<Topic>> topics;
+  final List<Accent> accents;
+  final ValueChanged<LessonsFilter> onChanged;
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: AppSpacing.s1),
-      child: AppCheckbox(
-        value: selected,
-        label: label,
-        onChanged: (_) => onToggle(),
-      ),
-    );
-  }
-}
-
-class _TopicOptions extends ConsumerWidget {
-  const _TopicOptions();
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final selected = ref.watch(
-      lessonsFilterProvider.select((filter) => filter.topicIds),
-    );
-    final topics = ref.watch(topicsProvider);
-    final notifier = ref.read(lessonsFilterProvider.notifier);
-
-    return switch (topics) {
-      AsyncData(:final value) when value.isNotEmpty => Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          for (final Topic topic in value)
-            _OptionRow(
-              label: topic.name,
-              selected: selected.contains(topic.id),
-              onToggle: () => notifier.toggleTopic(topic.id),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        for (final group in groups)
+          LessonsFilterGroupSection(
+            title: group.title,
+            child: LessonsFilterGroupOptions(
+              group: group,
+              filter: filter,
+              topics: topics,
+              accents: accents,
+              onChanged: onChanged,
             ),
-        ],
-      ),
-      AsyncError() => Text(
-        'Темы недоступны',
-        style: AppText.caption.copyWith(color: context.colors.text3),
-      ),
-      _ => const Padding(
-        padding: EdgeInsets.symmetric(vertical: AppSpacing.s2),
-        child: Align(
-          alignment: Alignment.centerLeft,
-          child: SizedBox.square(
-            dimension: AppSizes.iconMd,
-            child: CircularProgressIndicator(strokeWidth: 2),
-          ),
-        ),
-      ),
-    };
-  }
-}
-
-class _LevelOptions extends ConsumerWidget {
-  const _LevelOptions();
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final selected = ref.watch(
-      lessonsFilterProvider.select((filter) => filter.levels),
-    );
-    final notifier = ref.read(lessonsFilterProvider.notifier);
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        for (final level in LessonLevel.values)
-          _OptionRow(
-            label: level.label,
-            selected: selected.contains(level),
-            onToggle: () => notifier.toggleLevel(level),
-          ),
-      ],
-    );
-  }
-}
-
-class _AccentOptions extends ConsumerWidget {
-  const _AccentOptions();
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final selected = ref.watch(
-      lessonsFilterProvider.select((filter) => filter.accents),
-    );
-    final accents = ref.watch(currentAccentsProvider);
-    final notifier = ref.read(lessonsFilterProvider.notifier);
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        for (final accent in accents)
-          _OptionRow(
-            label: accent.label,
-            selected: selected.contains(accent.code),
-            onToggle: () => notifier.toggleAccent(accent.code),
-          ),
-      ],
-    );
-  }
-}
-
-class _AccessOptions extends ConsumerWidget {
-  const _AccessOptions();
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final onlyPrivate = ref.watch(
-      lessonsFilterProvider.select((filter) => filter.onlyPrivate),
-    );
-    final notifier = ref.read(lessonsFilterProvider.notifier);
-
-    // The server only returns the viewer own private lessons.
-    return _OptionRow(
-      label: 'Мои приватные',
-      selected: onlyPrivate,
-      onToggle: notifier.toggleOnlyPrivate,
-    );
-  }
-}
-
-class _StatusOptions extends ConsumerWidget {
-  const _StatusOptions();
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final selected = ref.watch(
-      lessonsFilterProvider.select((filter) => filter.statuses),
-    );
-    final notifier = ref.read(lessonsFilterProvider.notifier);
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        for (final status in LessonFilterStatus.values)
-          _OptionRow(
-            label: status.label,
-            selected: selected.contains(status),
-            onToggle: () => notifier.toggleStatus(status),
           ),
       ],
     );

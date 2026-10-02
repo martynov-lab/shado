@@ -6,6 +6,7 @@ import 'package:sqflite/sqflite.dart';
 
 import '../../../../core/error/failures.dart';
 import '../../../../core/platform/platform_setup.dart';
+import '../../domain/entities/pending_events.dart';
 import 'progress_local_datasource.dart';
 
 /// Sqflite implementation backed by a separate `progress.db`; migrations are
@@ -50,7 +51,7 @@ class SqfliteProgressLocalDataSource implements ProgressLocalDataSource {
       return db;
     } catch (error) {
       _opening = null;
-      throw StorageFailure('Не удалось открыть базу прогресса', cause: error);
+      throw StorageFailure('Failed to open the progress database', cause: error);
     }
   }
 
@@ -103,7 +104,7 @@ class SqfliteProgressLocalDataSource implements ProgressLocalDataSource {
         );
       });
     } catch (error) {
-      throw StorageFailure('Не удалось записать повтор сегмента', cause: error);
+      throw StorageFailure('Failed to record the segment repeat', cause: error);
     }
   }
 
@@ -117,7 +118,7 @@ class SqfliteProgressLocalDataSource implements ProgressLocalDataSource {
         [ms],
       );
     } catch (error) {
-      throw StorageFailure('Не удалось записать минуты', cause: error);
+      throw StorageFailure('Failed to record the minutes', cause: error);
     }
   }
 
@@ -136,7 +137,7 @@ class SqfliteProgressLocalDataSource implements ProgressLocalDataSource {
           row['segment_index']! as int: row['reps']! as int,
       };
     } catch (error) {
-      throw StorageFailure('Не удалось прочитать повторы', cause: error);
+      throw StorageFailure('Failed to read the repeats', cause: error);
     }
   }
 
@@ -151,7 +152,7 @@ class SqfliteProgressLocalDataSource implements ProgressLocalDataSource {
         segmentRepeats: rows.first['segment_repeats'] as int? ?? 0,
       );
     } catch (error) {
-      throw StorageFailure('Не удалось прочитать дельту', cause: error);
+      throw StorageFailure('Failed to read the delta', cause: error);
     }
   }
 
@@ -168,7 +169,7 @@ class SqfliteProgressLocalDataSource implements ProgressLocalDataSource {
         [listenedMs, segmentRepeats],
       );
     } catch (error) {
-      throw StorageFailure('Не удалось обновить дельту', cause: error);
+      throw StorageFailure('Failed to update the delta', cause: error);
     }
   }
 
@@ -186,7 +187,7 @@ class SqfliteProgressLocalDataSource implements ProgressLocalDataSource {
       if (rows.isEmpty) return false;
       return (rows.first['completed_sent'] as int? ?? 0) != 0;
     } catch (error) {
-      throw StorageFailure('Не удалось прочитать флаг пройдено', cause: error);
+      throw StorageFailure('Failed to read the completed flag', cause: error);
     }
   }
 
@@ -199,7 +200,7 @@ class SqfliteProgressLocalDataSource implements ProgressLocalDataSource {
         'completed_sent': 1,
       }, conflictAlgorithm: ConflictAlgorithm.replace);
     } catch (error) {
-      throw StorageFailure('Не удалось отметить пройдено', cause: error);
+      throw StorageFailure('Failed to mark as completed', cause: error);
     }
   }
 
@@ -214,7 +215,7 @@ class SqfliteProgressLocalDataSource implements ProgressLocalDataSource {
         'segment_repeats': 0,
       }, where: 'id = 1');
     } catch (error) {
-      throw StorageFailure('Не удалось очистить прогресс', cause: error);
+      throw StorageFailure('Failed to clear the progress', cause: error);
     }
   }
 }

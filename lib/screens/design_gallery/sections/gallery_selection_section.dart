@@ -24,33 +24,33 @@ class _GallerySelectionSectionState extends State<GallerySelectionSection> {
 
   @override
   Widget build(BuildContext context) => GallerySection(
-    title: 'Выбор',
-    caption: 'Флажки, переключатели, тумблеры и сегменты',
+    title: 'Selection',
+    caption: 'Checkboxes, radio buttons, switches and segments',
     child: Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const GalleryLabel('Флажки'),
+        const GalleryLabel('Checkboxes'),
         AppCheckbox(
           value: _checked,
-          label: 'Повторять сегмент',
+          label: 'Repeat segment',
           onChanged: (value) => setState(() => _checked = value),
         ),
         AppCheckbox(
           value: _unchecked,
-          label: 'Показывать перевод',
+          label: 'Show translation',
           onChanged: (value) => setState(() => _unchecked = value),
         ),
         AppCheckbox(
           value: _indeterminate,
-          label: 'Выбраны не все сегменты',
+          label: 'Not all segments selected',
           onChanged: (value) => setState(() => _indeterminate = value),
         ),
         const AppCheckbox(
           value: true,
-          label: 'Выключенный флажок',
+          label: 'Disabled checkbox',
           onChanged: null,
         ),
-        const GalleryLabel('Переключатели'),
+        const GalleryLabel('Radio buttons'),
         for (final speed in GallerySpeed.values)
           AppRadio<GallerySpeed>(
             value: speed,
@@ -58,23 +58,23 @@ class _GallerySelectionSectionState extends State<GallerySelectionSection> {
             label: speed.label,
             onChanged: (value) => setState(() => _speed = value),
           ),
-        const GalleryLabel('Тумблеры'),
+        const GalleryLabel('Switches'),
         AppSwitch(
           value: _switchOn,
-          label: 'Автопауза после сегмента',
+          label: 'Auto-pause after segment',
           onChanged: (value) => setState(() => _switchOn = value),
         ),
         AppSwitch(
           value: _switchOff,
-          label: 'Скрывать текст',
+          label: 'Hide text',
           onChanged: (value) => setState(() => _switchOff = value),
         ),
         const AppSwitch(
           value: true,
-          label: 'Выключенный тумблер',
+          label: 'Disabled switch',
           onChanged: null,
         ),
-        const GalleryLabel('Сегменты'),
+        const GalleryLabel('Segments'),
         AppSegmentedControl<GallerySpeed>(
           value: _speed,
           onChanged: (value) => setState(() => _speed = value),

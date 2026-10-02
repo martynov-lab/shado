@@ -51,7 +51,7 @@ class LessonEditorHeader extends StatelessWidget {
         children: [
           AppIconButton(
             icon: Icons.chevron_left,
-            semanticLabel: 'Назад',
+            semanticLabel: 'Back',
             shape: AppIconButtonShape.square,
             onPressed: onBack,
           ),
@@ -65,7 +65,7 @@ class LessonEditorHeader extends StatelessWidget {
           ),
           if (!compact && onCancel != null) ...[
             AppButton(
-              label: 'Отмена',
+              label: 'Cancel',
               variant: AppButtonVariant.ghost,
               onPressed: onCancel,
             ),

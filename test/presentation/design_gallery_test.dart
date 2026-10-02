@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
+import 'package:shado/di/core_providers.dart';
 import 'package:shado/screens/design_gallery/design_gallery_screen.dart';
 import 'package:shado/theme/theme.dart';
 import 'package:shado/widgets/widgets.dart';
@@ -94,24 +95,24 @@ void main() {
     );
 
     await tester.dragUntilVisible(
-      find.text('Модальный лист'),
+      find.text('Modal sheet'),
       find.byType(Scrollable).first,
       const Offset(0, -300),
     );
     // dragUntilVisible stops on a built but still invisible widget.
-    await tester.ensureVisible(find.text('Модальный лист'));
+    await tester.ensureVisible(find.text('Modal sheet'));
     await tester.pumpAndSettle();
 
-    await tester.tap(find.text('Модальный лист'));
+    await tester.tap(find.text('Modal sheet'));
     await tester.pumpAndSettle();
-    expect(find.text('Скорость воспроизведения'), findsOneWidget);
+    expect(find.text('Playback speed'), findsOneWidget);
 
-    await tester.tap(find.text('Готово'));
+    await tester.tap(find.text('Done'));
     await tester.pumpAndSettle();
 
-    await tester.tap(find.text('Успех'));
+    await tester.tap(find.text('Success'));
     await tester.pumpAndSettle();
-    expect(find.text('Урок сохранён'), findsOneWidget);
+    expect(find.text('Lesson saved'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 
@@ -151,13 +152,13 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    await tester.tap(find.text('Тёмная'));
+    await tester.tap(find.text('Dark'));
     await tester.pumpAndSettle();
 
     final context = tester.element(find.byType(ThemeToggle));
     expect(Theme.of(context).brightness, Brightness.dark);
 
-    await tester.tap(find.text('Светлая'));
+    await tester.tap(find.text('Light'));
     await tester.pumpAndSettle();
     expect(
       Theme.of(tester.element(find.byType(ThemeToggle))).brightness,

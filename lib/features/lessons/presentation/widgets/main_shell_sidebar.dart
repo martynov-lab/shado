@@ -1,22 +1,21 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:shado/theme/theme.dart';
 import 'package:shado/widgets/widgets.dart';
 
-import '../../../auth/presentation/controllers/auth_controller.dart';
-import '../pages/main_shell.dart';
-import 'account_menu.dart';
-import 'lesson_gradients.dart';
+import '../screens/main_shell/main_shell.dart';
 import 'main_shell_brand.dart';
+import 'main_shell_sidebar_item.dart';
+import 'main_shell_sidebar_user.dart';
 
 /// Desktop sidebar: brand, section menu, the add button and the profile.
-class MainShellSidebar extends ConsumerWidget {
+class MainShellSidebar extends StatelessWidget {
   const MainShellSidebar({
     super.key,
     required this.currentIndex,
     required this.onSelected,
     required this.canAdd,
+    required this.email,
   });
 
   final int currentIndex;
@@ -25,12 +24,12 @@ class MainShellSidebar extends ConsumerWidget {
   /// Whether to show the add-lesson button.
   final bool canAdd;
 
+  /// The signed-in user shown at the bottom.
+  final String email;
+
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     final colors = context.colors;
-    final email = ref.watch(
-      authControllerProvider.select((state) => state.user?.email ?? ''),
-    );
 
     return Container(
       width: 236,
@@ -56,7 +55,7 @@ class MainShellSidebar extends ConsumerWidget {
               ),
               const SizedBox(height: AppSpacing.s6),
               for (final i in MainShell.sectionIndexes) ...[
-                _SidebarItem(
+                MainShellSidebarItem(
                   destination: MainShell.destinations[i],
                   selected: currentIndex == i,
                   onTap: () => onSelected(i),
@@ -66,111 +65,17 @@ class MainShellSidebar extends ConsumerWidget {
               if (canAdd) ...[
                 const SizedBox(height: AppSpacing.s4),
                 AppButton(
-                  label: 'Добавить урок',
+                  label: 'Add lesson',
                   icon: Icons.add_rounded,
                   expand: true,
                   onPressed: () => onSelected(MainShell.addIndex),
                 ),
               ],
               const Spacer(),
-              _SidebarUser(email: email),
+              MainShellSidebarUser(email: email),
             ],
           ),
         ),
-      ),
-    );
-  }
-}
-
-class _SidebarItem extends StatelessWidget {
-  const _SidebarItem({
-    required this.destination,
-    required this.selected,
-    required this.onTap,
-  });
-
-  final MainShellDestination destination;
-  final bool selected;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final colors = context.colors;
-    final tint = selected ? colors.primary : colors.text2;
-
-    return Semantics(
-      button: true,
-      selected: selected,
-      label: destination.label,
-      excludeSemantics: true,
-      child: Material(
-        type: MaterialType.transparency,
-        child: InkWell(
-          onTap: onTap,
-          borderRadius: AppRadii.rMd,
-          child: Container(
-            constraints: const BoxConstraints(
-              minHeight: AppSizes.minTouchTarget,
-            ),
-            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.s3),
-            decoration: BoxDecoration(
-              color: selected ? colors.primarySoft : Colors.transparent,
-              borderRadius: AppRadii.rMd,
-            ),
-            child: Row(
-              children: [
-                AppIcon(destination.icon, size: AppSizes.iconMd, color: tint),
-                const SizedBox(width: AppSpacing.s3),
-                Text(
-                  destination.label,
-                  style: AppText.label.copyWith(color: tint),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-/// User block: avatar, email and the account menu.
-class _SidebarUser extends StatelessWidget {
-  const _SidebarUser({required this.email});
-
-  final String email;
-
-  @override
-  Widget build(BuildContext context) {
-    final colors = context.colors;
-
-    return Container(
-      padding: const EdgeInsets.all(AppSpacing.s2),
-      decoration: BoxDecoration(
-        color: colors.surface2,
-        borderRadius: AppRadii.rMd,
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 36,
-            height: 36,
-            decoration: BoxDecoration(
-              gradient: lessonBrandGradient(colors),
-              shape: BoxShape.circle,
-            ),
-          ),
-          const SizedBox(width: AppSpacing.s3),
-          Expanded(
-            child: Text(
-              email.isEmpty ? 'Аккаунт' : email,
-              style: AppText.label.copyWith(color: colors.text),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
-          ),
-          const AccountMenu(),
-        ],
       ),
     );
   }

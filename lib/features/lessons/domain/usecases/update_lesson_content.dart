@@ -22,11 +22,11 @@ class UpdateLessonContent {
   }) async {
     final trimmedTitle = title.trim();
     if (trimmedTitle.isEmpty) {
-      throw const ValidationFailure('Введите название урока');
+      throw const ValidationFailure('Enter a lesson title');
     }
     final segmentTexts = CreateLesson.splitIntoSegments(rawText);
     if (segmentTexts.isEmpty) {
-      throw const ValidationFailure('Текст не содержит ни одного куска');
+      throw const ValidationFailure('The text contains no chunks');
     }
     final range = (trim ?? lesson.trim).clampedTo(lesson.durationMs);
     // A layout that lags behind the text is laid out again.

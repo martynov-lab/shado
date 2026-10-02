@@ -4,41 +4,34 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shado/app.dart';
-import 'package:shado/features/auth/domain/entities/auth_user.dart';
-import 'package:shado/features/auth/presentation/controllers/auth_controller.dart';
-import 'package:shado/features/lessons/domain/entities/lesson.dart';
-import 'package:shado/features/lessons/presentation/controllers/lessons_controller.dart';
+import 'package:shado/di/auth_providers.dart';
+import 'package:shado/di/lesson_providers.dart';
+import 'package:shado/di/progress_providers.dart';
+import 'package:shado/features/progress/data/datasources/progress_remote_datasource.dart';
 import 'package:shado/features/progress/domain/entities/progress_summary.dart';
-import 'package:shado/features/progress/presentation/controllers/progress_providers.dart';
 
-/// The session is already up; only the warm-up after sign-in matters.
-class _FakeAuthController extends AuthController {
-  @override
-  AuthState build() => AuthState(
-    status: AuthStatus.authenticated,
-    user: AuthUser(
-      id: 'user-1',
-      email: 'user@example.com',
-      role: UserRole.user,
-      createdAt: DateTime.utc(2026),
-    ),
-  );
-}
+import 'fake_auth_repository.dart';
+import 'fake_lesson_repository.dart';
 
-/// The lesson list is of no interest here.
-class _FakeLessons extends LessonsController {
-  @override
-  Future<List<Lesson>> build() async => const <Lesson>[];
-}
+/// Progress server: the summary arrives when [summary] completes.
+class _FakeProgressRemote implements ProgressRemoteDataSource {
+  _FakeProgressRemote(this.summary);
 
-/// A summary whose arrival moment the test controls.
-class _HeldProgressSummary extends ProgressSummaryController {
-  _HeldProgressSummary(this.pending);
-
-  final Future<ProgressSummary> pending;
+  final Future<ProgressSummary> summary;
 
   @override
-  Future<ProgressSummary> build() => pending;
+  Future<ProgressSummary> reportEvents({
+    int? listenedMs,
+    int? segmentRepeats,
+    String? lessonId,
+    bool? completed,
+  }) => summary;
+
+  @override
+  Future<ProgressSummary> getSummary() => summary;
+
+  @override
+  Future<List<ProgressDay>> getHistory({int days = 70}) async => const [];
 }
 
 final _summary = ProgressSummary(
@@ -72,13 +65,12 @@ void main() {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
-          authControllerProvider.overrideWith(_FakeAuthController.new),
-          lessonsControllerProvider.overrideWith(_FakeLessons.new),
-          progressSummaryProvider.overrideWith(
-            () => _HeldProgressSummary(completer.future),
+          authRepositoryProvider.overrideWithValue(
+            FakeAuthRepository(user: testUser()),
           ),
-          progressHistoryProvider.overrideWith(
-            (ref) => Future.value(const <ProgressDay>[]),
+          lessonRepositoryProvider.overrideWithValue(FakeLessonRepository()),
+          progressRemoteDataSourceProvider.overrideWithValue(
+            _FakeProgressRemote(completer.future),
           ),
         ],
         child: const ShadoApp(),

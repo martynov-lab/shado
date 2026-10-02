@@ -26,19 +26,19 @@ class TopicTile extends StatelessWidget {
         ),
       ),
       title: Text(topic.name, overflow: TextOverflow.ellipsis),
-      subtitle: topic.isDefault ? const Text('Тема по умолчанию') : null,
+      subtitle: topic.isDefault ? const Text('Default topic') : null,
       trailing: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
           IconButton(
             icon: const Icon(Icons.edit_outlined),
-            tooltip: 'Переименовать',
+            tooltip: 'Rename',
             onPressed: onRename,
           ),
           if (onDelete != null)
             IconButton(
               icon: const Icon(Icons.delete_outline),
-              tooltip: 'Удалить',
+              tooltip: 'Delete',
               onPressed: onDelete,
             ),
         ],

@@ -1,15 +1,13 @@
+import 'package:elementary/elementary.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../data/datasources/waveform_datasource.dart';
 import '../../domain/entities/audio_trim.dart';
-import '../controllers/waveform_controller.dart';
-import 'trim_bar.dart';
-import 'waveform_editor.dart';
+import 'waveform_card_view.dart';
+import 'waveform_card_wm.dart';
 
 /// Waveform card: it fetches peaks itself and shows the loading state.
 /// With [onTrimStart] a trim bar appears underneath.
-class WaveformCard extends ConsumerWidget {
+class WaveformCard extends ElementaryWidget<WaveformCardWidgetModel> {
   const WaveformCard({
     super.key,
     required this.audioId,
@@ -31,7 +29,7 @@ class WaveformCard extends ConsumerWidget {
     this.onTrimStart,
     this.onTrimApply,
     this.onTrimCancel,
-  });
+  }) : super(waveformCardWidgetModelFactory);
 
   /// Server-side audio the peaks are fetched for.
   final String audioId;
@@ -75,77 +73,30 @@ class WaveformCard extends ConsumerWidget {
   final VoidCallback? onTrimCancel;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    // For an untrimmed file no range is set, so the wave is not refetched.
-    final peaksAsync = ref.watch(
-      waveformPeaksProvider(
-        WaveformQuery(
-          audioId: audioId,
-          localPath: audioPath,
-          durationMs: durationMs,
-          cache: cachePeaks,
-          range: view.isTrimmedFrom(durationMs) ? view : null,
-        ),
-      ),
-    );
-    final card = Card(
-      margin: margin,
-      // No clip here: the painter clips the wave and handles overflow the edge.
-      clipBehavior: Clip.none,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.all(Radius.circular(kWaveCornerRadius)),
-      ),
-      child: SizedBox(
-        height: height,
-        child: peaksAsync.when(
-          loading: () => const Center(child: CircularProgressIndicator()),
-          error: (error, _) => Center(
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Text(
-                'Волна недоступна: $error',
-                textAlign: TextAlign.center,
-                style: Theme.of(context).textTheme.bodySmall,
-              ),
-            ),
-          ),
-          data: (peaks) => WaveformEditor(
-            peaks: peaks,
-            view: view,
-            boundaries: boundaries,
-            positionMs: positionMs,
-            activeSegmentIndex: activeSegmentIndex,
-            showCursor: showCursor,
-            height: height,
-            onBoundariesChanged: onBoundariesChanged,
-            onBoundaryRemoved: onBoundaryRemoved,
-            onSeek: onSeek,
-            trim: trim,
-            onTrimChanged: onTrimChanged,
-          ),
-        ),
-      ),
-    );
-    if (onTrimStart == null) return card;
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        card,
-        Padding(
-          padding: EdgeInsets.only(
-            left: margin.left,
-            right: margin.right,
-            top: 8,
-          ),
-          child: TrimBar(
-            trim: trim,
-            isEnabled: peaksAsync.hasValue,
-            onStartPressed: onTrimStart,
-            onApplyPressed: onTrimApply,
-            onCancelPressed: onTrimCancel,
-          ),
-        ),
-      ],
+  Widget build(WaveformCardWidgetModel wm) {
+    return ListenableBuilder(
+      listenable: Listenable.merge([wm.peaks, wm.config]),
+      builder: (_, _) {
+        final card = wm.config.value;
+        return WaveformCardView(
+          peaks: wm.peaks.value,
+          view: card.view,
+          boundaries: card.boundaries,
+          onBoundariesChanged: card.onBoundariesChanged,
+          onBoundaryRemoved: card.onBoundaryRemoved,
+          onSeek: card.onSeek,
+          positionMs: card.positionMs,
+          activeSegmentIndex: card.activeSegmentIndex,
+          showCursor: card.showCursor,
+          height: card.height,
+          margin: card.margin,
+          trim: card.trim,
+          onTrimChanged: card.onTrimChanged,
+          onTrimStart: card.onTrimStart,
+          onTrimApply: card.onTrimApply,
+          onTrimCancel: card.onTrimCancel,
+        );
+      },
     );
   }
 }

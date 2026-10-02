@@ -11,7 +11,7 @@
 .svn/
 .swiftpm/
 .claude/*
-# Правила для агентов — часть проекта, а не локальная настройка.
+# Agent rules are part of the project, not a local setting.
 !.claude/skills/
 migrate_working_dir/
 
@@ -47,5 +47,5 @@ app.*.map.json
 /android/app/profile
 /android/app/release
 
-# Секреты доставки в Telegram — токен бота в репозиторий не кладём.
+# Telegram delivery secrets — the bot token stays out of the repository.
 installer/telegram.env

@@ -248,7 +248,7 @@ class LessonRepositoryImpl implements LessonRepository {
   Future<void> updateLesson(Lesson lesson, {bool? isPublic}) async {
     final cached = await _local.getLesson(lesson.id);
     if (cached == null) {
-      throw NotFoundFailure('Урок ${lesson.id} не найден в кеше');
+      throw NotFoundFailure('Lesson ${lesson.id} not found in the cache');
     }
     final segments = _segmentsFor(
       texts: [for (final segment in lesson.segments) segment.text],
@@ -338,7 +338,7 @@ class LessonRepositoryImpl implements LessonRepository {
     if (!await _cache.verify(target, audio.sha256)) {
       await _cache.remove(audio.id);
       throw const AudioFailure(
-        'Скачанный файл повреждён — попробуйте открыть урок ещё раз',
+        'The downloaded file is corrupted — try opening the lesson again',
       );
     }
     return target;
@@ -365,7 +365,7 @@ class LessonRepositoryImpl implements LessonRepository {
     if (cached == null) return null;
     if (!cached.hasAudioFile || !await File(cached.audioPath).exists()) {
       throw const NetworkFailure(
-        'Нет связи с сервером, а аудио этого урока ещё не скачано',
+        'No connection to the server, and this lesson audio is not downloaded yet',
       );
     }
     return cached.toEntity();

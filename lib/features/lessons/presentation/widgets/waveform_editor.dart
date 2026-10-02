@@ -8,8 +8,8 @@ import 'package:flutter/services.dart';
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/utils/duration_format.dart';
-import '../../data/models/waveform_peaks.dart';
 import '../../domain/entities/audio_trim.dart';
+import '../../domain/entities/waveform_peaks.dart';
 
 /// Which trim handle is being dragged.
 enum TrimEdge { start, end }
@@ -486,10 +486,10 @@ class _WaveformEditorState extends State<WaveformEditor> {
             onTapUp: widget.onSeek == null ? null : _onTapUp,
             // Double tap is caught only where markers can be removed, else
             // the recognizer would delay a plain tap-to-seek.
-            onDoubleTapDown:
-                widget.onBoundaryRemoved == null ? null : _onDoubleTapDown,
-            onDoubleTap:
-                widget.onBoundaryRemoved == null ? null : _onDoubleTap,
+            onDoubleTapDown: widget.onBoundaryRemoved == null
+                ? null
+                : _onDoubleTapDown,
+            onDoubleTap: widget.onBoundaryRemoved == null ? null : _onDoubleTap,
             child: CustomPaint(
               size: Size(_viewportWidth, widget.height),
               painter: _WaveformPainter(
@@ -738,10 +738,7 @@ class _WaveformPainter extends CustomPainter {
       );
       number.paint(
         canvas,
-        Offset(
-          x - number.width / 2,
-          _boundaryHandleDrawY - number.height / 2,
-        ),
+        Offset(x - number.width / 2, _boundaryHandleDrawY - number.height / 2),
       );
       if (isDragged) {
         // While a marker is dragged, show the exact time under the finger.

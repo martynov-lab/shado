@@ -55,7 +55,7 @@ class LessonFileChip extends StatelessWidget {
         child: UploadProgress(
           progress: uploadProgress,
           onCancelPressed: onCancelUpload,
-          label: isSynthesizing ? 'Озвучиваем текст через ИИ…' : null,
+          label: isSynthesizing ? 'Voicing the text with AI…' : null,
         ),
       );
     }
@@ -68,7 +68,7 @@ class LessonFileChip extends StatelessWidget {
             children: [
               Expanded(
                 child: AppButton(
-                  label: 'Выберите аудио',
+                  label: 'Choose audio',
                   icon: Icons.audiotrack,
                   variant: AppButtonVariant.secondary,
                   onPressed: onPick,
@@ -78,7 +78,7 @@ class LessonFileChip extends StatelessWidget {
                 const SizedBox(width: AppSpacing.s3),
                 Expanded(
                   child: AppButton(
-                    label: 'Озвучить ИИ',
+                    label: 'Voice with AI',
                     icon: Icons.auto_awesome,
                     variant: AppButtonVariant.secondary,
                     onPressed: onSynthesize,
@@ -89,10 +89,7 @@ class LessonFileChip extends StatelessWidget {
           ),
           if (helper != null) ...[
             const SizedBox(height: AppSpacing.s2),
-            Text(
-              helper!,
-              style: AppText.caption.copyWith(color: colors.text3),
-            ),
+            Text(helper!, style: AppText.caption.copyWith(color: colors.text3)),
           ],
         ],
       );
@@ -108,7 +105,11 @@ class LessonFileChip extends StatelessWidget {
               color: colors.primarySoft,
               borderRadius: AppRadii.rSm,
             ),
-            child: Icon(Icons.music_note, size: AppSizes.iconMd, color: colors.primary),
+            child: Icon(
+              Icons.music_note,
+              size: AppSizes.iconMd,
+              color: colors.primary,
+            ),
           ),
           const SizedBox(width: AppSpacing.s3),
           Expanded(
@@ -132,7 +133,7 @@ class LessonFileChip extends StatelessWidget {
           // Voice-over is available with a file chosen too — it replaces it.
           if (canSynthesize) ...[
             AppButton(
-              label: 'Озвучить ИИ',
+              label: 'Voice with AI',
               variant: AppButtonVariant.ghost,
               size: AppButtonSize.sm,
               onPressed: onSynthesize,
@@ -140,7 +141,7 @@ class LessonFileChip extends StatelessWidget {
             const SizedBox(width: AppSpacing.s2),
           ],
           AppButton(
-            label: 'Заменить',
+            label: 'Replace',
             variant: AppButtonVariant.ghost,
             size: AppButtonSize.sm,
             onPressed: onPick,

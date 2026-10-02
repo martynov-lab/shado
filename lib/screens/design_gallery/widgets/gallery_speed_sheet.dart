@@ -41,7 +41,7 @@ class _GallerySpeedSheetState extends State<GallerySpeedSheet> {
         ),
       const SizedBox(height: AppSpacing.s5),
       AppButton(
-        label: 'Готово',
+        label: 'Done',
         expand: true,
         onPressed: () => Navigator.of(context).pop(),
       ),

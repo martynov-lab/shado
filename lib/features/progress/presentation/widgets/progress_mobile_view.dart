@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 
 import 'package:shado/theme/theme.dart';
 
-import '../controllers/progress_view_model.dart';
+import '../../../lessons/domain/entities/lesson.dart';
+import '../screens/progress_overview.dart';
 import 'achievements_wrap.dart';
 import 'activity_heatmap.dart';
 import 'continue_lessons.dart';
@@ -16,9 +17,14 @@ import 'streak_hero_card.dart';
 
 /// Progress on phone: a single scrollable column.
 class ProgressMobileView extends StatelessWidget {
-  const ProgressMobileView({super.key, required this.model});
+  const ProgressMobileView({
+    super.key,
+    required this.overview,
+    required this.onOpenLesson,
+  });
 
-  final ProgressViewModel model;
+  final ProgressOverview overview;
+  final ValueChanged<Lesson> onOpenLesson;
 
   @override
   Widget build(BuildContext context) {
@@ -34,33 +40,36 @@ class ProgressMobileView extends StatelessWidget {
         children: [
           const ProgressHeader(),
           const SizedBox(height: AppSpacing.s5),
-          StreakHeroCard(days: model.streakDays, hint: model.streakHint),
-          if (model.recentLessonIds.isNotEmpty) ...[
+          StreakHeroCard(days: overview.streakDays, hint: overview.streakHint),
+          if (overview.recentLessons.isNotEmpty) ...[
             const SizedBox(height: AppSpacing.s4),
-            ContinueLessons(lessonIds: model.recentLessonIds),
+            ContinueLessons(
+              lessons: overview.recentLessons,
+              onOpenLesson: onOpenLesson,
+            ),
           ],
           const SizedBox(height: AppSpacing.s4),
-          ProgressStatsRow(stats: model.stats),
+          ProgressStatsRow(stats: overview.stats),
           const SizedBox(height: AppSpacing.s4),
           ProgressCard(
-            title: 'Минуты по дням',
-            caption: 'эта неделя',
+            title: 'Minutes per day',
+            caption: 'this week',
             child: MinutesBarChart(
-              values: model.weekBars,
-              labels: model.weekLabels,
-              todayIndex: model.weekTodayIndex,
+              values: overview.weekBars,
+              labels: overview.weekLabels,
+              todayIndex: overview.weekTodayIndex,
             ),
           ),
           const SizedBox(height: AppSpacing.s4),
           ProgressCard(
-            title: 'Активность',
-            caption: '10 недель',
-            child: ActivityHeatmap(cells: model.heatmapCells),
+            title: 'Activity',
+            caption: '10 weeks',
+            child: ActivityHeatmap(cells: overview.heatmapCells),
           ),
           const SizedBox(height: AppSpacing.s4),
           // Placeholder: there is no server data about the level yet.
           const ProgressCard(
-            title: 'Твой уровень',
+            title: 'Your level',
             child: LevelProgressBar(
               fromLevel: ProgressSample.levelFrom,
               toLevel: ProgressSample.levelTo,
@@ -70,7 +79,7 @@ class ProgressMobileView extends StatelessWidget {
           ),
           const SizedBox(height: AppSpacing.s4),
           const ProgressCard(
-            title: 'Достижения',
+            title: 'Achievements',
             child: AchievementsWrap(items: ProgressSample.achievements),
           ),
         ],

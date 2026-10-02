@@ -4,18 +4,20 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shado/app.dart';
-import 'package:shado/core/bootstrap/app_bootstrap.dart';
+import 'package:shado/di/auth_providers.dart';
+import 'package:shado/di/lesson_providers.dart';
+import 'package:shado/di/progress_providers.dart';
 import 'package:shado/features/auth/domain/entities/auth_user.dart';
 import 'package:shado/features/auth/domain/repositories/auth_repository.dart';
-import 'package:shado/features/auth/presentation/controllers/auth_providers.dart';
-import 'package:shado/features/auth/presentation/pages/login_page.dart';
+import 'package:shado/features/auth/presentation/screens/login_page.dart';
 import 'package:shado/features/lessons/domain/entities/audio_upload.dart';
 import 'package:shado/features/lessons/domain/entities/lesson.dart';
 import 'package:shado/features/lessons/domain/entities/lesson_category.dart';
 import 'package:shado/features/lessons/domain/entities/tts_quota.dart';
 import 'package:shado/features/lessons/domain/entities/tts_voice.dart';
 import 'package:shado/features/lessons/domain/repositories/lesson_repository.dart';
-import 'package:shado/features/lessons/presentation/controllers/lesson_providers.dart';
+import 'package:shado/features/progress/data/datasources/progress_remote_datasource.dart';
+import 'package:shado/features/progress/domain/entities/progress_summary.dart';
 import 'package:shado/theme/theme.dart';
 import 'package:shado/widgets/widgets.dart';
 
@@ -142,6 +144,24 @@ class FakeLessonRepository implements LessonRepository {
   Future<void> clearCache() async {}
 }
 
+/// Progress without the server: the warm-up after sign-in ends at once.
+class _FakeProgressRemote implements ProgressRemoteDataSource {
+  @override
+  Future<ProgressSummary> reportEvents({
+    int? listenedMs,
+    int? segmentRepeats,
+    String? lessonId,
+    bool? completed,
+  }) async => ProgressSummary.fromJson(const {});
+
+  @override
+  Future<ProgressSummary> getSummary() async =>
+      ProgressSummary.fromJson(const {});
+
+  @override
+  Future<List<ProgressDay>> getHistory({int days = 70}) async => const [];
+}
+
 const _quotaWindow = TtsQuotaWindow(used: 0, limit: 14, remaining: 14);
 
 void main() {
@@ -156,8 +176,9 @@ void main() {
         overrides: [
           authRepositoryProvider.overrideWithValue(auth),
           lessonRepositoryProvider.overrideWithValue(FakeLessonRepository()),
-          // Warm-up counts as done at once, otherwise it would hold the splash.
-          appBootstrapProvider.overrideWith((ref) async {}),
+          progressRemoteDataSourceProvider.overrideWithValue(
+            _FakeProgressRemote(),
+          ),
         ],
         child: const ShadoApp(),
       ),
@@ -217,7 +238,7 @@ void main() {
             expect(
               find.widgetWithText(
                 AppButton,
-                isRegistration ? 'Создать аккаунт' : 'Войти',
+                isRegistration ? 'Create account' : 'Sign in',
               ),
               findsOneWidget,
             );
@@ -232,7 +253,7 @@ void main() {
 
     await pumpApp(tester, auth);
 
-    expect(find.text('С возвращением'), findsOneWidget);
+    expect(find.text('Welcome back'), findsOneWidget);
     expect(auth.restoreCalls, 1);
   });
 
@@ -249,7 +270,7 @@ void main() {
     await pumpApp(tester, auth);
 
     // The user never even saw the sign-in screen.
-    expect(find.text('С возвращением'), findsNothing);
+    expect(find.text('Welcome back'), findsNothing);
     // The lessons screen has the account menu in the header.
     expect(find.byIcon(Icons.account_circle_outlined), findsOneWidget);
   });
@@ -259,7 +280,7 @@ void main() {
 
     await tester.enterText(find.byType(AppTextField).first, 'user@example.com');
     await tester.enterText(find.byType(AppTextField).last, 'password123');
-    await tester.tap(find.widgetWithText(AppButton, 'Войти'));
+    await tester.tap(find.widgetWithText(AppButton, 'Sign in'));
     await tester.pumpAndSettle();
 
     expect(find.byIcon(Icons.account_circle_outlined), findsOneWidget);
@@ -272,10 +293,10 @@ void main() {
 
     await tester.enterText(find.byType(AppTextField).first, 'user@example.com');
     await tester.enterText(find.byType(AppTextField).last, 'short');
-    await tester.tap(find.widgetWithText(AppButton, 'Войти'));
+    await tester.tap(find.widgetWithText(AppButton, 'Sign in'));
     await tester.pumpAndSettle();
 
-    expect(find.text('Не короче 8 символов'), findsOneWidget);
+    expect(find.text('At least 8 characters'), findsOneWidget);
     expect(find.byIcon(Icons.account_circle_outlined), findsNothing);
   });
 
@@ -298,15 +319,15 @@ void main() {
   ) async {
     await pumpApp(tester, FakeAuthRepository());
 
-    await tester.tap(find.text('Зарегистрироваться'));
+    await tester.tap(find.text('Sign up'));
     await tester.pumpAndSettle();
-    expect(find.text('Создать аккаунт'), findsWidgets);
+    expect(find.text('Create account'), findsWidgets);
 
     await tester.tap(find.byType(AppCheckbox));
     await tester.pumpAndSettle();
 
     final submit = tester.widget<AppButton>(
-      find.widgetWithText(AppButton, 'Создать аккаунт'),
+      find.widgetWithText(AppButton, 'Create account'),
     );
     expect(submit.onPressed, isNull);
   });
@@ -328,8 +349,8 @@ void main() {
     await tester.pumpAndSettle();
 
     // The management and users sections are visible to the owner only.
-    expect(find.text('Управление'), findsNothing);
-    expect(find.text('Пользователи'), findsNothing);
+    expect(find.text('Management'), findsNothing);
+    expect(find.text('Users'), findsNothing);
   });
 
   testWidgets('the owner sees the management and users sections in the account menu', (
@@ -348,8 +369,8 @@ void main() {
     await tester.tap(find.byIcon(Icons.account_circle_outlined));
     await tester.pumpAndSettle();
 
-    expect(find.text('Управление'), findsOneWidget);
-    expect(find.text('Пользователи'), findsOneWidget);
+    expect(find.text('Management'), findsOneWidget);
+    expect(find.text('Users'), findsOneWidget);
   });
 
   testWidgets('signing out returns to the sign-in screen', (tester) async {
@@ -365,9 +386,9 @@ void main() {
 
     await tester.tap(find.byIcon(Icons.account_circle_outlined));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Выйти'));
+    await tester.tap(find.text('Sign out'));
     await tester.pumpAndSettle();
 
-    expect(find.text('С возвращением'), findsOneWidget);
+    expect(find.text('Welcome back'), findsOneWidget);
   });
 }

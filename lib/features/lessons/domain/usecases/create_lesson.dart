@@ -52,19 +52,19 @@ class CreateLesson {
   Future<Lesson> call(CreateLessonParams params) {
     final title = params.title.trim();
     if (title.isEmpty) {
-      throw const ValidationFailure('Введите название урока');
+      throw const ValidationFailure('Enter a lesson title');
     }
     if (params.audioId.trim().isEmpty) {
-      throw const ValidationFailure('Выберите аудиофайл');
+      throw const ValidationFailure('Choose an audio file');
     }
     if (params.durationMs <= 0) {
       throw const ValidationFailure(
-        'Длительность аудио должна быть больше нуля',
+        'Audio duration must be greater than zero',
       );
     }
     final segmentTexts = splitIntoSegments(params.rawText);
     if (segmentTexts.isEmpty) {
-      throw const ValidationFailure('Текст не содержит ни одного куска');
+      throw const ValidationFailure('The text contains no chunks');
     }
     final boundaries = params.boundaries;
     return _repository.createLesson(

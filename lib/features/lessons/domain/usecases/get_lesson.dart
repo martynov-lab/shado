@@ -11,7 +11,7 @@ class GetLesson {
   Future<Lesson> call(String id) async {
     final lesson = await _repository.getLesson(id);
     if (lesson == null) {
-      throw NotFoundFailure('Урок $id не найден');
+      throw NotFoundFailure('Lesson $id not found');
     }
     return lesson;
   }

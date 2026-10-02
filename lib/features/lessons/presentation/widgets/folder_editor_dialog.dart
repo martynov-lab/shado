@@ -45,13 +45,13 @@ class _FolderEditorDialogState extends State<FolderEditorDialog> {
       controller: _controller,
       autofocus: true,
       textInputAction: TextInputAction.done,
-      decoration: const InputDecoration(hintText: 'Название папки'),
+      decoration: const InputDecoration(hintText: 'Folder name'),
       onSubmitted: (_) => _submit(),
     ),
     actions: [
       TextButton(
         onPressed: () => Navigator.of(context).pop(),
-        child: const Text('Отмена'),
+        child: const Text('Cancel'),
       ),
       FilledButton(onPressed: _submit, child: Text(widget.confirmLabel)),
     ],

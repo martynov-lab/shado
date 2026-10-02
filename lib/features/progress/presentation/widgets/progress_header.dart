@@ -16,7 +16,7 @@ class ProgressHeader extends StatelessWidget {
     return Row(
       children: [
         Expanded(
-          child: Text('Прогресс', style: AppText.h2.copyWith(color: colors.text)),
+          child: Text('Progress', style: AppText.h2.copyWith(color: colors.text)),
         ),
         if (showAvatar)
           Container(

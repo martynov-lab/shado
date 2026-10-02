@@ -1,60 +1,61 @@
 ---
 name: resolving-dart-static-analysis-errors
 description: >-
-  Исправление ошибок flutter analyze и линтера в Shado: null safety, дженерики,
-  переопределения, ошибки после кодогенерации freezed/json_serializable.
-  Использовать при разборе диагностики анализатора и после build_runner.
+  Fixing flutter analyze and linter errors in Shado: null safety, generics,
+  overrides, errors after freezed/json_serializable code generation.
+  Use when going through analyzer diagnostics and after build_runner.
 ---
 
-# Ошибки анализатора
+# Analyzer errors
 
-Конфигурация — `analysis_options.yaml` (`package:flutter_lints` +
-исключение сгенерированных файлов). Правила кода —
+Configuration — `analysis_options.yaml` (`package:flutter_lints` + excluded
+generated files). Code rules —
 [docs/code_style.md](../../../docs/code_style.md).
 
-## Порядок
+## Order
 
 - [ ] `flutter analyze`
-- [ ] Ошибки в `*.freezed.dart` / `*.g.dart` — не правим руками:
-      `dart run build_runner build --force-jit` (при конфликте — `--delete-conflicting-outputs`)
-- [ ] `dart fix --apply` для механических правок
-- [ ] Остальное — руками (ниже)
-- [ ] Проверить: `flutter analyze` и `flutter test`
+- [ ] Errors in `*.freezed.dart` / `*.g.dart` — never fix by hand:
+      `dart run build_runner build --force-jit` (on a conflict — `--delete-conflicting-outputs`)
+- [ ] `dart fix --apply` for mechanical fixes
+- [ ] The rest — by hand (below)
+- [ ] Verify: `flutter analyze` and `flutter test`
 
-## Разбор частых диагностик
+## Common diagnostics
 
-**Nullable-получатель.** `?.` или `??`; `!` — только когда «не null»
-гарантировано выше по коду и это видно из строки. Поле, которое точно
-инициализируют до первого чтения, но не в конструкторе, — `late`.
+**Nullable receiver.** `?.` or `??`; `!` — only when "not null" is guaranteed
+earlier in the code and that is visible from the line. A field that is surely
+initialized before the first read, but not in the constructor, is `late`.
 
-**Несовпадение типов** (`List<dynamic> can't be assigned`). Ставим явный
-аргумент типа литералу: `<Segment>[]`, `<String, Object?>{}`.
+**Type mismatch** (`List<dynamic> can't be assigned`). Give the literal an
+explicit type argument: `<Segment>[]`, `<String, Object?>{}`.
 
-**Неисчерпывающий switch.** По `sealed`-типу или `enum` дописываем недостающие
-ветки, а не `default` — иначе следующий вариант молча провалится в рантайм.
-См. скилл `dart-pattern-matching`.
+**Non-exhaustive switch.** For a `sealed` type or an `enum`, add the missing
+cases, not `default` — otherwise the next variant silently falls through at
+runtime. See the `dart-pattern-matching` skill.
 
-**Неверное переопределение.** Параметр в наследнике сужать нельзя — либо
-расширяем тип, либо помечаем `covariant`, если сужение осознанное.
+**Invalid override.** A parameter cannot be narrowed in a subclass — either
+widen the type or mark it `covariant` if the narrowing is deliberate.
 
-**`use_build_context_synchronously`.** После `await` проверяем `mounted`
-(в `State`) или `context.mounted` — до обращения к `context`, а не `// ignore`.
+**`use_build_context_synchronously`.** After `await`, check `mounted`
+(in a `State`) or `context.mounted` before touching `context`, rather than
+`// ignore`.
 
-**Неиспользуемое.** Убираем то, что осталось от собственной правки. Чужой
-мёртвый код не трогаем — называем его в ответе.
+**Unused code.** Remove what is left over from your own change. Do not touch
+someone else's dead code — name it in the reply.
 
-## Про `// ignore`
+## About `// ignore`
 
-Подавление — крайняя мера, только с комментарием, зачем оно здесь. В
-`analysis_options.yaml` правило не отключаем ради одного файла.
+Suppression is a last resort, only with a comment on why it is there. Do not
+disable a rule in `analysis_options.yaml` for the sake of one file.
 
-## Кодогенерация
+## Code generation
 
-Правки в `@freezed`- и `@JsonSerializable`-моделях требуют перегенерации:
+Changes to `@freezed` and `@JsonSerializable` models require regeneration:
 
 ```bash
 dart run build_runner build --force-jit
 ```
 
-Ошибки вида «`_$LessonModel` не найден» или «part-файл устарел» лечатся ею же, а
-не правкой сгенерированного кода.
+Errors like "`_$LessonModel` not found" or "the part file is outdated" are
+cured by it too, not by editing generated code.

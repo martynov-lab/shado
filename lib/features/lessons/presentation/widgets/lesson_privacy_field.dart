@@ -26,12 +26,12 @@ class LessonPrivacyField extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             children: [
               Text(
-                'Приватный урок',
+                'Private lesson',
                 style: AppText.title.copyWith(color: colors.text),
               ),
               const SizedBox(height: AppSpacing.s1),
               Text(
-                'Виден только вам, в общий каталог не попадёт',
+                'Visible only to you, it will not appear in the shared catalog',
                 style: AppText.caption.copyWith(color: colors.text2),
               ),
             ],
@@ -41,7 +41,7 @@ class LessonPrivacyField extends StatelessWidget {
         AppSwitch(
           value: isPrivate,
           onChanged: onChanged,
-          semanticLabel: 'Приватный урок',
+          semanticLabel: 'Private lesson',
         ),
       ],
     );

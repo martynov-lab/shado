@@ -5,19 +5,19 @@ import 'package:shado/features/lessons/data/datasources/audio_cache.dart';
 import 'package:shado/features/lessons/data/datasources/audio_remote_datasource.dart';
 import 'package:shado/features/lessons/data/datasources/lesson_local_datasource.dart';
 import 'package:shado/features/lessons/data/datasources/lesson_remote_datasource.dart';
+import 'package:shado/features/lessons/data/datasources/topic_remote_datasource.dart';
+import 'package:shado/features/lessons/data/datasources/tts_remote_datasource.dart';
 import 'package:shado/features/lessons/data/models/audio_dto.dart';
 import 'package:shado/features/lessons/data/models/lesson_dto.dart';
 import 'package:shado/features/lessons/data/models/lesson_model.dart';
 import 'package:shado/features/lessons/data/models/segment_model.dart';
-import 'package:shado/features/lessons/data/models/waveform_peaks.dart';
 import 'package:shado/features/lessons/data/repositories/lesson_repository_impl.dart';
-import 'package:shado/features/lessons/data/datasources/topic_remote_datasource.dart';
-import 'package:shado/features/lessons/data/datasources/tts_remote_datasource.dart';
 import 'package:shado/features/lessons/domain/entities/lesson.dart';
 import 'package:shado/features/lessons/domain/entities/lesson_category.dart';
 import 'package:shado/features/lessons/domain/entities/segment.dart';
 import 'package:shado/features/lessons/domain/entities/tts_quota.dart';
 import 'package:shado/features/lessons/domain/entities/tts_voice.dart';
+import 'package:shado/features/lessons/domain/entities/waveform_peaks.dart';
 
 /// The server response for a lesson; segments come back as they were sent.
 Map<String, dynamic> lessonJson({

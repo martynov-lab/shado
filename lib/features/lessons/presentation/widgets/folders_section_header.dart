@@ -25,13 +25,13 @@ class FoldersSectionHeader extends StatelessWidget {
         children: [
           Expanded(
             child: Text(
-              'Папки',
+              'Folders',
               style: AppText.caption.copyWith(color: colors.text3),
             ),
           ),
           if (onCreate != null)
             AppButton(
-              label: 'Папка',
+              label: 'Folder',
               icon: Icons.add,
               variant: AppButtonVariant.ghost,
               size: AppButtonSize.sm,

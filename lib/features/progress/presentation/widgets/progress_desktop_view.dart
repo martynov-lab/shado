@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 
 import 'package:shado/theme/theme.dart';
 
-import '../controllers/progress_view_model.dart';
+import '../../../lessons/domain/entities/lesson.dart';
+import '../screens/progress_overview.dart';
 import 'achievements_wrap.dart';
 import 'activity_heatmap.dart';
 import 'continue_lessons.dart';
@@ -17,9 +18,14 @@ import 'weekly_goal_ring.dart';
 
 /// Progress on desktop: a dashboard column and a side panel on the right.
 class ProgressDesktopView extends StatelessWidget {
-  const ProgressDesktopView({super.key, required this.model});
+  const ProgressDesktopView({
+    super.key,
+    required this.overview,
+    required this.onOpenLesson,
+  });
 
-  final ProgressViewModel model;
+  final ProgressOverview overview;
+  final ValueChanged<Lesson> onOpenLesson;
 
   static const double _panelWidth = 320;
 
@@ -38,26 +44,29 @@ class ProgressDesktopView extends StatelessWidget {
               children: [
                 const ProgressHeader(showAvatar: false),
                 const SizedBox(height: AppSpacing.s5),
-                ProgressStatsRow(stats: model.statsWide),
-                if (model.recentLessonIds.isNotEmpty) ...[
+                ProgressStatsRow(stats: overview.statsWide),
+                if (overview.recentLessons.isNotEmpty) ...[
                   const SizedBox(height: AppSpacing.s4),
-                  ContinueLessons(lessonIds: model.recentLessonIds),
+                  ContinueLessons(
+                    lessons: overview.recentLessons,
+                    onOpenLesson: onOpenLesson,
+                  ),
                 ],
                 const SizedBox(height: AppSpacing.s4),
                 ProgressCard(
-                  title: 'Минуты по дням',
-                  caption: 'эта неделя',
+                  title: 'Minutes per day',
+                  caption: 'this week',
                   child: MinutesBarChart(
-                    values: model.weekBars,
-                    labels: model.weekLabels,
-                    todayIndex: model.weekTodayIndex,
+                    values: overview.weekBars,
+                    labels: overview.weekLabels,
+                    todayIndex: overview.weekTodayIndex,
                   ),
                 ),
                 const SizedBox(height: AppSpacing.s4),
                 ProgressCard(
-                  title: 'Активность',
-                  caption: 'последние 10 недель',
-                  child: ActivityHeatmap(cells: model.heatmapCells),
+                  title: 'Activity',
+                  caption: 'last 10 weeks',
+                  child: ActivityHeatmap(cells: overview.heatmapCells),
                 ),
               ],
             ),
@@ -68,7 +77,10 @@ class ProgressDesktopView extends StatelessWidget {
           decoration: BoxDecoration(
             color: colors.surface2,
             border: Border(
-              left: BorderSide(color: colors.border, width: AppSizes.borderThin),
+              left: BorderSide(
+                color: colors.border,
+                width: AppSizes.borderThin,
+              ),
             ),
           ),
           child: SafeArea(
@@ -77,22 +89,22 @@ class ProgressDesktopView extends StatelessWidget {
               padding: const EdgeInsets.all(AppSpacing.s6),
               children: [
                 StreakHeroCard(
-                  days: model.streakDays,
-                  hint: model.streakHintShort,
+                  days: overview.streakDays,
+                  hint: overview.streakHintShort,
                 ),
                 const SizedBox(height: AppSpacing.s4),
                 ProgressCard(
-                  title: 'Цель недели',
+                  title: 'Weekly goal',
                   child: WeeklyGoalRing(
-                    ratio: model.goalRatio,
-                    value: model.goalValue,
-                    remaining: model.goalRemaining,
+                    ratio: overview.goalRatio,
+                    value: overview.goalValue,
+                    remaining: overview.goalRemaining,
                   ),
                 ),
                 const SizedBox(height: AppSpacing.s4),
                 // Design placeholders: there is no server data yet.
                 const ProgressCard(
-                  title: 'Уровень',
+                  title: 'Level',
                   child: LevelProgressBar(
                     fromLevel: ProgressSample.levelFrom,
                     toLevel: ProgressSample.levelTo,
@@ -102,7 +114,7 @@ class ProgressDesktopView extends StatelessWidget {
                 ),
                 const SizedBox(height: AppSpacing.s4),
                 ProgressCard(
-                  title: 'Достижения',
+                  title: 'Achievements',
                   child: AchievementsWrap(
                     items: ProgressSample.achievements.sublist(0, 3),
                   ),

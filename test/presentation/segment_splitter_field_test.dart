@@ -42,7 +42,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.byType(SegmentMarkerChip), findsOneWidget);
-    expect(find.text('Сегментов: 3'), findsOneWidget);
+    expect(find.text('Segments: 3'), findsOneWidget);
   });
 
   testWidgets('the reset button removes every marker', (tester) async {
@@ -59,7 +59,7 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    final reset = find.widgetWithText(AppButton, 'Сбросить');
+    final reset = find.widgetWithText(AppButton, 'Reset');
     expect(tester.widget<AppButton>(reset).onPressed, isNotNull);
 
     await tester.tap(reset);
@@ -76,7 +76,7 @@ void main() {
     await tester.pumpWidget(wrap(controller: controller, segmentCount: 1));
     await tester.pumpAndSettle();
 
-    final reset = find.widgetWithText(AppButton, 'Сбросить');
+    final reset = find.widgetWithText(AppButton, 'Reset');
     expect(tester.widget<AppButton>(reset).onPressed, isNull);
   });
 

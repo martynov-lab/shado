@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 
 import 'package:shado/theme/theme.dart';
 
+import 'home_lesson_cover.dart';
+
 /// Lesson preview row: index, cover, title and duration.
 class HomeLessonRow extends StatelessWidget {
   const HomeLessonRow({
@@ -49,7 +51,7 @@ class HomeLessonRow extends StatelessWidget {
                   ),
                   const SizedBox(width: AppSpacing.s3),
                 ],
-                const _Cover(),
+                const HomeLessonCover(),
                 const SizedBox(width: AppSpacing.s3),
                 Expanded(
                   child: Column(
@@ -81,46 +83,6 @@ class HomeLessonRow extends StatelessWidget {
                   style: AppText.monoTime.copyWith(color: colors.text2),
                 ),
               ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-/// Square lesson cover: a gradient with a progress bar at the bottom.
-class _Cover extends StatelessWidget {
-  const _Cover();
-
-  static const double _size = 44;
-
-  @override
-  Widget build(BuildContext context) {
-    final onGrad = context.colors.primaryOn;
-
-    return ClipRRect(
-      borderRadius: AppRadii.rSm,
-      child: SizedBox(
-        width: _size,
-        height: _size,
-        child: DecoratedBox(
-          decoration: const BoxDecoration(gradient: AppBrand.signGradient),
-          child: Align(
-            alignment: Alignment.bottomLeft,
-            child: SizedBox(
-              height: 5,
-              child: Row(
-                children: [
-                  SizedBox(
-                    width: _size * 0.6,
-                    child: ColoredBox(color: onGrad),
-                  ),
-                  Expanded(
-                    child: ColoredBox(color: onGrad.withValues(alpha: 0.4)),
-                  ),
-                ],
-              ),
             ),
           ),
         ),

@@ -2,23 +2,21 @@ import 'package:flutter/material.dart';
 
 import 'package:shado/theme/theme.dart';
 
-import 'lesson_header.dart';
-import 'lesson_player_panel.dart';
-import 'lesson_segments_panel.dart';
-import 'lesson_transcript_panel.dart';
 
 /// Lesson screen on a wide layout: the player left, the segment list right.
 class LessonWideLayout extends StatelessWidget {
   const LessonWideLayout({
     super.key,
-    required this.lessonId,
-    required this.onBack,
-    required this.onEdit,
+    required this.header,
+    required this.transcript,
+    required this.player,
+    required this.segments,
   });
 
-  final String lessonId;
-  final VoidCallback onBack;
-  final VoidCallback onEdit;
+  final Widget header;
+  final Widget transcript;
+  final Widget player;
+  final Widget segments;
 
   @override
   Widget build(BuildContext context) {
@@ -34,28 +32,33 @@ class LessonWideLayout extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            LessonHeader(lessonId: lessonId, onBack: onBack, onEdit: onEdit),
+            header,
             const SizedBox(height: AppSpacing.s5),
             Expanded(
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   Expanded(
-                    child: SingleChildScrollView(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          LessonTranscriptPanel(lessonId: lessonId),
-                          const SizedBox(height: AppSpacing.s4),
-                          LessonPlayerPanel(lessonId: lessonId),
-                        ],
-                      ),
+                    child: CustomScrollView(
+                      slivers: [
+                        SliverFillRemaining(
+                          hasScrollBody: false,
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              Expanded(child: transcript),
+                              const SizedBox(height: AppSpacing.s4),
+                              player,
+                            ],
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                   const SizedBox(width: AppSpacing.s5),
                   SizedBox(
                     width: sideWidth,
-                    child: LessonSegmentsPanel(lessonId: lessonId),
+                    child: segments,
                   ),
                 ],
               ),

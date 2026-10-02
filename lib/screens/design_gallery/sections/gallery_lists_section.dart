@@ -13,8 +13,8 @@ class GalleryListsSection extends StatelessWidget {
     final colors = context.colors;
 
     return GallerySection(
-      title: 'Списки и карточки',
-      caption: 'Строка урока и карточка-контейнер',
+      title: 'Lists and cards',
+      caption: 'Lesson row and container card',
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -25,25 +25,25 @@ class GalleryListsSection extends StatelessWidget {
                 AppListRow(
                   index: 1,
                   title: 'Small talk at the airport',
-                  subtitle: 'Повседневное общение · 12 сегментов',
+                  subtitle: 'Everyday conversation · 12 segments',
                   trailingTime: '04:17',
                   selected: true,
-                  semanticLabel: 'Урок 1, Small talk at the airport, играет',
+                  semanticLabel: 'Lesson 1, Small talk at the airport, playing',
                   onTap: () {},
                 ),
                 AppListRow(
                   index: 2,
                   title: 'Ordering coffee',
-                  subtitle: 'Повседневное общение · 8 сегментов',
+                  subtitle: 'Everyday conversation · 8 segments',
                   trailingTime: '02:48',
                   onTap: () {},
                 ),
                 AppListRow(
                   index: 3,
                   title: 'Job interview basics',
-                  subtitle: 'Деловой английский · 21 сегмент',
+                  subtitle: 'Business English · 21 segments',
                   trailing: const AppBadge(
-                    label: 'Новый',
+                    label: 'New',
                     variant: AppBadgeVariant.fresh,
                   ),
                   onTap: () {},
@@ -54,7 +54,7 @@ class GalleryListsSection extends StatelessWidget {
           const SizedBox(height: AppSpacing.s5),
           AppCard(
             onTap: () {},
-            semanticLabel: 'Карточка прогресса',
+            semanticLabel: 'Progress card',
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -62,20 +62,20 @@ class GalleryListsSection extends StatelessWidget {
                   children: [
                     Expanded(
                       child: Text(
-                        'Нажимаемая карточка',
+                        'Tappable card',
                         style: AppText.h2.copyWith(color: colors.text),
                       ),
                     ),
                     const AppBadge(
-                      label: 'Серия 7 дней',
+                      label: '7-day streak',
                       variant: AppBadgeVariant.hot,
                     ),
                   ],
                 ),
                 const SizedBox(height: AppSpacing.s3),
                 Text(
-                  'На наведении поднимается с тени e1 до e2, с клавиатуры '
-                  'получает кольцо фокуса.',
+                  'On hover it rises from shadow e1 to e2, from the keyboard '
+                  'it gets a focus ring.',
                   style: AppText.body.copyWith(color: colors.text2),
                 ),
               ],

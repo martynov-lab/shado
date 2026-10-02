@@ -12,26 +12,26 @@ class StorageSettingsSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return const SettingsSection(
-      title: 'Данные и хранилище',
+      title: 'Data and storage',
       rows: [
         SettingsRow(
           icon: Icons.storage_rounded,
-          title: 'Использовано',
-          subtitle: '240 МБ · 14 уроков',
+          title: 'Used',
+          subtitle: '240 MB · 14 lessons',
         ),
         SettingsSwitchRow(
           icon: Icons.download_rounded,
-          title: 'Скачивать аудио офлайн',
+          title: 'Download audio for offline',
           initialValue: true,
         ),
         SettingsRow(
           icon: Icons.backup_outlined,
-          title: 'Резервная копия',
+          title: 'Backup',
           trailing: SettingsChevron(),
         ),
         SettingsRow(
           icon: Icons.delete_outline_rounded,
-          title: 'Очистить кэш',
+          title: 'Clear cache',
           danger: true,
           trailing: SettingsChevron(),
         ),

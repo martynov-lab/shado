@@ -36,7 +36,7 @@ class TrimBar extends StatelessWidget {
         child: OutlinedButton.icon(
           onPressed: isEnabled ? onStartPressed : null,
           icon: const Icon(Icons.content_cut),
-          label: const Text('Обрезать'),
+          label: const Text('Trim'),
         ),
       );
     }
@@ -46,14 +46,14 @@ class TrimBar extends StatelessWidget {
         FilledButton.icon(
           onPressed: onApplyPressed,
           icon: const Icon(Icons.check),
-          label: const Text('Применить'),
+          label: const Text('Apply'),
         ),
         const SizedBox(width: 8),
-        TextButton(onPressed: onCancelPressed, child: const Text('Отменить')),
+        TextButton(onPressed: onCancelPressed, child: const Text('Cancel')),
         const SizedBox(width: 12),
         Expanded(
           child: Text(
-            'Останется ${formatPosition(range.durationMs)}',
+            'Remaining ${formatPosition(range.durationMs)}',
             style: theme.textTheme.bodySmall,
             overflow: TextOverflow.ellipsis,
           ),

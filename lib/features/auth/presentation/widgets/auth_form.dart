@@ -67,14 +67,14 @@ class AuthForm extends StatelessWidget {
       children: [
         if (showHeading) ...[
           Text(
-            isRegistration ? 'Создать аккаунт' : 'С возвращением',
+            isRegistration ? 'Create account' : 'Welcome back',
             style: AppText.h1.copyWith(color: colors.text),
           ),
           const SizedBox(height: AppSpacing.s1),
           Text(
             isRegistration
-                ? 'Начните учиться уже сегодня'
-                : 'Войдите, чтобы продолжить тренировку',
+                ? 'Start learning today'
+                : 'Sign in to continue practicing',
             style: AppText.caption.copyWith(color: colors.text3),
           ),
           const SizedBox(height: AppSpacing.s6),
@@ -82,8 +82,8 @@ class AuthForm extends StatelessWidget {
         if (isRegistration) ...[
           AppTextField(
             controller: nameController,
-            label: 'Имя',
-            hint: 'Андрей',
+            label: 'Name',
+            hint: 'Alex',
             prefixIcon: AppIcons.user,
             textInputAction: TextInputAction.next,
             enabled: !isBusy,
@@ -103,11 +103,11 @@ class AuthForm extends StatelessWidget {
         const SizedBox(height: AppSpacing.s4),
         AppTextField(
           controller: passwordController,
-          label: 'Пароль',
-          hint: isRegistration ? 'Минимум 8 символов' : '••••••••',
+          label: 'Password',
+          hint: isRegistration ? 'At least 8 characters' : '••••••••',
           prefixIcon: AppIcons.lock,
           suffixIcon: obscurePassword ? AppIcons.eye : AppIcons.eyeOff,
-          suffixSemanticLabel: obscurePassword ? 'Показать' : 'Скрыть',
+          suffixSemanticLabel: obscurePassword ? 'Show' : 'Hide',
           onSuffixPressed: onObscureToggled,
           obscureText: obscurePassword,
           errorText: passwordError,
@@ -126,7 +126,7 @@ class AuthForm extends StatelessWidget {
           // Password recovery does not exist yet — the link has no action.
           const Align(
             alignment: Alignment.centerRight,
-            child: AuthLink(label: 'Забыли пароль?'),
+            child: AuthLink(label: 'Forgot password?'),
           ),
         ],
         if (errorMessage != null) ...[
@@ -142,7 +142,7 @@ class AuthForm extends StatelessWidget {
           onPressed: canSubmit ? onSubmitPressed : null,
         ),
         const SizedBox(height: AppSpacing.s5),
-        const AuthDivider(label: 'или'),
+        const AuthDivider(label: 'or'),
         const SizedBox(height: AppSpacing.s5),
         // Social sign-in is not wired yet — buttons have no handlers.
         const Row(

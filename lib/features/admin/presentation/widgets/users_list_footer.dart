@@ -27,7 +27,7 @@ class UsersListFooter extends StatelessWidget {
                 child: CircularProgressIndicator(strokeWidth: 2),
               )
             : Text(
-                'Показано $shownCount из $totalCount',
+                'Showing $shownCount of $totalCount',
                 style: theme.textTheme.bodySmall,
               ),
       ),

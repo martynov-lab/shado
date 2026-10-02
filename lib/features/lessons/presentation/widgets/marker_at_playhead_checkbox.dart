@@ -19,12 +19,12 @@ class MarkerAtPlayheadCheckbox extends StatelessWidget {
   Widget build(BuildContext context) {
     return Tooltip(
       message: value
-          ? 'Новая метка встанет в позицию ползунка'
-          : 'Новая метка встанет правее самой правой',
+          ? 'A new marker lands at the playhead'
+          : 'A new marker lands right of the rightmost one',
       child: AppCheckbox(
         value: value,
         onChanged: onChanged,
-        label: 'Метка по ползунку',
+        label: 'Marker at playhead',
       ),
     );
   }

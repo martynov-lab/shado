@@ -36,7 +36,7 @@ class _AddLessonsToFolderSheetState extends State<AddLessonsToFolderSheet> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Text(
-              'Добавить уроки',
+              'Add lessons',
               style: AppText.h2.copyWith(color: colors.text),
             ),
             const SizedBox(height: AppSpacing.s4),
@@ -44,7 +44,7 @@ class _AddLessonsToFolderSheetState extends State<AddLessonsToFolderSheet> {
               Padding(
                 padding: const EdgeInsets.symmetric(vertical: AppSpacing.s6),
                 child: Text(
-                  'Все ваши уроки уже в этой папке.',
+                  'All your lessons are already in this folder.',
                   textAlign: TextAlign.center,
                   style: AppText.body.copyWith(color: colors.text2),
                 ),
@@ -72,8 +72,8 @@ class _AddLessonsToFolderSheetState extends State<AddLessonsToFolderSheet> {
             const SizedBox(height: AppSpacing.s5),
             AppButton(
               label: _selected.isEmpty
-                  ? 'Добавить'
-                  : 'Добавить · ${lessonsLabel(_selected.length)}',
+                  ? 'Add'
+                  : 'Add · ${lessonsLabel(_selected.length)}',
               expand: true,
               onPressed: _selected.isEmpty
                   ? null

@@ -1,18 +1,4 @@
-/// Pending daily activity delta.
-class PendingEvents {
-  const PendingEvents({required this.listenedMs, required this.segmentRepeats});
-
-  static const PendingEvents empty = PendingEvents(
-    listenedMs: 0,
-    segmentRepeats: 0,
-  );
-
-  final int listenedMs;
-  final int segmentRepeats;
-
-  /// Nothing to send — skip the network call.
-  bool get isEmpty => listenedMs <= 0 && segmentRepeats <= 0;
-}
+import '../../domain/entities/pending_events.dart';
 
 /// Local progress counters in a separate database; minutes and repeats must
 /// not be lost, so migrations here are additive only.

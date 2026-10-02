@@ -1,177 +1,45 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:shado/theme/theme.dart';
-import 'package:shado/widgets/widgets.dart';
 
-import '../controllers/lessons_filter.dart';
-import 'lessons_filter_options.dart';
+import '../../domain/entities/lessons_filter.dart';
+import '../screens/lessons/lesson_filter_group.dart';
+import 'lessons_filter_clear_button.dart';
+import 'lessons_filter_trigger.dart';
 
 /// Row of filter chips; each opens a sheet with its group checkboxes.
-class LessonsFilterBar extends ConsumerWidget {
-  const LessonsFilterBar({super.key});
+class LessonsFilterBar extends StatelessWidget {
+  const LessonsFilterBar({
+    super.key,
+    required this.filter,
+    required this.groups,
+    required this.onOpenGroup,
+    required this.onClear,
+  });
 
-  /// How many values of the group are selected — the chip badge.
-  int _countFor(LessonsFilter filter, LessonFilterGroup group) =>
-      switch (group) {
-        LessonFilterGroup.topic => filter.topicIds.length,
-        LessonFilterGroup.level => filter.levels.length,
-        LessonFilterGroup.accent => filter.accents.length,
-        LessonFilterGroup.status => filter.statuses.length,
-        LessonFilterGroup.access => filter.onlyPrivate ? 1 : 0,
-      };
-
-  Future<void> _open(BuildContext context, LessonFilterGroup group) {
-    return showAppBottomSheet<void>(
-      context: context,
-      title: group.title,
-      builder: (context) =>
-          SingleChildScrollView(child: LessonsFilterOptions(only: group)),
-    );
-  }
+  final LessonsFilter filter;
+  final List<LessonFilterGroup> groups;
+  final ValueChanged<LessonFilterGroup> onOpenGroup;
+  final VoidCallback onClear;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final filter = ref.watch(lessonsFilterProvider);
-    final notifier = ref.read(lessonsFilterProvider.notifier);
-    final groups = ref.watch(lessonFilterGroupsProvider);
+  Widget build(BuildContext context) {
 
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
       child: Row(
         children: [
           for (final group in groups) ...[
-            _FilterTrigger(
+            LessonsFilterTrigger(
               label: group.title,
-              count: _countFor(filter, group),
-              onTap: () => _open(context, group),
+              count: group.countIn(filter),
+              onTap: () => onOpenGroup(group),
             ),
             const SizedBox(width: AppSpacing.s2),
           ],
-          if (filter.activeCount > 0) _ClearButton(onTap: notifier.clearFilters),
+          if (filter.activeCount > 0)
+            LessonsFilterClearButton(onTap: onClear),
         ],
-      ),
-    );
-  }
-}
-
-class _FilterTrigger extends StatelessWidget {
-  const _FilterTrigger({
-    required this.label,
-    required this.count,
-    required this.onTap,
-  });
-
-  final String label;
-  final int count;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final colors = context.colors;
-    final active = count > 0;
-    final foreground = active ? colors.primary : colors.text2;
-
-    return Semantics(
-      button: true,
-      label: label,
-      excludeSemantics: true,
-      child: AppTapTarget(
-        child: Material(
-          type: MaterialType.transparency,
-          child: InkWell(
-            onTap: onTap,
-            borderRadius: AppRadii.rPill,
-            child: Container(
-              height: AppSizes.controlSm,
-              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.s4),
-              decoration: BoxDecoration(
-                color: active ? colors.primarySoft : colors.surface,
-                borderRadius: AppRadii.rPill,
-                border: Border.all(
-                  color: active ? colors.primary : colors.border,
-                  width: AppSizes.borderThin,
-                ),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(label, style: AppText.label.copyWith(color: foreground)),
-                  if (active) ...[
-                    const SizedBox(width: AppSpacing.s2),
-                    _CountBadge(count),
-                  ],
-                  const SizedBox(width: AppSpacing.s1),
-                  AppIcon(
-                    AppIcons.chevronDown,
-                    size: AppSizes.iconSm,
-                    color: foreground,
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _CountBadge extends StatelessWidget {
-  const _CountBadge(this.count);
-
-  final int count;
-
-  @override
-  Widget build(BuildContext context) {
-    final colors = context.colors;
-
-    return Container(
-      padding: const EdgeInsets.symmetric(
-        horizontal: AppSpacing.s2,
-        vertical: 1,
-      ),
-      decoration: BoxDecoration(
-        color: colors.primary,
-        borderRadius: AppRadii.rPill,
-      ),
-      child: Text(
-        '$count',
-        style: AppText.caption.copyWith(color: colors.primaryOn),
-      ),
-    );
-  }
-}
-
-class _ClearButton extends StatelessWidget {
-  const _ClearButton({required this.onTap});
-
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final colors = context.colors;
-
-    return Semantics(
-      button: true,
-      child: AppTapTarget(
-        child: Material(
-          type: MaterialType.transparency,
-          child: InkWell(
-            onTap: onTap,
-            borderRadius: AppRadii.rPill,
-            child: Padding(
-              padding: const EdgeInsets.symmetric(
-                horizontal: AppSpacing.s3,
-                vertical: AppSpacing.s2,
-              ),
-              child: Text(
-                'Сбросить',
-                style: AppText.label.copyWith(color: colors.text3),
-              ),
-            ),
-          ),
-        ),
       ),
     );
   }

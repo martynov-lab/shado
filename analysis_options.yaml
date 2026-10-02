@@ -11,15 +11,22 @@ include: package:flutter_lints/flutter.yaml
 
 analyzer:
   errors:
-    # @JsonKey на параметрах freezed-конструктора переносится в сгенерированные
-    # поля — для анализатора это выглядит некорректной целью аннотации.
+    # @JsonKey on freezed constructor parameters is copied to the generated
+    # fields — the analyzer sees it as an invalid annotation target.
     invalid_annotation_target: ignore
   exclude:
     - "**/*.freezed.dart"
     - "**/*.g.dart"
-    # В docs/ лежат материалы поставки (шаблоны, примеры), а не код приложения:
-    # они не собираются и не должны шуметь в анализе.
+    # docs/ holds delivery materials (templates, samples), not app code:
+    # they are not built and must not clutter the analysis.
     - "docs/**"
+    - build/**
+    - android/**
+    - ios/**
+    - web/**
+    - windows/**
+    - macos/**
+    - linux/**
 
 linter:
   # The lint rules applied to this project can be customized in the

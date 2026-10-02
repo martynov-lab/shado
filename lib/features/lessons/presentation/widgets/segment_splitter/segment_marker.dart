@@ -126,7 +126,7 @@ class SegmentMarkerChip extends StatelessWidget {
               ),
             ),
             const SizedBox(width: AppSpacing.s2),
-            Text('Метка', style: AppText.label.copyWith(color: colors.primary)),
+            Text('Marker', style: AppText.label.copyWith(color: colors.primary)),
           ],
         ),
       ),

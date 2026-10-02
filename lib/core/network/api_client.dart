@@ -176,7 +176,7 @@ class ApiClient {
     final response = error.response;
     if (response == null) {
       if (error.type == DioExceptionType.cancel) {
-        return NetworkFailure('Запрос отменён', cause: error);
+        return NetworkFailure('Request cancelled', cause: error);
       }
       return NetworkFailure(_networkMessage(error), cause: error);
     }
@@ -207,20 +207,20 @@ class ApiClient {
     return switch (error.type) {
       DioExceptionType.connectionTimeout ||
       DioExceptionType.sendTimeout ||
-      DioExceptionType.receiveTimeout => 'Сервер не ответил вовремя',
-      _ => 'Нет связи с сервером',
+      DioExceptionType.receiveTimeout => 'The server did not respond in time',
+      _ => 'No connection to the server',
     };
   }
 
   static String _statusMessage(int? status) => switch (status) {
-    401 => 'Требуется вход',
-    403 => 'Доступ запрещён',
-    404 => 'Не найдено',
-    409 => 'Конфликт данных',
-    413 => 'Файл слишком большой',
-    415 => 'Формат не поддерживается',
-    422 => 'Сервер отклонил данные',
-    429 => 'Слишком много попыток, подождите минуту',
-    _ => 'Ошибка сервера ($status)',
+    401 => 'Sign-in required',
+    403 => 'Access denied',
+    404 => 'Not found',
+    409 => 'Data conflict',
+    413 => 'File is too large',
+    415 => 'Format is not supported',
+    422 => 'The server rejected the data',
+    429 => 'Too many attempts, please wait a minute',
+    _ => 'Server error ($status)',
   };
 }

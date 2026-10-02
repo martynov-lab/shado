@@ -1,49 +1,40 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:shado/theme/theme.dart';
 import 'package:shado/widgets/widgets.dart';
 
-import '../../../auth/presentation/controllers/auth_controller.dart';
-import '../../../progress/presentation/controllers/progress_providers.dart';
 import '../../domain/entities/lesson.dart';
-import '../controllers/lesson_permissions.dart';
-import '../controllers/lessons_filter.dart';
+import '../../domain/entities/lessons_filter.dart';
 import 'lesson_gradients.dart';
 import 'lesson_labels.dart';
+import 'lesson_play_bubble.dart';
 import 'lesson_progress_bar.dart';
 
 /// Lesson grid card: a cap with a play button, the title and progress.
-class LessonGridCard extends ConsumerWidget {
+class LessonGridCard extends StatelessWidget {
   const LessonGridCard({
     super.key,
     required this.lesson,
+    required this.progress,
+    required this.canDelete,
     required this.onTap,
     required this.onDelete,
   });
 
   final Lesson lesson;
+
+  /// How much of the lesson is done, `0..1`.
+  final double progress;
+
+  /// Long press deletes only for users allowed to.
+  final bool canDelete;
+
   final VoidCallback onTap;
   final VoidCallback onDelete;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     final colors = context.colors;
-    final role = ref.watch(
-      authControllerProvider.select((auth) => auth.user?.role),
-    );
-    // Long-press delete is attached only for users allowed to remove lessons.
-    final canDelete = canModifyLesson(role, lesson);
-    final progress =
-        ref
-            .watch(
-              lessonProgressProvider((
-                lessonId: lesson.id,
-                segmentCount: lesson.segmentCount,
-              )),
-            )
-            .value ??
-        0.0;
 
     return GestureDetector(
       onLongPress: canDelete ? onDelete : null,
@@ -80,13 +71,13 @@ class LessonGridCard extends ConsumerWidget {
                                 AppIcons.lock,
                                 size: AppSizes.iconSm,
                                 color: colors.primaryOn,
-                                semanticLabel: 'Приватный',
+                                semanticLabel: 'Private',
                               ),
                             if (lessonIsNew(lesson))
                               const AppBadge(label: 'New'),
                           ],
                         ),
-                        _PlayBubble(),
+                        const LessonPlayBubble(),
                       ],
                     ),
                   ],
@@ -119,26 +110,6 @@ class LessonGridCard extends ConsumerWidget {
             ],
           ),
         ),
-      ),
-    );
-  }
-}
-
-/// White play dot in the corner of the card cap.
-class _PlayBubble extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    final colors = context.colors;
-
-    return Container(
-      width: 36,
-      height: 36,
-      decoration: BoxDecoration(
-        color: colors.surface,
-        shape: BoxShape.circle,
-      ),
-      child: Center(
-        child: AppIcon(AppIcons.play, size: AppSizes.iconSm, color: colors.primary),
       ),
     );
   }

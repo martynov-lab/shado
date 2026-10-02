@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 
 import 'package:shado/theme/theme.dart';
 
+import 'activity_heatmap_cell.dart';
+import 'activity_heatmap_legend.dart';
+
 /// Activity heatmap: seven weekday rows across [columns] weeks.
 class ActivityHeatmap extends StatelessWidget {
   const ActivityHeatmap({super.key, required this.cells, this.columns = 10});
@@ -10,16 +13,6 @@ class ActivityHeatmap extends StatelessWidget {
   final int columns;
 
   static const int _rows = 7;
-  static const double _radius = 3;
-
-  /// Cell opacity derived from the minute count.
-  static double _alphaFor(int minutes) {
-    if (minutes <= 0) return 0.08;
-    if (minutes <= 8) return 0.30;
-    if (minutes <= 18) return 0.55;
-    if (minutes <= 30) return 0.78;
-    return 1;
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -41,7 +34,10 @@ class ActivityHeatmap extends StatelessWidget {
                       ),
                       child: AspectRatio(
                         aspectRatio: 1,
-                        child: _Cell(minutes: _valueAt(r, c), colors: colors),
+                        child: ActivityHeatmapCell(
+                          minutes: _valueAt(r, c),
+                          colors: colors,
+                        ),
                       ),
                     ),
                   ),
@@ -49,7 +45,7 @@ class ActivityHeatmap extends StatelessWidget {
             ),
           ),
         const SizedBox(height: AppSpacing.s3),
-        _Legend(colors: colors),
+        ActivityHeatmapLegend(colors: colors),
       ],
     );
   }
@@ -57,74 +53,5 @@ class ActivityHeatmap extends StatelessWidget {
   int _valueAt(int row, int col) {
     final index = row * columns + col;
     return index < cells.length ? cells[index] : 0;
-  }
-}
-
-/// Heatmap cell with the minute count inside.
-class _Cell extends StatelessWidget {
-  const _Cell({required this.minutes, required this.colors});
-
-  final int minutes;
-  final AppColors colors;
-
-  @override
-  Widget build(BuildContext context) {
-    final alpha = ActivityHeatmap._alphaFor(minutes);
-
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        color: colors.primary.withValues(alpha: alpha),
-        borderRadius: BorderRadius.circular(ActivityHeatmap._radius),
-      ),
-      child: minutes <= 0
-          ? null
-          : Center(
-              child: Padding(
-                padding: const EdgeInsets.all(AppSpacing.s1),
-                child: FittedBox(
-                  child: Text(
-                    '$minutes',
-                    style: AppText.caption.copyWith(
-                      color: alpha >= 0.78 ? colors.primaryOn : colors.text,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                ),
-              ),
-            ),
-    );
-  }
-}
-
-class _Legend extends StatelessWidget {
-  const _Legend({required this.colors});
-
-  final AppColors colors;
-
-  @override
-  Widget build(BuildContext context) {
-    final captionStyle = AppText.caption.copyWith(color: colors.text3);
-
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.end,
-      children: [
-        Text('меньше', style: captionStyle),
-        const SizedBox(width: AppSpacing.s2),
-        for (final alpha in const [0.30, 0.55, 0.78, 1.0])
-          Padding(
-            padding: const EdgeInsets.only(right: AppSpacing.s1),
-            child: Container(
-              width: 12,
-              height: 12,
-              decoration: BoxDecoration(
-                color: colors.primary.withValues(alpha: alpha),
-                borderRadius: BorderRadius.circular(ActivityHeatmap._radius),
-              ),
-            ),
-          ),
-        const SizedBox(width: AppSpacing.s1),
-        Text('больше', style: captionStyle),
-      ],
-    );
   }
 }

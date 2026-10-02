@@ -12,7 +12,7 @@ class SettingsThemeRow extends StatelessWidget {
   Widget build(BuildContext context) {
     return const SettingsRow(
       icon: Icons.light_mode_outlined,
-      title: 'Тема',
+      title: 'Theme',
       // Icons only: labels do not fit into a settings row.
       trailing: ThemeToggle(labels: false),
     );

@@ -83,5 +83,5 @@ class Language {
   int get hashCode => Object.hash(code, name);
 
   @override
-  String toString() => 'Language($code, "$name", ${accents.length} акцентов)';
+  String toString() => 'Language($code, "$name", ${accents.length} accents)';
 }

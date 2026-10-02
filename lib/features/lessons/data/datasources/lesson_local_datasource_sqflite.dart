@@ -61,7 +61,7 @@ class SqfliteLessonLocalDataSource implements LessonLocalDataSource {
       return db;
     } catch (error) {
       _opening = null;
-      throw StorageFailure('Не удалось открыть базу данных', cause: error);
+      throw StorageFailure('Failed to open the database', cause: error);
     }
   }
 
@@ -105,7 +105,7 @@ class SqfliteLessonLocalDataSource implements LessonLocalDataSource {
     } on Failure {
       rethrow;
     } catch (error) {
-      throw StorageFailure('Не удалось прочитать список уроков', cause: error);
+      throw StorageFailure('Failed to read the lesson list', cause: error);
     }
   }
 
@@ -124,7 +124,7 @@ class SqfliteLessonLocalDataSource implements LessonLocalDataSource {
     } on Failure {
       rethrow;
     } catch (error) {
-      throw StorageFailure('Не удалось прочитать урок $id', cause: error);
+      throw StorageFailure('Failed to read lesson $id', cause: error);
     }
   }
 
@@ -140,7 +140,7 @@ class SqfliteLessonLocalDataSource implements LessonLocalDataSource {
     } on Failure {
       rethrow;
     } catch (error) {
-      throw StorageFailure('Не удалось сохранить урок', cause: error);
+      throw StorageFailure('Failed to save the lesson', cause: error);
     }
   }
 
@@ -161,7 +161,7 @@ class SqfliteLessonLocalDataSource implements LessonLocalDataSource {
     } on Failure {
       rethrow;
     } catch (error) {
-      throw StorageFailure('Не удалось сохранить уроки', cause: error);
+      throw StorageFailure('Failed to save the lessons', cause: error);
     }
   }
 
@@ -179,7 +179,7 @@ class SqfliteLessonLocalDataSource implements LessonLocalDataSource {
     } on Failure {
       rethrow;
     } catch (error) {
-      throw StorageFailure('Не удалось удалить уроки', cause: error);
+      throw StorageFailure('Failed to delete the lessons', cause: error);
     }
   }
 
@@ -199,7 +199,7 @@ class SqfliteLessonLocalDataSource implements LessonLocalDataSource {
     } on Failure {
       rethrow;
     } catch (error) {
-      throw StorageFailure('Не удалось прочитать кеш уроков', cause: error);
+      throw StorageFailure('Failed to read the lesson cache', cause: error);
     }
   }
 
@@ -219,7 +219,7 @@ class SqfliteLessonLocalDataSource implements LessonLocalDataSource {
       rethrow;
     } catch (error) {
       throw StorageFailure(
-        'Не удалось прочитать метку синхронизации',
+        'Failed to read the sync marker',
         cause: error,
       );
     }
@@ -237,7 +237,7 @@ class SqfliteLessonLocalDataSource implements LessonLocalDataSource {
       rethrow;
     } catch (error) {
       throw StorageFailure(
-        'Не удалось сохранить метку синхронизации',
+        'Failed to save the sync marker',
         cause: error,
       );
     }
@@ -252,7 +252,7 @@ class SqfliteLessonLocalDataSource implements LessonLocalDataSource {
     } on Failure {
       rethrow;
     } catch (error) {
-      throw StorageFailure('Не удалось очистить кеш уроков', cause: error);
+      throw StorageFailure('Failed to clear the lesson cache', cause: error);
     }
   }
 

@@ -6,19 +6,19 @@ class VersionConflictDialog extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => AlertDialog(
-    title: const Text('Урок изменён на другом устройстве'),
+    title: const Text('Lesson changed on another device'),
     content: const Text(
-      'Пока вы правили, урок сохранили в другом месте. Свежая версия уже '
-      'загружена — откройте её и повторите правку поверх.',
+      'While you were editing, the lesson was saved elsewhere. The latest version is already '
+      'loaded — open it and redo your edit on top.',
     ),
     actions: [
       TextButton(
         onPressed: () => Navigator.of(context).pop(false),
-        child: const Text('Остаться'),
+        child: const Text('Stay'),
       ),
       FilledButton(
         onPressed: () => Navigator.of(context).pop(true),
-        child: const Text('Открыть свежую'),
+        child: const Text('Open latest'),
       ),
     ],
   );

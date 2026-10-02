@@ -20,7 +20,7 @@ class LessonsHeader extends StatelessWidget {
             TextSpan(
               children: [
                 TextSpan(
-                  text: 'Уроки',
+                  text: 'Lessons',
                   style: AppText.h2.copyWith(color: colors.text),
                 ),
                 TextSpan(

@@ -1,36 +1,48 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:shado/core/constants/app_constants.dart';
-import 'package:shado/features/settings/presentation/widgets/playback_speed_sheet.dart';
 import 'package:shado/theme/theme.dart';
 import 'package:shado/widgets/widgets.dart';
 
 import '../../../../core/utils/duration_format.dart';
-import '../controllers/lesson_controller.dart';
+import '../screens/lesson/lesson_state.dart';
 import 'lesson_gradients.dart';
 import 'lesson_labels.dart';
-import 'lesson_player_waveform.dart';
+import 'lesson_player_tag.dart';
+import 'lesson_speed_chip.dart';
+import 'lesson_transport_button.dart';
 
 /// Dark player panel: segment, waveform, timing and transport buttons.
-class LessonPlayerPanel extends ConsumerWidget {
-  const LessonPlayerPanel({super.key, required this.lessonId});
+class LessonPlayerPanel extends StatelessWidget {
+  const LessonPlayerPanel({
+    super.key,
+    required this.state,
+    required this.waveform,
+    required this.onPrevious,
+    required this.onTogglePlay,
+    required this.onNext,
+    required this.onPickSpeed,
+    required this.onToggleLoop,
+  });
 
-  final String lessonId;
+  final LessonState state;
+  final Widget waveform;
+  final VoidCallback onPrevious;
+  final VoidCallback onTogglePlay;
+  final VoidCallback onNext;
+  final VoidCallback onPickSpeed;
+  final VoidCallback onToggleLoop;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     final colors = context.colors;
-    final state = ref.watch(lessonControllerProvider(lessonId)).value;
-    if (state == null) return const SizedBox.shrink();
-    final controller = ref.read(lessonControllerProvider(lessonId).notifier);
 
     final fg = lessonPlayerForeground;
     final range = state.playerRange;
     // One segment gets a singular caption, a range gets a plural one.
     final rangeLabel = range.isSingle
-        ? 'Сегмент ${segmentNumber(range.start)}'
-        : 'Сегменты ${segmentNumber(range.start)}–${segmentNumber(range.end)}';
+        ? 'Segment ${segmentNumber(range.start)}'
+        : 'Segments ${segmentNumber(range.start)}–${segmentNumber(range.end)}';
 
     return Container(
       padding: const EdgeInsets.all(AppSpacing.s6),
@@ -54,11 +66,11 @@ class LessonPlayerPanel extends ConsumerWidget {
                   ),
                 ),
               ),
-              _Tag(label: 'SHADOWING', foreground: fg),
+              LessonPlayerTag(label: 'SHADOWING', foreground: fg),
             ],
           ),
           const SizedBox(height: AppSpacing.s4),
-          LessonPlayerWaveform(lessonId: lessonId, color: fg),
+          waveform,
           const SizedBox(height: AppSpacing.s2),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -84,182 +96,47 @@ class LessonPlayerPanel extends ConsumerWidget {
             spacing: AppSpacing.s2,
             runSpacing: AppSpacing.s2,
             children: [
-              _TransportButton(
+              LessonTransportButton(
                 icon: AppIcons.prev,
-                semanticLabel: 'Предыдущий сегмент',
+                semanticLabel: 'Previous segment',
                 background: fg.withValues(alpha: 0.08),
                 foreground: fg,
-                onTap: state.canGoPrevious ? controller.previous : null,
+                onTap: state.canGoPrevious ? onPrevious : null,
               ),
-              _TransportButton(
+              LessonTransportButton(
                 icon: state.isPlayerPlaying ? AppIcons.pause : AppIcons.play,
-                semanticLabel: state.isPlayerPlaying ? 'Стоп' : 'Играть',
+                semanticLabel: state.isPlayerPlaying ? 'Stop' : 'Play',
                 background: colors.primary,
                 foreground: colors.primaryOn,
                 size: AppSizes.controlLg,
-                onTap: controller.togglePlayCurrent,
+                onTap: onTogglePlay,
               ),
-              _TransportButton(
+              LessonTransportButton(
                 icon: AppIcons.next,
-                semanticLabel: 'Следующий сегмент',
+                semanticLabel: 'Next segment',
                 background: fg.withValues(alpha: 0.08),
                 foreground: fg,
-                onTap: state.canGoNext ? controller.next : null,
+                onTap: state.canGoNext ? onNext : null,
               ),
-              _SpeedChip(
+              LessonSpeedChip(
                 label: speedLabel(state.speed),
                 foreground: fg,
-                onTap: () => _pickSpeed(context, ref, state.speed),
+                onTap: onPickSpeed,
               ),
-              _TransportButton(
+              LessonTransportButton(
                 icon: AppIcons.loop,
                 semanticLabel: state.isLooped
-                    ? 'Выключить повтор'
-                    : 'Повторять',
+                    ? 'Turn off repeat'
+                    : 'Repeat',
                 background: state.isLooped
                     ? colors.primary.withValues(alpha: 0.35)
                     : fg.withValues(alpha: 0.08),
                 foreground: fg,
-                onTap: controller.toggleLoop,
+                onTap: onToggleLoop,
               ),
             ],
           ),
         ],
-      ),
-    );
-  }
-
-  /// Opens the speed list and applies the choice to the current lesson.
-  Future<void> _pickSpeed(
-    BuildContext context,
-    WidgetRef ref,
-    double current,
-  ) async {
-    final selected = await showAppBottomSheet<double>(
-      context: context,
-      title: 'Скорость воспроизведения',
-      builder: (_) => PlaybackSpeedSheet(current: current),
-    );
-    if (selected == null) return;
-    await ref
-        .read(lessonControllerProvider(lessonId).notifier)
-        .setSpeed(selected);
-  }
-}
-
-class _Tag extends StatelessWidget {
-  const _Tag({required this.label, required this.foreground});
-
-  final String label;
-  final Color foreground;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(
-        horizontal: AppSpacing.s3,
-        vertical: AppSpacing.s1,
-      ),
-      decoration: BoxDecoration(
-        color: foreground.withValues(alpha: 0.14),
-        borderRadius: AppRadii.rPill,
-      ),
-      child: Text(
-        label,
-        style: AppText.caption.copyWith(color: foreground, letterSpacing: 0.6),
-      ),
-    );
-  }
-}
-
-class _TransportButton extends StatelessWidget {
-  const _TransportButton({
-    required this.icon,
-    required this.semanticLabel,
-    required this.background,
-    required this.foreground,
-    required this.onTap,
-    this.size = AppSizes.controlMd,
-  });
-
-  final AppIcons icon;
-  final String semanticLabel;
-  final Color background;
-  final Color foreground;
-  final VoidCallback? onTap;
-  final double size;
-
-  @override
-  Widget build(BuildContext context) {
-    final enabled = onTap != null;
-
-    return Semantics(
-      button: true,
-      enabled: enabled,
-      label: semanticLabel,
-      excludeSemantics: true,
-      child: Tooltip(
-        message: semanticLabel,
-        child: Opacity(
-          opacity: enabled ? 1 : AppOpacities.disabled,
-          child: Material(
-            color: background,
-            shape: const CircleBorder(),
-            clipBehavior: Clip.antiAlias,
-            child: InkWell(
-              onTap: onTap,
-              child: SizedBox.square(
-                dimension: size,
-                child: Center(
-                  child: AppIcon(
-                    icon,
-                    size: AppSizes.iconMd,
-                    color: foreground,
-                  ),
-                ),
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _SpeedChip extends StatelessWidget {
-  const _SpeedChip({
-    required this.label,
-    required this.foreground,
-    required this.onTap,
-  });
-
-  final String label;
-  final Color foreground;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return Semantics(
-      button: true,
-      label: 'Скорость $label',
-      excludeSemantics: true,
-      child: Material(
-        color: foreground.withValues(alpha: 0.08),
-        shape: const StadiumBorder(),
-        clipBehavior: Clip.antiAlias,
-        child: InkWell(
-          onTap: onTap,
-          child: Padding(
-            padding: const EdgeInsets.symmetric(
-              horizontal: AppSpacing.s4,
-              vertical: AppSpacing.s3,
-            ),
-            child: Text(
-              label,
-              style: AppText.monoTime.copyWith(color: foreground),
-            ),
-          ),
-        ),
       ),
     );
   }

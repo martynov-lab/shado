@@ -16,7 +16,7 @@ class UpdateFolder {
   }) {
     final trimmed = title.trim();
     if (trimmed.isEmpty) {
-      throw const ValidationFailure('Введите название папки');
+      throw const ValidationFailure('Enter a folder name');
     }
     return _repository.updateFolder(
       id: id,

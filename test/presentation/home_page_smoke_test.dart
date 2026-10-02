@@ -1,30 +1,36 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:shado/features/auth/presentation/controllers/auth_controller.dart';
-import 'package:shado/features/home/presentation/pages/home_page.dart';
-import 'package:shado/features/lessons/domain/entities/lesson.dart';
-import 'package:shado/features/lessons/presentation/controllers/lessons_controller.dart';
+import 'package:shado/di/auth_providers.dart';
+import 'package:shado/di/lesson_providers.dart';
+import 'package:shado/di/progress_providers.dart';
+import 'package:shado/features/home/presentation/screens/home_page.dart';
+import 'package:shado/features/progress/data/datasources/progress_remote_datasource.dart';
 import 'package:shado/features/progress/domain/entities/progress_summary.dart';
-import 'package:shado/features/progress/presentation/controllers/progress_providers.dart';
 import 'package:shado/theme/theme.dart';
 
-/// Fake session controller returning a ready state without the network.
-class _FakeAuthController extends AuthController {
-  @override
-  AuthState build() => const AuthState(status: AuthStatus.authenticated);
-}
+import 'fake_auth_repository.dart';
+import 'fake_lesson_repository.dart';
 
-/// Fake progress summary: fixed metrics without hitting the server.
-class _FakeProgressSummary extends ProgressSummaryController {
-  @override
-  Future<ProgressSummary> build() async => _summary;
-}
+/// Progress server: the summary arrives when [summary] completes.
+class _FakeProgressRemote implements ProgressRemoteDataSource {
+  _FakeProgressRemote(this.summary);
 
-/// An empty lesson list without touching the cache or the network.
-class _FakeLessons extends LessonsController {
+  final Future<ProgressSummary> summary;
+
   @override
-  Future<List<Lesson>> build() async => const <Lesson>[];
+  Future<ProgressSummary> reportEvents({
+    int? listenedMs,
+    int? segmentRepeats,
+    String? lessonId,
+    bool? completed,
+  }) => summary;
+
+  @override
+  Future<ProgressSummary> getSummary() => summary;
+
+  @override
+  Future<List<ProgressDay>> getHistory({int days = 70}) async => const [];
 }
 
 final _summary = ProgressSummary(
@@ -61,12 +67,13 @@ void main() {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
-          authControllerProvider.overrideWith(_FakeAuthController.new),
-          progressSummaryProvider.overrideWith(_FakeProgressSummary.new),
-          progressHistoryProvider.overrideWith(
-            (ref) => Future.value(const <ProgressDay>[]),
+          authRepositoryProvider.overrideWithValue(
+            FakeAuthRepository(user: testUser()),
           ),
-          lessonsControllerProvider.overrideWith(_FakeLessons.new),
+          progressRemoteDataSourceProvider.overrideWithValue(
+            _FakeProgressRemote(Future.value(_summary)),
+          ),
+          lessonRepositoryProvider.overrideWithValue(FakeLessonRepository()),
         ],
         child: MaterialApp(
           theme: AppTheme.light(),

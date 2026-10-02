@@ -71,5 +71,6 @@ class _WaveMarkPainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(_WaveMarkPainter oldDelegate) => oldDelegate.color != color;
+  bool shouldRepaint(_WaveMarkPainter oldDelegate) =>
+      oldDelegate.color != color;
 }

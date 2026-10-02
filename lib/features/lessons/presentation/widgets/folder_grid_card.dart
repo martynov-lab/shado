@@ -45,7 +45,7 @@ class FolderGridCard extends StatelessWidget {
                       AppIcons.lock,
                       size: AppSizes.iconSm,
                       color: colors.primaryOn,
-                      semanticLabel: 'Приватная',
+                      semanticLabel: 'Private',
                     ),
                 ],
               ),
@@ -64,7 +64,7 @@ class FolderGridCard extends StatelessWidget {
                   ),
                   const SizedBox(height: AppSpacing.s1),
                   Text(
-                    'Папка · ${lessonsLabel(folder.lessonCount)}',
+                    'Folder · ${lessonsLabel(folder.lessonCount)}',
                     style: AppText.caption.copyWith(color: colors.text2),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,

@@ -2,8 +2,7 @@ import 'package:flutter/material.dart';
 
 import 'package:shado/theme/theme.dart';
 
-import '../controllers/home_lesson_tile.dart';
-import '../controllers/home_view_model.dart';
+import '../screens/home_overview.dart';
 import 'continue_hero_card.dart';
 import 'home_card.dart';
 import 'home_goal_ring.dart';
@@ -18,18 +17,16 @@ import 'home_week_dots.dart';
 class HomeDesktopView extends StatelessWidget {
   const HomeDesktopView({
     super.key,
-    required this.name,
-    required this.model,
-    required this.lessons,
-    required this.lessonsCount,
+    required this.overview,
+    required this.heroProgress,
     required this.onOpenLessons,
     required this.onOpenLesson,
   });
 
-  final String name;
-  final HomeViewModel model;
-  final List<HomeLessonTile> lessons;
-  final int lessonsCount;
+  final HomeOverview overview;
+
+  /// Progress of the lesson in the continue card, `0..1`.
+  final double heroProgress;
   final VoidCallback onOpenLessons;
   final void Function(String lessonId) onOpenLesson;
 
@@ -37,6 +34,7 @@ class HomeDesktopView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final lessons = overview.lessons;
     final colors = context.colors;
     final hero = lessons.isEmpty ? null : lessons.first;
 
@@ -49,7 +47,7 @@ class HomeDesktopView extends StatelessWidget {
             child: ListView(
               padding: const EdgeInsets.all(AppSpacing.s8),
               children: [
-                HomeGreeting(name: name, showAccount: false),
+                HomeGreeting(name: overview.greetingName, showAccount: false),
                 const SizedBox(height: AppSpacing.s5),
                 IntrinsicHeight(
                   child: Row(
@@ -59,21 +57,22 @@ class HomeDesktopView extends StatelessWidget {
                         flex: 3,
                         child: ContinueHeroCard(
                           lesson: hero,
+                          progress: heroProgress,
                           onOpen: hero == null
                               ? onOpenLessons
                               : () => onOpenLesson(hero.id),
                         ),
                       ),
                       const SizedBox(width: AppSpacing.s4),
-                      for (var i = 0; i < model.statsCompact.length; i++) ...[
+                      for (var i = 0; i < overview.statsCompact.length; i++) ...[
                         if (i > 0) const SizedBox(width: AppSpacing.s4),
                         Expanded(
                           flex: 2,
                           child: HomeStat(
-                            caption: model.statsCompact[i].$1,
-                            value: model.statsCompact[i].$2,
-                            unit: model.statsCompact[i].$3,
-                            delta: model.statsCompact[i].$4,
+                            caption: overview.statsCompact[i].$1,
+                            value: overview.statsCompact[i].$2,
+                            unit: overview.statsCompact[i].$3,
+                            delta: overview.statsCompact[i].$4,
                           ),
                         ),
                       ],
@@ -82,8 +81,8 @@ class HomeDesktopView extends StatelessWidget {
                 ),
                 const SizedBox(height: AppSpacing.s6),
                 HomeSectionHeader(
-                  title: 'Мои уроки',
-                  actionLabel: 'Все $lessonsCount',
+                  title: 'My lessons',
+                  actionLabel: 'All ${overview.lessonsCount}',
                   onAction: onOpenLessons,
                 ),
                 const SizedBox(height: AppSpacing.s2),
@@ -113,30 +112,30 @@ class HomeDesktopView extends StatelessWidget {
               padding: const EdgeInsets.all(AppSpacing.s6),
               children: [
                 HomeCard(
-                  title: 'Эта неделя',
+                  title: 'This week',
                   child: HomeWeekDots(
-                    days: model.weekDays,
-                    done: model.weekDone,
-                    todayIndex: model.weekTodayIndex,
+                    days: overview.weekDays,
+                    done: overview.weekDone,
+                    todayIndex: overview.weekTodayIndex,
                   ),
                 ),
                 const SizedBox(height: AppSpacing.s4),
                 HomeCard(
-                  title: 'Цель недели',
+                  title: 'Weekly goal',
                   child: HomeGoalRing(
-                    ratio: model.goalRatio,
-                    value: model.goalValue,
-                    remaining: model.goalRemaining,
+                    ratio: overview.goalRatio,
+                    value: overview.goalValue,
+                    remaining: overview.goalRemaining,
                   ),
                 ),
                 const SizedBox(height: AppSpacing.s4),
                 HomeCard(
-                  title: 'Минуты по дням',
-                  caption: 'эта неделя',
+                  title: 'Minutes per day',
+                  caption: 'this week',
                   child: HomeMinutesMini(
-                    values: model.weekMinutes,
-                    labels: model.weekDays,
-                    todayIndex: model.weekTodayIndex,
+                    values: overview.weekMinutes,
+                    labels: overview.weekDays,
+                    todayIndex: overview.weekTodayIndex,
                   ),
                 ),
               ],

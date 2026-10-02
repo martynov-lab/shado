@@ -53,5 +53,5 @@ class Folder {
       Object.hash(id, title, isPublic, language, version, lessonCount);
 
   @override
-  String toString() => 'Folder($id, "$title", $lessonCount уроков)';
+  String toString() => 'Folder($id, "$title", $lessonCount lessons)';
 }

@@ -47,7 +47,10 @@ class MainShellBrand extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text('Shadowing', style: AppText.title.copyWith(color: colors.text)),
+            Text(
+              'Shadowing',
+              style: AppText.title.copyWith(color: colors.text),
+            ),
             Text(
               'Learn by repeating',
               style: AppText.caption.copyWith(color: colors.text3),

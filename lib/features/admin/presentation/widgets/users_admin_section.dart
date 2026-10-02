@@ -1,106 +1,69 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../../core/network/api_exception.dart';
+import 'package:shado/core/async/async_state.dart';
+
 import '../../../auth/domain/entities/auth_user.dart';
-import '../../../auth/presentation/controllers/auth_controller.dart';
-import '../admin_controller.dart';
+import '../screens/admin_users_state.dart';
 import 'admin_error_view.dart';
 import 'user_tile.dart';
 import 'users_list_footer.dart';
 
 /// User list with search, paging and role changes.
-class UsersAdminSection extends ConsumerStatefulWidget {
-  const UsersAdminSection({super.key});
+class UsersAdminSection extends StatelessWidget {
+  const UsersAdminSection({
+    super.key,
+    required this.users,
+    required this.currentUserId,
+    required this.searchController,
+    required this.scrollController,
+    required this.onSearchChanged,
+    required this.onRefresh,
+    required this.onRoleChanged,
+  });
 
-  @override
-  ConsumerState<UsersAdminSection> createState() => _UsersAdminSectionState();
-}
+  final AsyncState<AdminUsersState> users;
 
-class _UsersAdminSectionState extends ConsumerState<UsersAdminSection> {
-  final _searchController = TextEditingController();
-  final _scrollController = ScrollController();
+  /// The signed-in owner; their own role can't be changed.
+  final String? currentUserId;
 
-  @override
-  void initState() {
-    super.initState();
-    _scrollController.addListener(_onScroll);
-    // The role could be revoked from another device — re-read it.
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      ref.read(authControllerProvider.notifier).reloadUser();
-    });
-  }
+  final TextEditingController searchController;
 
-  @override
-  void dispose() {
-    _scrollController.dispose();
-    _searchController.dispose();
-    super.dispose();
-  }
+  /// The next page loads when this list is scrolled near the end.
+  final ScrollController scrollController;
 
-  void _onScroll() {
-    if (!_scrollController.hasClients) return;
-    final position = _scrollController.position;
-    if (position.pixels >= position.maxScrollExtent - 320) {
-      ref.read(adminUsersControllerProvider.notifier).loadMore();
-    }
-  }
-
-  Future<void> _setRole(AuthUser user, UserRole role) async {
-    try {
-      await ref
-          .read(adminUsersControllerProvider.notifier)
-          .setRole(user.id, role);
-      if (!mounted) return;
-      _showMessage('${user.email}: роль ${role.wire}');
-    } on ApiException catch (error) {
-      // The server explains the refusal — show its message.
-      _showMessage(error.message);
-    } catch (error) {
-      _showMessage('Не удалось изменить роль: $error');
-    }
-  }
-
-  void _showMessage(String message) {
-    if (!mounted) return;
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(SnackBar(content: Text(message)));
-  }
+  final ValueChanged<String> onSearchChanged;
+  final Future<void> Function() onRefresh;
+  final void Function(AuthUser user, UserRole role) onRoleChanged;
 
   @override
   Widget build(BuildContext context) {
-    final state = ref.watch(adminUsersControllerProvider);
-    final controller = ref.read(adminUsersControllerProvider.notifier);
-    final currentUser = ref.watch(authControllerProvider).user;
-
     return Column(
       children: [
         Padding(
           padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
           child: TextField(
-            controller: _searchController,
+            controller: searchController,
             decoration: const InputDecoration(
-              hintText: 'Поиск по email',
+              hintText: 'Search by email',
               prefixIcon: Icon(Icons.search),
               isDense: true,
             ),
-            onChanged: controller.search,
+            onChanged: onSearchChanged,
           ),
         ),
         Expanded(
-          child: switch (state) {
-            AsyncError(:final error) => AdminErrorView(
+          child: switch (users) {
+            AsyncFailed(:final error) => AdminErrorView(
               error: error,
-              onRetryPressed: controller.refresh,
+              onRetryPressed: onRefresh,
             ),
-            AsyncData(value: final data) when data.users.isEmpty => const Center(
-              child: Text('Никого не нашлось'),
+            AsyncReady(value: final data) when data.users.isEmpty => const Center(
+              child: Text('No one found'),
             ),
-            AsyncData(value: final data) => RefreshIndicator(
-              onRefresh: controller.refresh,
+            AsyncReady(value: final data) => RefreshIndicator(
+              onRefresh: onRefresh,
               child: ListView.builder(
-                controller: _scrollController,
+                controller: scrollController,
                 // One extra item at the end is the list footer.
                 itemCount: data.users.length + 1,
                 itemBuilder: (context, index) => index == data.users.length
@@ -111,9 +74,9 @@ class _UsersAdminSectionState extends ConsumerState<UsersAdminSection> {
                       )
                     : UserTile(
                         user: data.users[index],
-                        isSelf: data.users[index].id == currentUser?.id,
+                        isSelf: data.users[index].id == currentUserId,
                         onRoleChanged: (role) =>
-                            _setRole(data.users[index], role),
+                            onRoleChanged(data.users[index], role),
                       ),
               ),
             ),

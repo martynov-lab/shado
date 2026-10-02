@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 
 import 'package:shado/theme/theme.dart';
 
-import '../controllers/progress_view_model.dart';
+import '../../../lessons/domain/entities/lesson.dart';
+import '../screens/progress_overview.dart';
 import 'activity_heatmap.dart';
 import 'continue_lessons.dart';
 import 'level_progress_bar.dart';
@@ -17,9 +18,14 @@ import 'weekly_goal_ring.dart';
 /// Progress on tablet: streak and weekly goal in two columns, a stats row,
 /// the minutes chart beside the heatmap and a full-width level bar.
 class ProgressTabletView extends StatelessWidget {
-  const ProgressTabletView({super.key, required this.model});
+  const ProgressTabletView({
+    super.key,
+    required this.overview,
+    required this.onOpenLesson,
+  });
 
-  final ProgressViewModel model;
+  final ProgressOverview overview;
+  final ValueChanged<Lesson> onOpenLesson;
 
   @override
   Widget build(BuildContext context) {
@@ -36,31 +42,34 @@ class ProgressTabletView extends StatelessWidget {
                 Expanded(
                   flex: 3,
                   child: StreakHeroCard(
-                    days: model.streakDays,
-                    hint: model.streakHintShort,
+                    days: overview.streakDays,
+                    hint: overview.streakHintShort,
                   ),
                 ),
                 const SizedBox(width: AppSpacing.s4),
                 Expanded(
                   flex: 2,
                   child: ProgressCard(
-                    title: 'Цель недели',
+                    title: 'Weekly goal',
                     child: WeeklyGoalRing(
-                      ratio: model.goalRatio,
-                      value: model.goalValue,
-                      remaining: model.goalRemaining,
+                      ratio: overview.goalRatio,
+                      value: overview.goalValue,
+                      remaining: overview.goalRemaining,
                     ),
                   ),
                 ),
               ],
             ),
           ),
-          if (model.recentLessonIds.isNotEmpty) ...[
+          if (overview.recentLessons.isNotEmpty) ...[
             const SizedBox(height: AppSpacing.s4),
-            ContinueLessons(lessonIds: model.recentLessonIds),
+            ContinueLessons(
+              lessons: overview.recentLessons,
+              onOpenLesson: onOpenLesson,
+            ),
           ],
           const SizedBox(height: AppSpacing.s4),
-          ProgressStatsRow(stats: model.stats),
+          ProgressStatsRow(stats: overview.stats),
           const SizedBox(height: AppSpacing.s4),
           IntrinsicHeight(
             child: Row(
@@ -68,21 +77,21 @@ class ProgressTabletView extends StatelessWidget {
               children: [
                 Expanded(
                   child: ProgressCard(
-                    title: 'Минуты по дням',
-                    caption: 'неделя',
+                    title: 'Minutes per day',
+                    caption: 'week',
                     child: MinutesBarChart(
-                      values: model.weekBars,
-                      labels: model.weekLabels,
-                      todayIndex: model.weekTodayIndex,
+                      values: overview.weekBars,
+                      labels: overview.weekLabels,
+                      todayIndex: overview.weekTodayIndex,
                     ),
                   ),
                 ),
                 const SizedBox(width: AppSpacing.s4),
                 Expanded(
                   child: ProgressCard(
-                    title: 'Активность',
-                    caption: '10 недель',
-                    child: ActivityHeatmap(cells: model.heatmapCells),
+                    title: 'Activity',
+                    caption: '10 weeks',
+                    child: ActivityHeatmap(cells: overview.heatmapCells),
                   ),
                 ),
               ],
@@ -91,7 +100,7 @@ class ProgressTabletView extends StatelessWidget {
           const SizedBox(height: AppSpacing.s4),
           // Placeholder: there is no server data about the level yet.
           const ProgressCard(
-            title: 'Твой уровень',
+            title: 'Your level',
             child: LevelProgressBar(
               fromLevel: ProgressSample.levelFrom,
               toLevel: ProgressSample.levelTo,

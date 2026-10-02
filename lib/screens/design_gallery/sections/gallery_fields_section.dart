@@ -17,7 +17,7 @@ class _GalleryFieldsSectionState extends State<GalleryFieldsSection> {
     text: 'Small talk at the airport',
   );
   late final TextEditingController _errorField = TextEditingController(
-    text: 'не почта',
+    text: 'not an email',
   );
   final TextEditingController _emptyField = TextEditingController();
 
@@ -35,90 +35,90 @@ class _GalleryFieldsSectionState extends State<GalleryFieldsSection> {
 
   @override
   Widget build(BuildContext context) => GallerySection(
-    title: 'Поля',
-    caption: 'Ввод, выпадающий список и ползунки',
+    title: 'Fields',
+    caption: 'Input, dropdown and sliders',
     child: Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         AppTextField(
           controller: _plainField,
-          label: 'Название урока',
-          hint: 'Например, «Разговор в аэропорту»',
+          label: 'Lesson title',
+          hint: 'For example, "Conversation at the airport"',
           prefixIcon: AppIcons.music,
         ),
         const SizedBox(height: AppSpacing.s5),
         AppTextField(
           controller: _emptyField,
-          label: 'Пароль',
-          hint: 'Минимум 8 символов',
+          label: 'Password',
+          hint: 'At least 8 characters',
           prefixIcon: AppIcons.lock,
           suffixIcon: AppIcons.eye,
-          suffixSemanticLabel: 'Показать пароль',
+          suffixSemanticLabel: 'Show password',
           obscureText: true,
-          helperText: 'Хранится только на устройстве',
+          helperText: 'Stored only on the device',
           onSuffixPressed: () {},
         ),
         const SizedBox(height: AppSpacing.s5),
         AppTextField(
           controller: _errorField,
-          label: 'Почта',
+          label: 'Email',
           prefixIcon: AppIcons.mail,
-          errorText: 'Похоже, это не адрес почты',
+          errorText: 'This does not look like an email address',
         ),
         const SizedBox(height: AppSpacing.s5),
         const AppTextField(
-          label: 'Выключенное поле',
-          hint: 'Недоступно',
+          label: 'Disabled field',
+          hint: 'Unavailable',
           enabled: false,
         ),
         const SizedBox(height: AppSpacing.s6),
         AppDropdown<String>(
-          label: 'Тема урока',
-          hint: 'Выберите тему',
+          label: 'Lesson topic',
+          hint: 'Choose a topic',
           value: _topic,
           onChanged: (value) => setState(() => _topic = value),
           items: const [
             AppDropdownItem(
               value: 'daily',
-              label: 'Повседневное общение',
+              label: 'Everyday conversation',
               icon: Icons.chat_bubble_outline_rounded,
             ),
             AppDropdownItem(
               value: 'business',
-              label: 'Деловой английский',
+              label: 'Business English',
               icon: Icons.work_outline_rounded,
             ),
             AppDropdownItem(
               value: 'travel',
-              label: 'Путешествия',
+              label: 'Travel',
               icon: Icons.flight_takeoff_rounded,
             ),
             AppDropdownItem(
               value: 'movies',
-              label: 'Кино и сериалы',
+              label: 'Movies and TV shows',
               icon: Icons.movie_outlined,
             ),
           ],
         ),
         const SizedBox(height: AppSpacing.s6),
         AppSlider(
-          label: 'Скорость',
+          label: 'Speed',
           valueLabel: '${_speedValue.toStringAsFixed(2)}×',
           value: _speedValue,
           min: 0.5,
           max: 2,
           divisions: 6,
-          semanticLabel: 'Скорость воспроизведения',
+          semanticLabel: 'Playback speed',
           onChanged: (value) => setState(() => _speedValue = value),
         ),
         AppSlider(
-          label: 'Позиция',
+          label: 'Position',
           valueLabel: '00:42 / 04:17',
           value: _position,
-          semanticLabel: 'Позиция воспроизведения',
+          semanticLabel: 'Playback position',
           onChanged: (value) => setState(() => _position = value),
         ),
-        const AppSlider(label: 'Выключенный', value: 0.5, onChanged: null),
+        const AppSlider(label: 'Disabled', value: 0.5, onChanged: null),
       ],
     ),
   );

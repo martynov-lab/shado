@@ -4,6 +4,7 @@ import 'package:shado/theme/theme.dart';
 
 import '../../domain/entities/folder.dart';
 import '../../domain/entities/lesson.dart';
+import '../screens/lessons/lesson_list_item.dart';
 import 'folder_grid_card.dart';
 import 'lesson_grid_card.dart';
 
@@ -11,7 +12,7 @@ import 'lesson_grid_card.dart';
 class LessonsGridView extends StatelessWidget {
   const LessonsGridView({
     super.key,
-    required this.lessons,
+    required this.items,
     required this.onOpen,
     required this.onDelete,
     required this.onRefresh,
@@ -19,17 +20,17 @@ class LessonsGridView extends StatelessWidget {
     this.onOpenFolder,
   });
 
-  final List<Lesson> lessons;
-  final void Function(Lesson) onOpen;
-  final void Function(Lesson) onDelete;
+  final List<LessonListItem> items;
+  final ValueChanged<Lesson> onOpen;
+  final ValueChanged<Lesson> onDelete;
   final Future<void> Function() onRefresh;
 
   final List<Folder> folders;
-  final void Function(Folder)? onOpenFolder;
+  final ValueChanged<Folder>? onOpenFolder;
 
   @override
   Widget build(BuildContext context) {
-    final total = folders.length + lessons.length;
+    final total = folders.length + items.length;
 
     return RefreshIndicator(
       onRefresh: onRefresh,
@@ -50,11 +51,13 @@ class LessonsGridView extends StatelessWidget {
               onTap: () => onOpenFolder?.call(folder),
             );
           }
-          final lesson = lessons[index - folders.length];
+          final item = items[index - folders.length];
           return LessonGridCard(
-            lesson: lesson,
-            onTap: () => onOpen(lesson),
-            onDelete: () => onDelete(lesson),
+            lesson: item.lesson,
+            progress: item.progress,
+            canDelete: item.canModify,
+            onTap: () => onOpen(item.lesson),
+            onDelete: () => onDelete(item.lesson),
           );
         },
       ),

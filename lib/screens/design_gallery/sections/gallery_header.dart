@@ -15,12 +15,12 @@ class GalleryHeader extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Дизайн-система',
+          'Design system',
           style: AppText.displayLg.copyWith(color: colors.text),
         ),
         const SizedBox(height: AppSpacing.s2),
         Text(
-          'Слушай. Повторяй. Все компоненты — на токенах.',
+          'Listen. Repeat. Every component is built on tokens.',
           style: AppText.body.copyWith(color: colors.text2),
         ),
         const SizedBox(height: AppSpacing.s6),

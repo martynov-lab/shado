@@ -88,7 +88,10 @@ class _SegmentSplitterFieldState extends State<SegmentSplitterField> {
       fontSize: 16,
       height: 1.9,
     );
-    final strutStyle = StrutStyle.fromTextStyle(baseStyle, forceStrutHeight: true);
+    final strutStyle = StrutStyle.fromTextStyle(
+      baseStyle,
+      forceStrutHeight: true,
+    );
     final hasMarkers = _controller.text.contains(kSegmentDelimiter);
 
     // Needle positions are read from the field after it has laid out.
@@ -103,7 +106,7 @@ class _SegmentSplitterFieldState extends State<SegmentSplitterField> {
             const SizedBox(width: AppSpacing.s3),
             Expanded(
               child: Text(
-                'Сегментов: ${widget.segmentCount}',
+                'Segments: ${widget.segmentCount}',
                 style: AppText.monoTime.copyWith(color: colors.text2),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
@@ -111,7 +114,7 @@ class _SegmentSplitterFieldState extends State<SegmentSplitterField> {
             ),
             const SizedBox(width: AppSpacing.s3),
             AppButton(
-              label: 'Сбросить',
+              label: 'Reset',
               variant: AppButtonVariant.ghost,
               size: AppButtonSize.sm,
               onPressed: widget.enabled && hasMarkers ? _clearAll : null,
@@ -167,7 +170,7 @@ class _SegmentSplitterFieldState extends State<SegmentSplitterField> {
                         enabledBorder: InputBorder.none,
                         focusedBorder: InputBorder.none,
                         disabledBorder: InputBorder.none,
-                        hintText: 'Вставьте текст урока…',
+                        hintText: 'Paste the lesson text…',
                         hintStyle: baseStyle.copyWith(color: colors.text3),
                       ),
                     ),

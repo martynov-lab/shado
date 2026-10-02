@@ -24,12 +24,12 @@ class EmptyLessonsView extends StatelessWidget {
             ),
             const SizedBox(height: AppSpacing.s4),
             Text(
-              'Уроков пока нет',
+              'No lessons yet',
               style: AppText.title.copyWith(color: colors.text),
             ),
             const SizedBox(height: AppSpacing.s2),
             Text(
-              'Загрузите аудио и разметьте текст, чтобы начать заниматься.',
+              'Upload audio and mark up the text to start practicing.',
               textAlign: TextAlign.center,
               style: AppText.body.copyWith(color: colors.text2),
             ),

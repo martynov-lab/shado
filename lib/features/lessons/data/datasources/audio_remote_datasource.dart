@@ -7,8 +7,8 @@ import '../../../../core/config/app_config.dart';
 import '../../../../core/error/failures.dart';
 import '../../../../core/network/api_client.dart';
 import '../../../../core/network/api_exception.dart';
+import '../../domain/entities/waveform_peaks.dart';
 import '../models/audio_dto.dart';
-import '../models/waveform_peaks.dart';
 
 /// Server-side audio: upload, peaks and the file.
 abstract interface class AudioRemoteDataSource {
@@ -46,7 +46,7 @@ class ApiAudioRemoteDataSource implements AudioRemoteDataSource {
   }) async {
     final file = File(filePath);
     if (!await file.exists()) {
-      throw AudioFailure('Файл $filePath не найден');
+      throw AudioFailure('File $filePath not found');
     }
     final size = await file.length();
     // The size is checked before uploading.
@@ -54,8 +54,8 @@ class ApiAudioRemoteDataSource implements AudioRemoteDataSource {
       throw ApiException(
         code: ApiErrorCode.payloadTooLarge,
         message:
-            'Файл больше ${AppConfig.maxUploadBytes ~/ (1024 * 1024)} МБ — '
-            'сервер его не примет',
+            'The file is larger than ${AppConfig.maxUploadBytes ~/ (1024 * 1024)} MB — '
+            'the server will not accept it',
         status: 413,
       );
     }

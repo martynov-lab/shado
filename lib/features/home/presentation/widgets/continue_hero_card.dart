@@ -1,41 +1,35 @@
-import 'dart:math' as math;
-
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:shado/theme/theme.dart';
-import 'package:shado/widgets/widgets.dart';
 
-import '../../../progress/presentation/controllers/progress_providers.dart';
-import '../controllers/home_lesson_tile.dart';
+import '../screens/home_lesson_tile.dart';
+import 'continue_hero_play_button.dart';
+import 'continue_hero_wave.dart';
 
 /// Continue card with the latest lesson, its progress and a play button.
-class ContinueHeroCard extends ConsumerWidget {
-  const ContinueHeroCard({super.key, required this.lesson, required this.onOpen});
+class ContinueHeroCard extends StatelessWidget {
+  const ContinueHeroCard({
+    super.key,
+    required this.lesson,
+    required this.progress,
+    required this.onOpen,
+  });
 
   /// The latest lesson; `null` when there is none yet.
   final HomeLessonTile? lesson;
+
+  /// How much of the lesson is done, `0..1`.
+  final double progress;
 
   /// Opens the lesson or the lesson list.
   final VoidCallback onOpen;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     final onGrad = context.colors.primaryOn;
     final tile = lesson;
-    final progress = tile == null
-        ? 0.0
-        : ref
-                  .watch(
-                    lessonProgressProvider((
-                      lessonId: tile.id,
-                      segmentCount: tile.segmentCount,
-                    )),
-                  )
-                  .value ??
-              0.0;
-    final title = tile?.title ?? 'Начните первый урок';
-    final subtitle = tile?.subtitle ?? 'Выберите урок из каталога';
+    final title = tile?.title ?? 'Start your first lesson';
+    final subtitle = tile?.subtitle ?? 'Pick a lesson from the catalog';
 
     return Container(
       padding: const EdgeInsets.all(AppSpacing.s5),
@@ -48,7 +42,7 @@ class ContinueHeroCard extends ConsumerWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Продолжить'.toUpperCase(),
+            'Continue'.toUpperCase(),
             style: AppText.caption.copyWith(
               color: onGrad.withValues(alpha: 0.85),
               fontWeight: FontWeight.w700,
@@ -72,7 +66,7 @@ class ContinueHeroCard extends ConsumerWidget {
             overflow: TextOverflow.ellipsis,
           ),
           const SizedBox(height: AppSpacing.s4),
-          const _HeroWave(),
+          const ContinueHeroWave(),
           const SizedBox(height: AppSpacing.s4),
           Row(
             children: [
@@ -88,101 +82,11 @@ class ContinueHeroCard extends ConsumerWidget {
                 ),
               ),
               const SizedBox(width: AppSpacing.s3),
-              _PlayButton(onTap: onOpen),
+              ContinueHeroPlayButton(onTap: onOpen),
             ],
           ),
         ],
       ),
     );
-  }
-}
-
-/// Round play button on the card.
-class _PlayButton extends StatelessWidget {
-  const _PlayButton({required this.onTap});
-
-  final VoidCallback onTap;
-
-  static const double _size = 48;
-
-  @override
-  Widget build(BuildContext context) {
-    final colors = context.colors;
-
-    return Semantics(
-      button: true,
-      label: 'Продолжить урок',
-      excludeSemantics: true,
-      child: Material(
-        color: colors.primaryOn,
-        shape: const CircleBorder(),
-        clipBehavior: Clip.antiAlias,
-        child: InkWell(
-          onTap: onTap,
-          child: SizedBox(
-            width: _size,
-            height: _size,
-            child: Center(
-              child: AppIcon(
-                AppIcons.play,
-                size: AppSizes.iconLg,
-                color: colors.primary,
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-/// Decorative equalizer on the card.
-class _HeroWave extends StatelessWidget {
-  const _HeroWave();
-
-  static const double _barWidth = 3;
-  static const double _barGap = 2;
-  static const double _playedFraction = 0.4;
-  static const double _minBarFraction = 0.28;
-
-  @override
-  Widget build(BuildContext context) {
-    final onGrad = context.colors.primaryOn;
-
-    return SizedBox(
-      height: 26,
-      child: LayoutBuilder(
-        builder: (context, constraints) {
-          final count =
-              ((constraints.maxWidth + _barGap) / (_barWidth + _barGap))
-                  .floor();
-          final played = (count * _playedFraction).round();
-
-          return Row(
-            spacing: _barGap,
-            children: [
-              for (var i = 0; i < count; i++)
-                SizedBox(
-                  width: _barWidth,
-                  height: constraints.maxHeight * _barHeightFraction(i),
-                  child: DecoratedBox(
-                    decoration: BoxDecoration(
-                      borderRadius: AppRadii.rPill,
-                      color: i <= played
-                          ? onGrad
-                          : onGrad.withValues(alpha: 0.35),
-                    ),
-                  ),
-                ),
-            ],
-          );
-        },
-      ),
-    );
-  }
-
-  double _barHeightFraction(int index) {
-    final shape = (math.sin(index * 0.7) * math.cos(index * 0.3)).abs();
-    return _minBarFraction + shape * (1 - _minBarFraction);
   }
 }

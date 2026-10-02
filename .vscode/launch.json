@@ -1,32 +1,32 @@
 {
-  // Базовый URL сервера приложение берёт из `SHADO_API_BASE_URL`
-  // (см. lib/core/config/app_config.dart). Без флага это боевой сервер,
-  // поэтому конфигурации для локальной разработки передают адрес явно.
+  // The app reads the server base URL from `SHADO_API_BASE_URL`
+  // (see lib/core/config/app_config.dart). Without the flag it is production,
+  // so local development configurations pass the address explicitly.
   //
-  // `program` указан у всех конфигураций намеренно: без него расширение Dart
-  // запускает активный файл редактора, и с открытым `*_test.dart` вместо
-  // приложения стартуют тесты.
+  // `program` is set on every configuration on purpose: without it the Dart extension
+  // runs the active editor file, and with a `*_test.dart` open the tests start
+  // instead of the app.
   "version": "0.2.0",
   "configurations": [
     {
-      // Боевой сервер — то же, что даёт сборка без флагов.
-      "name": "shado (прод)",
+      // Production server — same as a build without flags.
+      "name": "shado (prod)",
       "request": "launch",
       "type": "dart",
       "program": "lib/main.dart"
     },
     {
-      // Изнутри Android-эмулятора хост-машина видна как 10.0.2.2:
-      // 127.0.0.1 там ведёт в сам эмулятор.
-      "name": "shado (локальный сервер, Android-эмулятор)",
+      // Inside the Android emulator the host machine is 10.0.2.2:
+      // 127.0.0.1 there points to the emulator itself.
+      "name": "shado (local server, Android emulator)",
       "request": "launch",
       "type": "dart",
       "program": "lib/main.dart",
       "toolArgs": ["--dart-define=SHADO_API_BASE_URL=http://10.0.2.2:8080"]
     },
     {
-      // Windows/Linux/macOS и iOS-симулятор ходят на loopback напрямую.
-      "name": "shado (локальный сервер, десктоп / iOS-симулятор)",
+      // Windows/Linux/macOS and the iOS simulator reach loopback directly.
+      "name": "shado (local server, desktop / iOS simulator)",
       "request": "launch",
       "type": "dart",
       "program": "lib/main.dart",
@@ -40,8 +40,8 @@
       "flutterMode": "profile"
     },
     {
-      // Единственный режим, где проверяется настоящая цепочка TLS: послабление
-      // на открытый HTTP живёт только в debug-манифесте Android.
+      // The only mode that checks the real TLS chain: the cleartext HTTP
+      // allowance lives only in the Android debug manifest.
       "name": "shado (release mode)",
       "request": "launch",
       "type": "dart",

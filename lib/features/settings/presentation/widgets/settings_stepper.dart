@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 
 import 'package:shado/theme/theme.dart';
 
+import 'settings_step_button.dart';
+
 /// A minus/plus stepper for numeric settings.
 class SettingsStepper extends StatelessWidget {
   const SettingsStepper({
@@ -40,9 +42,9 @@ class SettingsStepper extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          _StepButton(
+          SettingsStepButton(
             icon: Icons.remove_rounded,
-            semanticLabel: 'Уменьшить',
+            semanticLabel: 'Decrease',
             onPressed: value > min ? () => _change(-1) : null,
           ),
           SizedBox(
@@ -53,54 +55,12 @@ class SettingsStepper extends StatelessWidget {
               style: AppText.monoTime.copyWith(color: colors.text),
             ),
           ),
-          _StepButton(
+          SettingsStepButton(
             icon: Icons.add_rounded,
-            semanticLabel: 'Увеличить',
+            semanticLabel: 'Increase',
             onPressed: value < max ? () => _change(1) : null,
           ),
         ],
-      ),
-    );
-  }
-}
-
-class _StepButton extends StatelessWidget {
-  const _StepButton({
-    required this.icon,
-    required this.semanticLabel,
-    required this.onPressed,
-  });
-
-  final IconData icon;
-  final String semanticLabel;
-  final VoidCallback? onPressed;
-
-  @override
-  Widget build(BuildContext context) {
-    final colors = context.colors;
-    final enabled = onPressed != null;
-
-    return Semantics(
-      button: true,
-      enabled: enabled,
-      label: semanticLabel,
-      excludeSemantics: true,
-      child: Material(
-        type: MaterialType.transparency,
-        shape: const CircleBorder(),
-        clipBehavior: Clip.antiAlias,
-        child: InkWell(
-          onTap: onPressed,
-          child: SizedBox(
-            width: 26,
-            height: 26,
-            child: Icon(
-              icon,
-              size: AppSizes.iconSm,
-              color: enabled ? colors.text2 : colors.text3,
-            ),
-          ),
-        ),
       ),
     );
   }

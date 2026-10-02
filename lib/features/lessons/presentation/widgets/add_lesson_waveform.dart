@@ -1,20 +1,22 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:shado/core/utils/duration_format.dart';
 
 import '../../domain/entities/audio_trim.dart';
-import '../controllers/add_lesson_controller.dart';
-import '../controllers/add_lesson_playback_controller.dart';
+import '../screens/add_lesson/add_lesson_form_state.dart';
 import 'marker_at_playhead_checkbox.dart';
 import 'waveform_card.dart';
 import 'waveform_placeholder_card.dart';
 
 /// Waveform of the chosen file with markers, trimming and a playhead.
-class AddLessonWaveform extends ConsumerWidget {
+class AddLessonWaveform extends StatelessWidget {
   const AddLessonWaveform({
     super.key,
     required this.state,
+    required this.isPlaying,
+    required this.playheadMs,
+    required this.onSeek,
+    required this.onTogglePlay,
     required this.onBoundariesChanged,
     required this.onBoundaryRemoved,
     required this.onMarkerAtPlayheadChanged,
@@ -25,6 +27,13 @@ class AddLessonWaveform extends ConsumerWidget {
   });
 
   final AddLessonFormState state;
+  final bool isPlaying;
+
+  /// Playhead in file milliseconds.
+  final int playheadMs;
+
+  final ValueChanged<int> onSeek;
+  final VoidCallback onTogglePlay;
 
   final ValueChanged<List<int>> onBoundariesChanged;
   final ValueChanged<int> onBoundaryRemoved;
@@ -37,7 +46,7 @@ class AddLessonWaveform extends ConsumerWidget {
   final VoidCallback onTrimCancel;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
     if (state.isUploading) {
@@ -52,21 +61,13 @@ class AddLessonWaveform extends ConsumerWidget {
         child: Padding(
           padding: const EdgeInsets.all(16),
           child: Text(
-            'Выберите аудио — здесь появится волна с метками границ',
+            'Choose audio — the waveform with boundary markers will appear here',
             textAlign: TextAlign.center,
             style: theme.textTheme.bodySmall,
           ),
         ),
       );
     }
-
-    final playback = ref.watch(addLessonPlaybackProvider);
-    final player = ref.read(addLessonPlaybackProvider.notifier);
-    // While playing, the player drives the playhead.
-    final position = ref.watch(addPlaybackPositionProvider).value;
-    final playheadMs = playback.isPlaying
-        ? (position?.inMilliseconds ?? playback.playheadMs)
-        : playback.playheadMs;
 
     // Time is shown from the left edge of what is currently in the window.
     final view = state.view;
@@ -83,7 +84,7 @@ class AddLessonWaveform extends ConsumerWidget {
           boundaries: state.boundaries,
           onBoundariesChanged: onBoundariesChanged,
           onBoundaryRemoved: onBoundaryRemoved,
-          onSeek: player.seek,
+          onSeek: onSeek,
           positionMs: playheadMs,
           showCursor: true,
           // The lesson itself will create the peaks cache next to the file.
@@ -99,10 +100,10 @@ class AddLessonWaveform extends ConsumerWidget {
         Row(
           children: [
             IconButton.filled(
-              tooltip: playback.isPlaying ? 'Пауза' : 'Играть с ползунка',
+              tooltip: isPlaying ? 'Pause' : 'Play from playhead',
               // No file on disk: nothing to play even with peaks ready.
-              onPressed: state.audioPath == null ? null : player.togglePlay,
-              icon: Icon(playback.isPlaying ? Icons.pause : Icons.play_arrow),
+              onPressed: state.audioPath == null ? null : onTogglePlay,
+              icon: Icon(isPlaying ? Icons.pause : Icons.play_arrow),
             ),
             const SizedBox(width: 12),
             Text(
@@ -131,21 +132,21 @@ class AddLessonWaveform extends ConsumerWidget {
 /// Hint under the waveform about available gestures and keys.
 String _hint(AddLessonFormState state) {
   if (state.isTrimming) {
-    return 'Тяните метки со стрелочками: затемнённые края отрежутся. '
-        '«Применить» оставит только середину, «Отменить» вернёт как было. '
-        'Обрезка помогает разметить середину файла, но в сохранённый урок '
-        'аудио уходит целиком: края достанутся крайним кускам. '
-        'Пробел — послушать';
+    return 'Drag the arrow markers: the dimmed edges will be cut off. '
+        '"Apply" keeps only the middle, "Cancel" restores it as it was. '
+        'Trimming helps mark up the middle of the file, but the saved lesson '
+        'gets the whole audio: the edges go to the outer chunks. '
+        'Space — listen';
   }
   if (state.segmentCount == 0) {
-    return 'Введите текст — метки границ появятся на волне';
+    return 'Enter text — boundary markers will appear on the waveform';
   }
-  return 'Метка в тексте добавляет границу правее самой правой. Чтобы ставить '
-      'границы на слух, включите «Метка по ползунку»: доведите плеер до паузы '
-      'между фразами, поставьте на паузу и добавьте метку в тексте — граница '
-      'встанет в позицию ползунка, а метки правее останутся на местах. '
-      'Метки берутся за кружок сверху, ползунок — за треугольник '
-      'снизу; перетаскивание в стороне от них двигает волну. Двойной тап по '
-      'метке убирает её (и парную метку в тексте). Растянуть волну: щипок двумя '
-      'пальцами или Ctrl + колесо мыши. Пробел — играть или пауза';
+  return 'A marker in the text adds a boundary right of the rightmost one. To set '
+      'boundaries by ear, turn on "Marker at playhead": play up to the pause '
+      'between phrases, pause and add a marker in the text — the boundary '
+      'lands at the playhead, and markers to the right stay in place. '
+      'Grab markers by the circle on top, the playhead by the triangle '
+      'below; dragging elsewhere moves the waveform. A double tap on a '
+      'marker removes it (and its paired marker in the text). Zoom the waveform: pinch with two '
+      'fingers or Ctrl + mouse wheel. Space — play or pause';
 }

@@ -30,11 +30,11 @@ class Lesson {
     required List<String> segmentTexts,
   }) {
     if (segmentTexts.isEmpty) {
-      throw const ValidationFailure('Урок должен содержать хотя бы один кусок');
+      throw const ValidationFailure('A lesson must contain at least one chunk');
     }
     if (durationMs <= 0) {
       throw const ValidationFailure(
-        'Длительность аудио должна быть больше нуля',
+        'Audio duration must be greater than zero',
       );
     }
     final count = segmentTexts.length;
@@ -119,17 +119,17 @@ class Lesson {
     required List<int> boundaries,
   }) {
     if (texts.isEmpty) {
-      throw const ValidationFailure('Урок должен содержать хотя бы один кусок');
+      throw const ValidationFailure('A lesson must contain at least one chunk');
     }
     if (boundaries.length != texts.length + 1) {
       throw ValidationFailure(
-        'Ожидалось ${texts.length + 1} границ, получено ${boundaries.length}',
+        'Expected ${texts.length + 1} boundaries, got ${boundaries.length}',
       );
     }
     for (var i = 1; i < boundaries.length; i++) {
       if (boundaries[i] <= boundaries[i - 1]) {
         throw const ValidationFailure(
-          'Границы должны идти строго по возрастанию',
+          'Boundaries must be strictly increasing',
         );
       }
     }
@@ -212,5 +212,5 @@ class Lesson {
   );
 
   @override
-  String toString() => 'Lesson($id, "$title", ${segments.length} сегментов)';
+  String toString() => 'Lesson($id, "$title", ${segments.length} segments)';
 }

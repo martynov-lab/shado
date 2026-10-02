@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shado/app.dart';
 import 'package:shado/core/audio/audio_service_setup.dart';
 import 'package:shado/core/platform/platform_setup.dart';
+import 'package:shado/di/core_providers.dart';
 import 'package:shado/theme/theme.dart';
 
 Future<void> main() async {

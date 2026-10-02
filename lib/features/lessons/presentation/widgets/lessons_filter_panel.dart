@@ -1,21 +1,26 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:shado/theme/theme.dart';
 
-import '../controllers/lessons_filter.dart';
-import 'lessons_filter_options.dart';
 
 /// Desktop filter sidebar: every checkbox group at once.
-class LessonsFilterPanel extends ConsumerWidget {
-  const LessonsFilterPanel({super.key});
+class LessonsFilterPanel extends StatelessWidget {
+  const LessonsFilterPanel({
+    super.key,
+    required this.activeCount,
+    required this.onClear,
+    required this.options,
+  });
+
+  /// The reset button shows while something is selected.
+  final int activeCount;
+
+  final VoidCallback onClear;
+  final Widget options;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     final colors = context.colors;
-    final activeCount = ref.watch(
-      lessonsFilterProvider.select((filter) => filter.activeCount),
-    );
 
     return Container(
       width: 300,
@@ -34,7 +39,7 @@ class LessonsFilterPanel extends ConsumerWidget {
               children: [
                 Expanded(
                   child: Text(
-                    'Фильтры',
+                    'Filters',
                     style: AppText.title.copyWith(color: colors.text),
                   ),
                 ),
@@ -42,12 +47,12 @@ class LessonsFilterPanel extends ConsumerWidget {
                   Semantics(
                     button: true,
                     child: InkWell(
-                      onTap: ref.read(lessonsFilterProvider.notifier).clearFilters,
+                      onTap: onClear,
                       borderRadius: AppRadii.rSm,
                       child: Padding(
                         padding: const EdgeInsets.all(AppSpacing.s1),
                         child: Text(
-                          'Сбросить',
+                          'Reset',
                           style: AppText.label.copyWith(color: colors.primary),
                         ),
                       ),
@@ -56,7 +61,7 @@ class LessonsFilterPanel extends ConsumerWidget {
               ],
             ),
             const SizedBox(height: AppSpacing.s5),
-            const LessonsFilterOptions(),
+            options,
           ],
         ),
       ),

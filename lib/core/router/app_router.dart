@@ -1,21 +1,21 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../features/admin/presentation/pages/management_page.dart';
-import '../../features/admin/presentation/pages/users_page.dart';
-import '../../features/auth/presentation/controllers/auth_controller.dart';
-import '../../features/auth/presentation/pages/login_page.dart';
-import '../../features/home/presentation/pages/home_page.dart';
-import '../../features/lessons/presentation/pages/add_lesson_page.dart';
-import '../../features/lessons/presentation/pages/edit_lesson_page.dart';
-import '../../features/lessons/presentation/pages/folder_page.dart';
-import '../../features/lessons/presentation/pages/lesson_page.dart';
-import '../../features/lessons/presentation/pages/lessons_page.dart';
-import '../../features/lessons/presentation/pages/main_shell.dart';
-import '../../features/lessons/presentation/pages/splash_page.dart';
-import '../../features/progress/presentation/pages/progress_page.dart';
-import '../../features/settings/presentation/pages/settings_page.dart';
+import 'package:shado/features/auth/domain/entities/user_session.dart';
+
+import '../../features/admin/presentation/screens/admin_users_page.dart';
+import '../../features/admin/presentation/screens/management_page.dart';
+import '../../features/auth/presentation/screens/login_page.dart';
+import '../../features/home/presentation/screens/home_page.dart';
+import '../../features/lessons/presentation/screens/add_lesson/add_lesson_page.dart';
+import '../../features/lessons/presentation/screens/edit_lesson/edit_lesson_page.dart';
+import '../../features/lessons/presentation/screens/folder/folder_page.dart';
+import '../../features/lessons/presentation/screens/lesson/lesson_page.dart';
+import '../../features/lessons/presentation/screens/lessons/lessons_page.dart';
+import '../../features/lessons/presentation/screens/main_shell/main_shell.dart';
+import '../../features/lessons/presentation/screens/splash/splash_page.dart';
+import '../../features/progress/presentation/screens/progress_page.dart';
+import '../../features/settings/presentation/screens/settings_page.dart';
 import '../../screens/design_gallery/design_gallery_screen.dart';
 import '../bootstrap/app_bootstrap.dart';
 
@@ -33,26 +33,17 @@ const String _adminSectionPrefix = '/admin';
 /// Whether to open the design gallery right at startup.
 const bool _openDesignGalleryAtLaunch = bool.fromEnvironment('design_gallery');
 
-final appRouterProvider = Provider<GoRouter>((ref) {
-  // The router is never rebuilt — a listener tells it about session and
-  // warm-up changes.
-  final refresh = ValueNotifier<int>(0);
-  ref.onDispose(refresh.dispose);
-  ref.listen(
-    authControllerProvider.select((state) => state.status),
-    (_, _) => refresh.value++,
-    fireImmediately: true,
-  );
-  ref.listen(appBootstrapProvider, (_, _) => refresh.value++);
-
+/// The app router. [bootstrap] tells it about session and warm-up changes;
+/// access rules live in `redirect`.
+GoRouter createAppRouter(AppBootstrap bootstrap) {
   return GoRouter(
     navigatorKey: _rootNavigatorKey,
     initialLocation: _openDesignGalleryAtLaunch
         ? DesignGalleryScreen.routePath
         : '/home',
-    refreshListenable: refresh,
+    refreshListenable: bootstrap,
     redirect: (context, state) {
-      final auth = ref.read(authControllerProvider);
+      final auth = bootstrap.session;
       final location = state.matchedLocation;
       final isPublic = _publicRoutes.contains(location);
 
@@ -65,7 +56,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       }
       if (!auth.isAuthenticated) return isPublic ? null : LoginPage.routePath;
       // First-frame data is still warming up — keep the splash.
-      if (ref.read(appBootstrapProvider).isLoading) {
+      if (bootstrap.isWarmingUp) {
         return location == SplashPage.routePath ? null : SplashPage.routePath;
       }
       // A signed-in user has nothing to do on the login or splash screens.
@@ -181,4 +172,4 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       ),
     ],
   );
-});
+}

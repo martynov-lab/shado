@@ -3,8 +3,8 @@ import 'dart:typed_data';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shado/features/lessons/data/datasources/waveform_datasource.dart';
-import 'package:shado/features/lessons/data/models/waveform_peaks.dart';
 import 'package:shado/features/lessons/domain/entities/audio_trim.dart';
+import 'package:shado/features/lessons/domain/entities/waveform_peaks.dart';
 
 /// Encodes values the way the server does: int8 into base64.
 String encode(List<int> values) =>

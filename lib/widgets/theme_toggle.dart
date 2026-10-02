@@ -1,12 +1,14 @@
+import 'package:elementary/elementary.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:shado/theme/theme.dart';
 import 'package:shado/widgets/app_segmented_control.dart';
+import 'package:shado/widgets/theme_toggle_wm.dart';
 
 /// Appearance switch: light / dark / system.
-class ThemeToggle extends ConsumerWidget {
-  const ThemeToggle({super.key, this.expand = false, this.labels});
+class ThemeToggle extends ElementaryWidget<ThemeToggleWidgetModel> {
+  const ThemeToggle({super.key, this.expand = false, this.labels})
+    : super(themeToggleWidgetModelFactory);
 
   /// Stretches to the full available width.
   final bool expand;
@@ -15,36 +17,36 @@ class ThemeToggle extends ConsumerWidget {
   final bool? labels;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final controller = ref.watch(themeControllerProvider);
-    final showLabels = labels ?? !context.isMobile;
-
-    return ValueListenableBuilder<ThemeMode>(
-      valueListenable: controller,
-      builder: (context, mode, _) {
+  Widget build(ThemeToggleWidgetModel wm) {
+    return ListenableBuilder(
+      listenable: Listenable.merge([wm.mode, wm.config]),
+      builder: (context, _) {
+        final mode = wm.mode.value;
+        final config = wm.config.value;
+        final showLabels = config.labels ?? !context.isMobile;
         return AppSegmentedControl<ThemeMode>(
           value: mode,
-          expand: expand,
-          semanticLabel: 'Оформление',
-          onChanged: controller.setMode,
+          expand: config.expand,
+          semanticLabel: 'Appearance',
+          onChanged: wm.setMode,
           segments: [
             AppSegment(
               value: ThemeMode.light,
-              label: showLabels ? 'Светлая' : '',
+              label: showLabels ? 'Light' : '',
               icon: Icons.light_mode_rounded,
-              semanticLabel: 'Светлая тема',
+              semanticLabel: 'Light theme',
             ),
             AppSegment(
               value: ThemeMode.dark,
-              label: showLabels ? 'Тёмная' : '',
+              label: showLabels ? 'Dark' : '',
               icon: Icons.dark_mode_rounded,
-              semanticLabel: 'Тёмная тема',
+              semanticLabel: 'Dark theme',
             ),
             AppSegment(
               value: ThemeMode.system,
-              label: showLabels ? 'Системная' : '',
+              label: showLabels ? 'System' : '',
               icon: Icons.brightness_auto_rounded,
-              semanticLabel: 'Как в системе',
+              semanticLabel: 'Same as system',
             ),
           ],
         );

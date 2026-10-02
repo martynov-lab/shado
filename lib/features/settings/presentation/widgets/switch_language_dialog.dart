@@ -8,19 +8,19 @@ class SwitchLanguageDialog extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => AlertDialog(
-    title: const Text('Сменить изучаемый язык?'),
+    title: const Text('Switch the studied language?'),
     content: Text(
-      'Уроки и папки на экранах сменятся на $languageLabel: каталог одноязычный. '
-      'Ничего не потеряется — прежние уроки вернутся, если переключиться назад.',
+      'Lessons and folders on screens will switch to $languageLabel: the catalog is single-language. '
+      'Nothing is lost — the previous lessons come back if you switch back.',
     ),
     actions: [
       TextButton(
         onPressed: () => Navigator.of(context).pop(false),
-        child: const Text('Отмена'),
+        child: const Text('Cancel'),
       ),
       FilledButton(
         onPressed: () => Navigator.of(context).pop(true),
-        child: const Text('Сменить'),
+        child: const Text('Switch'),
       ),
     ],
   );

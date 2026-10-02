@@ -1,4 +1,4 @@
-import 'waveform_peaks.dart';
+import '../../domain/entities/waveform_peaks.dart';
 
 /// Server-side audio; the content behind an [id] never changes.
 class AudioDto {

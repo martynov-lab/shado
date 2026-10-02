@@ -1,17 +1,19 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../languages/presentation/controllers/language_providers.dart';
+import 'package:shado/core/async/async_state.dart';
+
+import '../../../languages/domain/entities/language.dart';
 import '../../domain/entities/lesson_category.dart';
 
 /// Lesson category fields: accent, level and topic.
-class LessonCategoryFields extends ConsumerWidget {
+class LessonCategoryFields extends StatelessWidget {
   const LessonCategoryFields({
     super.key,
     required this.accent,
     required this.level,
     required this.topicId,
     required this.topics,
+    required this.accents,
     required this.isBusy,
     required this.onAccentChanged,
     required this.onLevelChanged,
@@ -26,7 +28,10 @@ class LessonCategoryFields extends ConsumerWidget {
   final String? topicId;
 
   /// Topic directory from the server; the field hint is built from it.
-  final AsyncValue<List<Topic>> topics;
+  final AsyncState<List<Topic>> topics;
+
+  /// Accents of the studied language; without any the accent isn't asked.
+  final List<Accent> accents;
 
   /// An upload is running — the fields are locked.
   final bool isBusy;
@@ -36,15 +41,13 @@ class LessonCategoryFields extends ConsumerWidget {
   final ValueChanged<String?> onTopicChanged;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final available = topics.value ?? const <Topic>[];
     // The dropdown throws when the selected value is not among the items.
     final selectedTopic = available.any((topic) => topic.id == topicId)
         ? topicId
         : null;
-    // Languages without accents have nothing to pick.
-    final accents = ref.watch(currentAccentsProvider);
     final selectedAccent = accents.any((item) => item.code == accent)
         ? accent
         : null;
@@ -60,7 +63,7 @@ class LessonCategoryFields extends ConsumerWidget {
                 child: DropdownButtonFormField<String>(
                   key: const ValueKey('dropdown-accent'),
                   initialValue: selectedAccent,
-                  decoration: const InputDecoration(labelText: 'Акцент'),
+                  decoration: const InputDecoration(labelText: 'Accent'),
                   items: [
                     for (final item in accents)
                       DropdownMenuItem(
@@ -80,7 +83,7 @@ class LessonCategoryFields extends ConsumerWidget {
               child: DropdownButtonFormField<LessonLevel>(
                 key: const ValueKey('dropdown-level'),
                 initialValue: level,
-                decoration: const InputDecoration(labelText: 'Уровень'),
+                decoration: const InputDecoration(labelText: 'Level'),
                 // The collapsed field keeps only the level code.
                 selectedItemBuilder: (_) => [
                   for (final value in LessonLevel.values)
@@ -103,24 +106,24 @@ class LessonCategoryFields extends ConsumerWidget {
           key: const ValueKey('dropdown-topic'),
           initialValue: selectedTopic,
           decoration: InputDecoration(
-            labelText: 'Тема',
+            labelText: 'Topic',
             helperText: switch (topics) {
-              AsyncError() =>
-                'Справочник тем не загрузился — урок создастся '
-                    'с темой по умолчанию',
-              AsyncLoading() => 'Загружаем справочник тем…',
+              AsyncFailed() =>
+                'Topics failed to load — the lesson will be created '
+                    'with the default topic',
+              AsyncPending() => 'Loading topics…',
               _ =>
-                'Необязательно: без выбора сервер поставит тему по умолчанию',
+                'Optional: without a choice the server sets the default topic',
             },
             helperMaxLines: 2,
-            helperStyle: topics is AsyncError
+            helperStyle: topics is AsyncFailed
                 ? theme.textTheme.bodySmall?.copyWith(
                     color: theme.colorScheme.error,
                   )
                 : null,
           ),
           items: [
-            const DropdownMenuItem<String?>(child: Text('Без темы')),
+            const DropdownMenuItem<String?>(child: Text('No topic')),
             for (final topic in available)
               DropdownMenuItem<String?>(
                 value: topic.id,

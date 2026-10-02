@@ -3,8 +3,9 @@ import 'package:flutter/material.dart';
 import 'package:shado/theme/theme.dart';
 import 'package:shado/widgets/widgets.dart';
 
-import '../pages/main_shell.dart';
+import '../screens/main_shell/main_shell.dart';
 import 'main_shell_brand.dart';
+import 'main_shell_rail_item.dart';
 
 /// Tablet rail: the logo, section icons and the add button.
 class MainShellRail extends StatelessWidget {
@@ -43,7 +44,7 @@ class MainShellRail extends StatelessWidget {
               const MainShellBrand(),
               const SizedBox(height: AppSpacing.s4),
               for (final i in MainShell.sectionIndexes) ...[
-                _RailItem(
+                MainShellRailItem(
                   icon: MainShell.destinations[i].icon,
                   label: MainShell.destinations[i].label,
                   selected: currentIndex == i,
@@ -55,60 +56,13 @@ class MainShellRail extends StatelessWidget {
               if (canAdd)
                 AppIconButton(
                   icon: Icons.add_rounded,
-                  semanticLabel: MainShell.destinations[MainShell.addIndex].label,
+                  semanticLabel:
+                      MainShell.destinations[MainShell.addIndex].label,
                   variant: AppButtonVariant.primary,
                   shape: AppIconButtonShape.square,
                   onPressed: () => onSelected(MainShell.addIndex),
                 ),
             ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _RailItem extends StatelessWidget {
-  const _RailItem({
-    required this.icon,
-    required this.label,
-    required this.selected,
-    required this.onTap,
-  });
-
-  final AppIcons icon;
-  final String label;
-  final bool selected;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final colors = context.colors;
-
-    return Semantics(
-      button: true,
-      selected: selected,
-      label: label,
-      excludeSemantics: true,
-      child: Material(
-        type: MaterialType.transparency,
-        child: InkWell(
-          onTap: onTap,
-          borderRadius: AppRadii.rMd,
-          child: Container(
-            width: 46,
-            height: 46,
-            decoration: BoxDecoration(
-              color: selected ? colors.primarySoft : Colors.transparent,
-              borderRadius: AppRadii.rMd,
-            ),
-            child: Center(
-              child: AppIcon(
-                icon,
-                size: AppSizes.iconLg,
-                color: selected ? colors.primary : colors.text3,
-              ),
-            ),
           ),
         ),
       ),

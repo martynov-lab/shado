@@ -6,8 +6,8 @@ import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shado/core/constants/app_constants.dart';
 import 'package:shado/core/theme/app_theme.dart';
-import 'package:shado/features/lessons/data/models/waveform_peaks.dart';
 import 'package:shado/features/lessons/domain/entities/audio_trim.dart';
+import 'package:shado/features/lessons/domain/entities/waveform_peaks.dart';
 import 'package:shado/features/lessons/presentation/widgets/waveform_editor.dart';
 
 void main() {

@@ -30,7 +30,7 @@ class UserTile extends StatelessWidget {
       ),
       title: Text(user.email, overflow: TextOverflow.ellipsis),
       subtitle: Text(
-        isSelf ? 'это вы · ${user.role.wire}' : user.role.wire,
+        isSelf ? 'you · ${user.role.wire}' : user.role.wire,
         style: theme.textTheme.bodySmall,
       ),
       // With four roles only a dropdown fits into the trailing slot.

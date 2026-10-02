@@ -1,125 +1,150 @@
 ---
 name: adding-a-screen
 description: >-
-  Добавление нового экрана, виджета или фичи в Shado: файловая структура,
-  разбиение на виджеты, дизайн-система, маршрут, подключение контроллера.
-  Использовать при создании UI — новый page, widget, раздел фичи.
+  Adding a new screen, widget or feature to Shado: the Elementary trio
+  (page, widget model, model), splitting into widgets, the design system, the
+  route. Use when building UI — a new page, widget or feature section.
 ---
 
-# Новый экран или виджет
+# A new screen or widget
 
-Правила целиком — [docs/ui_guidelines.md](../../../docs/ui_guidelines.md),
-состояние — [docs/state_management.md](../../../docs/state_management.md).
+Full rules — [docs/ui_guidelines.md](../../../docs/ui_guidelines.md),
+state — [docs/state_management.md](../../../docs/state_management.md),
+widget parameters — [docs/code_style.md](../../../docs/code_style.md#widget-parameters).
 
-## Прежде чем писать
+## Before writing
 
-- [ ] Прочитать соседний экран той же фичи и повторить его приёмы.
-- [ ] Понять, где живут данные: уже есть use case / репозиторий или нужен новый.
-- [ ] Проверить, есть ли готовый компонент в `lib/widgets/` и
-      `lib/screens/design_gallery.dart` — новый пишем, только если нет.
+- [ ] Read a neighboring screen of the same feature and follow its patterns.
+- [ ] Find out where the data lives: a use case, repository or service already
+      exists or a new one is needed (see the `services-and-di` skill).
+- [ ] Check whether a ready component exists in `lib/widgets/` and
+      `lib/screens/design_gallery.dart` — write a new one only if it does not.
 
-## Файлы
+## Files
 
 ```text
 lib/features/<feature>/presentation/
-  pages/<name>_page.dart          # Scaffold, AppBar, подписка на состояние
-  widgets/<part>.dart             # каждая часть экрана — свой файл
-  controllers/<name>_controller.dart  # состояние + провайдер экрана
+  screens/<name>/<name>_page.dart   # ElementaryWidget: subscribes to the WM, builds widgets
+  screens/<name>/<name>_wm.dart     # <Name>WidgetModel + factory: screen state, dialogs, texts
+  screens/<name>/<name>_model.dart  # <Name>Model: services, use cases, Riverpod container
+  screens/<name>/...                # helpers of this screen only: its state, a form
+  widgets/<part>.dart       # every part of the screen is its own file
 ```
 
-Жёсткие правила:
+Hard rules:
 
-- **один виджет — один файл**; приватных `_SomeView` в файле экрана не бывает;
-- **никаких `Widget _buildX()`** — вместо метода класс виджета;
-- тело экрана (`body`) — отдельный виджет, чтобы его можно было тестировать без
-  `Scaffold` и роутера.
+- **one widget — one file**; no private `_SomeView` classes next to the main
+  one, layout variants included;
+- **no `Widget _buildX()`** — a widget class instead of a method;
+- **widgets never get the widget model** — the page passes values and
+  callbacks; views and columns take finished sections as `Widget` parameters;
+- the widget model has no separate interface.
 
-## Порядок работы
+## Workflow
 
-1. **Состояние.** Нужна асинхронная загрузка или изменяемое состояние — заводим
-   контроллер (`AsyncNotifier`/`Notifier`) и провайдер рядом с ним. Экран без
-   состояния — обычный `StatelessWidget`.
-2. **Экран.** `ConsumerWidget`: `ref.watch` состояния, `ref.read(...notifier)`
-   для действий, `switch` по `AsyncValue` для loading/error/data.
-3. **Части.** Каждый блок — отдельный виджет, принимающий данные и колбэки
-   (`on*`), а не `ref` и не идентификаторы для чтения провайдеров.
-4. **Адаптивность.** Если макет отличается на телефоне / планшете / десктопе —
-   тело экрана заворачиваем в `AppAdaptiveLayout`, на каждую платформу свой
-   view-виджет (`_mobile_view` / `_tablet_view` / `_desktop_view`). Мелкие
-   отличия — `context.responsive(...)`. Подробно —
-   [docs/ui_guidelines.md](../../../docs/ui_guidelines.md#адаптивные-экраны).
-5. **Оформление.** Только дизайн-система: `context.colors`, `AppSpacing`,
-   `AppRadii`, `AppText`, компоненты `AppButton`, `AppCard`, `AppTextField`
-   из `package:shado/widgets/widgets.dart`.
-6. **Маршрут.** Добавить `GoRoute` в `lib/core/router/app_router.dart`, путь в
-   kebab-case, у экрана — `static const routePath`. Правила доступа — в
-   `redirect`, не в виджете.
-7. **Доступность.** `tooltip` у иконок, `Semantics` у нестандартных элементов,
-   область нажатия ≥ 44 px, горячая клавиша — в подсказке.
-8. **Тесты.** Виджет-тест на поведение (см. скилл `writing-flutter-tests`).
-9. **Проверка.** `flutter analyze` и `flutter test`.
+1. **Model.** Takes the `ProviderContainer` from the factory, reads services and
+   use cases from `lib/di/`. Turns service `Stream`s into `ValueNotifier`s in
+   `init()`, cancels them in `dispose()`. Throws errors as they are.
+2. **Widget model.** Exposes `ValueListenable`s and public methods. Shows sheets,
+   dialogs and snackbars, catches the model's errors and builds the text. Busy
+   flags are plain fields.
+3. **Page.** `build(wm)` wraps every section in a `ValueListenableBuilder`
+   (`ListenableBuilder` for several sources) and passes plain values and `on*`
+   callbacks. Async data goes as `AsyncState` and is taken apart with `switch`.
+4. **Parts.** Every block is a `StatelessWidget` (or `StatefulWidget` for local
+   UI state) that takes data and callbacks.
+5. **Adaptivity.** `AppAdaptiveLayout` with a view per platform
+   (`_mobile_view` / `_tablet_view`); views take sections as `Widget`
+   parameters. Small differences — `context.responsive(...)`.
+6. **Styling.** Only the design system: `context.colors`, `AppSpacing`,
+   `AppRadii`, `AppText`, components from `package:shado/widgets/widgets.dart`.
+7. **Route.** A `GoRoute` in `lib/core/router/app_router.dart`, kebab-case path,
+   `static const routePath` on the page. Access rules go in `redirect`.
+8. **Accessibility.** `tooltip` on icons, `Semantics` on non-standard elements,
+   a tap target ≥ 44 px, the hotkey in the hint.
+9. **Tests.** The model in a `ProviderContainer`, the page with a widget test
+   (see the `writing-flutter-tests` skill).
+10. **Verification.** `flutter analyze` and `flutter test`.
 
-## Скелет
+## Skeleton
 
 ```dart
-// pages/lesson_page.dart
-class LessonPage extends ConsumerWidget {
-  const LessonPage({super.key, required this.lessonId});
+// screens/lesson/lesson_model.dart
+class LessonModel extends ElementaryModel {
+  LessonModel(this._container, this.lessonId);
+
+  final ProviderContainer _container;
+  final String lessonId;
+
+  Future<Lesson> loadLesson() => _container.read(getLessonProvider)(lessonId);
+}
+
+// screens/lesson/lesson_wm.dart
+LessonWidgetModel lessonWidgetModelFactory(BuildContext context) {
+  final page = context.widget as LessonPage;
+  return LessonWidgetModel(
+    LessonModel(ProviderScope.containerOf(context, listen: false), page.lessonId),
+  );
+}
+
+class LessonWidgetModel extends WidgetModel<LessonPage, LessonModel> {
+  LessonWidgetModel(super.model);
+
+  final ValueNotifier<AsyncState<Lesson>> _lesson = ValueNotifier(
+    const AsyncPending(),
+  );
+
+  ValueListenable<AsyncState<Lesson>> get lesson => _lesson;
+
+  @override
+  void initWidgetModel() {
+    super.initWidgetModel();
+    reload();
+  }
+
+  Future<void> reload() async {
+    _lesson.value = await AsyncState.guard(model.loadLesson);
+  }
+
+  @override
+  void dispose() {
+    _lesson.dispose();
+    super.dispose();
+  }
+}
+
+// screens/lesson/lesson_page.dart
+class LessonPage extends ElementaryWidget<LessonWidgetModel> {
+  const LessonPage({super.key, required this.lessonId})
+    : super(lessonWidgetModelFactory);
 
   static const routePath = '/lesson/:lessonId';
 
   final String lessonId;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final state = ref.watch(lessonControllerProvider(lessonId));
-    final controller = ref.read(lessonControllerProvider(lessonId).notifier);
-
-    return Scaffold(
-      appBar: AppBar(title: Text(state.value?.lesson.title ?? 'Урок')),
-      body: switch (state) {
-        AsyncLoading() => const Center(child: CircularProgressIndicator()),
-        AsyncError(:final error) => LessonLoadError(error: error),
-        AsyncData(:final value) => LessonView(
-          state: value,
-          onPlayPressed: controller.togglePlay,
-        ),
+  Widget build(LessonWidgetModel wm) {
+    return ValueListenableBuilder(
+      valueListenable: wm.lesson,
+      builder: (_, lesson, _) => switch (lesson) {
+        AsyncReady(:final value) => LessonView(lesson: value),
+        AsyncFailed() => LessonLoadError(onRetry: wm.reload),
+        _ => const Center(child: CircularProgressIndicator()),
       },
     );
   }
 }
-
-// widgets/lesson_view.dart
-class LessonView extends StatelessWidget {
-  const LessonView({
-    super.key,
-    required this.state,
-    required this.onPlayPressed,
-  });
-
-  final LessonState state;
-  final ValueChanged<int> onPlayPressed;
-
-  @override
-  Widget build(BuildContext context) => ListView.builder(
-    itemCount: state.lesson.segmentCount,
-    itemBuilder: (context, index) => SegmentTile(
-      segment: state.lesson.segments[index],
-      isPlaying: state.isSegmentPlaying(index),
-      onPlayPressed: () => onPlayPressed(index),
-    ),
-  );
-}
 ```
 
-## Частые ошибки
+## Common mistakes
 
-| Ошибка | Как правильно |
+| Mistake | The right way |
 | --- | --- |
-| `_buildHeader(context)` | класс `LessonHeader` в своём файле |
-| `class _SelectionBar` в файле экрана | `widgets/selection_bar.dart`, публичный класс |
-| `ref.read` внутри плитки списка | плитка получает данные и `on*`-колбэк |
+| `LessonSection(wm: wm)` | the page passes values and `on*` callbacks |
+| `class _TwoColumns` next to the view | `widgets/<feature>_two_columns.dart`, a public class |
+| `_buildHeader(context)` | a `LessonHeader` class in its own file |
+| Providers read in a widget or the WM | only the model touches the container |
+| `ScaffoldMessenger` in the model | the widget model shows messages |
 | `Color(0xFF3B82F6)`, `EdgeInsets.all(16)` | `context.colors.primary`, `AppSpacing.s4` |
-| `Center(child: Column(...))` | `Column(mainAxisAlignment: .center, ...)` |
-| Корень виджета — `Padding`/`Expanded` | отступ и растяжение задаёт родитель |
-| Бизнес-логика в `build` | контроллер и use case |
+| The widget root is `Padding`/`Expanded` | the parent sets padding and stretching |
+| Business logic in `build` or the WM | a use case or a service in `domain` |

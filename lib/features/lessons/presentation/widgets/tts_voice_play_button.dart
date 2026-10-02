@@ -24,7 +24,7 @@ class TtsVoicePlayButton extends StatelessWidget {
 
     return Semantics(
       button: true,
-      label: isPlaying ? 'Остановить' : 'Прослушать',
+      label: isPlaying ? 'Stop' : 'Listen',
       excludeSemantics: true,
       child: Material(
         type: MaterialType.transparency,

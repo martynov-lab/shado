@@ -2,39 +2,26 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shado/core/network/api_exception.dart';
+import 'package:shado/di/auth_providers.dart';
+import 'package:shado/di/language_providers.dart';
+import 'package:shado/di/lesson_providers.dart';
 import 'package:shado/features/auth/domain/entities/auth_user.dart';
-import 'package:shado/features/auth/presentation/controllers/auth_controller.dart';
+import 'package:shado/features/languages/domain/entities/language.dart';
 import 'package:shado/features/lessons/domain/entities/audio_upload.dart';
 import 'package:shado/features/lessons/domain/entities/lesson_category.dart';
 import 'package:shado/features/lessons/domain/entities/tts_quota.dart';
-import 'package:shado/features/languages/domain/entities/language.dart';
-import 'package:shado/features/languages/presentation/controllers/language_providers.dart';
+import 'package:shado/features/lessons/domain/usecases/get_topics.dart';
+import 'package:shado/features/lessons/domain/usecases/get_tts_quota.dart';
 import 'package:shado/features/lessons/domain/usecases/synthesize_tts.dart';
-import 'package:shado/features/lessons/presentation/controllers/add_lesson_controller.dart';
-import 'package:shado/features/lessons/presentation/controllers/lesson_providers.dart';
-import 'package:shado/features/lessons/presentation/pages/add_lesson_page.dart';
+import 'package:shado/features/lessons/presentation/screens/add_lesson/add_lesson_form.dart';
+import 'package:shado/features/lessons/presentation/screens/add_lesson/add_lesson_form_state.dart';
+import 'package:shado/features/lessons/presentation/screens/add_lesson/add_lesson_page.dart';
+import 'package:shado/features/lessons/presentation/widgets/segment_splitter/segment_splitter_field.dart';
 import 'package:shado/theme/theme.dart';
 import 'package:shado/widgets/widgets.dart';
 
-/// A session with the given role, which drives voice-over and privacy.
-class _FakeAuthController extends AuthController {
-  _FakeAuthController(this.role, this.languageCode);
-
-  final UserRole role;
-  final String languageCode;
-
-  @override
-  AuthState build() => AuthState(
-    status: AuthStatus.authenticated,
-    user: AuthUser(
-      id: 'user-1',
-      email: 'author@example.com',
-      role: role,
-      createdAt: DateTime.utc(2026),
-      studiedLanguage: languageCode,
-    ),
-  );
-}
+import 'fake_auth_repository.dart';
+import 'fake_language_repository.dart';
 
 /// A voice-over that always fails with the given error.
 class _FailingTts implements SynthesizeTts {
@@ -51,6 +38,29 @@ class _FailingTts implements SynthesizeTts {
   }) async => throw error;
 }
 
+/// A topic directory that answers with [topics] or fails with [error].
+class _FakeTopics implements GetTopics {
+  const _FakeTopics(this.topics, {this.error});
+
+  final List<Topic> topics;
+  final Object? error;
+
+  @override
+  Future<List<Topic>> call() async {
+    if (error != null) throw error!;
+    return topics;
+  }
+}
+
+class _FakeQuota implements GetTtsQuota {
+  const _FakeQuota(this.quota);
+
+  final TtsQuota quota;
+
+  @override
+  Future<TtsQuota> call() async => quota;
+}
+
 /// Lesson creation screen: accent, level and topic pickers.
 void main() {
   const topics = [
@@ -58,7 +68,7 @@ void main() {
     Topic(id: 'topic-2', name: 'Business'),
   ];
 
-  // Default voice-over balance keeps `ttsQuotaProvider` offline.
+  // Default voice-over balance: the quota is never asked from the server.
   const defaultQuota = TtsQuota(
     provider: 'gemini',
     day: TtsQuotaWindow(used: 3, limit: 14, remaining: 11),
@@ -77,7 +87,7 @@ void main() {
   );
   const french = Language(code: 'fr', name: 'French');
 
-  Future<ProviderContainer> pumpForm(
+  Future<void> pumpForm(
     WidgetTester tester, {
     List<Topic> available = topics,
     Object? topicsError,
@@ -89,37 +99,59 @@ void main() {
   }) async {
     final container = ProviderContainer(
       overrides: [
-        authControllerProvider.overrideWith(
-          () => _FakeAuthController(role, language.code),
+        authRepositoryProvider.overrideWithValue(
+          FakeAuthRepository(
+            user: testUser(
+              role: role,
+              email: 'author@example.com',
+              studiedLanguage: language.code,
+            ),
+          ),
         ),
-        languagesProvider.overrideWith((ref) async => [language]),
-        topicsProvider.overrideWith((ref) async {
-          if (topicsError != null) throw topicsError;
-          return available;
-        }),
-        ttsQuotaProvider.overrideWith((ref) async => quota),
+        languageRepositoryProvider.overrideWithValue(
+          FakeLanguageRepository([language]),
+        ),
+        getTopicsProvider.overrideWithValue(
+          _FakeTopics(available, error: topicsError),
+        ),
+        getTtsQuotaProvider.overrideWithValue(_FakeQuota(quota)),
         if (ttsError != null)
           synthesizeTtsProvider.overrideWithValue(_FailingTts(ttsError)),
       ],
     );
     addTearDown(container.dispose);
-    // The text is set before painting; without it the voice-over is locked.
-    if (text != null) {
-      container.read(addLessonControllerProvider.notifier).setText(text);
-    }
+    await container.read(authServiceProvider).restore();
+    // Tall enough for the text field at the bottom of the form.
+    tester.view
+      ..physicalSize = const Size(1000, 2400)
+      ..devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
     await tester.pumpWidget(
       UncontrolledProviderScope(
         container: container,
-        child: MaterialApp(theme: AppTheme.light(), home: const AddLessonPage()),
+        child: MaterialApp(
+          theme: AppTheme.light(),
+          home: const AddLessonPage(),
+        ),
       ),
     );
     await tester.pumpAndSettle();
-    return container;
+    // Without text the voice-over is locked.
+    if (text != null) {
+      await tester.enterText(
+        find.descendant(
+          of: find.byType(SegmentSplitterField),
+          matching: find.byType(EditableText),
+        ),
+        text,
+      );
+      await tester.pumpAndSettle();
+    }
   }
 
   /// Starts the voice-over; the voice comes from settings, so no sheet opens.
   Future<void> startSynthesis(WidgetTester tester) async {
-    await tester.tap(find.widgetWithText(AppButton, 'Озвучить ИИ'));
+    await tester.tap(find.widgetWithText(AppButton, 'Voice with AI'));
     await tester.pumpAndSettle();
   }
 
@@ -136,35 +168,35 @@ void main() {
     await tester.pumpAndSettle();
   }
 
-  testWidgets('the three pickers are in place and the topic comes from the server', (
+  testWidgets(
+    'the three pickers are in place and the topic comes from the server',
+    (tester) async {
+      await pumpForm(tester);
+
+      expect(find.text('Accent'), findsOneWidget);
+      expect(find.text('Level'), findsOneWidget);
+      expect(find.text('Topic'), findsOneWidget);
+
+      await tester.tap(find.byKey(const ValueKey('dropdown-topic')));
+      await tester.pumpAndSettle();
+      expect(find.text('Education'), findsOneWidget);
+      expect(find.text('Business'), findsOneWidget);
+      expect(find.text('No topic'), findsWidgets);
+    },
+  );
+
+  testWidgets('the chosen accent, level and topic show in the fields', (
     tester,
   ) async {
     await pumpForm(tester);
 
-    expect(find.text('Акцент'), findsOneWidget);
-    expect(find.text('Уровень'), findsOneWidget);
-    expect(find.text('Тема'), findsOneWidget);
-
-    await tester.tap(find.byKey(const ValueKey('dropdown-topic')));
-    await tester.pumpAndSettle();
-    expect(find.text('Education'), findsOneWidget);
-    expect(find.text('Business'), findsOneWidget);
-    expect(find.text('Без темы'), findsWidgets);
-  });
-
-  testWidgets('the chosen accent and level land in the form state', (
-    tester,
-  ) async {
-    final container = await pumpForm(tester);
-
     await choose(tester, 'accent', 'British');
-    await choose(tester, 'level', 'C1 — продвинутый');
+    await choose(tester, 'level', 'C1 — Advanced');
     await choose(tester, 'topic', 'Education');
 
-    final state = container.read(addLessonControllerProvider);
-    expect(state.accent, 'UK');
-    expect(state.level, LessonLevel.c1);
-    expect(state.topicId, 'topic-1');
+    expect(find.text('British'), findsOneWidget);
+    expect(find.text('C1'), findsOneWidget);
+    expect(find.text('Education'), findsOneWidget);
   });
 
   test('without an accent and a level the lesson is not submitted', () {
@@ -206,13 +238,11 @@ void main() {
   testWidgets('a language without accents has no accent field', (tester) async {
     await pumpForm(tester, language: french);
 
-    expect(find.text('Акцент'), findsNothing);
-    expect(find.text('Уровень'), findsOneWidget);
+    expect(find.text('Accent'), findsNothing);
+    expect(find.text('Level'), findsOneWidget);
   });
 
-  testWidgets('English has the Australian accent in the list', (
-    tester,
-  ) async {
+  testWidgets('English has the Australian accent in the list', (tester) async {
     await pumpForm(tester);
 
     await tester.tap(find.byKey(const ValueKey('dropdown-accent')));
@@ -228,7 +258,7 @@ void main() {
     await pumpForm(tester);
 
     final button = tester.widget<AppButton>(
-      find.widgetWithText(AppButton, 'Создать урок'),
+      find.widgetWithText(AppButton, 'Create lesson'),
     );
     expect(button.onPressed, isNull);
   });
@@ -236,73 +266,49 @@ void main() {
   testWidgets('the topic directory failed to load and the form still works', (
     tester,
   ) async {
-    final container = await pumpForm(
-      tester,
-      topicsError: StateError('no connection'),
-    );
+    await pumpForm(tester, topicsError: StateError('no connection'));
 
     // Accent and level do not depend on the directory: they are hardcoded.
     await choose(tester, 'accent', 'American');
-    await choose(tester, 'level', 'A2 — элементарный');
+    await choose(tester, 'level', 'A2 — Elementary');
 
-    final state = container.read(addLessonControllerProvider);
-    expect(state.accent, 'US');
-    expect(state.level, LessonLevel.a2);
-    expect(state.topicId, isNull);
-    expect(
-      find.textContaining('Справочник тем не загрузился'),
-      findsOneWidget,
-    );
+    expect(find.text('American'), findsOneWidget);
+    expect(find.text('A2'), findsOneWidget);
+    expect(find.textContaining('Topics failed to load'), findsOneWidget);
   });
 
-  testWidgets('a deleted topic leaves the state', (tester) async {
-    final container = ProviderContainer(
-      overrides: [
-        topicsProvider.overrideWith((ref) async => topics),
-        ttsQuotaProvider.overrideWith((ref) async => defaultQuota),
-      ],
-    );
-    addTearDown(container.dispose);
-    container.read(addLessonControllerProvider.notifier).setTopic('topic-1');
-
-    await tester.pumpWidget(
-      UncontrolledProviderScope(
-        container: container,
-        child: MaterialApp(theme: AppTheme.light(), home: const AddLessonPage()),
-      ),
-    );
-    await tester.pumpAndSettle();
-    expect(container.read(addLessonControllerProvider).topicId, 'topic-1');
+  test('a deleted topic leaves the form', () {
+    final form = AddLessonForm()..setTopic('topic-1');
+    addTearDown(form.dispose);
 
     // The topic was deleted elsewhere and the directory came back without it.
-    container.read(addLessonControllerProvider.notifier).dropTopicUnless(const [
-      'topic-2',
-    ]);
-    await tester.pumpAndSettle();
+    form.dropTopicUnless(const ['topic-2']);
 
-    expect(container.read(addLessonControllerProvider).topicId, isNull);
+    expect(form.value.topicId, isNull);
   });
 
   // TTS_CLIENT_SPEC §4.1: the daily voice-over balance sits by the button.
-  testWidgets('the daily voice-over balance shows next to the button', (tester) async {
+  testWidgets('the daily voice-over balance shows next to the button', (
+    tester,
+  ) async {
     await pumpForm(tester);
 
-    expect(find.text('Осталось озвучек сегодня: 11'), findsOneWidget);
+    expect(find.text('Voiceovers left today: 11'), findsOneWidget);
   });
 
   // Voice-over is owner-only: others get neither the button nor the hint.
-  testWidgets('an author who is not the owner gets no voice-over button', (tester) async {
-    await pumpForm(tester, role: UserRole.admin, text: 'Hello there');
-
-    expect(find.widgetWithText(AppButton, 'Озвучить ИИ'), findsNothing);
-    expect(find.textContaining('Осталось озвучек сегодня'), findsNothing);
-    // File upload stays: the author role does not lose it.
-    expect(find.widgetWithText(AppButton, 'Выберите аудио'), findsOneWidget);
-  });
-
-  testWidgets('with no cap (limit 0) the balance is not shown', (
+  testWidgets('an author who is not the owner gets no voice-over button', (
     tester,
   ) async {
+    await pumpForm(tester, role: UserRole.admin, text: 'Hello there');
+
+    expect(find.widgetWithText(AppButton, 'Voice with AI'), findsNothing);
+    expect(find.textContaining('Voiceovers left today'), findsNothing);
+    // File upload stays: the author role does not lose it.
+    expect(find.widgetWithText(AppButton, 'Choose audio'), findsOneWidget);
+  });
+
+  testWidgets('with no cap (limit 0) the balance is not shown', (tester) async {
     await pumpForm(
       tester,
       quota: const TtsQuota(
@@ -312,13 +318,11 @@ void main() {
       ),
     );
 
-    expect(find.textContaining('Осталось озвучек сегодня'), findsNothing);
+    expect(find.textContaining('Voiceovers left today'), findsNothing);
   });
 
   // Different voice-over error codes give different snackbar actions.
-  testWidgets('voice-over unavailable (503) offers a retry', (
-    tester,
-  ) async {
+  testWidgets('voice-over unavailable (503) offers a retry', (tester) async {
     await pumpForm(
       tester,
       ttsError: const ApiException(
@@ -332,33 +336,34 @@ void main() {
     await startSynthesis(tester);
 
     expect(
-      find.text('Озвучка временно недоступна. Попробуйте позже.'),
+      find.text('Voiceover is temporarily unavailable. Try again later.'),
       findsOneWidget,
     );
-    expect(find.widgetWithText(AppButton, 'Повторить'), findsOneWidget);
+    expect(find.widgetWithText(AppButton, 'Retry'), findsOneWidget);
   });
 
-  testWidgets('the quota is exhausted (429): it offers a file upload and no retry', (
-    tester,
-  ) async {
-    await pumpForm(
-      tester,
-      ttsError: const ApiException(
-        code: ApiErrorCode.ttsQuotaExceeded,
-        message: 'The free voice-over quota for this month is used up',
-        status: 429,
-      ),
-      text: 'Hello there',
-    );
+  testWidgets(
+    'the quota is exhausted (429): it offers a file upload and no retry',
+    (tester) async {
+      await pumpForm(
+        tester,
+        ttsError: const ApiException(
+          code: ApiErrorCode.ttsQuotaExceeded,
+          message: 'The free voice-over quota for this month is used up',
+          status: 429,
+        ),
+        text: 'Hello there',
+      );
 
-    await startSynthesis(tester);
+      await startSynthesis(tester);
 
-    expect(
-      find.text('The free voice-over quota for this month is used up'),
-      findsOneWidget,
-    );
-    expect(find.widgetWithText(AppButton, 'Загрузить файл'), findsOneWidget);
-    // A rate limit is not auto-retried, so no retry button here.
-    expect(find.widgetWithText(AppButton, 'Повторить'), findsNothing);
-  });
+      expect(
+        find.text('The free voice-over quota for this month is used up'),
+        findsOneWidget,
+      );
+      expect(find.widgetWithText(AppButton, 'Upload a file'), findsOneWidget);
+      // A rate limit is not auto-retried, so no retry button here.
+      expect(find.widgetWithText(AppButton, 'Retry'), findsNothing);
+    },
+  );
 }

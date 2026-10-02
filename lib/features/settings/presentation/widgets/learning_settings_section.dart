@@ -1,80 +1,43 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import 'package:shado/widgets/widgets.dart';
-
-import '../../../auth/presentation/controllers/auth_controller.dart';
-import '../controllers/settings_controller.dart';
 import 'settings_row.dart';
 import 'settings_section.dart';
 import 'settings_switch_row.dart';
-import 'settings_text_edit_sheet.dart';
 import 'settings_value.dart';
 
 /// Learning section: the daily goal and reminders.
-class LearningSettingsSection extends ConsumerWidget {
-  const LearningSettingsSection({super.key});
+class LearningSettingsSection extends StatelessWidget {
+  const LearningSettingsSection({
+    super.key,
+    required this.dailyGoalMinutes,
+    required this.onEditGoal,
+  });
+
+  final int? dailyGoalMinutes;
+  final VoidCallback onEditGoal;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final goal = ref.watch(
-      authControllerProvider.select((state) => state.user?.dailyGoalMinutes),
-    );
+  Widget build(BuildContext context) {
+    final goal = dailyGoalMinutes;
 
     return SettingsSection(
-      title: 'Обучение',
+      title: 'Learning',
       rows: [
         SettingsRow(
           icon: Icons.schedule_rounded,
-          title: 'Дневная цель',
+          title: 'Daily goal',
           trailing: SettingsValue(
-            label: goal == null ? 'Не задана' : '$goal мин',
+            label: goal == null ? 'Not set' : '$goal min',
           ),
-          onTap: () => _editGoal(context, ref, goal),
+          onTap: onEditGoal,
         ),
         const SettingsSwitchRow(
           icon: Icons.notifications_outlined,
-          title: 'Напоминания',
-          subtitle: 'Каждый день в 20:00',
+          title: 'Reminders',
+          subtitle: 'Every day at 20:00',
           initialValue: true,
         ),
       ],
     );
-  }
-
-  Future<void> _editGoal(
-    BuildContext context,
-    WidgetRef ref,
-    int? current,
-  ) async {
-    final raw = await showAppBottomSheet<String>(
-      context: context,
-      title: 'Дневная цель',
-      builder: (_) => SettingsTextEditSheet(
-        label: 'Минут в день',
-        initialValue: current?.toString() ?? '',
-        hint: 'Например, 15',
-        keyboardType: TextInputType.number,
-      ),
-    );
-    if (raw == null || !context.mounted) return;
-    final trimmed = raw.trim();
-    // An empty field leaves the goal unchanged.
-    if (trimmed.isEmpty) return;
-    final minutes = int.tryParse(trimmed);
-    if (minutes == null) {
-      _showMessage(context, 'Введите число минут');
-      return;
-    }
-    final error = await ref
-        .read(settingsControllerProvider.notifier)
-        .save(dailyGoalMinutes: minutes);
-    if (error != null && context.mounted) _showMessage(context, error);
-  }
-
-  void _showMessage(BuildContext context, String message) {
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(SnackBar(content: Text(message)));
   }
 }

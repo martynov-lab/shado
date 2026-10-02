@@ -8,16 +8,16 @@ class DeleteLessonDialog extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => AlertDialog(
-    title: const Text('Удалить урок?'),
-    content: Text('«$lessonTitle» и его аудио будут удалены навсегда.'),
+    title: const Text('Delete lesson?'),
+    content: Text('"$lessonTitle" and its audio will be deleted permanently.'),
     actions: [
       TextButton(
         onPressed: () => Navigator.of(context).pop(false),
-        child: const Text('Отмена'),
+        child: const Text('Cancel'),
       ),
       FilledButton(
         onPressed: () => Navigator.of(context).pop(true),
-        child: const Text('Удалить'),
+        child: const Text('Delete'),
       ),
     ],
   );

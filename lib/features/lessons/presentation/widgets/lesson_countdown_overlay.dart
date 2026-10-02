@@ -1,23 +1,17 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:shado/theme/theme.dart';
 
-import '../controllers/lesson_controller.dart';
 
 /// Full-screen countdown before the start; it does not absorb taps.
-class LessonCountdownOverlay extends ConsumerWidget {
-  const LessonCountdownOverlay({super.key, required this.lessonId});
+class LessonCountdownOverlay extends StatelessWidget {
+  const LessonCountdownOverlay({super.key, required this.countdown});
 
-  final String lessonId;
+  /// `null` hides the overlay.
+  final int? countdown;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final countdown = ref.watch(
-      lessonControllerProvider(
-        lessonId,
-      ).select((state) => state.value?.countdown),
-    );
+  Widget build(BuildContext context) {
     final colors = context.colors;
 
     return IgnorePointer(

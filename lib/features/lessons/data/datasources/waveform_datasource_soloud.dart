@@ -7,7 +7,8 @@ import 'package:path/path.dart' as p;
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/error/failures.dart';
 import '../../domain/entities/audio_trim.dart';
-import '../models/waveform_peaks.dart';
+import '../../domain/entities/waveform_peaks.dart';
+import '../../domain/entities/waveform_query.dart';
 import 'waveform_datasource.dart';
 
 /// Waveform peaks via `flutter_soloud` on Windows/Linux; reads mp3, wav,
@@ -19,7 +20,7 @@ class SoLoudWaveformDataSource implements WaveformDataSource {
   Future<WaveformPeaks> loadPeaks(WaveformQuery query) async {
     final audioPath = query.localPath;
     if (audioPath == null) {
-      throw const AudioFailure('Файл ещё не скачан — волну строить не из чего');
+      throw const AudioFailure('The file is not downloaded yet — nothing to build a waveform from');
     }
     final resolution = query.resolution;
     final range = query.range;
@@ -35,8 +36,8 @@ class SoLoudWaveformDataSource implements WaveformDataSource {
         .toLowerCase();
     if (!kDesktopAudioExtensions.contains(extension)) {
       throw AudioFailure(
-        'На этой платформе волна доступна только для '
-        '${kDesktopAudioExtensions.join(', ')} — формат $extension не читается',
+        'On this platform the waveform is available only for '
+        '${kDesktopAudioExtensions.join(', ')} — the $extension format cannot be read',
       );
     }
 
@@ -51,7 +52,7 @@ class SoLoudWaveformDataSource implements WaveformDataSource {
         average: true,
       );
     } catch (error) {
-      throw AudioFailure('Не удалось построить волновую форму', cause: error);
+      throw AudioFailure('Failed to build the waveform', cause: error);
     }
 
     final normalized = _normalize(envelope);

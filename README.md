@@ -1,15 +1,15 @@
 # Shado
 
-Приложение для изучения английского по технике **shadowing**: загружаете аудио
-и текст, вручную размечаете границы кусков на волне, затем проигрываете и
-зацикливаете каждый кусок, повторяя за диктором.
+An app for learning English with the **shadowing** technique: you upload audio
+and text, manually mark chunk boundaries on the waveform, then play and loop
+each chunk, repeating after the speaker.
 
-Уроки и аудио живут на сервере ([shado_server](../shado_server), контракт — в
-[docs/CLIENT_SPEC.md](docs/CLIENT_SPEC.md)), локально остаётся кеш: список
-уроков в sqflite и скачанные аудиофайлы. Распознавания речи по-прежнему нет —
-вся разметка ручная.
+Lessons and audio live on the server ([shado_server](../shado_server), the
+contract is in [docs/CLIENT_SPEC.md](docs/CLIENT_SPEC.md)); a local cache stays
+on the device: the lesson list in sqflite and the downloaded audio files. There
+is still no speech recognition — all markup is manual.
 
-## Запуск
+## Running
 
 ```bash
 flutter pub get
@@ -17,218 +17,227 @@ dart run build_runner build --force-jit   # freezed + json_serializable
 flutter run
 ```
 
-Сервер по умолчанию — боевой, `https://shado-martin.duckdns.org`: релиз без
-флагов собирается рабочим. Локальный `shado_server` подставляется флагом:
+The default server is production, `https://shado-martin.duckdns.org`: a release
+built without flags works out of the box. A local `shado_server` is set with a
+flag:
 
 ```bash
 flutter run --dart-define=SHADO_API_BASE_URL=http://10.0.2.2:8080
 ```
 
-`10.0.2.2` — это хост-машина изнутри Android-эмулятора; `127.0.0.1` там ведёт в
-сам эмулятор. На iOS-симуляторе и десктопе — `127.0.0.1`, на живом телефоне —
-адрес машины в локальной сети (см. [docs/RUNNING.md](docs/RUNNING.md), §5).
+`10.0.2.2` is the host machine as seen from inside the Android emulator;
+`127.0.0.1` there points to the emulator itself. On the iOS simulator and the
+desktop use `127.0.0.1`, on a real phone — the machine's LAN address (see
+[docs/RUNNING.md](docs/RUNNING.md), §5).
 
-Целевые платформы — Android, iOS и Windows/Linux.
+Target platforms are Android, iOS and Windows/Linux.
 
-### Что делает сервер, а что клиент
+### What the server does and what the client does
 
-| Задача | Где считается |
+| Task | Where it is computed |
 | --- | --- |
-| Длительность аудио | сервер, при `POST /v1/audio` |
-| Пики волны | сервер, `GET /v1/audio/{id}/peaks` |
-| Разметка кусков, обрезка, зацикливание | клиент |
-| Воспроизведение | клиент, из скачанного файла |
+| Audio duration | server, on `POST /v1/audio` |
+| Waveform peaks | server, `GET /v1/audio/{id}/peaks` |
+| Chunk markup, trimming, looping | client |
+| Playback | client, from the downloaded file |
 
-Аудио играет из локальной копии, а не по сети: в shadowing куски зацикливаются
-по две-три секунды, и каждый повтор поверх сетевого источника дёргался бы. Файл
-скачивается один раз в кеш по `audio_id`, проверяется по `sha256` и больше не
-меняется — содержимое под одним `audio_id` иммутабельно.
+Audio plays from a local copy, not over the network: in shadowing, chunks of two
+or three seconds are looped, and every repeat over a network source would
+stutter. The file is downloaded into the cache once by `audio_id`, verified by
+`sha256` and never changes — the content under one `audio_id` is immutable.
 
-### Чем отличается десктоп
+### How the desktop differs
 
-`just_audio` и `sqflite` нативных реализаций под Windows и Linux не имеют,
-поэтому там подставляются замены (см. `lib/core/platform/platform_setup.dart`,
-вызывается из `main` до `runApp`):
+`just_audio` and `sqflite` have no native implementations for Windows and
+Linux, so replacements are plugged in there (see
+`lib/core/platform/platform_setup.dart`, called from `main` before `runApp`):
 
-| Задача | Android / iOS | Windows / Linux |
+| Task | Android / iOS | Windows / Linux |
 | --- | --- | --- |
-| Воспроизведение | `just_audio` | `just_audio_media_kit` (libmpv) |
-| База | `sqflite` | `sqflite_common_ffi` |
-| Пики волны без сети | `just_waveform` | `flutter_soloud` (miniaudio) |
+| Playback | `just_audio` | `just_audio_media_kit` (libmpv) |
+| Database | `sqflite` | `sqflite_common_ffi` |
+| Offline waveform peaks | `just_waveform` | `flutter_soloud` (miniaudio) |
 
-Волна теперь одинакова на всех платформах — её строит сервер. Локальные
-построители остались запасным путём на случай, когда сервер недоступен, а файл
-уже скачан; у `flutter_soloud` он умеет только `mp3, wav, flac, ogg` и рисует
-RMS-огибающую, симметричную относительно центра.
+The waveform is now the same on all platforms — the server builds it. The local
+builders remain as a fallback for when the server is unreachable but the file is
+already downloaded; with `flutter_soloud` it handles only `mp3, wav, flac, ogg`
+and draws an RMS envelope symmetric around the center.
 
-## Сессия
+## Session
 
-- вход и регистрация — по email и паролю (не короче 8 символов);
-- refresh-токен лежит в защищённом хранилище платформы и переживает перезапуск:
-  приложение входит само, экрана входа пользователь не видит;
-- access живёт 15 минут и обновляется молча; на несколько параллельных запросов
-  приходится одно обновление;
-- если сервер отверг refresh, сессия закрывается целиком: чистятся токены, кеш
-  уроков и скачанное аудио;
-- у владельца (почта задана на сервере) в меню аккаунта появляется раздел
-  «Пользователи» со сменой ролей.
+- sign-in and registration use email and password (at least 8 characters);
+- the refresh token is kept in the platform's secure storage and survives a
+  restart: the app signs in by itself, the user never sees the sign-in screen;
+- the access token lives 15 minutes and is refreshed silently; several parallel
+  requests share one refresh;
+- if the server rejects the refresh, the session is closed entirely: tokens, the
+  lesson cache and downloaded audio are cleared;
+- the owner (whose email is set on the server) gets a "Users" section in the
+  account menu for changing roles.
 
-## Как пользоваться
+## How to use
 
-1. Вкладка **«Добавить»**: название, текст с кусками через `|`, кнопка выбора
-   аудио. Принимаются `mp3, m4a, aac, wav, flac, ogg` до 50 МБ.
-2. Выбранный файл сразу уходит на сервер — с прогрессом и кнопкой «Отменить».
-   Сервер отвечает длительностью и пиками, и под формой появляется волна с
-   метками границ: куски раскладываются равномерно, метки двигаются сразу, ещё
-   до создания урока. Правка текста подгоняет разметку под новое число кусков —
-   уже расставленные метки с начала сохраняются. Тот же файл, загруженный
-   повторно, сервер узнаёт по контрольной сумме и второй раз не обрабатывает.
-3. «Создать урок»: урок уходит на сервер одним запросом, аудио уже лежит в
-   локальном кеше — качать его обратно не нужно.
-4. Экран урока: переключатель «Медленно / Нормально» (0.75× / 1.0×) и список
-   кусков с кнопками «играть / остановить» и «повторять». Волны здесь нет —
-   урок уже нарезан, экран только для повторения.
-5. Кнопка ✏️ в шапке урока открывает правку: название, разбивка текста на
-   куски и границы на волне. Для `N` кусков метка одна на каждый внутренний
-   стык — `N - 1` штука. После сохранения урок перечитывается, плеер
-   сбрасывается.
+1. The **"Add"** tab: a title, text with chunks separated by `|`, an audio pick
+   button. Accepted formats are `mp3, m4a, aac, wav, flac, ogg` up to 50 MB.
+2. The chosen file is uploaded to the server right away — with progress and a
+   "Cancel" button. The server responds with the duration and peaks, and a
+   waveform with boundary markers appears under the form: chunks are laid out
+   evenly, markers can be moved immediately, even before the lesson is created.
+   Editing the text fits the markup to the new chunk count — markers already
+   placed from the start are kept. The same file uploaded again is recognized by
+   the server by its checksum and not processed a second time.
+3. "Create lesson": the lesson goes to the server in one request, the audio is
+   already in the local cache — no need to download it back.
+4. The lesson screen: a "Slow / Normal" switch (0.75× / 1.0×) and a list of
+   chunks with "play / stop" and "repeat" buttons. There is no waveform here —
+   the lesson is already cut, the screen is only for practice.
+5. The ✏️ button in the lesson header opens editing: the title, splitting the
+   text into chunks and the boundaries on the waveform. For `N` chunks there is
+   one marker per inner joint — `N - 1` of them. After saving, the lesson is
+   re-read and the player is reset.
 
-### Несколько кусков сразу
+### Several chunks at once
 
-Галочка на плитке выбирает кусок, внизу появляется панель: сколько выбрано,
-сколько это звучит, «играть / стоп» и «повторять». Выбранные куски играются
-подряд и зацикливаются целиком.
+A checkbox on a tile selects a chunk, and a panel appears at the bottom: how many
+are selected, how long they sound, "play / stop" and "repeat". The selected
+chunks play in a row and loop as a whole.
 
-Выбирать можно только соседние куски (или все сразу кнопкой в шапке) — иначе
-непонятно, что значит «проиграть выбранное». Отсюда и приятное следствие:
-соседние куски идут встык, поэтому любой выбор — это один непрерывный фрагмент
-аудио, который плеер играет и зацикливает как обычный кусок. Правила выделения
-собраны в `SegmentRange.toggled`: сосед расширяет выбор, край снимает, кусок из
-середины или вдалеке начинает выбор заново.
+Only adjacent chunks can be selected (or all at once with the header button) —
+otherwise it is unclear what "play the selection" means. A nice consequence:
+adjacent chunks are contiguous, so any selection is one continuous piece of
+audio that the player plays and loops like a regular chunk. The selection rules
+live in `SegmentRange.toggled`: a neighbor extends the selection, an edge chunk
+removes itself, a chunk from the middle or far away starts a new selection.
 
-### Клавиатура на экране урока
+### Keyboard on the lesson screen
 
-| Клавиши | Что делают |
+| Keys | What they do |
 | --- | --- |
-| ↑ / ↓ | ходят по кускам; список сам прокручивается к текущему |
-| Shift + ↑ / ↓ | набирают соседние куски от того, с которого начали |
-| Пробел | играет или останавливает — выбранное, а если выбора нет, кусок под рамкой |
-| Ctrl + A | выбрать все куски |
-| Esc | снять выбор |
+| ↑ / ↓ | move between chunks; the list scrolls to the current one |
+| Shift + ↑ / ↓ | add adjacent chunks starting from the one you began with |
+| Space | plays or stops — the selection, or the framed chunk if nothing is selected |
+| Ctrl + A | select all chunks |
+| Esc | clear the selection |
 
-Кусок под клавиатурой обведён рамкой, выбранные — залиты цветом: это разные
-вещи и на одной плитке бывают одновременно.
+The keyboard chunk has a frame, the selected ones are filled with color: these
+are different things and can be on one tile at the same time.
 
-### Волна
+### Waveform
 
-Волна живёт на экранах создания и правки (`WaveformCard` → `WaveformEditor`) и
-растягивается, чтобы метку можно было поставить точнее. Жест никогда не значит
-двух вещей сразу: метки берутся только за свои ручки, всё остальное —
-перемещение самой волны.
+The waveform lives on the create and edit screens (`WaveformCard` →
+`WaveformEditor`) and can be zoomed so a marker can be placed more precisely. A
+gesture never means two things at once: markers are grabbed only by their
+handles, everything else moves the waveform itself.
 
-| Что делаем | Мышь / трекпад | Сенсор |
+| Action | Mouse / trackpad | Touch |
 | --- | --- | --- |
-| Двигаем метку границы | тянем за кружок сверху | тянем за кружок сверху |
-| Двигаем ползунок | тянем за треугольник снизу, либо клик по волне | тянем за треугольник снизу, либо тап |
-| Двигаем волну | тянем левой кнопкой мимо ручек, колесо | тянем одним пальцем мимо ручек |
-| Меняем масштаб | `Ctrl` + колесо, щипок на трекпаде | щипок двумя пальцами |
-| Играем / пауза | кнопка ▶ или пробел | кнопка ▶ |
+| Move a boundary marker | drag the circle on top | drag the circle on top |
+| Move the playhead | drag the triangle below, or click the waveform | drag the triangle below, or tap |
+| Move the waveform | drag with the left button away from handles, wheel | drag with one finger away from handles |
+| Zoom | `Ctrl` + wheel, trackpad pinch | two-finger pinch |
+| Play / pause | ▶ button or space | ▶ button |
 
-Кнопок масштаба нет: текущее растяжение подписано в правом нижнем углу, пока
-оно больше единицы, а видимое окно показывает полоска внизу. Метка, доведённая
-до края окна, тянет волну за собой. Сверху идёт шкала времени с круглым шагом,
-у перетаскиваемой метки показывается точное время, в кусках — их номера.
+There are no zoom buttons: the current zoom is shown in the bottom-right corner
+while it is above one, and the visible window is shown by a bar at the bottom.
+A marker dragged to the window edge pulls the waveform along. A time scale with
+round steps runs along the top, a dragged marker shows its exact time, and
+chunks show their numbers.
 
-Ползунок воспроизведения появляется только там, где задан `onSeek` — сейчас
-это экран правки. Кнопка ▶ играет файл целиком с ползунка, повторное нажатие
-ставит на паузу и оставляет ползунок там, где аудио остановилось: так слышно,
-попадает ли метка в паузу между фразами. С клавиатурой то же делает **пробел**
-— но только когда фокус на самом экране: в текстовом поле пробел остаётся
-пробелом, а прикосновение к волне забирает фокус себе, чтобы пробел снова
-работал.
+The playback playhead appears only where `onSeek` is set — currently the edit
+screen. The ▶ button plays the whole file from the playhead, a second press
+pauses and leaves the playhead where the audio stopped: this lets you hear
+whether a marker falls into the pause between phrases. On the keyboard the
+**space** bar does the same — but only when the screen itself has focus: in a
+text field space stays a space, and touching the waveform takes the focus so
+space works again.
 
-## Архитектура
+## Architecture
 
-Чистая архитектура, feature-first; зависимости направлены внутрь:
+Clean architecture, feature-first; dependencies point inward:
 `presentation → domain ← data`.
 
 ```text
 lib/
-  core/            константы, тема, роутер, типы ошибок, форматирование
+  core/            constants, theme, router, failure types, formatting
   features/lessons/
-    domain/        entities, repositories (интерфейс), usecases
+    domain/        entities, repositories (interface), usecases
     data/          models (freezed + json), datasources, repositories
-    presentation/  pages, widgets, controllers (riverpod)
+    presentation/  pages (Elementary: page, widget model, model), widgets
 ```
 
-Домен не знает ни о Flutter, ни о БД, ни о сети. За интерфейсами спрятано всё:
-кеш уроков — за `LessonLocalDataSource`, сервер — за `LessonRemoteDataSource` и
-`AudioRemoteDataSource`, файлы аудио — за `AudioCache`, пики — за
-`WaveformDataSource`. Поэтому репозиторий и контроллеры тестируются на
-подделках, без сети.
+The domain knows nothing about Flutter, the database or the network. Everything
+is hidden behind interfaces: the lesson cache behind `LessonLocalDataSource`,
+the server behind `LessonRemoteDataSource` and `AudioRemoteDataSource`, audio
+files behind `AudioCache`, peaks behind `WaveformDataSource`. So the repository
+and screen models are tested on fakes, without a network.
 
 ```text
 lib/
   core/
-    config/          базовый URL и лимиты
+    config/          base URL and limits
     network/         ApiClient, ApiException, AuthInterceptor
-    storage/         TokenStorage поверх flutter_secure_storage
-  features/auth/     вход, регистрация, сессия
-  features/admin/    пользователи и роли (только владельцу)
+    storage/         TokenStorage on top of flutter_secure_storage
+  di/                Riverpod providers: services, repositories, use cases
+  features/auth/     sign-in, registration, session
+  features/admin/    users and roles (owner only)
   features/lessons/  domain / data / presentation
 ```
 
-Что где происходит:
+What happens where:
 
-- **сервер — источник истины**, sqflite — кеш для чтения. На старте и по
-  pull-to-refresh уходит `GET /v1/lessons?since=<последний updated_at>`;
-  «водяной знак» берётся из полученных записей, а не с часов устройства.
-- **создание урока — один `PUT`** по UUID, сгенерированному клиентом: повтор
-  после обрыва не создаёт дубль.
-- **правка идёт с `If-Match`**. Если урок изменили на другом устройстве, сервер
-  отвечает конфликтом версий, свежая версия попадает в кеш, а пользователь
-  видит сообщение — молча перезаписывать чужую правку нельзя.
-- **удаление мягкое**: урок помечается удалённым и исчезает на других
-  устройствах после синхронизации. Аудио из кеша удаляется, только когда на
-  него не ссылается ни один живой урок: сервер дедуплицирует загрузки по
-  `sha256`, и один `audio_id` бывает у нескольких уроков сразу.
+- **the server is the source of truth**, sqflite is a read cache. On start and
+  on pull-to-refresh the app sends `GET /v1/lessons?since=<last updated_at>`;
+  the "watermark" is taken from the received records, not from the device
+  clock.
+- **creating a lesson is one `PUT`** by a client-generated UUID: a retry after a
+  dropped connection does not create a duplicate.
+- **editing goes with `If-Match`**. If the lesson was changed on another device,
+  the server responds with a version conflict, the latest version goes into the
+  cache, and the user sees a message — silently overwriting someone else's edit
+  is not allowed.
+- **deletion is soft**: the lesson is marked deleted and disappears on other
+  devices after sync. Audio is removed from the cache only when no live lesson
+  references it: the server deduplicates uploads by `sha256`, and one `audio_id`
+  can belong to several lessons at once.
 
-### Обрезка и сервер
+### Trimming and the server
 
-Сервер требует, чтобы куски покрывали аудио целиком (`0..duration_ms`), поэтому
-обрезка осталась инструментом разметки на клиенте: она помогает точно
-расставить метки в середине файла, но в сохранённый урок аудио уходит целиком —
-отрезанные края достаются крайним кускам.
+The server requires the chunks to cover the whole audio (`0..duration_ms`), so
+trimming remains a client-side markup tool: it helps place markers precisely in
+the middle of the file, but the saved lesson gets the whole audio — the cut-off
+edges go to the outer chunks.
 
-## Тесты
+## Tests
 
 ```bash
-flutter test                              # 110 тестов, сеть не нужна
-flutter test test/live/live_contract.dart # контракт против живого сервера
+flutter test                              # 110 tests, no network needed
+flutter test test/live/live_contract.dart # contract against a live server
 ```
 
-Покрыта доменная логика: равномерная разбивка, пересчёт границ, разбор текста
-по разделителю, нормализация границ, подгонка разметки под изменившееся число
-кусков и правила непрерывного выделения (`SegmentRange`). Виджет-тесты на
-`WaveformEditor` проверяют разделение жестов (за ручку — метка, мимо ручек —
-волна), неподвижность крайних границ, масштабирование щипком и `Ctrl` +
-колесом, а также работу ползунка воспроизведения.
+The domain logic is covered: even splitting, boundary recalculation, parsing the
+text by the delimiter, boundary normalization, fitting the markup to a changed
+chunk count and the contiguous selection rules (`SegmentRange`). Widget tests
+on `WaveformEditor` check gesture separation (by the handle — a marker, away
+from handles — the waveform), fixed outer boundaries, pinch and `Ctrl` + wheel
+zoom, and the playback playhead.
 
-Сетевой слой: разбор всех кодов ошибок из спецификации, повтор только
-идемпотентных запросов, подстановка `Authorization`, одно обновление токена на
-несколько параллельных `401`, полный выход при `401` на самом refresh. Дальше —
-репозиторий (растягивание границ до целого файла, `If-Match`, конфликт версий,
-дельта с удалёнными, чистка кеша) и маршрутизация по состоянию сессии.
+The network layer: parsing every error code from the spec, retrying only
+idempotent requests, injecting `Authorization`, one token refresh for several
+parallel `401`s, a full sign-out on a `401` from the refresh itself. Then the
+repository (stretching boundaries to the whole file, `If-Match`, version
+conflict, delta with deleted records, cache cleanup) and routing by session
+state.
 
-`test/live/live_contract.dart` проходит тот же путь по настоящему серверу:
-регистрация, загрузка аудио с дедупликацией, пики, скачивание файла, создание и
-правка урока, конфликт версий, мягкое удаление, `403` в админке, ротация
-refresh-токена, отказ по размеру файла и отмена загрузки. Имя без суффикса
-`_test` — намеренно, чтобы обычный `flutter test` его не подхватывал.
+`test/live/live_contract.dart` walks the same path against the real server:
+registration, audio upload with deduplication, peaks, file download, creating
+and editing a lesson, version conflict, soft deletion, `403` in the admin area,
+refresh token rotation, a file size rejection and upload cancellation. The name
+lacks the `_test` suffix on purpose, so a regular `flutter test` does not pick
+it up.
 
-Инфраструктуру десктопа (пики через miniaudio, воспроизведение куска, запись
-урока в sqlite) проверяет интеграционный тест на сгенерированном wav — он
-требует запущенной платформы:
+The desktop infrastructure (peaks via miniaudio, chunk playback, writing a
+lesson to sqlite) is checked by an integration test on a generated wav — it
+requires a running platform:
 
 ```bash
 flutter test integration_test/desktop_pipeline_test.dart -d windows

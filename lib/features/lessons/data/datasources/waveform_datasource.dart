@@ -5,53 +5,10 @@ import 'dart:math' as math;
 import 'package:just_waveform/just_waveform.dart';
 import 'package:path/path.dart' as p;
 
-import '../../../../core/constants/app_constants.dart';
 import '../../../../core/error/failures.dart';
 import '../../domain/entities/audio_trim.dart';
-import '../models/waveform_peaks.dart';
-
-/// Peaks query: which audio to build and which range to show.
-class WaveformQuery {
-  const WaveformQuery({
-    required this.audioId,
-    this.localPath,
-    this.durationMs = 0,
-    this.resolution = kWaveformResolution,
-    this.range,
-    this.cache = true,
-  });
-
-  final String audioId;
-
-  /// Path to the downloaded file; `null` when it is missing.
-  final String? localPath;
-
-  /// Duration of the whole file.
-  final int durationMs;
-
-  final int resolution;
-
-  /// File range for the waveform; `null` means the whole file.
-  final AudioTrim? range;
-
-  /// Whether to write the peaks cache next to the file.
-  final bool cache;
-
-  @override
-  bool operator ==(Object other) =>
-      identical(this, other) ||
-      other is WaveformQuery &&
-          other.audioId == audioId &&
-          other.localPath == localPath &&
-          other.durationMs == durationMs &&
-          other.resolution == resolution &&
-          other.range == range &&
-          other.cache == cache;
-
-  @override
-  int get hashCode =>
-      Object.hash(audioId, localPath, durationMs, resolution, range, cache);
-}
+import '../../domain/entities/waveform_peaks.dart';
+import '../../domain/entities/waveform_query.dart';
 
 /// Source of waveform peaks for painting.
 abstract interface class WaveformDataSource {
@@ -85,7 +42,7 @@ class JustWaveformDataSource implements WaveformDataSource {
   Future<WaveformPeaks> loadPeaks(WaveformQuery query) async {
     final audioPath = query.localPath;
     if (audioPath == null) {
-      throw const AudioFailure('Файл ещё не скачан — волну строить не из чего');
+      throw const AudioFailure('The file is not downloaded yet — nothing to build a waveform from');
     }
     // Extract and cache the whole file; the range is sliced from ready peaks.
     final waveform = await _obtainWaveform(audioPath, query.cache);
@@ -121,7 +78,7 @@ class JustWaveformDataSource implements WaveformDataSource {
       );
       return result.waveform!;
     } catch (error) {
-      throw AudioFailure('Не удалось построить волновую форму', cause: error);
+      throw AudioFailure('Failed to build the waveform', cause: error);
     } finally {
       if (!cache) {
         try {

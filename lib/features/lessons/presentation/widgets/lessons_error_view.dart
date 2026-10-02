@@ -36,7 +36,7 @@ class LessonsErrorView extends StatelessWidget {
               style: AppText.body.copyWith(color: colors.text2),
             ),
             const SizedBox(height: AppSpacing.s4),
-            AppButton(label: 'Повторить', onPressed: onRetryPressed),
+            AppButton(label: 'Retry', onPressed: onRetryPressed),
           ],
         ),
       ),

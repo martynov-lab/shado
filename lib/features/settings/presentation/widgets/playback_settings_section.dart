@@ -1,12 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:shado/core/constants/app_constants.dart';
-import 'package:shado/widgets/widgets.dart';
 
 import '../../domain/entities/playback_settings.dart';
-import '../controllers/playback_settings_controller.dart';
-import 'playback_speed_sheet.dart';
 import 'settings_row.dart';
 import 'settings_section.dart';
 import 'settings_stepper.dart';
@@ -14,67 +10,58 @@ import 'settings_switch_row.dart';
 import 'settings_value.dart';
 
 /// Playback section: speed, repeats, pause and the countdown.
-class PlaybackSettingsSection extends ConsumerWidget {
-  const PlaybackSettingsSection({super.key});
+class PlaybackSettingsSection extends StatelessWidget {
+  const PlaybackSettingsSection({
+    super.key,
+    required this.settings,
+    required this.onEditSpeed,
+    required this.onRepeatsChanged,
+    required this.onPauseChanged,
+    required this.onCountdownChanged,
+  });
+
+  final PlaybackSettings settings;
+  final VoidCallback onEditSpeed;
+  final ValueChanged<int> onRepeatsChanged;
+  final ValueChanged<bool> onPauseChanged;
+  final ValueChanged<bool> onCountdownChanged;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    // While settings load, show the default values.
-    final settings =
-        ref.watch(playbackSettingsControllerProvider).value ??
-        const PlaybackSettings();
-    final controller = ref.read(playbackSettingsControllerProvider.notifier);
-
+  Widget build(BuildContext context) {
     return SettingsSection(
-      title: 'Воспроизведение',
+      title: 'Playback',
       rows: [
         SettingsRow(
           icon: Icons.play_arrow_rounded,
-          title: 'Скорость по умолчанию',
+          title: 'Default speed',
           trailing: SettingsValue(label: speedLabel(settings.defaultSpeed)),
-          onTap: () => _editSpeed(context, ref, settings.defaultSpeed),
+          onTap: onEditSpeed,
         ),
         SettingsRow(
           icon: Icons.repeat_rounded,
-          title: 'Повторов в цикле',
+          title: 'Repeats per loop',
           trailing: SettingsStepper(
             value: settings.repeatsInCycle,
             min: kMinRepeatsInCycle,
             max: kMaxRepeatsInCycle,
             formatValue: repeatsLabel,
-            onChanged: controller.setRepeatsInCycle,
+            onChanged: onRepeatsChanged,
           ),
         ),
         SettingsSwitchRow(
           icon: Icons.pause_rounded,
-          title: 'Пауза между повторами',
-          subtitle: '1 секунда',
+          title: 'Pause between repeats',
+          subtitle: '1 second',
           value: settings.pauseBetweenRepeats,
-          onChanged: controller.setPauseBetweenRepeats,
+          onChanged: onPauseChanged,
         ),
         SettingsSwitchRow(
           icon: Icons.timer_outlined,
-          title: 'Обратный отсчёт «3-2-1»',
+          title: '"3-2-1" countdown',
           value: settings.countdownEnabled,
-          onChanged: controller.setCountdownEnabled,
+          onChanged: onCountdownChanged,
         ),
       ],
     );
-  }
-
-  Future<void> _editSpeed(
-    BuildContext context,
-    WidgetRef ref,
-    double current,
-  ) async {
-    final selected = await showAppBottomSheet<double>(
-      context: context,
-      title: 'Скорость по умолчанию',
-      builder: (_) => PlaybackSpeedSheet(current: current),
-    );
-    if (selected == null) return;
-    await ref
-        .read(playbackSettingsControllerProvider.notifier)
-        .setDefaultSpeed(selected);
   }
 }

@@ -30,13 +30,13 @@ class UploadProgress extends StatelessWidget {
               LinearProgressIndicator(value: progress == 0 ? null : progress),
               const SizedBox(height: 6),
               Text(
-                label ?? 'Загрузка на сервер — ${(progress * 100).round()}%',
+                label ?? 'Uploading to the server — ${(progress * 100).round()}%',
                 style: theme.textTheme.bodySmall,
               ),
             ],
           ),
         ),
-        TextButton(onPressed: onCancelPressed, child: const Text('Отменить')),
+        TextButton(onPressed: onCancelPressed, child: const Text('Cancel')),
       ],
     );
   }

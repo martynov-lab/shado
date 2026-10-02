@@ -11,7 +11,7 @@ class SettingsProfileCard extends StatelessWidget {
     required this.email,
     required this.onEdit,
     this.languageLabel,
-    this.editLabel = 'Изменить',
+    this.editLabel = 'Edit',
   });
 
   final String name;

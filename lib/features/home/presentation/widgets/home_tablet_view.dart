@@ -3,8 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:shado/theme/theme.dart';
 import 'package:shado/widgets/widgets.dart';
 
-import '../controllers/home_lesson_tile.dart';
-import '../controllers/home_view_model.dart';
+import '../screens/home_overview.dart';
 import 'continue_hero_card.dart';
 import 'home_card.dart';
 import 'home_goal_ring.dart';
@@ -17,23 +16,22 @@ import 'home_stats_row.dart';
 class HomeTabletView extends StatelessWidget {
   const HomeTabletView({
     super.key,
-    required this.name,
-    required this.model,
-    required this.lessons,
-    required this.lessonsCount,
+    required this.overview,
+    required this.heroProgress,
     required this.onOpenLessons,
     required this.onOpenLesson,
   });
 
-  final String name;
-  final HomeViewModel model;
-  final List<HomeLessonTile> lessons;
-  final int lessonsCount;
+  final HomeOverview overview;
+
+  /// Progress of the lesson in the continue card, `0..1`.
+  final double heroProgress;
   final VoidCallback onOpenLessons;
   final void Function(String lessonId) onOpenLesson;
 
   @override
   Widget build(BuildContext context) {
+    final lessons = overview.lessons;
     final hero = lessons.isEmpty ? null : lessons.first;
     final preview = lessons.take(2).toList();
 
@@ -41,7 +39,11 @@ class HomeTabletView extends StatelessWidget {
       child: ListView(
         padding: const EdgeInsets.all(AppSpacing.s6),
         children: [
-          HomeGreeting(name: name, streakDays: model.streakDays, showStreak: true),
+          HomeGreeting(
+            name: overview.greetingName,
+            streakDays: overview.streakDays,
+            showStreak: true,
+          ),
           const SizedBox(height: AppSpacing.s5),
           // Card heights are not aligned — the goal text may wrap.
           Row(
@@ -51,6 +53,7 @@ class HomeTabletView extends StatelessWidget {
                 flex: 3,
                 child: ContinueHeroCard(
                   lesson: hero,
+                  progress: heroProgress,
                   onOpen: hero == null
                       ? onOpenLessons
                       : () => onOpenLesson(hero.id),
@@ -60,18 +63,18 @@ class HomeTabletView extends StatelessWidget {
               Expanded(
                 flex: 2,
                 child: HomeCard(
-                  title: 'Цель недели',
+                  title: 'Weekly goal',
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
                       HomeGoalRing(
-                        ratio: model.goalRatio,
-                        value: model.goalValue,
-                        remaining: model.goalRemaining,
+                        ratio: overview.goalRatio,
+                        value: overview.goalValue,
+                        remaining: overview.goalRemaining,
                       ),
                       const SizedBox(height: AppSpacing.s4),
                       AppButton(
-                        label: 'Разобрать новый урок',
+                        label: 'Break down a new lesson',
                         variant: AppButtonVariant.secondary,
                         expand: true,
                         onPressed: onOpenLessons,
@@ -83,11 +86,11 @@ class HomeTabletView extends StatelessWidget {
             ],
           ),
           const SizedBox(height: AppSpacing.s4),
-          HomeStatsRow(stats: model.stats),
+          HomeStatsRow(stats: overview.stats),
           const SizedBox(height: AppSpacing.s5),
           HomeSectionHeader(
-            title: 'Мои уроки',
-            actionLabel: 'Все $lessonsCount',
+            title: 'My lessons',
+            actionLabel: 'All ${overview.lessonsCount}',
             onAction: onOpenLessons,
           ),
           const SizedBox(height: AppSpacing.s2),

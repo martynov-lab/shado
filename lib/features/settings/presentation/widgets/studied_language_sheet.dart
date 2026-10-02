@@ -1,25 +1,28 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'package:shado/core/async/async_state.dart';
 import 'package:shado/theme/theme.dart';
 
 import '../../../languages/domain/entities/language.dart';
-import '../../../languages/presentation/controllers/language_providers.dart';
 import 'studied_language_row.dart';
 
 /// Studied language picker sheet; returns the selected code.
-class StudiedLanguageSheet extends ConsumerWidget {
-  const StudiedLanguageSheet({super.key, required this.selectedCode});
+class StudiedLanguageSheet extends StatelessWidget {
+  const StudiedLanguageSheet({
+    super.key,
+    required this.languages,
+    required this.selectedCode,
+  });
+
+  final AsyncState<List<Language>> languages;
 
   /// Current code; the matching item is highlighted.
   final String? selectedCode;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final languages = ref.watch(languagesProvider);
-
+  Widget build(BuildContext context) {
     return switch (languages) {
-      AsyncData(:final value) when value.isNotEmpty => Column(
+      AsyncReady(:final value) when value.isNotEmpty => Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -34,10 +37,10 @@ class StudiedLanguageSheet extends ConsumerWidget {
             ),
         ],
       ),
-      AsyncError() => Padding(
+      AsyncFailed() => Padding(
         padding: const EdgeInsets.all(AppSpacing.s3),
         child: Text(
-          'Список языков не загрузился — проверьте связь и попробуйте снова',
+          'The language list failed to load — check your connection and try again',
           style: AppText.body.copyWith(color: context.colors.text3),
         ),
       ),

@@ -1,42 +1,38 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:shado/theme/theme.dart';
 import 'package:shado/widgets/widgets.dart';
 
-import '../../../auth/presentation/controllers/auth_controller.dart';
-import '../controllers/lesson_controller.dart';
-import '../controllers/lesson_permissions.dart';
+import '../screens/lesson/lesson_state.dart';
 
 /// Lesson screen header: back, the title with a subtitle and the edit button.
-class LessonHeader extends ConsumerWidget {
+class LessonHeader extends StatelessWidget {
   const LessonHeader({
     super.key,
-    required this.lessonId,
+    required this.state,
+    required this.canEdit,
     required this.onBack,
     required this.onEdit,
   });
 
-  final String lessonId;
+  final LessonState state;
+
+  /// Shows the edit button; the server still checks the rights.
+  final bool canEdit;
+
   final VoidCallback onBack;
   final VoidCallback onEdit;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     final colors = context.colors;
-    final state = ref.watch(lessonControllerProvider(lessonId)).value;
-    final lesson = state?.lesson;
-    final role = ref.watch(
-      authControllerProvider.select((auth) => auth.user?.role),
-    );
-    // The edit button follows permissions; the server still decides.
-    final canEdit = lesson != null && canModifyLesson(role, lesson);
+    final lesson = state.lesson;
 
     return Row(
       children: [
         AppIconButton(
           icon: Icons.arrow_back_rounded,
-          semanticLabel: 'Назад',
+          semanticLabel: 'Back',
           onPressed: onBack,
         ),
         const SizedBox(width: AppSpacing.s3),
@@ -46,18 +42,17 @@ class LessonHeader extends ConsumerWidget {
             mainAxisSize: MainAxisSize.min,
             children: [
               Text(
-                lesson?.title ?? 'Урок',
+                lesson.title,
                 style: AppText.title.copyWith(color: colors.text),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
               ),
-              if (state != null)
-                Text(
-                  _subtitle(state),
-                  style: AppText.caption.copyWith(color: colors.text3),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
+              Text(
+                _subtitle(state),
+                style: AppText.caption.copyWith(color: colors.text3),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
             ],
           ),
         ),
@@ -65,7 +60,7 @@ class LessonHeader extends ConsumerWidget {
           const SizedBox(width: AppSpacing.s3),
           AppIconButton(
             icon: Icons.edit_outlined,
-            semanticLabel: 'Править разбивку',
+            semanticLabel: 'Edit segmentation',
             onPressed: onEdit,
           ),
         ],
@@ -78,7 +73,7 @@ class LessonHeader extends ConsumerWidget {
     return [
       if (lesson.topic != null && lesson.topic!.name.isNotEmpty)
         lesson.topic!.name,
-      'сегмент ${state.currentIndex + 1} из ${lesson.segmentCount}',
+      'segment ${state.currentIndex + 1} of ${lesson.segmentCount}',
       if (lesson.level != null) lesson.level!.wire.toUpperCase(),
     ].join(' · ');
   }

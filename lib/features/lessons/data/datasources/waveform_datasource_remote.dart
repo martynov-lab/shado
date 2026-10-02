@@ -1,5 +1,6 @@
 import '../../../../core/error/failures.dart';
-import '../models/waveform_peaks.dart';
+import '../../domain/entities/waveform_peaks.dart';
+import '../../domain/entities/waveform_query.dart';
 import 'audio_remote_datasource.dart';
 import 'waveform_datasource.dart';
 

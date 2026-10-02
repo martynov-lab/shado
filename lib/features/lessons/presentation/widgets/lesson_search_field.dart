@@ -1,19 +1,19 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:shado/widgets/widgets.dart';
 
-import '../controllers/lessons_filter.dart';
 
-/// Lesson search; it writes into [lessonsFilterProvider] and can be cleared.
-class LessonSearchField extends ConsumerStatefulWidget {
-  const LessonSearchField({super.key});
+/// Lesson search field with a clear button.
+class LessonSearchField extends StatefulWidget {
+  const LessonSearchField({super.key, required this.onChanged});
+
+  final ValueChanged<String> onChanged;
 
   @override
-  ConsumerState<LessonSearchField> createState() => _LessonSearchFieldState();
+  State<LessonSearchField> createState() => _LessonSearchFieldState();
 }
 
-class _LessonSearchFieldState extends ConsumerState<LessonSearchField> {
+class _LessonSearchFieldState extends State<LessonSearchField> {
   final _controller = TextEditingController();
 
   @override
@@ -23,7 +23,7 @@ class _LessonSearchFieldState extends ConsumerState<LessonSearchField> {
   }
 
   void _onChanged(String value) {
-    ref.read(lessonsFilterProvider.notifier).setQuery(value);
+    widget.onChanged(value);
     // The clear button appears and disappears with the text.
     setState(() {});
   }
@@ -39,11 +39,11 @@ class _LessonSearchFieldState extends ConsumerState<LessonSearchField> {
 
     return AppTextField(
       controller: _controller,
-      hint: 'Поиск по урокам…',
+      hint: 'Search lessons…',
       prefixIcon: AppIcons.search,
       suffixIcon: hasText ? AppIcons.close : null,
       onSuffixPressed: hasText ? _clear : null,
-      suffixSemanticLabel: 'Очистить поиск',
+      suffixSemanticLabel: 'Clear search',
       textInputAction: TextInputAction.search,
       onChanged: _onChanged,
     );

@@ -1,7 +1,6 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 /// Selected theme (light, dark, system) persisted to disk.
@@ -53,11 +52,3 @@ class ThemeController extends ValueNotifier<ThemeMode> {
     super.dispose();
   }
 }
-
-/// Theme controller; `main()` overrides it with a restored instance.
-final themeControllerProvider = Provider<ThemeController>((ref) {
-  final controller = ThemeController();
-  unawaited(controller.restore());
-  ref.onDispose(controller.dispose);
-  return controller;
-});

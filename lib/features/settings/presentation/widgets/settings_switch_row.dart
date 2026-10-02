@@ -16,7 +16,7 @@ class SettingsSwitchRow extends StatefulWidget {
     this.onChanged,
   }) : assert(
          value != null || initialValue != null,
-         'Задайте value (управляемый) или initialValue (локальный)',
+         'Set value (controlled) or initialValue (local)',
        );
 
   final IconData icon;

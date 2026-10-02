@@ -2,8 +2,7 @@ import 'package:flutter/material.dart';
 
 import 'package:shado/theme/theme.dart';
 
-import '../controllers/home_lesson_tile.dart';
-import '../controllers/home_view_model.dart';
+import '../screens/home_overview.dart';
 import 'continue_hero_card.dart';
 import 'home_greeting.dart';
 import 'home_lesson_row.dart';
@@ -14,21 +13,22 @@ import 'home_stats_row.dart';
 class HomeMobileView extends StatelessWidget {
   const HomeMobileView({
     super.key,
-    required this.name,
-    required this.model,
-    required this.lessons,
+    required this.overview,
+    required this.heroProgress,
     required this.onOpenLessons,
     required this.onOpenLesson,
   });
 
-  final String name;
-  final HomeViewModel model;
-  final List<HomeLessonTile> lessons;
+  final HomeOverview overview;
+
+  /// Progress of the lesson in the continue card, `0..1`.
+  final double heroProgress;
   final VoidCallback onOpenLessons;
   final void Function(String lessonId) onOpenLesson;
 
   @override
   Widget build(BuildContext context) {
+    final lessons = overview.lessons;
     final hero = lessons.isEmpty ? null : lessons.first;
 
     return SafeArea(
@@ -41,18 +41,19 @@ class HomeMobileView extends StatelessWidget {
           AppSpacing.s6,
         ),
         children: [
-          HomeGreeting(name: name),
+          HomeGreeting(name: overview.greetingName),
           const SizedBox(height: AppSpacing.s5),
           ContinueHeroCard(
             lesson: hero,
+            progress: heroProgress,
             onOpen: hero == null ? onOpenLessons : () => onOpenLesson(hero.id),
           ),
           const SizedBox(height: AppSpacing.s5),
-          HomeStatsRow(stats: model.stats, scrollable: true),
+          HomeStatsRow(stats: overview.stats, scrollable: true),
           const SizedBox(height: AppSpacing.s6),
           HomeSectionHeader(
-            title: 'Мои уроки',
-            actionLabel: 'Все',
+            title: 'My lessons',
+            actionLabel: 'All',
             onAction: onOpenLessons,
           ),
           const SizedBox(height: AppSpacing.s2),

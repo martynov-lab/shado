@@ -12,10 +12,10 @@ class GalleryTypographySection extends StatelessWidget {
     final colors = context.colors;
 
     return GallerySection(
-      title: 'Типографика',
+      title: 'Typography',
       caption:
-          'Sora для заголовков, Plus Jakarta Sans для текста, '
-          'JetBrains Mono для цифр',
+          'Sora for headings, Plus Jakarta Sans for body text, '
+          'JetBrains Mono for numbers',
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -40,8 +40,8 @@ class GalleryTypographySection extends StatelessWidget {
           ),
           const SizedBox(height: AppSpacing.s2),
           Text(
-            'Body — 15/400. Shadowing — это когда ты повторяешь за диктором '
-            'почти одновременно с ним.',
+            'Body — 15/400. Shadowing is when you repeat after the speaker '
+            'almost at the same time.',
             style: AppText.body.copyWith(color: colors.text2),
           ),
           const SizedBox(height: AppSpacing.s2),

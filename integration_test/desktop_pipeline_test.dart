@@ -11,11 +11,11 @@ import 'package:just_audio/just_audio.dart';
 import 'package:path/path.dart' as p;
 import 'package:shado/core/platform/platform_setup.dart';
 import 'package:shado/features/lessons/data/datasources/lesson_local_datasource_sqflite.dart';
-import 'package:shado/features/lessons/data/datasources/waveform_datasource.dart';
 import 'package:shado/features/lessons/data/datasources/waveform_datasource_soloud.dart';
 import 'package:shado/features/lessons/data/models/lesson_model.dart';
 import 'package:shado/features/lessons/data/models/segment_model.dart';
 import 'package:shado/features/lessons/domain/entities/audio_trim.dart';
+import 'package:shado/features/lessons/domain/entities/waveform_query.dart';
 
 /// A two-second 440 Hz sine, 44100 Hz, mono, 16-bit.
 File _writeTestWav(String path) {

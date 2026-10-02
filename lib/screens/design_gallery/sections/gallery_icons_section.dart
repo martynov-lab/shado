@@ -16,12 +16,12 @@ class GalleryIconsSection extends StatelessWidget {
     final colors = context.colors;
 
     return GallerySection(
-      title: 'Иконки',
-      caption: 'SVG-набор из макетов, ${AppIcons.values.length} штуки',
+      title: 'Icons',
+      caption: 'SVG set from the mockups, ${AppIcons.values.length} icons',
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const GalleryLabel('Размеры — sm, md, lg'),
+          const GalleryLabel('Sizes — sm, md, lg'),
           const GalleryWrap(
             children: [
               AppIcon(AppIcons.headphones, size: AppSizes.iconSm),
@@ -29,7 +29,7 @@ class GalleryIconsSection extends StatelessWidget {
               AppIcon(AppIcons.headphones, size: AppSizes.iconLg),
             ],
           ),
-          const GalleryLabel('Цвет — любой токен темы'),
+          const GalleryLabel('Color — any theme token'),
           GalleryWrap(
             children: [
               AppIcon(
@@ -65,7 +65,7 @@ class GalleryIconsSection extends StatelessWidget {
               ),
             ],
           ),
-          const GalleryLabel('Весь набор — имя под иконкой = имя в коде'),
+          const GalleryLabel('Full set — the name under an icon = the name in code'),
           GalleryWrap(
             children: [
               for (final icon in AppIcons.values) GalleryIconTile(icon),

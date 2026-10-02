@@ -6,19 +6,19 @@ class SynthesizeTtsDialog extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => AlertDialog(
-    title: const Text('Заменить аудио озвучкой?'),
+    title: const Text('Replace audio with a voiceover?'),
     content: const Text(
-      'Аудио уже загружено. Озвучка через ИИ заменит его, а расставленные '
-      'границы сегментов сбросятся.',
+      'Audio is already uploaded. The AI voiceover will replace it, and the placed '
+      'segment boundaries will be reset.',
     ),
     actions: [
       TextButton(
         onPressed: () => Navigator.of(context).pop(false),
-        child: const Text('Отмена'),
+        child: const Text('Cancel'),
       ),
       FilledButton(
         onPressed: () => Navigator.of(context).pop(true),
-        child: const Text('Озвучить'),
+        child: const Text('Voice'),
       ),
     ],
   );

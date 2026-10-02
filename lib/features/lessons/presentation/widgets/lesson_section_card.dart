@@ -46,10 +46,7 @@ class LessonSectionCard extends StatelessWidget {
           ),
           if (hint != null) ...[
             const SizedBox(height: AppSpacing.s2),
-            Text(
-              hint!,
-              style: AppText.caption.copyWith(color: colors.text3),
-            ),
+            Text(hint!, style: AppText.caption.copyWith(color: colors.text3)),
           ],
           const SizedBox(height: AppSpacing.s4),
           child,

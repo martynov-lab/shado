@@ -1,46 +1,47 @@
 ---
 name: writing-flutter-tests
 description: >-
-  Написание и правка тестов в Shado: юнит-тесты домена и data, тесты
-  Riverpod-контроллеров, виджет-тесты, подделки вместо моков, матчеры, запуск.
-  Использовать при создании или изменении любого *_test.dart.
+  Writing and editing tests in Shado: unit tests for domain and data, service
+  and screen model tests, widget tests, fakes instead of mocks, matchers, running.
+  Use when creating or changing any *_test.dart.
 ---
 
-# Тесты
+# Tests
 
-Правила целиком — [docs/testing.md](../../../docs/testing.md).
+Full rules — [docs/testing.md](../../../docs/testing.md).
 
-Только `flutter_test`. Библиотек моков в проекте нет — подделки пишем руками
-классами `Fake*`, реализующими интерфейс слоя.
+Only `flutter_test`. The project has no mocking libraries — fakes are written by
+hand as `Fake*` classes implementing the layer interface.
 
-## Куда положить
+## Where to put it
 
-| Что тестируем | Файл |
+| What is tested | File |
 | --- | --- |
-| Сущность, use case, правила | `test/domain/<name>_test.dart` |
-| Репозиторий, маппинг, DTO | `test/data/<name>_test.dart` |
-| Сеть, интерцепторы, хранилище | `test/core/<name>_test.dart` |
-| Контроллер, виджет, экран | `test/presentation/<name>_test.dart` |
+| Entity, use case, service, rules | `test/domain/<name>_test.dart` |
+| Repository, mapping, DTO | `test/data/<name>_test.dart` |
+| Network, interceptors, storage | `test/core/<name>_test.dart` |
+| Screen model, widget, page | `test/presentation/<name>_test.dart` |
 
-## Чек-лист
+## Checklist
 
-- [ ] Описание теста по-русски: «действие, результат, условие».
-- [ ] Тесты класса — в `group('$ClassName', ...)` с интерполяцией.
-- [ ] Второй аргумент `expect` — матчер (`equals`, `isNull`, `hasLength`,
-      `isA<T>()`, `throwsA(...)`), а не голое значение.
-- [ ] Подделки — классы `Fake*`; общие для нескольких файлов выносим рядом с
-      тестами.
-- [ ] Данные собирает приватный билдер в конце файла (`Lesson _makeLesson(...)`).
-- [ ] Ресурсы закрываются: `addTearDown(container.dispose)`.
-- [ ] Сеть, БД и файлы не трогаются — только подделки.
-- [ ] Прогнать: `flutter test <файл>`, затем `flutter test` целиком.
+- [ ] The test description is in English: "action, result, condition".
+- [ ] Tests of a class go in `group('$ClassName', ...)` with interpolation.
+- [ ] The second `expect` argument is a matcher (`equals`, `isNull`,
+      `hasLength`, `isA<T>()`, `throwsA(...)`), not a bare value.
+- [ ] Fakes are `Fake*` classes; ones shared by several files live next to the
+      tests.
+- [ ] Data is built by a private builder at the end of the file
+      (`Lesson _makeLesson(...)`).
+- [ ] Resources are closed: `addTearDown(container.dispose)`.
+- [ ] The network, database and files are not touched — only fakes.
+- [ ] Run: `flutter test <file>`, then the whole `flutter test`.
 
-## Юнит-тест
+## Unit test
 
 ```dart
 void main() {
   group('$Lesson', () {
-    test('withSegments отвергает разбивку с неверным числом границ', () {
+    test('withSegments rejects a split with a wrong boundary count', () {
       expect(
         () => _makeLesson().withSegments(
           texts: const ['a', 'b'],
@@ -55,24 +56,26 @@ void main() {
 Lesson _makeLesson({int durationMs = 1000}) => Lesson.withEvenBoundaries(...);
 ```
 
-## Тест контроллера
+## Model test
 
 ```dart
 final container = ProviderContainer(
   overrides: [lessonRepositoryProvider.overrideWithValue(FakeLessonRepository())],
 );
 addTearDown(container.dispose);
+final model = SettingsModel(container);
+addTearDown(model.dispose);
 
-await container.read(lessonControllerProvider('id').future);
-await container.read(lessonControllerProvider('id').notifier).togglePlay(0);
+await model.changeStudiedLanguage('fr');
 
-expect(container.read(lessonControllerProvider('id')).value!.isPlaying, isTrue);
+expect(fakeRepository.cleared, isTrue);
 ```
 
-Подменяем на границе слоя (репозиторий, datasource) — код контроллера и use
-case'ов остаётся настоящим.
+Substitute at the layer boundary (repository, datasource) — the model, service
+and use case code stays real. A service is tested without a container, on a
+fake repository. The widget model is tested through a widget test of the page.
 
-## Виджет-тест
+## Widget test
 
 ```dart
 Future<List<String>> pumpTile(WidgetTester tester, {required bool isSelecting}) async {
@@ -86,7 +89,7 @@ Future<List<String>> pumpTile(WidgetTester tester, {required bool isSelecting}) 
   return taps;
 }
 
-testWidgets('в режиме выбора тап по плитке набирает выделение', (tester) async {
+testWidgets('in selection mode a tap on the tile extends the selection', (tester) async {
   final taps = await pumpTile(tester, isSelecting: true);
 
   await tester.tap(find.text(segment.text));
@@ -95,10 +98,10 @@ testWidgets('в режиме выбора тап по плитке набира�
 });
 ```
 
-Виджету с провайдерами нужен `ProviderScope` с `overrides`; виджету, который
-принимает данные и колбэки, — не нужен.
+A page needs a `ProviderScope` with `overrides`; a widget that takes data and
+callbacks does not.
 
-Жёсткий размер поверхности, если он важен:
+A fixed surface size, when it matters:
 
 ```dart
 const size = Size(400, 800);
@@ -109,13 +112,13 @@ addTearDown(tester.view.reset);
 await tester.binding.setSurfaceSize(size);
 ```
 
-## Запуск
+## Running
 
 ```bash
 flutter test test/presentation/segment_tile_test.dart
-flutter test --name 'режим выбора'
+flutter test --name 'selection mode'
 flutter test
 ```
 
-Golden-тесты не пишем (библиотеки нет). `test/live/` и `integration_test/`
-запускаются руками и в обычный прогон не входят.
+No golden tests. `test/live/` and
+`integration_test/` are run by hand and are not part of the regular run.

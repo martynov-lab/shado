@@ -4,20 +4,22 @@ import 'package:shado/theme/theme.dart';
 
 import '../../domain/entities/folder.dart';
 import '../../domain/entities/lesson.dart';
+import '../screens/lessons/lesson_list_item.dart';
 import 'account_menu.dart';
 import 'empty_lessons_view.dart';
-import 'lessons_filter_bar.dart';
 import 'lessons_header.dart';
 import 'lessons_list_view.dart';
 import 'lessons_no_results.dart';
-import 'lesson_search_field.dart';
 
 /// Phone lesson list: header, search, filters and a row list.
 class LessonsMobileLayout extends StatelessWidget {
   const LessonsMobileLayout({
     super.key,
-    required this.lessons,
+    required this.items,
     required this.emptyLibrary,
+    required this.searchField,
+    required this.filters,
+    required this.onResetFilters,
     required this.onOpen,
     required this.onDelete,
     required this.onRefresh,
@@ -26,17 +28,23 @@ class LessonsMobileLayout extends StatelessWidget {
     this.onCreateFolder,
   });
 
-  final List<Lesson> lessons;
+  final List<LessonListItem> items;
 
   /// The library is empty — show a placeholder instead of search and filters.
   final bool emptyLibrary;
 
-  final void Function(Lesson) onOpen;
-  final void Function(Lesson) onDelete;
+  final ValueChanged<Lesson> onOpen;
+  final ValueChanged<Lesson> onDelete;
   final Future<void> Function() onRefresh;
+  final Widget searchField;
+
+  /// The filter chips on narrow screens, the filter panel on desktop.
+  final Widget filters;
+
+  final VoidCallback onResetFilters;
 
   final List<Folder> folders;
-  final void Function(Folder)? onOpenFolder;
+  final ValueChanged<Folder>? onOpenFolder;
   final VoidCallback? onCreateFolder;
 
   @override
@@ -57,14 +65,14 @@ class LessonsMobileLayout extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 LessonsHeader(
-                  count: lessons.length,
+                  count: items.length,
                   trailing: const AccountMenu(),
                 ),
                 if (!emptyLibrary) ...[
                   const SizedBox(height: AppSpacing.s4),
-                  const LessonSearchField(),
+                  searchField,
                   const SizedBox(height: AppSpacing.s3),
-                  const LessonsFilterBar(),
+                  filters,
                 ],
               ],
             ),
@@ -73,10 +81,10 @@ class LessonsMobileLayout extends StatelessWidget {
           Expanded(
             child: emptyLibrary
                 ? const EmptyLessonsView()
-                : lessons.isEmpty && folders.isEmpty
-                ? const LessonsNoResults()
+                : items.isEmpty && folders.isEmpty
+                ? LessonsNoResults(onResetFilters: onResetFilters)
                 : LessonsListView(
-                    lessons: lessons,
+                    items: items,
                     folders: folders,
                     onOpen: onOpen,
                     onDelete: onDelete,

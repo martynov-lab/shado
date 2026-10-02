@@ -1,21 +1,25 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../languages/presentation/controllers/language_providers.dart';
-import '../controllers/tts_voice_controller.dart';
+import '../../../languages/domain/entities/language.dart';
 
 /// Voice-over accent picker; shown for languages that have accents.
-class TtsAccentField extends ConsumerWidget {
-  const TtsAccentField({super.key});
+class TtsAccentField extends StatelessWidget {
+  const TtsAccentField({
+    super.key,
+    required this.accents,
+    required this.selected,
+    required this.onChanged,
+  });
+
+  final List<Accent> accents;
+
+  /// Code of the chosen accent; a code missing from [accents] shows nothing.
+  final String? selected;
+
+  final ValueChanged<String> onChanged;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final accents = ref.watch(currentAccentsProvider);
-    if (accents.isEmpty) return const SizedBox.shrink();
-
-    final selected = ref.watch(
-      ttsVoiceControllerProvider.select((state) => state.value?.accent),
-    );
+  Widget build(BuildContext context) {
     // The dropdown throws when the selected value is not among the items.
     final value = accents.any((accent) => accent.code == selected)
         ? selected
@@ -24,7 +28,7 @@ class TtsAccentField extends ConsumerWidget {
     return DropdownButtonFormField<String>(
       key: const ValueKey('dropdown-tts-accent'),
       initialValue: value,
-      decoration: const InputDecoration(labelText: 'Акцент озвучки'),
+      decoration: const InputDecoration(labelText: 'Voiceover accent'),
       items: [
         for (final accent in accents)
           DropdownMenuItem(
@@ -33,8 +37,7 @@ class TtsAccentField extends ConsumerWidget {
           ),
       ],
       onChanged: (code) {
-        if (code == null) return;
-        ref.read(ttsVoiceControllerProvider.notifier).selectAccent(code);
+        if (code != null) onChanged(code);
       },
     );
   }
