@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:shado/theme/theme.dart';
 import 'package:shado/widgets/widgets.dart';
 
-
 /// Panel with the current segment text and its translation.
 class LessonTranscriptPanel extends StatelessWidget {
   const LessonTranscriptPanel({super.key, required this.text});
@@ -44,7 +43,7 @@ class LessonTranscriptPanel extends StatelessWidget {
             ],
           ),
           const SizedBox(height: AppSpacing.s3),
-          Text(
+          SelectableText(
             text,
             style: AppText.body.copyWith(
               fontSize: 18,
