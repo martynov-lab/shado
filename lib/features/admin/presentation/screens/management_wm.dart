@@ -9,6 +9,7 @@ import 'package:shado/widgets/widgets.dart';
 import '../../../../core/error/failures.dart';
 import '../../../../core/network/api_exception.dart';
 import '../../../lessons/domain/entities/lesson_category.dart';
+import '../../../settings/domain/entities/tts_provider_settings.dart';
 import '../../../settings/presentation/widgets/settings_text_edit_sheet.dart';
 import '../widgets/delete_topic_dialog.dart';
 import 'management_model.dart';
@@ -26,9 +27,9 @@ class ManagementWidgetModel
   final ValueNotifier<AsyncState<List<Topic>>> _topics = ValueNotifier(
     const AsyncPending(),
   );
-  bool _isSavingReps = false;
+  bool _isSwitchingProvider = false;
 
-  ValueListenable<int?> get completionReps => model.completionReps;
+  ValueListenable<TtsProviderSettings?> get ttsProvider => model.ttsProvider;
   ValueListenable<AsyncState<List<Topic>>> get topics => _topics;
 
   @override
@@ -49,35 +50,17 @@ class ManagementWidgetModel
     if (isMounted) _topics.value = topics;
   }
 
-  Future<void> editCompletionReps() async {
-    final current = model.completionReps.value;
-    if (current == null) return;
-    final raw = await showAppBottomSheet<String>(
-      context: context,
-      title: 'Completion threshold',
-      builder: (_) => SettingsTextEditSheet(
-        label: 'Repeats per segment',
-        initialValue: '$current',
-        hint: 'For example, 10',
-        keyboardType: TextInputType.number,
-      ),
-    );
-    if (raw == null || !isMounted) return;
-    final reps = int.tryParse(raw.trim());
-    if (reps == null) {
-      _showMessage('Enter the number of repeats');
-      return;
-    }
-    if (_isSavingReps) return;
-    _isSavingReps = true;
+  Future<void> selectTtsProvider(String name) async {
+    if (_isSwitchingProvider) return;
+    _isSwitchingProvider = true;
     try {
-      await model.saveCompletionReps(reps);
+      await model.selectTtsProvider(name);
     } on Failure catch (failure) {
       _showMessage(failure.message);
     } catch (error) {
-      _showMessage('Failed to save: $error');
+      _showMessage('Failed to switch: $error');
     } finally {
-      _isSavingReps = false;
+      _isSwitchingProvider = false;
     }
   }
 

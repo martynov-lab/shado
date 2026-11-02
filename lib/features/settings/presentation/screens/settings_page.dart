@@ -51,13 +51,17 @@ class SettingsPage extends ElementaryWidget<SettingsWidgetModel> {
     final language = ListenableBuilder(
       listenable: Listenable.merge([
         wm.studiedLanguageLabel,
+        wm.translationLanguageLabel,
         wm.ttsVoiceLabel,
         wm.isOwner,
       ]),
       builder: (_, _) => LanguageSettingsSection(
         studiedLanguageLabel: wm.studiedLanguageLabel.value,
+        translationLanguageLabel: wm.translationLanguageLabel.value,
         ttsVoiceLabel: wm.isOwner.value ? wm.ttsVoiceLabel.value : null,
         onEditLanguage: () => unawaited(wm.editStudiedLanguage()),
+        onEditTranslationLanguage: () =>
+            unawaited(wm.editTranslationLanguage()),
         onEditVoice: () => unawaited(wm.editTtsVoice()),
       ),
     );

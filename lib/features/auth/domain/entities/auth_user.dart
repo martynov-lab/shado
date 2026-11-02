@@ -41,6 +41,7 @@ class AuthUser {
     required this.createdAt,
     this.name,
     this.studiedLanguage,
+    this.translationLanguage,
     this.dailyGoalMinutes,
   });
 
@@ -53,6 +54,7 @@ class AuthUser {
         DateTime.now().toUtc(),
     name: _nonEmpty(json['name']),
     studiedLanguage: _nonEmpty(json['studied_language']),
+    translationLanguage: _nonEmpty(json['translation_language']),
     dailyGoalMinutes: (json['daily_goal_minutes'] as num?)?.toInt(),
   );
 
@@ -64,6 +66,10 @@ class AuthUser {
   /// Profile fields; `null` when the server did not send them.
   final String? name;
   final String? studiedLanguage;
+
+  /// Language code phrases are translated into.
+  final String? translationLanguage;
+
   final int? dailyGoalMinutes;
 
   bool get isOwner => role.isOwner;
@@ -76,12 +82,14 @@ class AuthUser {
     'created_at': createdAt.toIso8601String(),
     'name': ?name,
     'studied_language': ?studiedLanguage,
+    'translation_language': ?translationLanguage,
     'daily_goal_minutes': ?dailyGoalMinutes,
   };
 
   AuthUser copyWith({
     String? name,
     String? studiedLanguage,
+    String? translationLanguage,
     int? dailyGoalMinutes,
   }) => AuthUser(
     id: id,
@@ -90,6 +98,7 @@ class AuthUser {
     createdAt: createdAt,
     name: name ?? this.name,
     studiedLanguage: studiedLanguage ?? this.studiedLanguage,
+    translationLanguage: translationLanguage ?? this.translationLanguage,
     dailyGoalMinutes: dailyGoalMinutes ?? this.dailyGoalMinutes,
   );
 
@@ -102,11 +111,20 @@ class AuthUser {
           other.role == role &&
           other.name == name &&
           other.studiedLanguage == studiedLanguage &&
+          other.translationLanguage == translationLanguage &&
           other.dailyGoalMinutes == dailyGoalMinutes;
 
   @override
   int get hashCode =>
-      Object.hash(id, email, role, name, studiedLanguage, dailyGoalMinutes);
+      Object.hash(
+        id,
+        email,
+        role,
+        name,
+        studiedLanguage,
+        translationLanguage,
+        dailyGoalMinutes,
+      );
 
   @override
   String toString() => 'AuthUser($email, ${role.name})';

@@ -1,20 +1,17 @@
-import '../../../settings/domain/services/completion_threshold_service.dart';
 import '../progress_math.dart';
 import '../repositories/progress_repository.dart';
 
-/// Share of the lesson already practised, from `0` to `1`.
+/// Share of the lesson already learned, from `0` to `1`.
 class GetLessonProgress {
-  const GetLessonProgress(this._repository, this._threshold);
+  const GetLessonProgress(this._repository);
 
   final ProgressRepository _repository;
-  final CompletionThresholdService _threshold;
 
   Future<double> call({
     required String lessonId,
-    required int segmentCount,
+    required List<String> itemKeys,
   }) async {
-    final reps = await _repository.readReps(lessonId);
-    final target = await _threshold.load();
-    return lessonProgressFraction(reps, segmentCount, target);
+    final stars = await _repository.readStars(lessonId);
+    return lessonProgressFraction(stars, itemKeys);
   }
 }

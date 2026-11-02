@@ -1,9 +1,13 @@
 import '../../../../core/error/failures.dart';
+import '../../../progress/domain/item_keys.dart';
 import 'audio_trim.dart';
 import 'lesson_category.dart';
+import 'lesson_kind.dart';
+import 'phrase.dart';
 import 'segment.dart';
 
-/// Lesson: an audio file split into text segments with manual boundaries.
+/// Lesson: a story — an audio file split into text segments with manual
+/// boundaries — or a set of phrases, each with its own audio.
 class Lesson {
   const Lesson({
     required this.id,
@@ -12,6 +16,8 @@ class Lesson {
     required this.durationMs,
     required this.createdAt,
     required this.segments,
+    this.kind = LessonKind.story,
+    this.phrases = const [],
     this.audioId = '',
     this.isPublic = true,
     this.language = '',
@@ -89,7 +95,24 @@ class Lesson {
   final DateTime createdAt;
   final List<Segment> segments;
 
+  final LessonKind kind;
+
+  /// Phrases of a phrase set; empty for a story.
+  final List<Phrase> phrases;
+
+  bool get isExpressions => kind == LessonKind.expressions;
+
   int get segmentCount => segments.length;
+
+  /// Rating keys of the lesson items, in lesson order.
+  List<String> get itemKeys => switch (kind) {
+    LessonKind.story => [
+      for (final segment in segments) segmentItemKey(segment.text),
+    ],
+    LessonKind.expressions => [
+      for (final phrase in phrases) phraseItemKey(phrase.id),
+    ],
+  };
 
   /// File range that made it into the lesson — the outer segment edges.
   AudioTrim get trim => segments.isEmpty
@@ -154,6 +177,7 @@ class Lesson {
     int? durationMs,
     DateTime? createdAt,
     List<Segment>? segments,
+    List<Phrase>? phrases,
     bool? isPublic,
     String? language,
     String? accent,
@@ -168,6 +192,8 @@ class Lesson {
       durationMs: durationMs ?? this.durationMs,
       createdAt: createdAt ?? this.createdAt,
       segments: segments ?? this.segments,
+      kind: kind,
+      phrases: phrases ?? this.phrases,
       isPublic: isPublic ?? this.isPublic,
       language: language ?? this.language,
       accent: accent ?? this.accent,
@@ -184,7 +210,12 @@ class Lesson {
     for (var i = 0; i < segments.length; i++) {
       if (other.segments[i] != segments[i]) return false;
     }
+    if (other.phrases.length != phrases.length) return false;
+    for (var i = 0; i < phrases.length; i++) {
+      if (other.phrases[i] != phrases[i]) return false;
+    }
     return other.id == id &&
+        other.kind == kind &&
         other.title == title &&
         other.audioPath == audioPath &&
         other.durationMs == durationMs &&
@@ -204,6 +235,8 @@ class Lesson {
     durationMs,
     createdAt,
     Object.hashAll(segments),
+    kind,
+    Object.hashAll(phrases),
     isPublic,
     language,
     accent,
@@ -212,5 +245,9 @@ class Lesson {
   );
 
   @override
-  String toString() => 'Lesson($id, "$title", ${segments.length} segments)';
+  String toString() => switch (kind) {
+    LessonKind.story => 'Lesson($id, "$title", ${segments.length} segments)',
+    LessonKind.expressions =>
+      'Lesson($id, "$title", ${phrases.length} phrases)',
+  };
 }

@@ -1,4 +1,6 @@
 import '../../../../core/error/failures.dart';
+import '../../../../core/network/api_exception.dart';
+import '../../domain/entities/item_rating.dart';
 import '../../domain/entities/pending_events.dart';
 import '../../domain/entities/progress_summary.dart';
 import '../../domain/repositories/progress_repository.dart';
@@ -20,12 +22,43 @@ class ProgressRepositoryImpl implements ProgressRepository {
   @override
   Future<void> addListened(int ms) => _local.addListened(ms);
 
-  @override
-  Future<void> bumpSegment(String lessonId, int segmentIndex) =>
-      _local.bumpSegment(lessonId, segmentIndex);
+  /// Server limit of one rating request.
+  static const int _ratingsBatch = 500;
 
   @override
-  Future<Map<int, int>> readReps(String lessonId) => _local.readReps(lessonId);
+  Future<void> bumpSegment() => _local.bumpSegment();
+
+  @override
+  Future<Map<String, int>> readStars(String lessonId) =>
+      _local.readStars(lessonId);
+
+  @override
+  Future<void> saveRatings(List<ItemRating> ratings) =>
+      _local.saveRatings(ratings);
+
+  @override
+  Future<Set<String>> syncRatings() async {
+    while (true) {
+      final queued = await _local.readQueuedRatings(limit: _ratingsBatch);
+      if (queued.isEmpty) break;
+      try {
+        await _remote.putRatings(queued);
+      } on ApiException catch (error) {
+        // A rejected batch is a client bug; retrying it would block the queue.
+        if (error.code != ApiErrorCode.validationError) rethrow;
+      }
+      await _local.markRatingsSent(queued);
+      if (queued.length < _ratingsBatch) break;
+    }
+    final delta = await _remote.getRatings(
+      since: await _local.readRatingsSince(),
+    );
+    final changed = await _local.applyServerRatings(delta.ratings);
+    if (delta.serverTime.isNotEmpty) {
+      await _local.saveRatingsSince(delta.serverTime);
+    }
+    return changed;
+  }
 
   @override
   Future<PendingEvents> readPending() => _local.readPending();

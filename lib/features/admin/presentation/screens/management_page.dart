@@ -5,11 +5,11 @@ import 'package:flutter/material.dart';
 
 import 'package:shado/theme/theme.dart';
 
-import '../widgets/completion_threshold_section.dart';
 import '../widgets/topics_admin_section.dart';
+import '../widgets/tts_provider_section.dart';
 import 'management_wm.dart';
 
-/// Management screen: completion threshold and the topic directory.
+/// Management screen: the voice-over provider and the topic directory.
 class ManagementPage extends ElementaryWidget<ManagementWidgetModel> {
   const ManagementPage({super.key}) : super(managementWidgetModelFactory);
 
@@ -26,10 +26,10 @@ class ManagementPage extends ElementaryWidget<ManagementWidgetModel> {
             Padding(
               padding: const EdgeInsets.all(AppSpacing.s5),
               child: ValueListenableBuilder(
-                valueListenable: wm.completionReps,
-                builder: (_, reps, _) => CompletionThresholdSection(
-                  reps: reps,
-                  onEdit: () => unawaited(wm.editCompletionReps()),
+                valueListenable: wm.ttsProvider,
+                builder: (_, settings, _) => TtsProviderSection(
+                  settings: settings,
+                  onSelect: (name) => unawaited(wm.selectTtsProvider(name)),
                 ),
               ),
             ),

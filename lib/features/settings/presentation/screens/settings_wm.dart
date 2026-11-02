@@ -10,11 +10,13 @@ import '../../../../core/error/failures.dart';
 import '../../../../core/network/api_exception.dart';
 import '../../../languages/domain/entities/language.dart';
 import '../../../lessons/presentation/widgets/tts_voice_sheet.dart';
+import '../../../translation/domain/entities/translation_language.dart';
 import '../../domain/entities/playback_settings.dart';
 import '../widgets/playback_speed_sheet.dart';
 import '../widgets/settings_text_edit_sheet.dart';
 import '../widgets/studied_language_sheet.dart';
 import '../widgets/switch_language_dialog.dart';
+import '../widgets/translation_language_sheet.dart';
 import 'settings_model.dart';
 import 'settings_page.dart';
 
@@ -58,6 +60,9 @@ class SettingsWidgetModel extends WidgetModel<SettingsPage, SettingsModel> {
   ValueListenable<int?> get dailyGoalMinutes => _dailyGoalMinutes;
 
   ValueListenable<String> get studiedLanguageLabel => _studiedLanguageLabel;
+
+  ValueListenable<String> get translationLanguageLabel =>
+      model.translationLanguageLabel;
 
   ValueListenable<String> get ttsVoiceLabel => _ttsVoiceLabel;
 
@@ -184,6 +189,47 @@ class SettingsWidgetModel extends WidgetModel<SettingsPage, SettingsModel> {
       _showMessage('Failed to switch the language: $error');
     } finally {
       _isSwitchingLanguage = false;
+    }
+  }
+
+  Future<void> editTranslationLanguage() async {
+    final context = this.context;
+    final current = model.translationLanguageCode;
+    final languages = ValueNotifier<AsyncState<List<TranslationLanguage>>>(
+      const AsyncPending(),
+    );
+    var isSheetOpen = true;
+    model.loadTranslationLanguages().then(
+      (value) {
+        if (isSheetOpen) languages.value = AsyncReady(value);
+      },
+      onError: (Object error, StackTrace stackTrace) {
+        if (isSheetOpen) languages.value = AsyncFailed(error, stackTrace);
+      },
+    );
+    final code =
+        await showAppBottomSheet<String>(
+          context: context,
+          title: 'Translation language',
+          builder: (_) => ValueListenableBuilder(
+            valueListenable: languages,
+            builder: (_, languages, _) => TranslationLanguageSheet(
+              languages: languages,
+              selectedCode: current,
+            ),
+          ),
+        ).whenComplete(() {
+          isSheetOpen = false;
+          languages.dispose();
+        });
+    if (code == null || code == current || !context.mounted) return;
+
+    try {
+      await model.changeTranslationLanguage(code);
+    } on Failure catch (failure) {
+      _showMessage(failure.message);
+    } catch (error) {
+      _showMessage('Failed to save: $error');
     }
   }
 

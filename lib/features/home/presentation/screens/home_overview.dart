@@ -46,7 +46,7 @@ class HomeOverview {
 
     final streak = currentStreak(history);
 
-    // Stat tiles: minutes today, the day streak and repeats.
+    // Stat tiles: minutes today, the day streak, learned phrases, repeats.
     final todayMinutes = today.listenedMinutes;
     final toGoal = dailyGoal - todayMinutes;
     final todayDelta = dailyGoal <= 0
@@ -58,6 +58,14 @@ class HomeOverview {
       '$streak',
       'd',
       streak > 0 ? 'streak is on' : 'start a streak',
+    );
+    final learnedStat = (
+      'Learned',
+      '${totals.phrasesLearned}',
+      null,
+      today.phrasesLearned > 0
+          ? '+${today.phrasesLearned} today'
+          : 'phrases at 5 stars',
     );
     final repeatsStat = (
       'Repeats',
@@ -92,8 +100,8 @@ class HomeOverview {
         catalog,
       ),
       lessonsCount: catalog.length,
-      stats: [todayStat, streakStat, repeatsStat],
-      statsCompact: [todayStat, repeatsStat],
+      stats: [todayStat, streakStat, learnedStat, repeatsStat],
+      statsCompact: [todayStat, learnedStat],
       streakDays: streak,
       weekDays: weekDays,
       weekDone: weekDone,
@@ -151,7 +159,8 @@ class HomeOverview {
     final days = weekWithGaps(week, today.day);
     final labels = [for (final day in days) _weekdayLabel(day.day)];
     final done = [
-      for (final day in days) day.listenedMs > 0 || day.segmentRepeats > 0,
+      for (final day in days)
+        day.listenedMs > 0 || day.segmentRepeats > 0 || day.phrasesLearned > 0,
     ];
     final minutes = [for (final day in days) day.listenedMinutes];
     final maxMinutes = minutes.fold<int>(0, (a, b) => b > a ? b : a);

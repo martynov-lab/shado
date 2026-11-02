@@ -11,6 +11,7 @@ import '../../domain/entities/audio_trim.dart';
 import '../../domain/entities/audio_upload.dart';
 import '../../domain/entities/lesson.dart';
 import '../../domain/entities/lesson_category.dart';
+import '../../domain/entities/phrase.dart';
 import '../../domain/entities/segment_boundaries.dart';
 import '../../domain/entities/tts_quota.dart';
 import '../../domain/entities/tts_voice.dart';
@@ -24,6 +25,7 @@ import '../datasources/tts_remote_datasource.dart';
 import '../models/audio_dto.dart';
 import '../models/lesson_dto.dart';
 import '../models/lesson_model.dart';
+import '../models/phrase_model.dart';
 import '../models/segment_model.dart';
 
 /// Lessons: the server is the source of truth, sqflite is the read cache and
@@ -89,16 +91,7 @@ class LessonRepositoryImpl implements LessonRepository {
           removed.add(dto.id);
           continue;
         }
-        final cached = await _local.getLesson(dto.id);
-        fresh.add(
-          LessonModel.fromDto(
-            dto,
-            // The file behind an `audio_id` never changes: keep it.
-            audioPath: cached?.audioId == dto.audio.id
-                ? cached?.audioPath ?? ''
-                : '',
-          ),
-        );
+        fresh.add(_withCachedAudio(dto, await _local.getLesson(dto.id)));
       }
       cursor = page.nextCursor;
     } while (cursor != null);
@@ -200,6 +193,30 @@ class LessonRepositoryImpl implements LessonRepository {
   }
 
   @override
+  Future<List<AudioUpload>> synthesizePhrases({
+    required List<String> texts,
+    String? voice,
+    String? accent,
+    Object? cancel,
+  }) async {
+    final items = await _tts.synthesizeBatch(
+      texts: texts,
+      voice: voice,
+      accent: accent,
+      cancelToken: cancel is CancelToken ? cancel : null,
+    );
+    return [
+      for (final dto in items)
+        AudioUpload(
+          audioId: dto.id,
+          durationMs: dto.durationMs,
+          sizeBytes: dto.sizeBytes,
+          localPath: await _ensureAudioFile(dto),
+        ),
+    ];
+  }
+
+  @override
   Future<TtsVoices> ttsVoices() => _tts.voices();
 
   @override
@@ -253,10 +270,61 @@ class LessonRepositoryImpl implements LessonRepository {
       topicId: topicId,
       isPublic: isPublic,
     );
-    final audioPath = await _ensureAudioFile(dto.audio);
-    final model = LessonModel.fromDto(dto, audioPath: audioPath);
-    await _local.upsertLesson(model);
+    final model = await _store(dto);
     return model.toEntity();
+  }
+
+  @override
+  Future<Lesson> createPhraseSet({
+    required String title,
+    required List<Phrase> phrases,
+    required LessonLevel level,
+    String? accent,
+    String? topicId,
+    bool? isPublic,
+  }) async {
+    final dto = await _remote.putPhraseSet(
+      id: _uuid.v4(),
+      title: title,
+      createdAt: DateTime.now().toUtc(),
+      phrases: phrases,
+      level: level,
+      accent: accent,
+      topicId: topicId,
+      isPublic: isPublic,
+    );
+    return (await _store(dto)).toEntity();
+  }
+
+  @override
+  Future<Lesson> updatePhraseSet(Lesson lesson, {bool? isPublic}) async {
+    final cached = await _local.getLesson(lesson.id);
+    if (cached == null) {
+      throw NotFoundFailure('Lesson ${lesson.id} not found in the cache');
+    }
+    try {
+      final dto = await _remote.putPhraseSet(
+        id: lesson.id,
+        title: lesson.title,
+        createdAt: lesson.createdAt,
+        phrases: lesson.phrases,
+        level: lesson.level ?? LessonLevel.parse(cached.level) ?? LessonLevel.b1,
+        // Version from the cache: the edit applies on top of the last seen one.
+        version: cached.version,
+        accent: lesson.accent ?? _nullIfEmpty(cached.accent),
+        topicId: lesson.topic?.id ?? _nullIfEmpty(cached.topicId),
+        isPublic: isPublic,
+      );
+      return (await _store(dto)).toEntity();
+    } on ApiException catch (error) {
+      final current = error.current;
+      if (!error.isVersionConflict || current == null) rethrow;
+      // Version conflict: store the fresh version, let the error bubble up.
+      await _local.upsertLesson(
+        _withCachedAudio(LessonDto.fromJson(current), cached),
+      );
+      rethrow;
+    }
   }
 
   @override
@@ -345,10 +413,68 @@ class LessonRepositoryImpl implements LessonRepository {
     LessonDto dto, {
     void Function(int received, int total)? onProgress,
   }) async {
-    final audioPath = await _ensureAudioFile(dto.audio, onProgress: onProgress);
-    final model = LessonModel.fromDto(dto, audioPath: audioPath);
+    final audio = dto.audio;
+    final model = audio == null
+        ? LessonModel.fromDto(
+            dto,
+            audioPath: '',
+            phrases: await _ensurePhraseFiles(
+              dto.phrases,
+              onProgress: onProgress,
+            ),
+          )
+        : LessonModel.fromDto(
+            dto,
+            audioPath: await _ensureAudioFile(audio, onProgress: onProgress),
+          );
     await _local.upsertLesson(model);
     return model;
+  }
+
+  /// A server lesson keeping the files already downloaded for it: the file
+  /// behind an `audio_id` never changes.
+  LessonModel _withCachedAudio(LessonDto dto, LessonModel? cached) {
+    final known = {
+      for (final phrase in cached?.phrases ?? const <PhraseModel>[])
+        if (phrase.audioPath.isNotEmpty) phrase.audio.id: phrase.audioPath,
+    };
+    final storyAudioId = dto.audio?.id;
+    return LessonModel.fromDto(
+      dto,
+      audioPath: storyAudioId != null && cached?.audioId == storyAudioId
+          ? cached?.audioPath ?? ''
+          : '',
+      phrases: [
+        for (final phrase in dto.phrases)
+          phrase.withAudioPath(known[phrase.audio.id] ?? ''),
+      ],
+    );
+  }
+
+  /// Downloads every distinct file of the phrases; [onProgress] counts them
+  /// together.
+  Future<List<PhraseModel>> _ensurePhraseFiles(
+    List<PhraseModel> phrases, {
+    void Function(int received, int total)? onProgress,
+  }) async {
+    final files = {for (final phrase in phrases) phrase.audio.id: phrase.audio};
+    final total = files.values.fold(0, (sum, audio) => sum + audio.sizeBytes);
+    final paths = <String, String>{};
+    var done = 0;
+    for (final audio in files.values) {
+      final offset = done;
+      paths[audio.id] = await _ensureAudioFile(
+        audio,
+        onProgress: onProgress == null
+            ? null
+            : (received, _) => onProgress(offset + received, total),
+      );
+      done += audio.sizeBytes;
+    }
+    return [
+      for (final phrase in phrases)
+        phrase.withAudioPath(paths[phrase.audio.id] ?? ''),
+    ];
   }
 
   /// Path to the audio file: downloads a missing one and verifies `sha256`.
@@ -400,12 +526,19 @@ class LessonRepositoryImpl implements LessonRepository {
         'No connection to the server, and this lesson is not downloaded yet',
       );
     }
-    if (!cached.hasAudioFile || !await File(cached.audioPath).exists()) {
+    if (!cached.hasAudioFile || !await _allExist(cached.audioPaths)) {
       throw const NetworkFailure(
         'No connection to the server, and this lesson audio is not downloaded yet',
       );
     }
     return cached.toEntity();
+  }
+
+  Future<bool> _allExist(List<String> paths) async {
+    for (final path in paths) {
+      if (!await File(path).exists()) return false;
+    }
+    return true;
   }
 
   Future<void> _forget(String id) async {
@@ -426,7 +559,7 @@ class LessonRepositoryImpl implements LessonRepository {
     if (downloaded.isEmpty) return const {};
     return {
       for (final lesson in await _local.getLessons())
-        if (downloaded.contains(lesson.id)) lesson.audioId,
+        if (downloaded.contains(lesson.id)) ...lesson.audioIds,
     };
   }
 

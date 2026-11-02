@@ -47,12 +47,14 @@ void main() {
         'created_at': '2026-01-01T00:00:00Z',
         'name': 'Andrew',
         'studied_language': 'en',
+        'translation_language': 'uk',
         'daily_goal_minutes': 15,
       });
 
       expect(user.role, UserRole.userPro);
       expect(user.name, 'Andrew');
       expect(user.studiedLanguage, 'en');
+      expect(user.translationLanguage, 'uk');
       expect(user.dailyGoalMinutes, 15);
     });
 

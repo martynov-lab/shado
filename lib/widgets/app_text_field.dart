@@ -28,6 +28,8 @@ class AppTextField extends StatefulWidget {
     this.onChanged,
     this.onSubmitted,
     this.semanticLabel,
+    this.borderRadius = AppRadii.rMd,
+    this.textStyle,
   });
 
   final TextEditingController? controller;
@@ -60,6 +62,13 @@ class AppTextField extends StatefulWidget {
   final ValueChanged<String>? onChanged;
   final ValueChanged<String>? onSubmitted;
   final String? semanticLabel;
+
+  /// Corners of the field; flat sides let two fields read as one card.
+  final BorderRadius borderRadius;
+
+  /// Style of the typed text; the body style in the main text color by
+  /// default.
+  final TextStyle? textStyle;
 
   bool get hasError => errorText != null && errorText!.isNotEmpty;
 
@@ -121,7 +130,7 @@ class _AppTextFieldState extends State<AppTextField> {
       ),
       decoration: BoxDecoration(
         color: widget.enabled ? colors.surface2 : colors.surface,
-        borderRadius: AppRadii.rMd,
+        borderRadius: widget.borderRadius,
         border: Border.all(
           color: borderColor,
           width: _focused || hasError
@@ -163,7 +172,9 @@ class _AppTextFieldState extends State<AppTextField> {
               onChanged: widget.onChanged,
               onSubmitted: widget.onSubmitted,
               cursorColor: colors.primary,
-              style: AppText.body.copyWith(color: colors.text),
+              style:
+                  widget.textStyle ??
+                  AppText.body.copyWith(color: colors.text),
               // The container above paints the border, so all borders are off.
               decoration: InputDecoration(
                 isCollapsed: true,

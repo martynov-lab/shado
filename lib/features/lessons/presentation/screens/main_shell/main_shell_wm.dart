@@ -21,9 +21,6 @@ class MainShellWidgetModel extends WidgetModel<MainShell, MainShellModel> {
     widget.navigationShell,
   );
 
-  /// The add section is shown to authors only.
-  ValueListenable<bool> get canAuthor => model.canAuthor;
-
   /// Offline the banner shows and the add section is hidden.
   ValueListenable<bool> get isOnline => model.isOnline;
 

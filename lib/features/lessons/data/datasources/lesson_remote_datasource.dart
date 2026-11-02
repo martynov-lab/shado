@@ -1,8 +1,12 @@
 import 'package:dio/dio.dart';
 
+import '../../../../core/constants/app_constants.dart';
 import '../../../../core/network/api_client.dart';
 import '../../domain/entities/lesson_category.dart';
+import '../../domain/entities/lesson_kind.dart';
+import '../../domain/entities/phrase.dart';
 import '../models/lesson_dto.dart';
+import '../models/phrase_model.dart';
 import '../models/segment_model.dart';
 
 /// A page of the lesson list.
@@ -36,6 +40,20 @@ abstract interface class LessonRemoteDataSource {
     bool? isPublic,
   });
 
+  /// Creates or replaces a whole phrase set; a `null` [version] means
+  /// creation.
+  Future<LessonDto> putPhraseSet({
+    required String id,
+    required String title,
+    required DateTime createdAt,
+    required List<Phrase> phrases,
+    required LessonLevel level,
+    int? version,
+    String? accent,
+    String? topicId,
+    bool? isPublic,
+  });
+
   Future<void> deleteLesson(String id);
 }
 
@@ -48,7 +66,12 @@ class ApiLessonRemoteDataSource implements LessonRemoteDataSource {
   Future<LessonPage> list({String? since, int? limit, String? cursor}) async {
     final json = await _client.get(
       '/v1/lessons',
-      query: {'since': ?since, 'limit': ?limit, 'cursor': ?cursor},
+      query: {
+        'kind': kLessonKindsQuery,
+        'since': ?since,
+        'limit': ?limit,
+        'cursor': ?cursor,
+      },
     );
     return LessonPage(
       items: [
@@ -95,6 +118,37 @@ class ApiLessonRemoteDataSource implements LessonRemoteDataSource {
         'segments': [for (final segment in segments) segment.toJson()],
       },
       // Edits carry `If-Match`, creation does not.
+      options: version == null
+          ? null
+          : Options(headers: {'If-Match': '"$version"'}),
+    );
+    return LessonDto.fromJson(response.data!);
+  }
+
+  @override
+  Future<LessonDto> putPhraseSet({
+    required String id,
+    required String title,
+    required DateTime createdAt,
+    required List<Phrase> phrases,
+    required LessonLevel level,
+    int? version,
+    String? accent,
+    String? topicId,
+    bool? isPublic,
+  }) async {
+    final response = await _client.put(
+      '/v1/lessons/$id',
+      data: {
+        'kind': LessonKind.expressions.wire,
+        'title': title,
+        'created_at': createdAt.toUtc().toIso8601String(),
+        'accent': ?accent,
+        'level': level.wire,
+        'topic_id': ?topicId,
+        'is_public': ?isPublic,
+        'phrases': [for (final phrase in phrases) PhraseModel.requestJson(phrase)],
+      },
       options: version == null
           ? null
           : Options(headers: {'If-Match': '"$version"'}),

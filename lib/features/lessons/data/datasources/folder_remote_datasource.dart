@@ -1,5 +1,6 @@
 import 'package:dio/dio.dart';
 
+import '../../../../core/constants/app_constants.dart';
 import '../../../../core/network/api_client.dart';
 import '../models/folder_dto.dart';
 
@@ -48,7 +49,12 @@ class ApiFolderRemoteDataSource implements FolderRemoteDataSource {
   Future<FolderPage> list({String? since, int? limit, String? cursor}) async {
     final json = await _client.get(
       '/v1/folders',
-      query: {'since': ?since, 'limit': ?limit, 'cursor': ?cursor},
+      query: {
+        'kind': kLessonKindsQuery,
+        'since': ?since,
+        'limit': ?limit,
+        'cursor': ?cursor,
+      },
     );
     return FolderPage(
       items: [
@@ -61,7 +67,10 @@ class ApiFolderRemoteDataSource implements FolderRemoteDataSource {
 
   @override
   Future<FolderDto> getFolder(String id) async {
-    final json = await _client.get('/v1/folders/$id');
+    final json = await _client.get(
+      '/v1/folders/$id',
+      query: {'kind': kLessonKindsQuery},
+    );
     return FolderDto.fromJson(json);
   }
 
@@ -75,6 +84,7 @@ class ApiFolderRemoteDataSource implements FolderRemoteDataSource {
   }) async {
     final response = await _client.put(
       '/v1/folders/$id',
+      query: {'kind': kLessonKindsQuery},
       data: {
         'title': title,
         'created_at': createdAt.toUtc().toIso8601String(),
@@ -96,6 +106,7 @@ class ApiFolderRemoteDataSource implements FolderRemoteDataSource {
   Future<FolderDto> addLessons(String id, List<String> lessonIds) async {
     final response = await _client.post(
       '/v1/folders/$id/lessons',
+      query: {'kind': kLessonKindsQuery},
       data: {'lesson_ids': lessonIds},
     );
     return FolderDto.fromJson(response.data!);

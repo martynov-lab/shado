@@ -5,6 +5,7 @@ import 'package:shado/theme/theme.dart';
 
 import '../../../languages/domain/entities/language.dart';
 import '../../domain/entities/lesson_category.dart';
+import '../../domain/entities/lesson_kind.dart';
 import '../../domain/entities/lessons_filter.dart';
 import '../screens/lessons/lesson_filter_group.dart';
 import 'lessons_filter_option_row.dart';
@@ -60,6 +61,18 @@ class LessonsFilterGroupOptions extends StatelessWidget {
           ),
         ),
       },
+      LessonFilterGroup.kind => Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          for (final kind in LessonKind.values)
+            LessonsFilterOptionRow(
+              label: kind.label,
+              selected: filter.kinds.contains(kind),
+              onToggle: () => onChanged(filter.toggleKind(kind)),
+            ),
+        ],
+      ),
       LessonFilterGroup.level => Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisSize: MainAxisSize.min,

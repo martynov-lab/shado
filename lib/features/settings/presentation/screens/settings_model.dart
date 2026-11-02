@@ -7,6 +7,7 @@ import 'package:shado/di/auth_providers.dart';
 import 'package:shado/di/language_providers.dart';
 import 'package:shado/di/lesson_providers.dart';
 import 'package:shado/di/settings_providers.dart';
+import 'package:shado/di/translation_providers.dart';
 
 import '../../../auth/domain/entities/auth_user.dart';
 import '../../../auth/domain/services/auth_service.dart';
@@ -16,6 +17,8 @@ import '../../../lessons/domain/entities/tts_voice_selection.dart';
 import '../../../lessons/domain/repositories/lesson_repository.dart';
 import '../../../lessons/domain/services/lesson_catalog_service.dart';
 import '../../../lessons/domain/services/tts_voice_service.dart';
+import '../../../translation/domain/entities/translation_language.dart';
+import '../../../translation/domain/services/translation_language_service.dart';
 import '../../domain/entities/playback_settings.dart';
 import '../../domain/services/playback_settings_service.dart';
 
@@ -28,7 +31,10 @@ class SettingsModel extends ElementaryModel {
       _playback = container.read(playbackSettingsServiceProvider),
       _catalog = container.read(lessonCatalogServiceProvider),
       _lessonRepository = container.read(lessonRepositoryProvider),
-      _ttsVoices = container.read(ttsVoiceServiceProvider);
+      _ttsVoices = container.read(ttsVoiceServiceProvider),
+      _translationLanguages = container.read(
+        translationLanguageServiceProvider,
+      );
 
   final AuthService _auth;
   final LanguageService _languages;
@@ -36,6 +42,7 @@ class SettingsModel extends ElementaryModel {
   final LessonCatalogService _catalog;
   final LessonRepository _lessonRepository;
   final TtsVoiceService _ttsVoices;
+  final TranslationLanguageService _translationLanguages;
 
   late final StreamValueNotifier<AuthUser?> _user = StreamValueNotifier(
     _auth.session.user,
@@ -47,6 +54,13 @@ class SettingsModel extends ElementaryModel {
   );
   late final StreamValueNotifier<Language?> _studiedLanguage =
       StreamValueNotifier(_languages.current, _languages.currentChanges);
+  late final StreamValueNotifier<String> _translationLanguageLabel =
+      StreamValueNotifier(
+        _translationLanguages.labelFor(_translationLanguages.currentCode),
+        _translationLanguages.currentChanges.map(
+          _translationLanguages.labelFor,
+        ),
+      );
   late final StreamValueNotifier<TtsVoiceSelection> _ttsVoice =
       StreamValueNotifier(_ttsVoices.selection, _ttsVoices.changes);
   late final StreamValueNotifier<PlaybackSettings> _playbackSettings =
@@ -60,6 +74,13 @@ class SettingsModel extends ElementaryModel {
 
   ValueListenable<TtsVoiceSelection> get ttsVoice => _ttsVoice;
 
+  /// Name of the translation language; the code until the directory loads.
+  ValueListenable<String> get translationLanguageLabel =>
+      _translationLanguageLabel;
+
+  /// Code of the translation language from the profile.
+  String get translationLanguageCode => _translationLanguages.currentCode;
+
   /// Default values until the saved settings are loaded.
   ValueListenable<PlaybackSettings> get playbackSettings => _playbackSettings;
 
@@ -69,12 +90,19 @@ class SettingsModel extends ElementaryModel {
     _playback.load().ignore();
     _languages.loadForCurrent();
     _ttsVoices.load().ignore();
+    _translationLanguages.load().ignore();
   }
 
   Future<List<Language>> loadLanguages() => _languages.load();
 
   /// Falls back to the code if the language isn't in the directory.
   String languageLabel(String code) => _languages.labelFor(code);
+
+  Future<List<TranslationLanguage>> loadTranslationLanguages() =>
+      _translationLanguages.load();
+
+  Future<void> changeTranslationLanguage(String code) =>
+      _translationLanguages.change(code);
 
   Future<void> updateProfile({String? name, int? dailyGoalMinutes}) =>
       _auth.updateProfile(name: name, dailyGoalMinutes: dailyGoalMinutes);
@@ -106,6 +134,7 @@ class SettingsModel extends ElementaryModel {
     _studiedLanguage.dispose();
     _playbackSettings.dispose();
     _ttsVoice.dispose();
+    _translationLanguageLabel.dispose();
     super.dispose();
   }
 }

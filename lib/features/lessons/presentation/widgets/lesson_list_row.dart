@@ -6,6 +6,7 @@ import 'package:shado/widgets/widgets.dart';
 import '../../../../core/utils/duration_format.dart';
 import '../../domain/entities/lesson.dart';
 import '../../domain/entities/lesson_download.dart';
+import '../../domain/entities/lesson_kind.dart';
 import '../../domain/entities/lessons_filter.dart';
 import 'lesson_cover.dart';
 import 'lesson_download_button.dart';
@@ -139,6 +140,13 @@ class _LessonListRowState extends State<LessonListRow> {
                               if (lessonIsNew(lesson)) ...[
                                 const SizedBox(width: AppSpacing.s2),
                                 const AppBadge(label: 'New'),
+                              ],
+                              if (lesson.isExpressions) ...[
+                                const SizedBox(width: AppSpacing.s2),
+                                AppBadge(
+                                  label: LessonKind.expressions.label,
+                                  variant: AppBadgeVariant.neutral,
+                                ),
                               ],
                             ],
                           ),

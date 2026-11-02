@@ -41,13 +41,14 @@ class MainShell extends ElementaryWidget<MainShellWidgetModel> {
     return ListenableBuilder(
       listenable: Listenable.merge([
         wm.shell,
-        wm.canAuthor,
         wm.email,
         wm.isOnline,
       ]),
       builder: (context, _) {
         final isOnline = wm.isOnline.value;
-        final canAdd = wm.canAuthor.value && isOnline;
+        // Every role creates phrase sets, so the add section needs only the
+        // network.
+        final canAdd = isOnline;
         final content = Column(
           children: [
             if (!isOnline) const OfflineBanner(),

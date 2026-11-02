@@ -1,4 +1,5 @@
 import '../../../lessons/domain/entities/lesson.dart';
+import '../../../lessons/presentation/lesson_routes.dart';
 import '../../../lessons/presentation/widgets/lesson_labels.dart';
 
 /// Lesson preview tile on the home screen, mapped from [Lesson].
@@ -8,7 +9,8 @@ class HomeLessonTile {
     required this.title,
     required this.subtitle,
     required this.time,
-    required this.segmentCount,
+    required this.itemKeys,
+    required this.route,
   });
 
   factory HomeLessonTile.from(Lesson lesson) => HomeLessonTile(
@@ -16,7 +18,8 @@ class HomeLessonTile {
     title: lesson.title,
     subtitle: lessonSubtitle(lesson),
     time: _duration(lesson),
-    segmentCount: lesson.segmentCount,
+    itemKeys: lesson.itemKeys,
+    route: lessonRoute(lesson),
   );
 
   final String id;
@@ -26,7 +29,11 @@ class HomeLessonTile {
   /// Lesson duration as `m:ss`.
   final String time;
 
-  final int segmentCount;
+  /// Rating keys of the lesson items, for the progress bar.
+  final List<String> itemKeys;
+
+  /// Where the lesson opens: the story player or the phrase cards.
+  final String route;
 
   /// `m:ss` for the file range that made it into the lesson.
   static String _duration(Lesson lesson) {

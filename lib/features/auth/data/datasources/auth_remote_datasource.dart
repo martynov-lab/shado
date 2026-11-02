@@ -37,6 +37,7 @@ abstract interface class AuthRemoteDataSource {
   Future<AuthUser> updateProfile({
     String? name,
     String? studiedLanguage,
+    String? translationLanguage,
     int? dailyGoalMinutes,
   });
 
@@ -108,6 +109,7 @@ class ApiAuthRemoteDataSource implements AuthRemoteDataSource {
   Future<AuthUser> updateProfile({
     String? name,
     String? studiedLanguage,
+    String? translationLanguage,
     int? dailyGoalMinutes,
   }) async {
     final response = await _client.patch(
@@ -115,6 +117,7 @@ class ApiAuthRemoteDataSource implements AuthRemoteDataSource {
       data: {
         'name': ?name,
         'studied_language': ?studiedLanguage,
+        'translation_language': ?translationLanguage,
         'daily_goal_minutes': ?dailyGoalMinutes,
       },
     );

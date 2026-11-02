@@ -20,6 +20,7 @@ import 'package:shado/features/progress/domain/entities/progress_summary.dart';
 import 'package:shado/features/progress/domain/repositories/progress_repository.dart';
 import 'package:shado/features/progress/domain/services/progress_reporter.dart';
 import 'package:shado/features/progress/domain/services/progress_summary_service.dart';
+import 'package:shado/features/progress/domain/services/rating_service.dart';
 
 import '../presentation/fake_auth_repository.dart';
 import '../presentation/fake_lesson_repository.dart';
@@ -52,6 +53,13 @@ class _EmptyLibrary implements LibraryRepository {
 class _FakeProgressRepository implements ProgressRepository {
   int reports = 0;
   int summaries = 0;
+  int ratingSyncs = 0;
+
+  @override
+  Future<Set<String>> syncRatings() async {
+    ratingSyncs++;
+    return const {};
+  }
 
   @override
   Future<PendingEvents> readPending() async =>
@@ -93,7 +101,9 @@ void main() {
 
       expect(setup.lessons.syncs, equals(1));
       expect(setup.progress.reports, equals(1));
-      expect(setup.progress.summaries, equals(1));
+      expect(setup.progress.ratingSyncs, equals(1));
+      // One refresh after the ratings sync, one after the reconnect.
+      expect(setup.progress.summaries, equals(2));
     });
 
     test('without a session a reconnect does nothing', () async {
@@ -139,17 +149,30 @@ _setUp(AuthUser? user) async {
   );
   final progress = _FakeProgressRepository();
   final summary = ProgressSummaryService(progress);
+  final reporter = ProgressReporter(repository: progress, summary: summary);
+  final ratings = RatingService(
+    repository: progress,
+    reporter: reporter,
+    summary: summary,
+    auth: auth,
+  );
   final sync = ReconnectSync(
     network: network,
     auth: auth,
     catalog: catalog,
-    reporter: ProgressReporter(repository: progress, summary: summary),
+    reporter: reporter,
     progressSummary: summary,
+    ratings: ratings,
   );
   // Let the initial offline status settle before the test goes online.
   await pumpEventQueue();
+  // The sign-in sync of the ratings is not what these tests count.
+  progress
+    ..ratingSyncs = 0
+    ..summaries = 0;
   addTearDown(() {
     sync.dispose();
+    ratings.dispose();
     summary.dispose();
     catalog.dispose();
     auth.dispose();

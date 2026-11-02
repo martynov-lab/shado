@@ -23,6 +23,8 @@ export 'package:shado/widgets/app_segmented_control.dart';
 export 'package:shado/widgets/app_slider.dart';
 export 'package:shado/widgets/app_snackbar.dart';
 export 'package:shado/widgets/app_snackbar_content.dart';
+export 'package:shado/widgets/app_star.dart';
+export 'package:shado/widgets/app_star_rating.dart';
 export 'package:shado/widgets/app_switch.dart';
 export 'package:shado/widgets/app_tap_target.dart';
 export 'package:shado/widgets/app_text_field.dart';

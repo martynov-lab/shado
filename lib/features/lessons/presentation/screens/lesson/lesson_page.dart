@@ -44,6 +44,7 @@ class LessonPage extends ElementaryWidget<LessonWidgetModel> {
           wm.canEdit,
           wm.download,
           wm.isOnline,
+          wm.stars,
         ]),
         builder: (context, _) => Scaffold(
           backgroundColor: context.colors.bg,
@@ -83,7 +84,16 @@ class LessonPage extends ElementaryWidget<LessonWidgetModel> {
                           ? () => unawaited(wm.toggleDownload())
                           : null,
                     ),
-                    transcript: LessonTranscriptPanel(text: state.playerText),
+                    transcript: ValueListenableBuilder(
+                      valueListenable: wm.translation,
+                      builder: (_, translation, _) => LessonTranscriptPanel(
+                        text: state.playerText,
+                        translation: translation,
+                        onToggleTranslation: wm.toggleTranslation,
+                        stars: wm.playerStars(state),
+                        onRate: (stars) => unawaited(wm.rate(stars)),
+                      ),
+                    ),
                     segmentsButton: LessonSegmentsButton(
                       currentIndex: state.currentIndex,
                       count: state.lesson.segmentCount,
@@ -116,7 +126,16 @@ class LessonPage extends ElementaryWidget<LessonWidgetModel> {
                           ? () => unawaited(wm.toggleDownload())
                           : null,
                     ),
-                    transcript: LessonTranscriptPanel(text: state.playerText),
+                    transcript: ValueListenableBuilder(
+                      valueListenable: wm.translation,
+                      builder: (_, translation, _) => LessonTranscriptPanel(
+                        text: state.playerText,
+                        translation: translation,
+                        onToggleTranslation: wm.toggleTranslation,
+                        stars: wm.playerStars(state),
+                        onRate: (stars) => unawaited(wm.rate(stars)),
+                      ),
+                    ),
                     player: LessonPlayerPanel(
                       state: state,
                       waveform: ValueListenableBuilder(
@@ -134,6 +153,7 @@ class LessonPage extends ElementaryWidget<LessonWidgetModel> {
                     ),
                     segments: LessonSegmentsPanel(
                       state: state,
+                      segmentStars: wm.segmentStars(state),
                       onSegmentPressed: wm.goToSegment,
                       onSelectPressed: wm.toggleSelection,
                       onStartSelecting: wm.startSelecting,
@@ -141,6 +161,9 @@ class LessonPage extends ElementaryWidget<LessonWidgetModel> {
                       onClearSelection: wm.clearSelection,
                       onDone: wm.finishSelecting,
                       onToggleLoop: wm.toggleLoop,
+                      onAddToPhrases: wm.canAddToPhrases(state)
+                          ? () => unawaited(wm.addSelectionToPhraseSet())
+                          : null,
                     ),
                   ),
                 ),

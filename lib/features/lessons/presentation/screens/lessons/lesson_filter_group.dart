@@ -2,6 +2,7 @@ import '../../../domain/entities/lessons_filter.dart';
 
 /// A filter group of the lesson list.
 enum LessonFilterGroup {
+  kind('Type'),
   topic('Topic'),
   level('Level'),
   accent('Accent'),
@@ -14,6 +15,7 @@ enum LessonFilterGroup {
 
   /// How many values of this group are selected in [filter].
   int countIn(LessonsFilter filter) => switch (this) {
+    kind => filter.kinds.length,
     topic => filter.topicIds.length,
     level => filter.levels.length,
     accent => filter.accents.length,

@@ -12,11 +12,13 @@ import 'package:shado/features/auth/domain/repositories/auth_repository.dart';
 import 'package:shado/features/auth/presentation/screens/login_page.dart';
 import 'package:shado/features/lessons/domain/entities/audio_upload.dart';
 import 'package:shado/features/lessons/domain/entities/lesson.dart';
+import 'package:shado/features/lessons/domain/entities/phrase.dart';
 import 'package:shado/features/lessons/domain/entities/lesson_category.dart';
 import 'package:shado/features/lessons/domain/entities/tts_quota.dart';
 import 'package:shado/features/lessons/domain/entities/tts_voice.dart';
 import 'package:shado/features/lessons/domain/repositories/lesson_repository.dart';
 import 'package:shado/features/progress/data/datasources/progress_remote_datasource.dart';
+import 'package:shado/features/progress/domain/entities/item_rating.dart';
 import 'package:shado/features/progress/domain/entities/progress_summary.dart';
 import 'package:shado/theme/theme.dart';
 import 'package:shado/widgets/widgets.dart';
@@ -75,6 +77,7 @@ class FakeAuthRepository implements AuthRepository {
   Future<AuthUser> updateProfile({
     String? name,
     String? studiedLanguage,
+    String? translationLanguage,
     int? dailyGoalMinutes,
   }) async => _current!;
 
@@ -159,6 +162,28 @@ class FakeLessonRepository implements LessonRepository {
   Future<void> updateLesson(Lesson lesson, {bool? isPublic}) async {}
 
   @override
+  Future<List<AudioUpload>> synthesizePhrases({
+    required List<String> texts,
+    String? voice,
+    String? accent,
+    Object? cancel,
+  }) async => throw UnimplementedError();
+
+  @override
+  Future<Lesson> createPhraseSet({
+    required String title,
+    required List<Phrase> phrases,
+    required LessonLevel level,
+    String? accent,
+    String? topicId,
+    bool? isPublic,
+  }) async => throw UnimplementedError();
+
+  @override
+  Future<Lesson> updatePhraseSet(Lesson lesson, {bool? isPublic}) async =>
+      lesson;
+
+  @override
   // The fake does nothing here.
   // ignore: no-empty-block
   Future<void> deleteLesson(String id) async {}
@@ -185,6 +210,14 @@ class _FakeProgressRemote implements ProgressRemoteDataSource {
 
   @override
   Future<List<ProgressDay>> getHistory({int days = 70}) async => const [];
+
+  @override
+  Future<int> putRatings(List<ItemRating> ratings) async => ratings.length;
+
+  @override
+  Future<({List<ItemRating> ratings, String serverTime})> getRatings({
+    String? since,
+  }) async => (ratings: const <ItemRating>[], serverTime: '');
 }
 
 const _quotaWindow = TtsQuotaWindow(used: 0, limit: 14, remaining: 14);

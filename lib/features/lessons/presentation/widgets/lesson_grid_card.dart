@@ -5,6 +5,7 @@ import 'package:shado/widgets/widgets.dart';
 
 import '../../domain/entities/lesson.dart';
 import '../../domain/entities/lesson_download.dart';
+import '../../domain/entities/lesson_kind.dart';
 import '../../domain/entities/lessons_filter.dart';
 import 'lesson_download_button.dart';
 import 'lesson_gradients.dart';
@@ -91,6 +92,11 @@ class LessonGridCard extends StatelessWidget {
                                 ),
                               if (lessonIsNew(lesson))
                                 const AppBadge(label: 'New'),
+                              if (lesson.isExpressions)
+                                AppBadge(
+                                  label: LessonKind.expressions.label,
+                                  variant: AppBadgeVariant.neutral,
+                                ),
                             ],
                           ),
                           const LessonPlayBubble(),

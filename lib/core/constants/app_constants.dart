@@ -50,3 +50,7 @@ const List<String> kDesktopAudioExtensions = ['mp3', 'wav', 'flac', 'ogg'];
 
 /// Formats offered in the file picker.
 List<String> get allowedAudioExtensions => kAllowedAudioExtensions;
+
+/// Lesson kinds the client understands; without them the server lists stories
+/// only.
+const String kLessonKindsQuery = 'story,expressions';

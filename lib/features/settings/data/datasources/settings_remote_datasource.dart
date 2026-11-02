@@ -1,13 +1,12 @@
 import '../../../../core/network/api_client.dart';
+import '../../domain/entities/tts_provider_settings.dart';
 
-/// Service settings; everyone reads the completion threshold, the owner edits.
+/// Service settings; everyone reads them, the owner edits.
 abstract interface class SettingsRemoteDataSource {
-  /// `lesson_completion_reps` — how many repeats per segment mark a lesson as
-  /// done.
-  Future<int> getCompletionReps();
+  Future<TtsProviderSettings> getTtsProvider();
 
-  /// Updates the threshold (1..1000) and returns the current value.
-  Future<int> setCompletionReps(int reps);
+  /// Switches the voice-over provider for all users and returns the result.
+  Future<TtsProviderSettings> setTtsProvider(String name);
 }
 
 class ApiSettingsRemoteDataSource implements SettingsRemoteDataSource {
@@ -15,20 +14,18 @@ class ApiSettingsRemoteDataSource implements SettingsRemoteDataSource {
 
   final ApiClient _client;
 
-  static const int _fallbackReps = 10;
-
   @override
-  Future<int> getCompletionReps() async {
+  Future<TtsProviderSettings> getTtsProvider() async {
     final json = await _client.get('/v1/settings');
-    return (json['lesson_completion_reps'] as num?)?.toInt() ?? _fallbackReps;
+    return TtsProviderSettings.fromJson(json);
   }
 
   @override
-  Future<int> setCompletionReps(int reps) async {
+  Future<TtsProviderSettings> setTtsProvider(String name) async {
     final response = await _client.patch(
       '/v1/settings',
-      data: {'lesson_completion_reps': reps},
+      data: {'tts_provider': name},
     );
-    return (response.data?['lesson_completion_reps'] as num?)?.toInt() ?? reps;
+    return TtsProviderSettings.fromJson(response.data!);
   }
 }

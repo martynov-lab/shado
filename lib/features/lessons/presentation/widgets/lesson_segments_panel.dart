@@ -14,6 +14,7 @@ class LessonSegmentsPanel extends StatelessWidget {
   const LessonSegmentsPanel({
     super.key,
     required this.state,
+    required this.segmentStars,
     required this.onSegmentPressed,
     required this.onSelectPressed,
     required this.onStartSelecting,
@@ -21,10 +22,14 @@ class LessonSegmentsPanel extends StatelessWidget {
     required this.onClearSelection,
     required this.onDone,
     required this.onToggleLoop,
+    required this.onAddToPhrases,
     this.shrinkWrap = false,
   });
 
   final LessonState state;
+
+  /// Rating of every segment, in lesson order.
+  final List<int> segmentStars;
   final ValueChanged<int> onSegmentPressed;
 
   /// A tap on a segment in selection mode.
@@ -38,6 +43,10 @@ class LessonSegmentsPanel extends StatelessWidget {
   final VoidCallback onDone;
 
   final VoidCallback onToggleLoop;
+
+  /// Adds the selection to a phrase set; `null` hides the button.
+  final VoidCallback? onAddToPhrases;
+
   final bool shrinkWrap;
 
   @override
@@ -56,6 +65,7 @@ class LessonSegmentsPanel extends StatelessWidget {
         isPlaying: state.isSegmentPlaying(index),
         isSelecting: state.isSelecting,
         isSelected: state.isSegmentSelected(index),
+        stars: index < segmentStars.length ? segmentStars[index] : 0,
         onPressed: () => onSegmentPressed(index),
         onSelectPressed: () => onSelectPressed(index),
       ),
@@ -105,6 +115,13 @@ class LessonSegmentsPanel extends StatelessWidget {
                   style: AppText.caption.copyWith(color: colors.text2),
                 ),
               ),
+              if (onAddToPhrases != null)
+                AppIconButton(
+                  icon: Icons.bookmark_add_outlined,
+                  semanticLabel: 'Add to a phrase set',
+                  size: AppButtonSize.sm,
+                  onPressed: onAddToPhrases,
+                ),
               AppIconButton(
                 icon: Icons.repeat_rounded,
                 semanticLabel: state.isLooped

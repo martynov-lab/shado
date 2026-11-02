@@ -20,12 +20,12 @@ import '../../widgets/delete_lesson_dialog.dart';
 import '../../widgets/folder_editor_dialog.dart';
 import '../../widgets/lessons_filter_group_options.dart';
 import '../folder/folder_page.dart';
-import '../lesson/lesson_page.dart';
 import 'lesson_filter_group.dart';
 import 'lesson_list_item.dart';
 import 'lessons_content.dart';
 import 'lessons_model.dart';
 import 'lessons_page.dart';
+import '../../lesson_routes.dart';
 
 LessonsWidgetModel lessonsWidgetModelFactory(BuildContext context) =>
     LessonsWidgetModel(
@@ -133,7 +133,7 @@ class LessonsWidgetModel extends WidgetModel<LessonsPage, LessonsModel> {
         ),
       );
 
-  void openLesson(Lesson lesson) => context.push(LessonPage.routeTo(lesson.id));
+  void openLesson(Lesson lesson) => context.push(lessonRoute(lesson));
 
   void openFolder(Folder folder) => context.push(FolderPage.routeTo(folder.id));
 

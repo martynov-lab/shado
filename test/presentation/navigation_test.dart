@@ -19,8 +19,10 @@ import 'package:shado/features/lessons/presentation/widgets/empty_lessons_view.d
 import 'package:shado/features/progress/data/datasources/progress_local_datasource.dart';
 import 'package:shado/features/progress/data/datasources/progress_remote_datasource.dart';
 import 'package:shado/features/progress/domain/entities/pending_events.dart';
+import 'package:shado/features/progress/domain/entities/item_rating.dart';
 import 'package:shado/features/progress/domain/entities/progress_summary.dart';
 import 'package:shado/features/settings/data/datasources/settings_remote_datasource.dart';
+import 'package:shado/features/settings/domain/entities/tts_provider_settings.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'fake_auth_repository.dart';
@@ -52,13 +54,33 @@ class _EmptyProgressLocal implements ProgressLocalDataSource {
   List<ProgressDay>? _history;
 
   @override
-  Future<void> bumpSegment(String lessonId, int segmentIndex) => Future.value();
+  Future<void> bumpSegment() => Future.value();
 
   @override
   Future<void> addListened(int ms) => Future.value();
 
   @override
-  Future<Map<int, int>> readReps(String lessonId) async => const {};
+  Future<Map<String, int>> readStars(String lessonId) async => const {};
+
+  @override
+  Future<void> saveRatings(List<ItemRating> ratings) => Future.value();
+
+  @override
+  Future<List<ItemRating>> readQueuedRatings({required int limit}) async =>
+      const [];
+
+  @override
+  Future<void> markRatingsSent(List<ItemRating> sent) => Future.value();
+
+  @override
+  Future<Set<String>> applyServerRatings(List<ItemRating> ratings) async =>
+      const {};
+
+  @override
+  Future<String?> readRatingsSince() async => null;
+
+  @override
+  Future<void> saveRatingsSince(String serverTime) => Future.value();
 
   @override
   Future<PendingEvents> readPending() async => PendingEvents.empty;
@@ -104,14 +126,27 @@ class _FakeProgressRemote implements ProgressRemoteDataSource {
 
   @override
   Future<List<ProgressDay>> getHistory({int days = 70}) async => const [];
+
+  @override
+  Future<int> putRatings(List<ItemRating> ratings) async => ratings.length;
+
+  @override
+  Future<({List<ItemRating> ratings, String serverTime})> getRatings({
+    String? since,
+  }) async => (ratings: const <ItemRating>[], serverTime: '');
 }
 
 class _FakeServerSettings implements SettingsRemoteDataSource {
-  @override
-  Future<int> getCompletionReps() async => 10;
+  static const _settings = TtsProviderSettings(
+    active: 'gemini',
+    providers: [TtsProviderOption(name: 'gemini', ready: true)],
+  );
 
   @override
-  Future<int> setCompletionReps(int reps) async => reps;
+  Future<TtsProviderSettings> getTtsProvider() async => _settings;
+
+  @override
+  Future<TtsProviderSettings> setTtsProvider(String name) async => _settings;
 }
 
 /// Moving between sections, signing in and out through the router.

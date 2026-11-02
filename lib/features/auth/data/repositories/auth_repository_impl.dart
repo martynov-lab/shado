@@ -91,12 +91,14 @@ class AuthRepositoryImpl implements AuthRepository {
   Future<AuthUser> updateProfile({
     String? name,
     String? studiedLanguage,
+    String? translationLanguage,
     int? dailyGoalMinutes,
   }) async {
     return _remember(
       await _remote.updateProfile(
         name: name,
         studiedLanguage: studiedLanguage,
+        translationLanguage: translationLanguage,
         dailyGoalMinutes: dailyGoalMinutes,
       ),
     );

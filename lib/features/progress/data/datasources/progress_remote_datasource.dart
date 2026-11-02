@@ -1,4 +1,6 @@
+import '../../../../core/constants/app_constants.dart';
 import '../../../../core/network/api_client.dart';
+import '../../domain/entities/item_rating.dart';
 import '../../domain/entities/progress_summary.dart';
 
 /// Server-side progress; the client batches activity and sends it as events.
@@ -16,6 +18,15 @@ abstract interface class ProgressRemoteDataSource {
 
   /// Daily history over a `days` window (1..365) for long charts.
   Future<List<ProgressDay>> getHistory({int days});
+
+  /// Sends up to 500 ratings; returns how many the server applied.
+  Future<int> putRatings(List<ItemRating> ratings);
+
+  /// Ratings changed since [since], all of them without it, and the server
+  /// time to pass next.
+  Future<({List<ItemRating> ratings, String serverTime})> getRatings({
+    String? since,
+  });
 }
 
 class ApiProgressRemoteDataSource implements ProgressRemoteDataSource {
@@ -32,6 +43,7 @@ class ApiProgressRemoteDataSource implements ProgressRemoteDataSource {
   }) async {
     final response = await _client.post(
       '/v1/progress/events',
+      query: {'kind': kLessonKindsQuery},
       data: {
         'listened_ms': ?listenedMs,
         'segment_repeats': ?segmentRepeats,
@@ -44,7 +56,10 @@ class ApiProgressRemoteDataSource implements ProgressRemoteDataSource {
 
   @override
   Future<ProgressSummary> getSummary() async {
-    final json = await _client.get('/v1/progress');
+    final json = await _client.get(
+      '/v1/progress',
+      query: {'kind': kLessonKindsQuery},
+    );
     return ProgressSummary.fromJson(json);
   }
 
@@ -58,5 +73,33 @@ class ApiProgressRemoteDataSource implements ProgressRemoteDataSource {
       for (final day in (json['days'] as List<dynamic>? ?? const []))
         ProgressDay.fromJson(Map<String, dynamic>.from(day as Map)),
     ];
+  }
+
+  @override
+  Future<int> putRatings(List<ItemRating> ratings) async {
+    final response = await _client.put(
+      '/v1/progress/ratings',
+      data: {
+        'ratings': [for (final rating in ratings) rating.toJson()],
+      },
+    );
+    return (response.data?['applied'] as num?)?.toInt() ?? 0;
+  }
+
+  @override
+  Future<({List<ItemRating> ratings, String serverTime})> getRatings({
+    String? since,
+  }) async {
+    final json = await _client.get(
+      '/v1/progress/ratings',
+      query: {'updated_since': ?since},
+    );
+    return (
+      ratings: [
+        for (final rating in (json['ratings'] as List<dynamic>? ?? const []))
+          ItemRating.fromJson(Map<String, dynamic>.from(rating as Map)),
+      ],
+      serverTime: json['server_time'] as String? ?? '',
+    );
   }
 }

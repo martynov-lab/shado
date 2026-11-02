@@ -19,6 +19,15 @@ abstract interface class TtsRemoteDataSource {
     CancelToken? cancelToken,
   });
 
+  /// Synthesizes every text of a phrase set in one request; the result keeps
+  /// the order of [texts].
+  Future<List<AudioDto>> synthesizeBatch({
+    required List<String> texts,
+    String? voice,
+    String? accent,
+    CancelToken? cancelToken,
+  });
+
   /// Voices the provider offers for the studied language.
   Future<TtsVoices> voices();
 
@@ -50,6 +59,25 @@ class ApiTtsRemoteDataSource implements TtsRemoteDataSource {
       options: Options(receiveTimeout: AppConfig.audioTimeout),
     );
     return AudioDto.fromJson(response.data!);
+  }
+
+  @override
+  Future<List<AudioDto>> synthesizeBatch({
+    required List<String> texts,
+    String? voice,
+    String? accent,
+    CancelToken? cancelToken,
+  }) async {
+    final response = await _client.post(
+      '/v1/tts/synthesize/batch',
+      data: {'texts': texts, 'voice': ?voice, 'accent': ?accent},
+      cancelToken: cancelToken,
+      options: Options(receiveTimeout: AppConfig.audioTimeout),
+    );
+    return [
+      for (final item in (response.data?['items'] as List<dynamic>? ?? []))
+        AudioDto.fromJson(Map<String, dynamic>.from(item as Map)),
+    ];
   }
 
   @override

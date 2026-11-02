@@ -54,8 +54,12 @@ class HomeWidgetModel extends WidgetModel<HomePage, HomeModel> {
 
   void openLessons() => context.go(LessonsPage.routePath);
 
-  void openLesson(String lessonId) =>
-      context.push(LessonPage.routeTo(lessonId));
+  void openLesson(String lessonId) {
+    final tile = _overview.value.lessons
+        .where((tile) => tile.id == lessonId)
+        .firstOrNull;
+    context.push(tile?.route ?? LessonPage.routeTo(lessonId));
+  }
 
   void _onSourcesChanged() {
     _overview.value = _currentOverview();
@@ -80,7 +84,7 @@ class HomeWidgetModel extends WidgetModel<HomePage, HomeModel> {
 
   Future<void> _loadHeroProgress(HomeLessonTile hero) async {
     try {
-      final progress = await model.lessonProgress(hero.id, hero.segmentCount);
+      final progress = await model.lessonProgress(hero.id, hero.itemKeys);
       if (isMounted && _hero?.id == hero.id) _heroProgress.value = progress;
     } catch (_) {
       return;

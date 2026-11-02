@@ -20,31 +20,39 @@ void main() {
     return (remote: ApiSettingsRemoteDataSource(client), adapter: adapter);
   }
 
-  test('getCompletionReps reads the threshold', () async {
-    final env = build(
-      (_) async => jsonResponse(200, {'lesson_completion_reps': 15}),
-    );
+  const settingsJson = {
+    'lesson_completion_reps': 10,
+    'tts_provider': 'gemini',
+    'tts_providers': [
+      {'name': 'gemini', 'ready': true},
+      {'name': 'google', 'ready': false},
+    ],
+  };
 
-    final reps = await env.remote.getCompletionReps();
+  test('getTtsProvider reads the active provider and the options', () async {
+    final env = build((_) async => jsonResponse(200, settingsJson));
+
+    final settings = await env.remote.getTtsProvider();
 
     expect(env.adapter.requests.single.path, '/v1/settings');
-    expect(reps, 15);
+    expect(settings.active, 'gemini');
+    expect(settings.providers.map((p) => (p.name, p.ready)), [
+      ('gemini', true),
+      ('google', false),
+    ]);
   });
 
-  test('setCompletionReps sends a PATCH with a body', () async {
+  test('setTtsProvider sends a PATCH with the provider name', () async {
     final env = build(
-      (_) async => jsonResponse(200, {'lesson_completion_reps': 20}),
+      (_) async => jsonResponse(200, {...settingsJson, 'tts_provider': 'google'}),
     );
 
-    final reps = await env.remote.setCompletionReps(20);
+    final settings = await env.remote.setTtsProvider('google');
 
     final request = env.adapter.requests.single;
     expect(request.method, 'PATCH');
     expect(request.path, '/v1/settings');
-    expect(
-      (request.data as Map)['lesson_completion_reps'],
-      20,
-    );
-    expect(reps, 20);
+    expect((request.data as Map)['tts_provider'], 'google');
+    expect(settings.active, 'google');
   });
 }

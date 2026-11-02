@@ -8,11 +8,14 @@ import '../../features/admin/presentation/screens/management_page.dart';
 import '../../features/auth/presentation/screens/login_page.dart';
 import '../../features/home/presentation/screens/home_page.dart';
 import '../../features/lessons/presentation/screens/add_lesson/add_lesson_page.dart';
+import '../../features/lessons/presentation/screens/add_lesson_kind/add_lesson_kind_page.dart';
 import '../../features/lessons/presentation/screens/edit_lesson/edit_lesson_page.dart';
 import '../../features/lessons/presentation/screens/folder/folder_page.dart';
 import '../../features/lessons/presentation/screens/lesson/lesson_page.dart';
 import '../../features/lessons/presentation/screens/lessons/lessons_page.dart';
 import '../../features/lessons/presentation/screens/main_shell/main_shell.dart';
+import '../../features/lessons/presentation/screens/phrase_set/phrase_set_page.dart';
+import '../../features/lessons/presentation/screens/phrase_set_editor/phrase_set_editor_page.dart';
 import '../../features/lessons/presentation/screens/splash/splash_page.dart';
 import '../../features/progress/presentation/screens/progress_page.dart';
 import '../../features/settings/presentation/screens/settings_page.dart';
@@ -67,8 +70,12 @@ GoRouter createAppRouter(AppBootstrap bootstrap) {
       if (location.startsWith(_adminSectionPrefix) && !auth.isOwner) {
         return HomePage.routePath;
       }
+      // Stories are for authors; anyone creates phrase sets.
       if (location == AddLessonPage.routePath && !auth.canAuthor) {
         return HomePage.routePath;
+      }
+      if (location == AddLessonKindPage.routePath && !auth.canAuthor) {
+        return PhraseSetEditorPage.createPath;
       }
       if (location.startsWith(ManagementPage.routePath) && !auth.canManage) {
         return HomePage.routePath;
@@ -116,8 +123,18 @@ GoRouter createAppRouter(AppBootstrap bootstrap) {
           StatefulShellBranch(
             routes: [
               GoRoute(
-                path: AddLessonPage.routePath,
-                builder: (context, state) => const AddLessonPage(),
+                path: AddLessonKindPage.routePath,
+                builder: (context, state) => const AddLessonKindPage(),
+                routes: [
+                  GoRoute(
+                    path: 'story',
+                    builder: (context, state) => const AddLessonPage(),
+                  ),
+                  GoRoute(
+                    path: 'phrases',
+                    builder: (context, state) => const PhraseSetEditorPage(),
+                  ),
+                ],
               ),
             ],
           ),
@@ -155,6 +172,20 @@ GoRouter createAppRouter(AppBootstrap bootstrap) {
         parentNavigatorKey: _rootNavigatorKey,
         builder: (context, state) =>
             FolderPage(folderId: state.pathParameters['id']!),
+      ),
+      GoRoute(
+        path: PhraseSetPage.routePath,
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) =>
+            PhraseSetPage(lessonId: state.pathParameters['id']!),
+        routes: [
+          GoRoute(
+            path: PhraseSetEditorPage.routeSegment,
+            parentNavigatorKey: _rootNavigatorKey,
+            builder: (context, state) =>
+                PhraseSetEditorPage(lessonId: state.pathParameters['id']),
+          ),
+        ],
       ),
       GoRoute(
         path: LessonPage.routePath,

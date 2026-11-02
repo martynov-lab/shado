@@ -1,101 +1,18 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:shado/features/progress/domain/entities/pending_events.dart';
-import 'package:shado/features/progress/domain/entities/progress_summary.dart';
+import 'package:shado/features/progress/domain/entities/item_rating.dart';
 import 'package:shado/features/progress/domain/repositories/progress_repository.dart';
 import 'package:shado/features/progress/domain/services/progress_reporter.dart';
 import 'package:shado/features/progress/domain/services/progress_summary_service.dart';
 
-class _RecordedEvent {
-  _RecordedEvent(
-    this.listenedMs,
-    this.segmentRepeats,
-    this.lessonId,
-    this.completed,
-  );
-  final int? listenedMs;
-  final int? segmentRepeats;
-  final String? lessonId;
-  final bool? completed;
-}
-
-/// In-memory progress: local counters plus a server that records events.
-class _FakeProgressRepository implements ProgressRepository {
-  _FakeProgressRepository({this.throwOnEvents = false});
-
-  bool throwOnEvents;
-  final List<_RecordedEvent> events = [];
-  final Map<String, Map<int, int>> reps = {};
-  final Set<String> completed = {};
-  int listenedMs = 0;
-  int segmentRepeats = 0;
-
-  @override
-  Future<void> addListened(int ms) async => listenedMs += ms;
-
-  @override
-  Future<void> bumpSegment(String lessonId, int segmentIndex) async {
-    final byIndex = reps.putIfAbsent(lessonId, () => {});
-    byIndex[segmentIndex] = (byIndex[segmentIndex] ?? 0) + 1;
-    segmentRepeats += 1;
-  }
-
-  @override
-  Future<Map<int, int>> readReps(String lessonId) async =>
-      Map.of(reps[lessonId] ?? const {});
-
-  @override
-  Future<PendingEvents> readPending() async =>
-      PendingEvents(listenedMs: listenedMs, segmentRepeats: segmentRepeats);
-
-  @override
-  Future<void> subtractPending(int listenedMs, int segmentRepeats) async {
-    this.listenedMs = (this.listenedMs - listenedMs).clamp(0, 1 << 62);
-    this.segmentRepeats = (this.segmentRepeats - segmentRepeats).clamp(
-      0,
-      1 << 62,
-    );
-  }
-
-  @override
-  Future<bool> isCompletedSent(String lessonId) async =>
-      completed.contains(lessonId);
-
-  @override
-  Future<void> markCompletedSent(String lessonId) async =>
-      completed.add(lessonId);
-
-  @override
-  Future<ProgressSummary> reportEvents({
-    int? listenedMs,
-    int? segmentRepeats,
-    String? lessonId,
-    bool? completed,
-  }) async {
-    if (throwOnEvents) throw Exception('offline');
-    events.add(_RecordedEvent(listenedMs, segmentRepeats, lessonId, completed));
-    return ProgressSummary.fromJson(const {});
-  }
-
-  @override
-  Future<ProgressSummary> getSummary() async =>
-      ProgressSummary.fromJson(const {});
-
-  @override
-  Future<List<ProgressDay>> getHistory({int days = 70}) async => const [];
-
-  @override
-  // The fake does nothing here.
-  // ignore: no-empty-block
-  Future<void> clear() async {}
-}
+import 'fake_progress_repository.dart';
 
 void main() {
   group('ProgressReporter.flush', () {
     test('sends what was accumulated and subtracts what was sent', () async {
-      final repository = _FakeProgressRepository();
+      final repository = FakeProgressRepository();
       final reporter = _makeReporter(repository);
       await repository.addListened(5000);
-      await repository.bumpSegment('l1', 0);
+      await reporter.recordRepeats(1);
 
       await reporter.flush(lessonId: 'l1');
 
@@ -108,7 +25,7 @@ void main() {
     });
 
     test('hands the fresh summary to the summary service', () async {
-      final repository = _FakeProgressRepository();
+      final repository = FakeProgressRepository();
       final summary = ProgressSummaryService(repository);
       addTearDown(summary.dispose);
       final reporter = ProgressReporter(
@@ -123,7 +40,7 @@ void main() {
     });
 
     test('does not send an empty delta', () async {
-      final repository = _FakeProgressRepository();
+      final repository = FakeProgressRepository();
       final reporter = _makeReporter(repository);
 
       await reporter.flush();
@@ -132,7 +49,7 @@ void main() {
     });
 
     test('the delta survives a failure', () async {
-      final repository = _FakeProgressRepository(throwOnEvents: true);
+      final repository = FakeProgressRepository(throwOnEvents: true);
       final reporter = _makeReporter(repository);
       await repository.addListened(3000);
 
@@ -143,26 +60,27 @@ void main() {
     });
   });
 
-  group('ProgressReporter.reportCompletedIfDone', () {
-    test('sends completed once and sets the flag', () async {
-      final repository = _FakeProgressRepository();
+  group('ProgressReporter.recordRepeats', () {
+    test('adds every repeat to the daily delta', () async {
+      final repository = FakeProgressRepository();
       final reporter = _makeReporter(repository);
-      // Two segments with threshold 2: both are completed.
-      await repository.bumpSegment('l1', 0);
-      await repository.bumpSegment('l1', 0);
-      await repository.bumpSegment('l1', 1);
-      await repository.bumpSegment('l1', 1);
 
-      await reporter.reportCompletedIfDone(
-        lessonId: 'l1',
-        segmentCount: 2,
-        completionReps: 2,
-      );
-      await reporter.reportCompletedIfDone(
-        lessonId: 'l1',
-        segmentCount: 2,
-        completionReps: 2,
-      );
+      await reporter.recordRepeats(3);
+
+      expect((await repository.readPending()).segmentRepeats, 3);
+    });
+  });
+
+  group('ProgressReporter.reportCompletedIfDone', () {
+    const keys = ['s:a', 's:b'];
+
+    test('sends completed once every item has five stars', () async {
+      final repository = FakeProgressRepository();
+      final reporter = _makeReporter(repository);
+      await repository.saveRatings(_ratings({'s:a': 5, 's:b': 5}));
+
+      await reporter.reportCompletedIfDone(lessonId: 'l1', itemKeys: keys);
+      await reporter.reportCompletedIfDone(lessonId: 'l1', itemKeys: keys);
 
       final completedEvents = repository.events
           .where((e) => e.completed == true)
@@ -171,22 +89,28 @@ void main() {
       expect(await repository.isCompletedSent('l1'), isTrue);
     });
 
-    test('an unfinished lesson is not marked', () async {
-      final repository = _FakeProgressRepository();
+    test('a lesson with an item below five stars is not marked', () async {
+      final repository = FakeProgressRepository();
       final reporter = _makeReporter(repository);
-      await repository.bumpSegment('l1', 0);
+      await repository.saveRatings(_ratings({'s:a': 5, 's:b': 4}));
 
-      await reporter.reportCompletedIfDone(
-        lessonId: 'l1',
-        segmentCount: 2,
-        completionReps: 2,
-      );
+      await reporter.reportCompletedIfDone(lessonId: 'l1', itemKeys: keys);
 
       expect(repository.events.where((e) => e.completed == true), isEmpty);
       expect(await repository.isCompletedSent('l1'), isFalse);
     });
   });
 }
+
+List<ItemRating> _ratings(Map<String, int> stars) => [
+  for (final MapEntry(:key, :value) in stars.entries)
+    ItemRating(
+      lessonId: 'l1',
+      itemKey: key,
+      stars: value,
+      ratedAt: DateTime.utc(2026, 11, 2),
+    ),
+];
 
 ProgressReporter _makeReporter(ProgressRepository repository) {
   final summary = ProgressSummaryService(repository);

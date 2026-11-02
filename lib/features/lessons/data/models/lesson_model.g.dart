@@ -26,6 +26,7 @@ _LessonModel _$LessonModelFromJson(Map<String, dynamic> json) => _LessonModel(
   level: json['level'] as String? ?? '',
   topicId: json['topic_id'] as String? ?? '',
   topicName: json['topic_name'] as String? ?? '',
+  kind: json['kind'] as String? ?? 'story',
 );
 
 Map<String, dynamic> _$LessonModelToJson(_LessonModel instance) =>
@@ -47,4 +48,5 @@ Map<String, dynamic> _$LessonModelToJson(_LessonModel instance) =>
       'level': instance.level,
       'topic_id': instance.topicId,
       'topic_name': instance.topicName,
+      'kind': instance.kind,
     };

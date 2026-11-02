@@ -7,7 +7,6 @@ import '../../../../../core/audio/shadowing_audio_handler.dart';
 import '../../../../../core/constants/app_constants.dart';
 import '../../../../progress/domain/services/progress_reporter.dart';
 import '../../../../settings/domain/entities/playback_settings.dart';
-import '../../../../settings/domain/services/completion_threshold_service.dart';
 import '../../../../settings/domain/services/playback_settings_service.dart';
 import '../../../domain/entities/lesson.dart';
 import '../../../domain/entities/segment_range.dart';
@@ -26,21 +25,18 @@ class LessonPlayback implements LessonRemoteControl {
     required AudioPlayer player,
     required ProgressReporter reporter,
     required PlaybackSettingsService settings,
-    required CompletionThresholdService threshold,
     required this.onChanged,
     required this.onPosition,
     ShadowingAudioHandler? audioHandler,
   }) : _player = player,
        _reporter = reporter,
        _settingsService = settings,
-       _threshold = threshold,
        _audioHandler = audioHandler;
 
   final String lessonId;
   final AudioPlayer _player;
   final ProgressReporter _reporter;
   final PlaybackSettingsService _settingsService;
-  final CompletionThresholdService _threshold;
   final ShadowingAudioHandler? _audioHandler;
 
   /// Called with every new screen state.
@@ -138,7 +134,6 @@ class LessonPlayback implements LessonRemoteControl {
             .listen(_onPosition),
       );
     _audioHandler?.attach(this);
-    _threshold.load().ignore();
     _flushTimer = Timer.periodic(
       const Duration(seconds: 30),
       (_) => _reporter.flush(lessonId: lessonId),
@@ -255,29 +250,8 @@ class LessonPlayback implements LessonRemoteControl {
       return false;
     }
     _lastPassAt = now;
-    final indices = [for (var i = range.start; i <= range.end; i++) i];
-    unawaited(
-      _reporter
-          .recordSegmentPass(lessonId, indices)
-          .then((_) => _maybeReportCompletion()),
-    );
+    unawaited(_reporter.recordRepeats(range.end - range.start + 1));
     return true;
-  }
-
-  /// Sends `completed` once the lesson is done.
-  void _maybeReportCompletion() {
-    final current = _current;
-    if (current == null) return;
-    // The threshold has not loaded yet — check on the next pass.
-    final target = _threshold.reps;
-    if (target == null) return;
-    unawaited(
-      _reporter.reportCompletedIfDone(
-        lessonId: lessonId,
-        segmentCount: current.lesson.segmentCount,
-        completionReps: target,
-      ),
-    );
   }
 
   Future<void> _flushOnLeave() async {

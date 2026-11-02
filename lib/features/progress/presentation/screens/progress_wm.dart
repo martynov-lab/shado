@@ -7,10 +7,10 @@ import 'package:go_router/go_router.dart';
 import 'package:shado/core/async/async_state.dart';
 
 import '../../../lessons/domain/entities/lesson.dart';
-import '../../../lessons/presentation/screens/lesson/lesson_page.dart';
 import 'progress_model.dart';
 import 'progress_overview.dart';
 import 'progress_page.dart';
+import '../../../lessons/presentation/lesson_routes.dart';
 
 ProgressWidgetModel progressWidgetModelFactory(BuildContext context) =>
     ProgressWidgetModel(
@@ -45,7 +45,7 @@ class ProgressWidgetModel extends WidgetModel<ProgressPage, ProgressModel> {
 
   Future<void> retry() => model.refreshSummary();
 
-  void openLesson(Lesson lesson) => context.push(LessonPage.routeTo(lesson.id));
+  void openLesson(Lesson lesson) => context.push(lessonRoute(lesson));
 
   void _onSourcesChanged() => _overview.value = _currentOverview();
 

@@ -70,8 +70,8 @@ class HomeModel extends ElementaryModel {
     _catalog.loadLessons().ignore();
   }
 
-  Future<double> lessonProgress(String lessonId, int segmentCount) =>
-      _getLessonProgress(lessonId: lessonId, segmentCount: segmentCount);
+  Future<double> lessonProgress(String lessonId, List<String> itemKeys) =>
+      _getLessonProgress(lessonId: lessonId, itemKeys: itemKeys);
 
   @override
   void dispose() {

@@ -2,7 +2,8 @@ import 'entities/progress_summary.dart';
 
 // Practice streak — consecutive active days.
 
-bool _isActive(ProgressDay day) => day.listenedMs > 0 || day.segmentRepeats > 0;
+bool _isActive(ProgressDay day) =>
+    day.listenedMs > 0 || day.segmentRepeats > 0 || day.phrasesLearned > 0;
 
 DateTime? _parseDay(String raw) {
   final parsed = DateTime.tryParse(raw);

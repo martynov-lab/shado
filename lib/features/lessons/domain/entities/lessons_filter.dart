@@ -1,6 +1,7 @@
 import 'folder.dart';
 import 'lesson.dart';
 import 'lesson_category.dart';
+import 'lesson_kind.dart';
 
 /// How long a lesson counts as new after being added.
 const Duration kNewLessonWindow = Duration(days: 7);
@@ -25,6 +26,7 @@ enum LessonFilterStatus {
 class LessonsFilter {
   const LessonsFilter({
     this.query = '',
+    this.kinds = const {},
     this.topicIds = const {},
     this.levels = const {},
     this.accents = const {},
@@ -34,6 +36,7 @@ class LessonsFilter {
   });
 
   final String query;
+  final Set<LessonKind> kinds;
   final Set<String> topicIds;
   final Set<LessonLevel> levels;
 
@@ -51,6 +54,7 @@ class LessonsFilter {
   /// Whether the filter is empty: no query and no selected values.
   bool get isEmpty =>
       query.isEmpty &&
+      kinds.isEmpty &&
       topicIds.isEmpty &&
       levels.isEmpty &&
       accents.isEmpty &&
@@ -60,6 +64,7 @@ class LessonsFilter {
 
   /// How many filters are selected, excluding the search query.
   int get activeCount =>
+      kinds.length +
       topicIds.length +
       levels.length +
       accents.length +
@@ -72,6 +77,9 @@ class LessonsFilter {
   bool matches(Lesson lesson, {Set<String> downloadedIds = const {}}) {
     if (query.isNotEmpty &&
         !lesson.title.toLowerCase().contains(query.toLowerCase())) {
+      return false;
+    }
+    if (kinds.isNotEmpty && !kinds.contains(lesson.kind)) {
       return false;
     }
     if (topicIds.isNotEmpty &&
@@ -138,6 +146,9 @@ class LessonsFilter {
 
   LessonsFilter withQuery(String query) => copyWith(query: query);
 
+  LessonsFilter toggleKind(LessonKind kind) =>
+      copyWith(kinds: _toggled(kinds, kind));
+
   LessonsFilter toggleTopic(String id) =>
       copyWith(topicIds: _toggled(topicIds, id));
 
@@ -160,6 +171,7 @@ class LessonsFilter {
 
   LessonsFilter copyWith({
     String? query,
+    Set<LessonKind>? kinds,
     Set<String>? topicIds,
     Set<LessonLevel>? levels,
     Set<String>? accents,
@@ -169,6 +181,7 @@ class LessonsFilter {
   }) {
     return LessonsFilter(
       query: query ?? this.query,
+      kinds: kinds ?? this.kinds,
       topicIds: topicIds ?? this.topicIds,
       levels: levels ?? this.levels,
       accents: accents ?? this.accents,

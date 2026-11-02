@@ -1,3 +1,4 @@
+import '../entities/item_rating.dart';
 import '../entities/pending_events.dart';
 import '../entities/progress_summary.dart';
 
@@ -5,12 +6,18 @@ import '../entities/progress_summary.dart';
 abstract interface class ProgressRepository {
   Future<void> addListened(int ms);
 
-  /// Counts one repeat of the segment, both for lesson completion and for the
-  /// pending daily delta.
-  Future<void> bumpSegment(String lessonId, int segmentIndex);
+  /// Counts one segment repeat in the pending daily delta.
+  Future<void> bumpSegment();
 
-  /// Repeats per segment of the lesson: `segmentIndex → reps`.
-  Future<Map<int, int>> readReps(String lessonId);
+  /// Current ratings of the lesson: `itemKey → stars`, rated items only.
+  Future<Map<String, int>> readStars(String lessonId);
+
+  /// Saves the user's ratings on the device until [syncRatings] sends them.
+  Future<void> saveRatings(List<ItemRating> ratings);
+
+  /// Sends queued ratings and pulls the ones changed on other devices;
+  /// returns the ids of lessons whose ratings changed.
+  Future<Set<String>> syncRatings();
 
   Future<PendingEvents> readPending();
 

@@ -20,7 +20,9 @@ mixin _$LessonModel {
 @JsonKey(name: 'is_public') bool get isPublic;@JsonKey(name: 'audio_sha256') String get audioSha256;@JsonKey(name: 'audio_content_type') String get audioContentType;/// Language code of the lesson; empty in records from an old cache.
  String get language;/// Lesson categories as strings from the server; empty means unset.
  String get accent; String get level;/// Lesson topic: id and name side by side.
-@JsonKey(name: 'topic_id') String get topicId;@JsonKey(name: 'topic_name') String get topicName;
+@JsonKey(name: 'topic_id') String get topicId;@JsonKey(name: 'topic_name') String get topicName;/// `story` or `expressions`.
+ String get kind;/// Phrases of a phrase set; empty for a story.
+@JsonKey(includeFromJson: false, includeToJson: false) List<PhraseModel> get phrases;
 /// Create a copy of LessonModel
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -33,16 +35,16 @@ $LessonModelCopyWith<LessonModel> get copyWith => _$LessonModelCopyWithImpl<Less
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is LessonModel&&(identical(other.id, id) || other.id == id)&&(identical(other.title, title) || other.title == title)&&(identical(other.audioId, audioId) || other.audioId == audioId)&&(identical(other.audioPath, audioPath) || other.audioPath == audioPath)&&(identical(other.durationMs, durationMs) || other.durationMs == durationMs)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.updatedAt, updatedAt) || other.updatedAt == updatedAt)&&(identical(other.version, version) || other.version == version)&&const DeepCollectionEquality().equals(other.segments, segments)&&(identical(other.isPublic, isPublic) || other.isPublic == isPublic)&&(identical(other.audioSha256, audioSha256) || other.audioSha256 == audioSha256)&&(identical(other.audioContentType, audioContentType) || other.audioContentType == audioContentType)&&(identical(other.language, language) || other.language == language)&&(identical(other.accent, accent) || other.accent == accent)&&(identical(other.level, level) || other.level == level)&&(identical(other.topicId, topicId) || other.topicId == topicId)&&(identical(other.topicName, topicName) || other.topicName == topicName));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is LessonModel&&(identical(other.id, id) || other.id == id)&&(identical(other.title, title) || other.title == title)&&(identical(other.audioId, audioId) || other.audioId == audioId)&&(identical(other.audioPath, audioPath) || other.audioPath == audioPath)&&(identical(other.durationMs, durationMs) || other.durationMs == durationMs)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.updatedAt, updatedAt) || other.updatedAt == updatedAt)&&(identical(other.version, version) || other.version == version)&&const DeepCollectionEquality().equals(other.segments, segments)&&(identical(other.isPublic, isPublic) || other.isPublic == isPublic)&&(identical(other.audioSha256, audioSha256) || other.audioSha256 == audioSha256)&&(identical(other.audioContentType, audioContentType) || other.audioContentType == audioContentType)&&(identical(other.language, language) || other.language == language)&&(identical(other.accent, accent) || other.accent == accent)&&(identical(other.level, level) || other.level == level)&&(identical(other.topicId, topicId) || other.topicId == topicId)&&(identical(other.topicName, topicName) || other.topicName == topicName)&&(identical(other.kind, kind) || other.kind == kind)&&const DeepCollectionEquality().equals(other.phrases, phrases));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,id,title,audioId,audioPath,durationMs,createdAt,updatedAt,version,const DeepCollectionEquality().hash(segments),isPublic,audioSha256,audioContentType,language,accent,level,topicId,topicName);
+int get hashCode => Object.hashAll([runtimeType,id,title,audioId,audioPath,durationMs,createdAt,updatedAt,version,const DeepCollectionEquality().hash(segments),isPublic,audioSha256,audioContentType,language,accent,level,topicId,topicName,kind,const DeepCollectionEquality().hash(phrases)]);
 
 @override
 String toString() {
-  return 'LessonModel(id: $id, title: $title, audioId: $audioId, audioPath: $audioPath, durationMs: $durationMs, createdAt: $createdAt, updatedAt: $updatedAt, version: $version, segments: $segments, isPublic: $isPublic, audioSha256: $audioSha256, audioContentType: $audioContentType, language: $language, accent: $accent, level: $level, topicId: $topicId, topicName: $topicName)';
+  return 'LessonModel(id: $id, title: $title, audioId: $audioId, audioPath: $audioPath, durationMs: $durationMs, createdAt: $createdAt, updatedAt: $updatedAt, version: $version, segments: $segments, isPublic: $isPublic, audioSha256: $audioSha256, audioContentType: $audioContentType, language: $language, accent: $accent, level: $level, topicId: $topicId, topicName: $topicName, kind: $kind, phrases: $phrases)';
 }
 
 
@@ -53,7 +55,7 @@ abstract mixin class $LessonModelCopyWith<$Res>  {
   factory $LessonModelCopyWith(LessonModel value, $Res Function(LessonModel) _then) = _$LessonModelCopyWithImpl;
 @useResult
 $Res call({
- String id, String title,@JsonKey(name: 'audio_id') String audioId,@JsonKey(name: 'audio_path') String audioPath,@JsonKey(name: 'duration_ms') int durationMs,@JsonKey(name: 'created_at') DateTime createdAt,@JsonKey(name: 'updated_at') DateTime updatedAt, int version, List<SegmentModel> segments,@JsonKey(name: 'is_public') bool isPublic,@JsonKey(name: 'audio_sha256') String audioSha256,@JsonKey(name: 'audio_content_type') String audioContentType, String language, String accent, String level,@JsonKey(name: 'topic_id') String topicId,@JsonKey(name: 'topic_name') String topicName
+ String id, String title,@JsonKey(name: 'audio_id') String audioId,@JsonKey(name: 'audio_path') String audioPath,@JsonKey(name: 'duration_ms') int durationMs,@JsonKey(name: 'created_at') DateTime createdAt,@JsonKey(name: 'updated_at') DateTime updatedAt, int version, List<SegmentModel> segments,@JsonKey(name: 'is_public') bool isPublic,@JsonKey(name: 'audio_sha256') String audioSha256,@JsonKey(name: 'audio_content_type') String audioContentType, String language, String accent, String level,@JsonKey(name: 'topic_id') String topicId,@JsonKey(name: 'topic_name') String topicName, String kind,@JsonKey(includeFromJson: false, includeToJson: false) List<PhraseModel> phrases
 });
 
 
@@ -70,7 +72,7 @@ class _$LessonModelCopyWithImpl<$Res>
 
 /// Create a copy of LessonModel
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? title = null,Object? audioId = null,Object? audioPath = null,Object? durationMs = null,Object? createdAt = null,Object? updatedAt = null,Object? version = null,Object? segments = null,Object? isPublic = null,Object? audioSha256 = null,Object? audioContentType = null,Object? language = null,Object? accent = null,Object? level = null,Object? topicId = null,Object? topicName = null,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? title = null,Object? audioId = null,Object? audioPath = null,Object? durationMs = null,Object? createdAt = null,Object? updatedAt = null,Object? version = null,Object? segments = null,Object? isPublic = null,Object? audioSha256 = null,Object? audioContentType = null,Object? language = null,Object? accent = null,Object? level = null,Object? topicId = null,Object? topicName = null,Object? kind = null,Object? phrases = null,}) {
   return _then(_self.copyWith(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,title: null == title ? _self.title : title // ignore: cast_nullable_to_non_nullable
@@ -89,7 +91,9 @@ as String,accent: null == accent ? _self.accent : accent // ignore: cast_nullabl
 as String,level: null == level ? _self.level : level // ignore: cast_nullable_to_non_nullable
 as String,topicId: null == topicId ? _self.topicId : topicId // ignore: cast_nullable_to_non_nullable
 as String,topicName: null == topicName ? _self.topicName : topicName // ignore: cast_nullable_to_non_nullable
-as String,
+as String,kind: null == kind ? _self.kind : kind // ignore: cast_nullable_to_non_nullable
+as String,phrases: null == phrases ? _self.phrases : phrases // ignore: cast_nullable_to_non_nullable
+as List<PhraseModel>,
   ));
 }
 
@@ -174,10 +178,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  String title, @JsonKey(name: 'audio_id')  String audioId, @JsonKey(name: 'audio_path')  String audioPath, @JsonKey(name: 'duration_ms')  int durationMs, @JsonKey(name: 'created_at')  DateTime createdAt, @JsonKey(name: 'updated_at')  DateTime updatedAt,  int version,  List<SegmentModel> segments, @JsonKey(name: 'is_public')  bool isPublic, @JsonKey(name: 'audio_sha256')  String audioSha256, @JsonKey(name: 'audio_content_type')  String audioContentType,  String language,  String accent,  String level, @JsonKey(name: 'topic_id')  String topicId, @JsonKey(name: 'topic_name')  String topicName)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  String title, @JsonKey(name: 'audio_id')  String audioId, @JsonKey(name: 'audio_path')  String audioPath, @JsonKey(name: 'duration_ms')  int durationMs, @JsonKey(name: 'created_at')  DateTime createdAt, @JsonKey(name: 'updated_at')  DateTime updatedAt,  int version,  List<SegmentModel> segments, @JsonKey(name: 'is_public')  bool isPublic, @JsonKey(name: 'audio_sha256')  String audioSha256, @JsonKey(name: 'audio_content_type')  String audioContentType,  String language,  String accent,  String level, @JsonKey(name: 'topic_id')  String topicId, @JsonKey(name: 'topic_name')  String topicName,  String kind, @JsonKey(includeFromJson: false, includeToJson: false)  List<PhraseModel> phrases)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _LessonModel() when $default != null:
-return $default(_that.id,_that.title,_that.audioId,_that.audioPath,_that.durationMs,_that.createdAt,_that.updatedAt,_that.version,_that.segments,_that.isPublic,_that.audioSha256,_that.audioContentType,_that.language,_that.accent,_that.level,_that.topicId,_that.topicName);case _:
+return $default(_that.id,_that.title,_that.audioId,_that.audioPath,_that.durationMs,_that.createdAt,_that.updatedAt,_that.version,_that.segments,_that.isPublic,_that.audioSha256,_that.audioContentType,_that.language,_that.accent,_that.level,_that.topicId,_that.topicName,_that.kind,_that.phrases);case _:
   return orElse();
 
 }
@@ -195,10 +199,10 @@ return $default(_that.id,_that.title,_that.audioId,_that.audioPath,_that.duratio
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  String title, @JsonKey(name: 'audio_id')  String audioId, @JsonKey(name: 'audio_path')  String audioPath, @JsonKey(name: 'duration_ms')  int durationMs, @JsonKey(name: 'created_at')  DateTime createdAt, @JsonKey(name: 'updated_at')  DateTime updatedAt,  int version,  List<SegmentModel> segments, @JsonKey(name: 'is_public')  bool isPublic, @JsonKey(name: 'audio_sha256')  String audioSha256, @JsonKey(name: 'audio_content_type')  String audioContentType,  String language,  String accent,  String level, @JsonKey(name: 'topic_id')  String topicId, @JsonKey(name: 'topic_name')  String topicName)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  String title, @JsonKey(name: 'audio_id')  String audioId, @JsonKey(name: 'audio_path')  String audioPath, @JsonKey(name: 'duration_ms')  int durationMs, @JsonKey(name: 'created_at')  DateTime createdAt, @JsonKey(name: 'updated_at')  DateTime updatedAt,  int version,  List<SegmentModel> segments, @JsonKey(name: 'is_public')  bool isPublic, @JsonKey(name: 'audio_sha256')  String audioSha256, @JsonKey(name: 'audio_content_type')  String audioContentType,  String language,  String accent,  String level, @JsonKey(name: 'topic_id')  String topicId, @JsonKey(name: 'topic_name')  String topicName,  String kind, @JsonKey(includeFromJson: false, includeToJson: false)  List<PhraseModel> phrases)  $default,) {final _that = this;
 switch (_that) {
 case _LessonModel():
-return $default(_that.id,_that.title,_that.audioId,_that.audioPath,_that.durationMs,_that.createdAt,_that.updatedAt,_that.version,_that.segments,_that.isPublic,_that.audioSha256,_that.audioContentType,_that.language,_that.accent,_that.level,_that.topicId,_that.topicName);case _:
+return $default(_that.id,_that.title,_that.audioId,_that.audioPath,_that.durationMs,_that.createdAt,_that.updatedAt,_that.version,_that.segments,_that.isPublic,_that.audioSha256,_that.audioContentType,_that.language,_that.accent,_that.level,_that.topicId,_that.topicName,_that.kind,_that.phrases);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -215,10 +219,10 @@ return $default(_that.id,_that.title,_that.audioId,_that.audioPath,_that.duratio
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  String title, @JsonKey(name: 'audio_id')  String audioId, @JsonKey(name: 'audio_path')  String audioPath, @JsonKey(name: 'duration_ms')  int durationMs, @JsonKey(name: 'created_at')  DateTime createdAt, @JsonKey(name: 'updated_at')  DateTime updatedAt,  int version,  List<SegmentModel> segments, @JsonKey(name: 'is_public')  bool isPublic, @JsonKey(name: 'audio_sha256')  String audioSha256, @JsonKey(name: 'audio_content_type')  String audioContentType,  String language,  String accent,  String level, @JsonKey(name: 'topic_id')  String topicId, @JsonKey(name: 'topic_name')  String topicName)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  String title, @JsonKey(name: 'audio_id')  String audioId, @JsonKey(name: 'audio_path')  String audioPath, @JsonKey(name: 'duration_ms')  int durationMs, @JsonKey(name: 'created_at')  DateTime createdAt, @JsonKey(name: 'updated_at')  DateTime updatedAt,  int version,  List<SegmentModel> segments, @JsonKey(name: 'is_public')  bool isPublic, @JsonKey(name: 'audio_sha256')  String audioSha256, @JsonKey(name: 'audio_content_type')  String audioContentType,  String language,  String accent,  String level, @JsonKey(name: 'topic_id')  String topicId, @JsonKey(name: 'topic_name')  String topicName,  String kind, @JsonKey(includeFromJson: false, includeToJson: false)  List<PhraseModel> phrases)?  $default,) {final _that = this;
 switch (_that) {
 case _LessonModel() when $default != null:
-return $default(_that.id,_that.title,_that.audioId,_that.audioPath,_that.durationMs,_that.createdAt,_that.updatedAt,_that.version,_that.segments,_that.isPublic,_that.audioSha256,_that.audioContentType,_that.language,_that.accent,_that.level,_that.topicId,_that.topicName);case _:
+return $default(_that.id,_that.title,_that.audioId,_that.audioPath,_that.durationMs,_that.createdAt,_that.updatedAt,_that.version,_that.segments,_that.isPublic,_that.audioSha256,_that.audioContentType,_that.language,_that.accent,_that.level,_that.topicId,_that.topicName,_that.kind,_that.phrases);case _:
   return null;
 
 }
@@ -230,7 +234,7 @@ return $default(_that.id,_that.title,_that.audioId,_that.audioPath,_that.duratio
 @JsonSerializable()
 
 class _LessonModel extends LessonModel {
-  const _LessonModel({required this.id, required this.title, @JsonKey(name: 'audio_id') required this.audioId, @JsonKey(name: 'audio_path') required this.audioPath, @JsonKey(name: 'duration_ms') required this.durationMs, @JsonKey(name: 'created_at') required this.createdAt, @JsonKey(name: 'updated_at') required this.updatedAt, required this.version, required final  List<SegmentModel> segments, @JsonKey(name: 'is_public') this.isPublic = true, @JsonKey(name: 'audio_sha256') this.audioSha256 = '', @JsonKey(name: 'audio_content_type') this.audioContentType = '', this.language = '', this.accent = '', this.level = '', @JsonKey(name: 'topic_id') this.topicId = '', @JsonKey(name: 'topic_name') this.topicName = ''}): _segments = segments,super._();
+  const _LessonModel({required this.id, required this.title, @JsonKey(name: 'audio_id') required this.audioId, @JsonKey(name: 'audio_path') required this.audioPath, @JsonKey(name: 'duration_ms') required this.durationMs, @JsonKey(name: 'created_at') required this.createdAt, @JsonKey(name: 'updated_at') required this.updatedAt, required this.version, required final  List<SegmentModel> segments, @JsonKey(name: 'is_public') this.isPublic = true, @JsonKey(name: 'audio_sha256') this.audioSha256 = '', @JsonKey(name: 'audio_content_type') this.audioContentType = '', this.language = '', this.accent = '', this.level = '', @JsonKey(name: 'topic_id') this.topicId = '', @JsonKey(name: 'topic_name') this.topicName = '', this.kind = 'story', @JsonKey(includeFromJson: false, includeToJson: false) final  List<PhraseModel> phrases = const []}): _segments = segments,_phrases = phrases,super._();
   factory _LessonModel.fromJson(Map<String, dynamic> json) => _$LessonModelFromJson(json);
 
 @override final  String id;
@@ -261,6 +265,17 @@ class _LessonModel extends LessonModel {
 /// Lesson topic: id and name side by side.
 @override@JsonKey(name: 'topic_id') final  String topicId;
 @override@JsonKey(name: 'topic_name') final  String topicName;
+/// `story` or `expressions`.
+@override@JsonKey() final  String kind;
+/// Phrases of a phrase set; empty for a story.
+ final  List<PhraseModel> _phrases;
+/// Phrases of a phrase set; empty for a story.
+@override@JsonKey(includeFromJson: false, includeToJson: false) List<PhraseModel> get phrases {
+  if (_phrases is EqualUnmodifiableListView) return _phrases;
+  // ignore: implicit_dynamic_type
+  return EqualUnmodifiableListView(_phrases);
+}
+
 
 /// Create a copy of LessonModel
 /// with the given fields replaced by the non-null parameter values.
@@ -275,16 +290,16 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _LessonModel&&(identical(other.id, id) || other.id == id)&&(identical(other.title, title) || other.title == title)&&(identical(other.audioId, audioId) || other.audioId == audioId)&&(identical(other.audioPath, audioPath) || other.audioPath == audioPath)&&(identical(other.durationMs, durationMs) || other.durationMs == durationMs)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.updatedAt, updatedAt) || other.updatedAt == updatedAt)&&(identical(other.version, version) || other.version == version)&&const DeepCollectionEquality().equals(other._segments, _segments)&&(identical(other.isPublic, isPublic) || other.isPublic == isPublic)&&(identical(other.audioSha256, audioSha256) || other.audioSha256 == audioSha256)&&(identical(other.audioContentType, audioContentType) || other.audioContentType == audioContentType)&&(identical(other.language, language) || other.language == language)&&(identical(other.accent, accent) || other.accent == accent)&&(identical(other.level, level) || other.level == level)&&(identical(other.topicId, topicId) || other.topicId == topicId)&&(identical(other.topicName, topicName) || other.topicName == topicName));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _LessonModel&&(identical(other.id, id) || other.id == id)&&(identical(other.title, title) || other.title == title)&&(identical(other.audioId, audioId) || other.audioId == audioId)&&(identical(other.audioPath, audioPath) || other.audioPath == audioPath)&&(identical(other.durationMs, durationMs) || other.durationMs == durationMs)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.updatedAt, updatedAt) || other.updatedAt == updatedAt)&&(identical(other.version, version) || other.version == version)&&const DeepCollectionEquality().equals(other._segments, _segments)&&(identical(other.isPublic, isPublic) || other.isPublic == isPublic)&&(identical(other.audioSha256, audioSha256) || other.audioSha256 == audioSha256)&&(identical(other.audioContentType, audioContentType) || other.audioContentType == audioContentType)&&(identical(other.language, language) || other.language == language)&&(identical(other.accent, accent) || other.accent == accent)&&(identical(other.level, level) || other.level == level)&&(identical(other.topicId, topicId) || other.topicId == topicId)&&(identical(other.topicName, topicName) || other.topicName == topicName)&&(identical(other.kind, kind) || other.kind == kind)&&const DeepCollectionEquality().equals(other._phrases, _phrases));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,id,title,audioId,audioPath,durationMs,createdAt,updatedAt,version,const DeepCollectionEquality().hash(_segments),isPublic,audioSha256,audioContentType,language,accent,level,topicId,topicName);
+int get hashCode => Object.hashAll([runtimeType,id,title,audioId,audioPath,durationMs,createdAt,updatedAt,version,const DeepCollectionEquality().hash(_segments),isPublic,audioSha256,audioContentType,language,accent,level,topicId,topicName,kind,const DeepCollectionEquality().hash(_phrases)]);
 
 @override
 String toString() {
-  return 'LessonModel(id: $id, title: $title, audioId: $audioId, audioPath: $audioPath, durationMs: $durationMs, createdAt: $createdAt, updatedAt: $updatedAt, version: $version, segments: $segments, isPublic: $isPublic, audioSha256: $audioSha256, audioContentType: $audioContentType, language: $language, accent: $accent, level: $level, topicId: $topicId, topicName: $topicName)';
+  return 'LessonModel(id: $id, title: $title, audioId: $audioId, audioPath: $audioPath, durationMs: $durationMs, createdAt: $createdAt, updatedAt: $updatedAt, version: $version, segments: $segments, isPublic: $isPublic, audioSha256: $audioSha256, audioContentType: $audioContentType, language: $language, accent: $accent, level: $level, topicId: $topicId, topicName: $topicName, kind: $kind, phrases: $phrases)';
 }
 
 
@@ -295,7 +310,7 @@ abstract mixin class _$LessonModelCopyWith<$Res> implements $LessonModelCopyWith
   factory _$LessonModelCopyWith(_LessonModel value, $Res Function(_LessonModel) _then) = __$LessonModelCopyWithImpl;
 @override @useResult
 $Res call({
- String id, String title,@JsonKey(name: 'audio_id') String audioId,@JsonKey(name: 'audio_path') String audioPath,@JsonKey(name: 'duration_ms') int durationMs,@JsonKey(name: 'created_at') DateTime createdAt,@JsonKey(name: 'updated_at') DateTime updatedAt, int version, List<SegmentModel> segments,@JsonKey(name: 'is_public') bool isPublic,@JsonKey(name: 'audio_sha256') String audioSha256,@JsonKey(name: 'audio_content_type') String audioContentType, String language, String accent, String level,@JsonKey(name: 'topic_id') String topicId,@JsonKey(name: 'topic_name') String topicName
+ String id, String title,@JsonKey(name: 'audio_id') String audioId,@JsonKey(name: 'audio_path') String audioPath,@JsonKey(name: 'duration_ms') int durationMs,@JsonKey(name: 'created_at') DateTime createdAt,@JsonKey(name: 'updated_at') DateTime updatedAt, int version, List<SegmentModel> segments,@JsonKey(name: 'is_public') bool isPublic,@JsonKey(name: 'audio_sha256') String audioSha256,@JsonKey(name: 'audio_content_type') String audioContentType, String language, String accent, String level,@JsonKey(name: 'topic_id') String topicId,@JsonKey(name: 'topic_name') String topicName, String kind,@JsonKey(includeFromJson: false, includeToJson: false) List<PhraseModel> phrases
 });
 
 
@@ -312,7 +327,7 @@ class __$LessonModelCopyWithImpl<$Res>
 
 /// Create a copy of LessonModel
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? title = null,Object? audioId = null,Object? audioPath = null,Object? durationMs = null,Object? createdAt = null,Object? updatedAt = null,Object? version = null,Object? segments = null,Object? isPublic = null,Object? audioSha256 = null,Object? audioContentType = null,Object? language = null,Object? accent = null,Object? level = null,Object? topicId = null,Object? topicName = null,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? title = null,Object? audioId = null,Object? audioPath = null,Object? durationMs = null,Object? createdAt = null,Object? updatedAt = null,Object? version = null,Object? segments = null,Object? isPublic = null,Object? audioSha256 = null,Object? audioContentType = null,Object? language = null,Object? accent = null,Object? level = null,Object? topicId = null,Object? topicName = null,Object? kind = null,Object? phrases = null,}) {
   return _then(_LessonModel(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,title: null == title ? _self.title : title // ignore: cast_nullable_to_non_nullable
@@ -331,7 +346,9 @@ as String,accent: null == accent ? _self.accent : accent // ignore: cast_nullabl
 as String,level: null == level ? _self.level : level // ignore: cast_nullable_to_non_nullable
 as String,topicId: null == topicId ? _self.topicId : topicId // ignore: cast_nullable_to_non_nullable
 as String,topicName: null == topicName ? _self.topicName : topicName // ignore: cast_nullable_to_non_nullable
-as String,
+as String,kind: null == kind ? _self.kind : kind // ignore: cast_nullable_to_non_nullable
+as String,phrases: null == phrases ? _self._phrases : phrases // ignore: cast_nullable_to_non_nullable
+as List<PhraseModel>,
   ));
 }
 

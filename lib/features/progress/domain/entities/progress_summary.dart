@@ -1,15 +1,17 @@
-/// Activity day: minutes and repeats for one server UTC day.
+/// Activity day: minutes, repeats and learned phrases for one server UTC day.
 class ProgressDay {
   const ProgressDay({
     required this.day,
     required this.listenedMs,
     required this.segmentRepeats,
+    this.phrasesLearned = 0,
   });
 
   factory ProgressDay.fromJson(Map<String, dynamic> json) => ProgressDay(
     day: json['day'] as String? ?? '',
     listenedMs: (json['listened_ms'] as num?)?.toInt() ?? 0,
     segmentRepeats: (json['segment_repeats'] as num?)?.toInt() ?? 0,
+    phrasesLearned: (json['phrases_learned'] as num?)?.toInt() ?? 0,
   );
 
   /// Date in `YYYY-MM-DD` format.
@@ -17,10 +19,14 @@ class ProgressDay {
   final int listenedMs;
   final int segmentRepeats;
 
+  /// Phrases that first reached five stars on this day.
+  final int phrasesLearned;
+
   Map<String, dynamic> toJson() => {
     'day': day,
     'listened_ms': listenedMs,
     'segment_repeats': segmentRepeats,
+    'phrases_learned': phrasesLearned,
   };
 
   int get listenedMinutes => listenedMs ~/ 60000;
@@ -32,22 +38,28 @@ class ProgressTotals {
     required this.listenedMs,
     required this.segmentRepeats,
     required this.lessonsCompleted,
+    this.phrasesLearned = 0,
   });
 
   factory ProgressTotals.fromJson(Map<String, dynamic> json) => ProgressTotals(
     listenedMs: (json['listened_ms'] as num?)?.toInt() ?? 0,
     segmentRepeats: (json['segment_repeats'] as num?)?.toInt() ?? 0,
     lessonsCompleted: (json['lessons_completed'] as num?)?.toInt() ?? 0,
+    phrasesLearned: (json['phrases_learned'] as num?)?.toInt() ?? 0,
   );
 
   final int listenedMs;
   final int segmentRepeats;
   final int lessonsCompleted;
 
+  /// Items currently rated with five stars.
+  final int phrasesLearned;
+
   Map<String, dynamic> toJson() => {
     'listened_ms': listenedMs,
     'segment_repeats': segmentRepeats,
     'lessons_completed': lessonsCompleted,
+    'phrases_learned': phrasesLearned,
   };
 
   int get listenedMinutes => listenedMs ~/ 60000;
@@ -61,7 +73,6 @@ class ProgressSummary {
     required this.weekMinutes,
     required this.week,
     required this.recentLessonIds,
-    required this.completionReps,
     this.dailyGoalMinutes,
   });
 
@@ -92,8 +103,6 @@ class ProgressSummary {
             id as String,
         ],
         dailyGoalMinutes: (json['daily_goal_minutes'] as num?)?.toInt(),
-        // Completion threshold; mirrors `GET /v1/settings`.
-        completionReps: (json['completion_reps'] as num?)?.toInt() ?? 1,
       );
 
   final ProgressDay today;
@@ -108,9 +117,6 @@ class ProgressSummary {
   /// The five most recent lessons for the continue block.
   final List<String> recentLessonIds;
 
-  /// How many repeats per segment mark a lesson as done.
-  final int completionReps;
-
   /// Daily goal from the profile; `null` when unset.
   final int? dailyGoalMinutes;
 
@@ -121,7 +127,6 @@ class ProgressSummary {
     'week_minutes': weekMinutes,
     'week': [for (final day in week) day.toJson()],
     'recent_lesson_ids': recentLessonIds,
-    'completion_reps': completionReps,
     'daily_goal_minutes': ?dailyGoalMinutes,
   };
 }

@@ -3,6 +3,7 @@ import 'dart:async';
 import '../entities/audio_upload.dart';
 import '../entities/lesson.dart';
 import '../entities/lesson_category.dart';
+import '../entities/phrase.dart';
 import '../entities/tts_quota.dart';
 import '../entities/tts_voice.dart';
 
@@ -47,6 +48,15 @@ abstract interface class LessonRepository {
     Object? cancel,
   });
 
+  /// Voices one batch of phrases with AI and stores every file in the audio
+  /// cache; the result keeps the order of [texts].
+  Future<List<AudioUpload>> synthesizePhrases({
+    required List<String> texts,
+    String? voice,
+    String? accent,
+    Object? cancel,
+  });
+
   /// Voices the provider offers for the studied language.
   Future<TtsVoices> ttsVoices();
 
@@ -73,6 +83,20 @@ abstract interface class LessonRepository {
     List<int>? boundaries,
     bool? isPublic,
   });
+
+  /// Creates a phrase set from already voiced phrases; a `null` [isPublic]
+  /// lets the server decide.
+  Future<Lesson> createPhraseSet({
+    required String title,
+    required List<Phrase> phrases,
+    required LessonLevel level,
+    String? accent,
+    String? topicId,
+    bool? isPublic,
+  });
+
+  /// Replaces a phrase set; a `null` [isPublic] leaves visibility untouched.
+  Future<Lesson> updatePhraseSet(Lesson lesson, {bool? isPublic});
 
   /// Updates a lesson; a `null` [isPublic] leaves visibility untouched.
   Future<void> updateLesson(Lesson lesson, {bool? isPublic});

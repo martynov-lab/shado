@@ -9,13 +9,17 @@ class LanguageSettingsSection extends StatelessWidget {
   const LanguageSettingsSection({
     super.key,
     required this.studiedLanguageLabel,
+    required this.translationLanguageLabel,
     required this.onEditLanguage,
+    required this.onEditTranslationLanguage,
     required this.onEditVoice,
     this.ttsVoiceLabel,
   });
 
   final String studiedLanguageLabel;
+  final String translationLanguageLabel;
   final VoidCallback onEditLanguage;
+  final VoidCallback onEditTranslationLanguage;
   final VoidCallback onEditVoice;
 
   /// Pass `null` to hide the voice row (it is for the owner only).
@@ -46,10 +50,11 @@ class LanguageSettingsSection extends StatelessWidget {
           title: 'Interface language',
           trailing: SettingsValue(label: 'English'),
         ),
-        const SettingsRow(
+        SettingsRow(
           icon: Icons.translate_rounded,
           title: 'Translation language',
-          trailing: SettingsValue(label: 'English'),
+          trailing: SettingsValue(label: translationLanguageLabel),
+          onTap: onEditTranslationLanguage,
         ),
       ],
     );

@@ -135,7 +135,7 @@ class LessonsModel extends ElementaryModel {
 
   Future<double> lessonProgress(Lesson lesson) => _getLessonProgress(
     lessonId: lesson.id,
-    segmentCount: lesson.segmentCount,
+    itemKeys: lesson.itemKeys,
   );
 
   Future<void> deleteLesson(String id) => _catalog.deleteLesson(id);

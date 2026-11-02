@@ -26,6 +26,7 @@ final reconnectSyncProvider = Provider<ReconnectSync>((ref) {
     catalog: ref.watch(lessonCatalogServiceProvider),
     reporter: ref.watch(progressReporterProvider),
     progressSummary: ref.watch(progressSummaryServiceProvider),
+    ratings: ref.watch(ratingServiceProvider),
   );
   ref.onDispose(sync.dispose);
   return sync;

@@ -1,26 +1,20 @@
-// Lesson progress math based on local repeat counters.
+// Lesson progress math based on star ratings.
 
-/// Whether the lesson is done: every segment repeated at least [target] times.
-bool progressIsComplete(Map<int, int> reps, int segmentCount, int target) {
-  if (segmentCount <= 0 || target <= 0) return false;
-  for (var i = 0; i < segmentCount; i++) {
-    if ((reps[i] ?? 0) < target) return false;
-  }
-  return true;
+import 'entities/item_rating.dart';
+
+/// Whether the lesson is done: every item rated with the top score.
+bool progressIsComplete(Map<String, int> stars, List<String> itemKeys) {
+  if (itemKeys.isEmpty) return false;
+  return itemKeys.every((key) => (stars[key] ?? 0) >= kMaxStars);
 }
 
-/// Completion share `0..1` — the averaged readiness of the segments.
-double lessonProgressFraction(
-  Map<int, int> reps,
-  int segmentCount,
-  int target,
-) {
-  if (segmentCount <= 0 || target <= 0) return 0;
-  var done = 0;
-  for (var i = 0; i < segmentCount; i++) {
-    final r = reps[i] ?? 0;
-    done += r < target ? r : target;
+/// Completion share `0..1` — the average rating over the top score; an
+/// unrated item counts as zero.
+double lessonProgressFraction(Map<String, int> stars, List<String> itemKeys) {
+  if (itemKeys.isEmpty) return 0;
+  var total = 0;
+  for (final key in itemKeys) {
+    total += (stars[key] ?? 0).clamp(0, kMaxStars);
   }
-  final fraction = done / (segmentCount * target);
-  return fraction.clamp(0, 1).toDouble();
+  return (total / (itemKeys.length * kMaxStars)).clamp(0, 1).toDouble();
 }

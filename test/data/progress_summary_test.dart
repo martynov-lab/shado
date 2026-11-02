@@ -21,7 +21,6 @@ void main() {
         ],
         'recent_lesson_ids': ['a', 'b'],
         'daily_goal_minutes': 20,
-        'completion_reps': 10,
       });
 
       expect(summary.today.listenedMinutes, 3);
@@ -30,7 +29,20 @@ void main() {
       expect(summary.week, hasLength(1));
       expect(summary.recentLessonIds, ['a', 'b']);
       expect(summary.dailyGoalMinutes, 20);
-      expect(summary.completionReps, 10);
+    });
+
+    test('reads learned phrases in totals, today and the week', () {
+      final summary = ProgressSummary.fromJson({
+        'today': {'day': '2026-11-02', 'phrases_learned': 2},
+        'totals': {'phrases_learned': 7},
+        'week': [
+          {'day': '2026-11-02', 'phrases_learned': 2},
+        ],
+      });
+
+      expect(summary.totals.phrasesLearned, 7);
+      expect(summary.today.phrasesLearned, 2);
+      expect(summary.week.single.phrasesLearned, 2);
     });
 
     test('missing fields fall back to safe defaults', () {
@@ -41,8 +53,7 @@ void main() {
       expect(summary.week, isEmpty);
       expect(summary.recentLessonIds, isEmpty);
       expect(summary.dailyGoalMinutes, isNull);
-      // The default threshold is non-zero so the bar never divides by zero.
-      expect(summary.completionReps, greaterThan(0));
+      expect(summary.totals.phrasesLearned, 0);
     });
   });
 }

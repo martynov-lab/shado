@@ -15,6 +15,7 @@ class LessonSegmentRow extends StatefulWidget {
     required this.isPlaying,
     required this.isSelecting,
     required this.isSelected,
+    required this.stars,
     required this.onPressed,
     required this.onSelectPressed,
   });
@@ -27,6 +28,9 @@ class LessonSegmentRow extends StatefulWidget {
 
   final bool isSelecting;
   final bool isSelected;
+
+  /// The segment rating, `0` when not rated.
+  final int stars;
 
   final VoidCallback onPressed;
   final VoidCallback onSelectPressed;
@@ -105,6 +109,14 @@ class _LessonSegmentRowState extends State<LessonSegmentRow> {
                     ],
                   ),
                 ),
+                if (widget.stars > 0) ...[
+                  const SizedBox(width: AppSpacing.s2),
+                  const AppStar(filled: true, size: AppSizes.iconSm),
+                  Text(
+                    '${widget.stars}',
+                    style: AppText.caption.copyWith(color: colors.text2),
+                  ),
+                ],
                 if (widget.isPlaying) ...[
                   const SizedBox(width: AppSpacing.s2),
                   AppIcon(

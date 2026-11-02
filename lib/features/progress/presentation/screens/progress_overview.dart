@@ -72,11 +72,12 @@ class ProgressOverview {
         'min',
         'today ${today.listenedMinutes}',
       ),
-      ('Repeats', '${totals.segmentRepeats}', null, 'total'),
+      ('Learned', '${totals.phrasesLearned}', null, _learnedToday(today)),
       ('Lessons', '${totals.lessonsCompleted}', null, 'completed'),
     ];
     final statsWide = <(String, String, String?, String)>[
       ...stats,
+      ('Repeats', '${totals.segmentRepeats}', null, 'total'),
       (
         'Daily avg',
         '$avgPerDay',
@@ -136,6 +137,10 @@ class ProgressOverview {
     'Sa',
     'Su',
   ];
+
+  /// Hint under the learned phrases tile.
+  static String _learnedToday(ProgressDay today) =>
+      today.phrasesLearned > 0 ? '+${today.phrasesLearned} today' : 'phrases';
 
   static String _weekdayLabel(String day) {
     final date = DateTime.tryParse(day);

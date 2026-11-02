@@ -25,7 +25,7 @@ import 'add_lesson_wm.dart';
 class AddLessonPage extends ElementaryWidget<AddLessonWidgetModel> {
   const AddLessonPage({super.key}) : super(addLessonWidgetModelFactory);
 
-  static const String routePath = '/add';
+  static const String routePath = '/add/story';
 
   @override
   Widget build(AddLessonWidgetModel wm) {

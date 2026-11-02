@@ -26,6 +26,7 @@ import 'package:shado/features/lessons/domain/repositories/waveform_repository.d
 import 'package:shado/features/lessons/domain/services/lesson_catalog_service.dart';
 import 'package:shado/features/lessons/domain/services/lesson_download_service.dart';
 import 'package:shado/features/lessons/domain/services/tts_voice_service.dart';
+import 'package:shado/features/lessons/domain/usecases/add_phrase_from_story.dart';
 import 'package:shado/features/lessons/domain/usecases/create_lesson.dart';
 import 'package:shado/features/lessons/domain/usecases/delete_lesson.dart';
 import 'package:shado/features/lessons/domain/usecases/get_lesson.dart';
@@ -35,6 +36,8 @@ import 'package:shado/features/lessons/domain/usecases/get_tts_quota.dart';
 import 'package:shado/features/lessons/domain/usecases/get_tts_voices.dart';
 import 'package:shado/features/lessons/domain/usecases/preview_tts_voice.dart';
 import 'package:shado/features/lessons/domain/usecases/sync_lessons.dart';
+import 'package:shado/features/lessons/domain/usecases/save_phrase_set.dart';
+import 'package:shado/features/lessons/domain/usecases/synthesize_phrases.dart';
 import 'package:shado/features/lessons/domain/usecases/synthesize_tts.dart';
 import 'package:shado/features/lessons/domain/usecases/update_lesson_content.dart';
 import 'package:shado/features/lessons/domain/usecases/upload_audio.dart';
@@ -115,6 +118,18 @@ final uploadAudioProvider = Provider<UploadAudio>(
 
 final synthesizeTtsProvider = Provider<SynthesizeTts>(
   (ref) => SynthesizeTts(ref.watch(lessonRepositoryProvider)),
+);
+
+final synthesizePhrasesProvider = Provider<SynthesizePhrases>(
+  (ref) => SynthesizePhrases(ref.watch(lessonRepositoryProvider)),
+);
+
+final addPhraseFromStoryProvider = Provider<AddPhraseFromStory>(
+  (ref) => AddPhraseFromStory(ref.watch(lessonRepositoryProvider)),
+);
+
+final savePhraseSetProvider = Provider<SavePhraseSet>(
+  (ref) => SavePhraseSet(ref.watch(lessonRepositoryProvider)),
 );
 
 final getTtsQuotaProvider = Provider<GetTtsQuota>(

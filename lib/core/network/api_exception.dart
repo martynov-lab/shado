@@ -15,6 +15,11 @@ enum ApiErrorCode {
   // AI voice-over codes.
   ttsQuotaExceeded('tts_quota_exceeded'),
   ttsUnavailable('tts_unavailable'),
+  ttsSplitFailed('tts_split_failed'),
+  // Translation codes.
+  translationQuotaExceeded('translation_quota_exceeded'),
+  translationUnavailable('translation_unavailable'),
+  unsupportedLanguage('unsupported_language'),
   internalError('internal_error'),
   unknown('unknown');
 

@@ -18,13 +18,10 @@ class ProgressReporter {
 
   Future<void> addListened(int ms) => _repository.addListened(ms);
 
-  /// Counts one pass of a range for each of its segments.
-  Future<void> recordSegmentPass(
-    String lessonId,
-    Iterable<int> segmentIndices,
-  ) async {
-    for (final index in segmentIndices) {
-      await _repository.bumpSegment(lessonId, index);
+  /// Counts [count] segment repeats in the daily activity.
+  Future<void> recordRepeats(int count) async {
+    for (var i = 0; i < count; i++) {
+      await _repository.bumpSegment();
     }
   }
 
@@ -55,17 +52,15 @@ class ProgressReporter {
     }
   }
 
-  /// Sends `completed` once, after every segment has been repeated
-  /// [completionReps] times.
+  /// Sends `completed` once, after every item of [itemKeys] got five stars.
   Future<void> reportCompletedIfDone({
     required String lessonId,
-    required int segmentCount,
-    required int completionReps,
+    required List<String> itemKeys,
   }) async {
     try {
       if (await _repository.isCompletedSent(lessonId)) return;
-      final reps = await _repository.readReps(lessonId);
-      if (!progressIsComplete(reps, segmentCount, completionReps)) return;
+      final stars = await _repository.readStars(lessonId);
+      if (!progressIsComplete(stars, itemKeys)) return;
       final summary = await _repository.reportEvents(
         completed: true,
         lessonId: lessonId,

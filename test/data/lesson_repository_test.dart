@@ -16,10 +16,52 @@ import 'package:shado/features/lessons/data/repositories/lesson_repository_impl.
 import 'package:shado/features/lessons/domain/entities/folder.dart';
 import 'package:shado/features/lessons/domain/entities/lesson.dart';
 import 'package:shado/features/lessons/domain/entities/lesson_category.dart';
+import 'package:shado/features/lessons/domain/entities/phrase.dart';
 import 'package:shado/features/lessons/domain/entities/segment.dart';
 import 'package:shado/features/lessons/domain/entities/tts_quota.dart';
 import 'package:shado/features/lessons/domain/entities/tts_voice.dart';
 import 'package:shado/features/lessons/domain/entities/waveform_peaks.dart';
+
+/// The server response for a phrase set; each phrase has its own audio.
+Map<String, dynamic> expressionsJson({
+  String id = 'set-1',
+  List<String> audioIds = const ['p-audio-1', 'p-audio-2'],
+}) {
+  return {
+    'id': id,
+    'kind': 'expressions',
+    'title': 'At the airport',
+    'duration_ms': 4000,
+    'created_at': '2026-11-02T09:00:00.000Z',
+    'updated_at': '2026-11-02T10:00:00.000Z',
+    'version': 1,
+    'language': 'en',
+    'accent': 'US',
+    'level': 'a2',
+    'is_public': false,
+    'topic': const {'id': 'topic-1', 'name': 'Travel'},
+    'phrases': [
+      for (var i = 0; i < audioIds.length; i++)
+        {
+          'id': 'phrase-$i',
+          'text': 'Phrase $i',
+          'translations': {'ru': 'Фраза $i'},
+          'audio': {
+            'id': audioIds[i],
+            'url': 'http://localhost/v1/audio/${audioIds[i]}/file',
+            'content_type': 'audio/wav',
+            'size_bytes': 500,
+            'sha256': 'abc',
+            'duration_ms': 2000,
+          },
+          'duration_ms': 2000,
+          'start_ms': null,
+          'end_ms': null,
+          'source_lesson_id': null,
+        },
+    ],
+  };
+}
 
 /// The server response for a lesson; segments come back as they were sent.
 Map<String, dynamic> lessonJson({
@@ -113,8 +155,9 @@ class FakeLocalDataSource implements LessonLocalDataSource {
   }
 
   @override
-  Future<Set<String>> usedAudioIds() async =>
-      lessons.values.map((lesson) => lesson.audioId).toSet();
+  Future<Set<String>> usedAudioIds() async => {
+    for (final lesson in lessons.values) ...lesson.audioIds,
+  };
 
   @override
   Future<Set<String>> downloadedIds() async => Set.of(downloaded);
@@ -170,7 +213,10 @@ class FakeLocalDataSource implements LessonLocalDataSource {
 }
 
 class FakeRemoteDataSource implements LessonRemoteDataSource {
-  FakeRemoteDataSource({this.pages = const [], this.onPut});
+  FakeRemoteDataSource({this.pages = const [], this.onPut, this.lesson});
+
+  /// What `getLesson` answers with; a story by default.
+  final Map<String, dynamic>? lesson;
 
   /// Pages returned by `list` in order.
   final List<LessonPage> pages;
@@ -205,7 +251,7 @@ class FakeRemoteDataSource implements LessonRemoteDataSource {
   @override
   Future<LessonDto> getLesson(String id) async {
     if (offline) throw const NetworkFailure('offline');
-    return LessonDto.fromJson(lessonJson(id: id));
+    return LessonDto.fromJson(lesson ?? lessonJson(id: id));
   }
 
   @override
@@ -239,6 +285,28 @@ class FakeRemoteDataSource implements LessonRemoteDataSource {
         segments: [for (final segment in segments) segment.toJson()],
       ),
     );
+  }
+
+  /// Phrase sets sent with `PUT` and the version from `If-Match`.
+  final List<({List<Phrase> phrases, int? version})> putSets = [];
+
+  @override
+  Future<LessonDto> putPhraseSet({
+    required String id,
+    required String title,
+    required DateTime createdAt,
+    required List<Phrase> phrases,
+    required LessonLevel level,
+    int? version,
+    String? accent,
+    String? topicId,
+    bool? isPublic,
+  }) async {
+    putSets.add((phrases: phrases, version: version));
+    return LessonDto.fromJson({
+      ...expressionsJson(id: id),
+      'version': (version ?? 0) + 1,
+    });
   }
 
   @override
@@ -327,6 +395,29 @@ class FakeTtsRemote implements TtsRemoteDataSource {
       'sha256': 'def',
       'duration_ms': 4200,
     });
+  }
+
+  /// Text batches of each batch voice-over.
+  final List<List<String>> batches = [];
+
+  @override
+  Future<List<AudioDto>> synthesizeBatch({
+    required List<String> texts,
+    String? voice,
+    String? accent,
+    CancelToken? cancelToken,
+  }) async {
+    batches.add(texts);
+    return [
+      for (var i = 0; i < texts.length; i++)
+        AudioDto.fromJson({
+          'id': 'batch-$i',
+          'content_type': 'audio/wav',
+          'size_bytes': 100,
+          'sha256': 'def',
+          'duration_ms': 1500,
+        }),
+    ];
   }
 
   @override
@@ -801,6 +892,130 @@ void main() {
 
       expect(local.lessons.keys, containsAll(['a', 'b']));
       expect(remote.sinceCalls, hasLength(2));
+    });
+  });
+
+  group('phrase sets', () {
+    test('opening downloads every phrase file once', () async {
+      final repository = build(FakeRemoteDataSource(lesson: expressionsJson()));
+
+      final lesson = await repository.getLesson('set-1');
+      await repository.getLesson('set-1');
+
+      expect(audio.downloads, 2);
+      expect(lesson!.isExpressions, isTrue);
+      expect(lesson.phrases.map((p) => p.audioPath), [
+        '/cache/p-audio-1.wav',
+        '/cache/p-audio-2.wav',
+      ]);
+      expect(lesson.phrases.first.translationFor('ru'), 'Фраза 0');
+    });
+
+    test('phrases sharing a file download it once', () async {
+      final repository = build(
+        FakeRemoteDataSource(
+          lesson: expressionsJson(audioIds: const ['same', 'same']),
+        ),
+      );
+
+      await repository.getLesson('set-1');
+
+      expect(audio.downloads, 1);
+    });
+
+    test('a download reports the progress across all files', () async {
+      final repository = build(FakeRemoteDataSource(lesson: expressionsJson()));
+
+      await repository.downloadLesson('set-1');
+
+      expect(cache.files, containsAll(['p-audio-1', 'p-audio-2']));
+      expect(await repository.downloadedLessonIds(), {'set-1'});
+    });
+
+    test('phrase files of a downloaded set survive the cache cleanup', () async {
+      final repository = build(FakeRemoteDataSource(lesson: expressionsJson()));
+      await repository.downloadLesson('set-1');
+
+      await repository.syncLessons();
+
+      expect(cache.retained.last, containsAll(['p-audio-1', 'p-audio-2']));
+      expect(cache.kept.last, {'p-audio-1', 'p-audio-2'});
+    });
+
+    test('a sync keeps the downloaded phrase files of a changed set', () async {
+      final repository = build(
+        FakeRemoteDataSource(
+          lesson: expressionsJson(),
+          pages: [
+            LessonPage(
+              items: [
+                LessonDto.fromJson(
+                  expressionsJson(audioIds: const ['p-audio-1', 'p-audio-3']),
+                ),
+              ],
+            ),
+          ],
+        ),
+      );
+      await repository.getLesson('set-1');
+
+      await repository.syncLessons();
+
+      final phrases = local.lessons['set-1']!.phrases;
+      expect(phrases.first.audioPath, '/cache/p-audio-1.wav');
+      expect(phrases.last.audioPath, isEmpty);
+    });
+
+    test('offline a set without its files on disk fails as no network', () async {
+      final remote = FakeRemoteDataSource(lesson: expressionsJson());
+      final repository = build(remote);
+      await repository.getLesson('set-1');
+      remote.offline = true;
+
+      // The fake cache paths do not exist on disk.
+      expect(repository.getLesson('set-1'), throwsA(isA<NetworkFailure>()));
+    });
+  });
+
+  group('saving phrase sets', () {
+    test('batch voice-over caches every file and keeps the order', () async {
+      final repository = build(FakeRemoteDataSource());
+
+      final uploads = await repository.synthesizePhrases(texts: ['A', 'B']);
+
+      expect(tts.batches.single, ['A', 'B']);
+      expect(uploads.map((u) => u.audioId), ['batch-0', 'batch-1']);
+      expect(uploads.first.localPath, '/cache/batch-0.wav');
+      expect(uploads.first.durationMs, 1500);
+    });
+
+    test('a new set lands in the cache with its phrase files', () async {
+      final remote = FakeRemoteDataSource();
+      final repository = build(remote);
+
+      final lesson = await repository.createPhraseSet(
+        title: 'At the airport',
+        phrases: const [
+          Phrase(id: 'p0', text: 'Hi', audioId: 'p-audio-1', durationMs: 900),
+        ],
+        level: LessonLevel.a2,
+      );
+
+      expect(remote.putSets.single.version, isNull);
+      expect(lesson.isExpressions, isTrue);
+      expect(local.lessons[lesson.id]!.phrases, hasLength(2));
+      expect(cache.files, containsAll(['p-audio-1', 'p-audio-2']));
+    });
+
+    test('an edit goes with the version from the cache', () async {
+      final remote = FakeRemoteDataSource(lesson: expressionsJson());
+      final repository = build(remote);
+      final lesson = (await repository.getLesson('set-1'))!;
+
+      await repository.updatePhraseSet(lesson);
+
+      expect(remote.putSets.single.version, 1);
+      expect(remote.putSets.single.phrases, lesson.phrases);
     });
   });
 

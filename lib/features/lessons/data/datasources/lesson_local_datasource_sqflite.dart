@@ -9,6 +9,7 @@ import '../../../../core/error/failures.dart';
 import '../../../../core/platform/platform_setup.dart';
 import '../../domain/entities/folder.dart';
 import '../models/lesson_model.dart';
+import '../models/phrase_model.dart';
 import '../models/segment_model.dart';
 import 'lesson_local_datasource.dart';
 
@@ -59,7 +60,7 @@ class SqfliteLessonLocalDataSource implements LessonLocalDataSource {
       final path = p.join(await _databaseDirectory(), _databaseName);
       final db = await openDatabase(
         path,
-        version: 7,
+        version: 8,
         onCreate: (db, version) => _createSchema(db),
         onUpgrade: (db, oldVersion, newVersion) async {
           // The cache is recreated, not migrated; `syncLessons` refills it.
@@ -102,7 +103,9 @@ class SqfliteLessonLocalDataSource implements LessonLocalDataSource {
         level TEXT NOT NULL DEFAULT '',
         topic_id TEXT NOT NULL DEFAULT '',
         topic_name TEXT NOT NULL DEFAULT '',
-        segments TEXT NOT NULL
+        segments TEXT NOT NULL,
+        kind TEXT NOT NULL DEFAULT 'story',
+        phrases TEXT NOT NULL DEFAULT '[]'
       )
     ''');
     await db.execute('''
@@ -251,14 +254,12 @@ class SqfliteLessonLocalDataSource implements LessonLocalDataSource {
   Future<Set<String>> usedAudioIds() async {
     try {
       final db = await _db();
-      final rows = await db.query(
-        _table,
-        columns: ['audio_id'],
-        distinct: true,
-      );
+      final rows = await db.query(_table, columns: ['audio_id', 'phrases']);
       return {
-        for (final row in rows)
-          if (row['audio_id'] case final String id) id,
+        for (final row in rows) ...[
+          if (row['audio_id'] case final String id when id.isNotEmpty) id,
+          for (final phrase in _phrasesOf(row)) phrase.audio.id,
+        ],
       };
     } on Failure {
       rethrow;
@@ -575,6 +576,10 @@ class SqfliteLessonLocalDataSource implements LessonLocalDataSource {
     'segments': jsonEncode(
       lesson.segments.map((segment) => segment.toJson()).toList(),
     ),
+    'kind': lesson.kind,
+    'phrases': jsonEncode([
+      for (final phrase in lesson.phrases) phrase.toCacheJson(),
+    ]),
   };
 
   LessonModel _fromRow(Map<String, Object?> row) {
@@ -599,6 +604,17 @@ class SqfliteLessonLocalDataSource implements LessonLocalDataSource {
       segments: rawSegments
           .map((json) => SegmentModel.fromJson(json as Map<String, dynamic>))
           .toList(),
+      kind: row['kind'] as String? ?? 'story',
+      phrases: _phrasesOf(row),
     );
+  }
+
+  List<PhraseModel> _phrasesOf(Map<String, Object?> row) {
+    final raw = row['phrases'] as String?;
+    if (raw == null || raw.isEmpty) return const [];
+    return [
+      for (final json in jsonDecode(raw) as List<dynamic>)
+        PhraseModel.fromCacheJson(Map<String, dynamic>.from(json as Map)),
+    ];
   }
 }

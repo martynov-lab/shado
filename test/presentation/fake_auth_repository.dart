@@ -56,11 +56,15 @@ class FakeAuthRepository implements AuthRepository {
   Future<AuthUser> updateProfile({
     String? name,
     String? studiedLanguage,
+    String? translationLanguage,
     int? dailyGoalMinutes,
   }) async {
     if (profileError != null) throw profileError!;
     savedLanguages.add(studiedLanguage);
-    return _user = _user!.copyWith(studiedLanguage: studiedLanguage);
+    return _user = _user!.copyWith(
+      studiedLanguage: studiedLanguage,
+      translationLanguage: translationLanguage,
+    );
   }
 
   @override

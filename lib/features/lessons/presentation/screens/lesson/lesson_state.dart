@@ -1,4 +1,5 @@
 import '../../../../../core/constants/app_constants.dart';
+import '../../../../progress/domain/item_keys.dart';
 import '../../../domain/entities/lesson.dart';
 import '../../../domain/entities/segment.dart';
 import '../../../domain/entities/segment_range.dart';
@@ -68,6 +69,16 @@ class LessonState {
       for (var i = range.start; i <= range.end && i < segments.length; i++)
         segments[i].text,
     ].join(' ');
+  }
+
+  /// Rating keys of the shown range segments.
+  List<String> get playerItemKeys {
+    final range = playerRange;
+    final segments = lesson.segments;
+    return [
+      for (var i = range.start; i <= range.end && i < segments.length; i++)
+        segmentItemKey(segments[i].text),
+    ];
   }
 
   int get playerStartMs => lesson.segments[playerRange.start].startMs;

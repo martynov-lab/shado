@@ -16,6 +16,7 @@ import 'package:shado/di/progress_providers.dart';
 import 'package:shado/di/settings_providers.dart';
 import 'package:shado/features/lessons/domain/entities/audio_upload.dart';
 import 'package:shado/features/lessons/domain/entities/lesson.dart';
+import 'package:shado/features/lessons/domain/entities/phrase.dart';
 import 'package:shado/features/lessons/domain/entities/lesson_category.dart';
 import 'package:shado/features/lessons/domain/entities/segment.dart';
 import 'package:shado/features/lessons/domain/entities/segment_range.dart';
@@ -134,6 +135,28 @@ class _OneLessonRepository implements LessonRepository {
   Future<void> updateLesson(Lesson lesson, {bool? isPublic}) async {}
 
   @override
+  Future<List<AudioUpload>> synthesizePhrases({
+    required List<String> texts,
+    String? voice,
+    String? accent,
+    Object? cancel,
+  }) async => throw UnimplementedError();
+
+  @override
+  Future<Lesson> createPhraseSet({
+    required String title,
+    required List<Phrase> phrases,
+    required LessonLevel level,
+    String? accent,
+    String? topicId,
+    bool? isPublic,
+  }) async => throw UnimplementedError();
+
+  @override
+  Future<Lesson> updatePhraseSet(Lesson lesson, {bool? isPublic}) async =>
+      lesson;
+
+  @override
   Future<void> deleteLesson(String id) async {}
 
   @override
@@ -204,7 +227,6 @@ void main() {
       player: player,
       reporter: container.read(progressReporterProvider),
       settings: container.read(playbackSettingsServiceProvider),
-      threshold: container.read(completionThresholdServiceProvider),
       onChanged: (value) => state.value = value,
       onPosition: (_) {},
     );

@@ -1,3 +1,4 @@
+import '../../../../core/constants/app_constants.dart';
 import '../../../../core/network/api_client.dart';
 import '../models/folder_dto.dart';
 import '../models/lesson_dto.dart';
@@ -31,7 +32,11 @@ class ApiLibraryRemoteDataSource implements LibraryRemoteDataSource {
   Future<LibraryPage> list({int? limit, String? cursor}) async {
     final json = await _client.get(
       '/v1/library',
-      query: {'limit': ?limit, 'cursor': ?cursor},
+      query: {
+        'kind': kLessonKindsQuery,
+        'limit': ?limit,
+        'cursor': ?cursor,
+      },
     );
 
     final folders = <FolderDto>[];

@@ -159,7 +159,7 @@ void main() {
       expect(created.id, lessonId);
       expect(created.version, 1);
       expect(created.segments, hasLength(2));
-      expect(created.audio.id, audioId);
+      expect(created.audio?.id, audioId);
       expect(created.accent, 'US');
       expect(created.level, LessonLevel.b1);
       // No topic was passed, so the server must supply its own.

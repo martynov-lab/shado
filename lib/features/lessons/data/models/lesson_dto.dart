@@ -1,6 +1,8 @@
 import '../../domain/entities/lesson.dart';
 import '../../domain/entities/lesson_category.dart';
+import '../../domain/entities/lesson_kind.dart';
 import 'audio_dto.dart';
+import 'phrase_model.dart';
 import 'segment_model.dart';
 
 /// Lesson exactly as the server returns it.
@@ -12,8 +14,10 @@ class LessonDto {
     required this.createdAt,
     required this.updatedAt,
     required this.version,
-    required this.audio,
     required this.segments,
+    this.audio,
+    this.kind = LessonKind.story,
+    this.phrases = const [],
     this.isPublic = true,
     this.deletedAt,
     this.language = '',
@@ -43,7 +47,15 @@ class LessonDto {
     topic: json['topic'] is Map
         ? Topic.fromJson(Map<String, dynamic>.from(json['topic'] as Map))
         : null,
-    audio: AudioDto.fromJson(json['audio'] as Map<String, dynamic>),
+    kind: LessonKind.parse(json['kind'] as String?),
+    // A phrase set has no audio of its own: every phrase brings one.
+    audio: json['audio'] is Map
+        ? AudioDto.fromJson(Map<String, dynamic>.from(json['audio'] as Map))
+        : null,
+    phrases: [
+      for (final phrase in (json['phrases'] as List<dynamic>? ?? const []))
+        PhraseModel.fromJson(Map<String, dynamic>.from(phrase as Map)),
+    ],
     segments: [
       for (final segment in (json['segments'] as List<dynamic>? ?? const []))
         SegmentModel.fromJson(segment as Map<String, dynamic>),
@@ -73,8 +85,12 @@ class LessonDto {
   final LessonLevel? level;
   final Topic? topic;
 
-  final AudioDto audio;
+  final LessonKind kind;
+
+  /// The story audio; `null` for a phrase set.
+  final AudioDto? audio;
   final List<SegmentModel> segments;
+  final List<PhraseModel> phrases;
 
   bool get isDeleted => deletedAt != null;
 
@@ -86,6 +102,8 @@ class LessonDto {
     durationMs: durationMs,
     createdAt: createdAt,
     segments: segments.map((segment) => segment.toEntity()).toList(),
+    kind: kind,
+    phrases: [for (final phrase in phrases) phrase.toEntity()],
     isPublic: isPublic,
     language: language,
     accent: accent,

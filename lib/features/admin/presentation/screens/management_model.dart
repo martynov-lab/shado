@@ -1,46 +1,42 @@
-import 'dart:async';
-
 import 'package:elementary/elementary.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'package:shado/core/elementary/stream_value_notifier.dart';
 import 'package:shado/di/lesson_providers.dart';
 import 'package:shado/di/settings_providers.dart';
 
 import '../../../lessons/domain/entities/lesson_category.dart';
 import '../../../lessons/domain/repositories/topic_repository.dart';
-import '../../../settings/domain/services/completion_threshold_service.dart';
+import '../../../settings/domain/entities/tts_provider_settings.dart';
+import '../../../settings/domain/services/tts_provider_service.dart';
 
-/// Data and actions of the management screen: the completion threshold and
+/// Data and actions of the management screen: the voice-over provider and
 /// the topic directory.
 class ManagementModel extends ElementaryModel {
   ManagementModel(this._container)
-    : _threshold = _container.read(completionThresholdServiceProvider),
+    : _ttsProvider = _container.read(ttsProviderServiceProvider),
       _topics = _container.read(topicRepositoryProvider);
 
   final ProviderContainer _container;
-  final CompletionThresholdService _threshold;
+  final TtsProviderService _ttsProvider;
   final TopicRepository _topics;
 
-  late final ValueNotifier<int?> _completionReps = ValueNotifier(
-    _threshold.reps,
-  );
-  StreamSubscription<int>? _thresholdSubscription;
+  late final StreamValueNotifier<TtsProviderSettings?> _ttsProviderSettings =
+      StreamValueNotifier(_ttsProvider.settings, _ttsProvider.changes);
 
-  /// `null` until the threshold is loaded.
-  ValueListenable<int?> get completionReps => _completionReps;
+  /// `null` until the settings are loaded.
+  ValueListenable<TtsProviderSettings?> get ttsProvider =>
+      _ttsProviderSettings;
 
   @override
   void init() {
     super.init();
-    _thresholdSubscription = _threshold.changes.listen(
-      (reps) => _completionReps.value = reps,
-    );
-    _threshold.load().ignore();
+    _ttsProvider.load().ignore();
   }
 
-  /// Throws a `ValidationFailure` for a value out of range.
-  Future<void> saveCompletionReps(int reps) => _threshold.save(reps);
+  /// Switches the voice-over provider for every user.
+  Future<void> selectTtsProvider(String name) => _ttsProvider.change(name);
 
   Future<List<Topic>> loadTopics() => _topics.list();
 
@@ -58,8 +54,7 @@ class ManagementModel extends ElementaryModel {
 
   @override
   void dispose() {
-    _thresholdSubscription?.cancel();
-    _completionReps.dispose();
+    _ttsProviderSettings.dispose();
     super.dispose();
   }
 }

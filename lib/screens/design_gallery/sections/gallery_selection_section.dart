@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'package:shado/screens/design_gallery/gallery_speed.dart';
+import 'package:shado/theme/theme.dart';
 import 'package:shado/screens/design_gallery/widgets/gallery_label.dart';
 import 'package:shado/screens/design_gallery/widgets/gallery_section.dart';
 import 'package:shado/widgets/widgets.dart';
@@ -21,11 +22,12 @@ class _GallerySelectionSectionState extends State<GallerySelectionSection> {
   GallerySpeed _speed = GallerySpeed.normal;
   bool _switchOn = true;
   bool _switchOff = false;
+  int _stars = 3;
 
   @override
   Widget build(BuildContext context) => GallerySection(
     title: 'Selection',
-    caption: 'Checkboxes, radio buttons, switches and segments',
+    caption: 'Checkboxes, radio buttons, switches, segments and stars',
     child: Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -83,6 +85,12 @@ class _GallerySelectionSectionState extends State<GallerySelectionSection> {
               AppSegment(value: speed, label: speed.shortLabel),
           ],
         ),
+        const GalleryLabel('Star rating'),
+        AppStarRating(
+          value: _stars,
+          onChanged: (value) => setState(() => _stars = value),
+        ),
+        const AppStarRating(value: 4, size: AppSizes.iconSm),
       ],
     ),
   );

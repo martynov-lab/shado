@@ -22,9 +22,16 @@ then practise segment by segment with looping, speed control and translation.
 - **Shadowing player** — play, loop and select ranges of adjacent segments,
   0.5×–1.5× speed, full keyboard control on desktop, lock-screen and
   notification controls via a system media session.
+- **Phrase sets** — separate phrases with translations, voiced in one batch;
+  study them as cards in order or shuffled, loop a chosen deck, or recall a
+  phrase from its translation and flip the card. A phrase can be taken
+  straight from 1–2 story segments.
 - **AI voice-over** — generate audio for a text with text-to-speech and a
-  choice of voice and accent.
-- **Translation** of each segment into the learner's language.
+  choice of voice and accent; the owner switches the provider for everyone.
+- **Translation** of segments and phrases into the language picked in
+  settings.
+- **Star ratings** — rate how well each segment or phrase is known; lesson
+  progress and the learned phrase count follow the stars.
 - **Library and folders** — personal lessons, public lessons, topics and
   filters.
 - **Progress** — daily goal, streaks, minutes per day, activity heatmap,

@@ -8,6 +8,7 @@ import 'package:shado/di/auth_providers.dart';
 import 'package:shado/di/lesson_providers.dart';
 import 'package:shado/di/progress_providers.dart';
 import 'package:shado/features/progress/data/datasources/progress_remote_datasource.dart';
+import 'package:shado/features/progress/domain/entities/item_rating.dart';
 import 'package:shado/features/progress/domain/entities/progress_summary.dart';
 
 import 'fake_auth_repository.dart';
@@ -32,6 +33,14 @@ class _FakeProgressRemote implements ProgressRemoteDataSource {
 
   @override
   Future<List<ProgressDay>> getHistory({int days = 70}) async => const [];
+
+  @override
+  Future<int> putRatings(List<ItemRating> ratings) async => ratings.length;
+
+  @override
+  Future<({List<ItemRating> ratings, String serverTime})> getRatings({
+    String? since,
+  }) async => (ratings: const <ItemRating>[], serverTime: '');
 }
 
 final _summary = ProgressSummary(
@@ -48,7 +57,6 @@ final _summary = ProgressSummary(
   weekMinutes: 18,
   week: const [],
   recentLessonIds: const [],
-  completionReps: 3,
   dailyGoalMinutes: 30,
 );
 

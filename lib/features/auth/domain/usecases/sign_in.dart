@@ -63,6 +63,7 @@ class UpdateProfile {
   Future<AuthUser> call({
     String? name,
     String? studiedLanguage,
+    String? translationLanguage,
     int? dailyGoalMinutes,
   }) {
     final trimmedName = name?.trim();
@@ -80,6 +81,7 @@ class UpdateProfile {
     return _repository.updateProfile(
       name: trimmedName,
       studiedLanguage: studiedLanguage,
+      translationLanguage: translationLanguage,
       dailyGoalMinutes: dailyGoalMinutes,
     );
   }

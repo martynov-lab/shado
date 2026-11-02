@@ -2,41 +2,49 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:shado/features/progress/domain/progress_math.dart';
 
 void main() {
+  const keys = ['s:a', 's:b', 's:c'];
+
   group('progressIsComplete', () {
-    test('complete when every segment was repeated at least the threshold', () {
-      expect(progressIsComplete({0: 3, 1: 3, 2: 4}, 3, 3), isTrue);
+    test('complete when every item has five stars', () {
+      expect(progressIsComplete({'s:a': 5, 's:b': 5, 's:c': 5}, keys), isTrue);
     });
 
-    test('one segment below the threshold means not complete', () {
-      expect(progressIsComplete({0: 3, 1: 2, 2: 3}, 3, 3), isFalse);
+    test('one item below five stars means not complete', () {
+      expect(progressIsComplete({'s:a': 5, 's:b': 4, 's:c': 5}, keys), isFalse);
     });
 
-    test('a missing segment counts as zero', () {
-      expect(progressIsComplete({0: 3, 1: 3}, 3, 3), isFalse);
+    test('an unrated item counts as zero', () {
+      expect(progressIsComplete({'s:a': 5, 's:b': 5}, keys), isFalse);
     });
 
-    test('an empty lesson or a zero threshold is not complete', () {
-      expect(progressIsComplete({}, 0, 3), isFalse);
-      expect(progressIsComplete({0: 5}, 1, 0), isFalse);
+    test('an empty lesson is not complete', () {
+      expect(progressIsComplete({}, const []), isFalse);
+    });
+
+    test('ratings of items outside the lesson are ignored', () {
+      expect(progressIsComplete({'s:x': 5}, const ['s:a']), isFalse);
     });
   });
 
   group('lessonProgressFraction', () {
-    test('no repeats gives zero', () {
-      expect(lessonProgressFraction({}, 3, 3), 0);
+    test('no ratings gives zero', () {
+      expect(lessonProgressFraction({}, keys), 0);
     });
 
-    test('every segment at the threshold gives one', () {
-      expect(lessonProgressFraction({0: 3, 1: 3, 2: 3}, 3, 3), 1);
+    test('every item at five stars gives one', () {
+      expect(lessonProgressFraction({'s:a': 5, 's:b': 5, 's:c': 5}, keys), 1);
     });
 
-    test('half of the work is about 0.5', () {
-      // One segment done, another untouched: half of the progress.
-      expect(lessonProgressFraction({0: 3, 1: 0}, 2, 3), 0.5);
+    test('is the average rating over five', () {
+      // (5 + 3 + 0) / 15.
+      expect(
+        lessonProgressFraction({'s:a': 5, 's:b': 3}, keys),
+        closeTo(8 / 15, 1e-9),
+      );
     });
 
-    test('repeats beyond the threshold never exceed 1', () {
-      expect(lessonProgressFraction({0: 10, 1: 10}, 2, 3), 1);
+    test('an empty lesson gives zero', () {
+      expect(lessonProgressFraction({'s:a': 5}, const []), 0);
     });
   });
 }

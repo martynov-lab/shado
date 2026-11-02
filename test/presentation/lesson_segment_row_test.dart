@@ -30,6 +30,7 @@ void main() {
             isPlaying: false,
             isSelecting: isSelecting,
             isSelected: isSelected,
+            stars: 0,
             onPressed: () => taps.add('current'),
             onSelectPressed: () => taps.add('select'),
           ),

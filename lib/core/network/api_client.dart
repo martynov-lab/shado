@@ -63,6 +63,18 @@ class ApiClient {
     return response.data ?? const {};
   }
 
+  /// Like [get] for a response whose body is a JSON array.
+  Future<List<dynamic>> getList(
+    String path, {
+    Map<String, dynamic>? query,
+    Options? options,
+  }) async {
+    final response = await _send<List<dynamic>>(
+      () => dio.get(path, queryParameters: query, options: options),
+    );
+    return response.data ?? const [];
+  }
+
   /// Like [get] but keeps response headers — `ETag` arrives there.
   Future<Response<Map<String, dynamic>>> getRaw(
     String path, {
@@ -77,6 +89,7 @@ class ApiClient {
   Future<Response<Map<String, dynamic>>> post(
     String path, {
     Object? data,
+    Map<String, dynamic>? query,
     Options? options,
     void Function(int, int)? onSendProgress,
     CancelToken? cancelToken,
@@ -85,6 +98,7 @@ class ApiClient {
       () => dio.post(
         path,
         data: data,
+        queryParameters: query,
         options: options,
         onSendProgress: onSendProgress,
         cancelToken: cancelToken,
@@ -95,10 +109,16 @@ class ApiClient {
   Future<Response<Map<String, dynamic>>> put(
     String path, {
     Object? data,
+    Map<String, dynamic>? query,
     Options? options,
   }) {
     return _send<Map<String, dynamic>>(
-      () => dio.put(path, data: data, options: options),
+      () => dio.put(
+        path,
+        data: data,
+        queryParameters: query,
+        options: options,
+      ),
     );
   }
 

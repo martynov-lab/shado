@@ -30,6 +30,7 @@ abstract interface class AuthRepository {
   Future<AuthUser> updateProfile({
     String? name,
     String? studiedLanguage,
+    String? translationLanguage,
     int? dailyGoalMinutes,
   });
 

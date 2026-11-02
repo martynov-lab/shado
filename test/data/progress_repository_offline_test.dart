@@ -3,6 +3,7 @@ import 'package:shado/core/error/failures.dart';
 import 'package:shado/features/progress/data/datasources/progress_local_datasource.dart';
 import 'package:shado/features/progress/data/datasources/progress_remote_datasource.dart';
 import 'package:shado/features/progress/data/repositories/progress_repository_impl.dart';
+import 'package:shado/features/progress/domain/entities/item_rating.dart';
 import 'package:shado/features/progress/domain/entities/progress_summary.dart';
 
 /// A server returning [summary] and [history] until it goes [offline].
@@ -32,6 +33,14 @@ class _FakeProgressRemote implements ProgressRemoteDataSource {
     String? lessonId,
     bool? completed,
   }) async => summary;
+
+  @override
+  Future<int> putRatings(List<ItemRating> ratings) async => ratings.length;
+
+  @override
+  Future<({List<ItemRating> ratings, String serverTime})> getRatings({
+    String? since,
+  }) async => (ratings: const <ItemRating>[], serverTime: '');
 }
 
 /// Saved server responses in memory.
@@ -139,6 +148,5 @@ ProgressSummary _summary({required int minutes}) => ProgressSummary(
     ),
   ],
   recentLessonIds: const ['l1'],
-  completionReps: 3,
   dailyGoalMinutes: 30,
 );

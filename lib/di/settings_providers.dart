@@ -6,8 +6,8 @@ import 'package:shado/features/settings/data/repositories/playback_settings_repo
 import 'package:shado/features/settings/data/repositories/server_settings_repository_impl.dart';
 import 'package:shado/features/settings/domain/repositories/playback_settings_repository.dart';
 import 'package:shado/features/settings/domain/repositories/server_settings_repository.dart';
-import 'package:shado/features/settings/domain/services/completion_threshold_service.dart';
 import 'package:shado/features/settings/domain/services/playback_settings_service.dart';
+import 'package:shado/features/settings/domain/services/tts_provider_service.dart';
 
 final playbackSettingsRepositoryProvider = Provider<PlaybackSettingsRepository>(
   (ref) => PlaybackSettingsRepositoryImpl(),
@@ -33,12 +33,10 @@ final serverSettingsRepositoryProvider = Provider<ServerSettingsRepository>(
   ),
 );
 
-final completionThresholdServiceProvider = Provider<CompletionThresholdService>(
-  (ref) {
-    final service = CompletionThresholdService(
-      ref.watch(serverSettingsRepositoryProvider),
-    );
-    ref.onDispose(service.dispose);
-    return service;
-  },
-);
+final ttsProviderServiceProvider = Provider<TtsProviderService>((ref) {
+  final service = TtsProviderService(
+    ref.watch(serverSettingsRepositoryProvider),
+  );
+  ref.onDispose(service.dispose);
+  return service;
+});

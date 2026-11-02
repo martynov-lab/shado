@@ -9,6 +9,9 @@ String segmentsLabel(int count) {
 
 String _segmentsWord(int count) => count == 1 ? 'segment' : 'segments';
 
+/// Phrase count label with the right plural form.
+String phrasesLabel(int count) => '$count ${count == 1 ? 'phrase' : 'phrases'}';
+
 /// Lesson count label for a folder with the right plural form.
 String lessonsLabel(int count) {
   final word = _lessonsWord(count);
@@ -41,7 +44,10 @@ String lessonSubtitle(Lesson lesson) {
   return [
     if (lesson.topic != null && lesson.topic!.name.isNotEmpty)
       lesson.topic!.name,
-    segmentsLabel(lesson.segmentCount),
+    if (lesson.isExpressions)
+      phrasesLabel(lesson.phrases.length)
+    else
+      segmentsLabel(lesson.segmentCount),
     if (lesson.level != null) lesson.level!.wire.toUpperCase(),
   ].join(' · ');
 }

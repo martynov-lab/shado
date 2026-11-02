@@ -15,9 +15,9 @@ import '../../../domain/lesson_permissions.dart';
 import '../../widgets/add_lessons_to_folder_sheet.dart';
 import '../../widgets/delete_folder_dialog.dart';
 import '../../widgets/folder_editor_dialog.dart';
-import '../lesson/lesson_page.dart';
 import 'folder_model.dart';
 import 'folder_page.dart';
+import '../../lesson_routes.dart';
 
 FolderWidgetModel folderWidgetModelFactory(BuildContext context) {
   final page = context.widget as FolderPage;
@@ -77,7 +77,7 @@ class FolderWidgetModel extends WidgetModel<FolderPage, FolderModel> {
     }
   }
 
-  void openLesson(Lesson lesson) => context.push(LessonPage.routeTo(lesson.id));
+  void openLesson(Lesson lesson) => context.push(lessonRoute(lesson));
 
   Future<void> rename() async {
     final current = _folder.value.value;

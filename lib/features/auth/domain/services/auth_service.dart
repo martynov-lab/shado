@@ -87,11 +87,13 @@ class AuthService {
   Future<void> updateProfile({
     String? name,
     String? studiedLanguage,
+    String? translationLanguage,
     int? dailyGoalMinutes,
   }) async {
     final user = await _updateProfile(
       name: name,
       studiedLanguage: studiedLanguage,
+      translationLanguage: translationLanguage,
       dailyGoalMinutes: dailyGoalMinutes,
     );
     _apply(UserSession.signedIn(user));

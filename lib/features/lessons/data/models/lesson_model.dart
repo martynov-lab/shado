@@ -2,7 +2,9 @@ import 'package:freezed_annotation/freezed_annotation.dart';
 
 import '../../domain/entities/lesson.dart';
 import '../../domain/entities/lesson_category.dart';
+import '../../domain/entities/lesson_kind.dart';
 import 'lesson_dto.dart';
+import 'phrase_model.dart';
 import 'segment_model.dart';
 
 part 'lesson_model.freezed.dart';
@@ -39,6 +41,14 @@ abstract class LessonModel with _$LessonModel {
     /// Lesson topic: id and name side by side.
     @JsonKey(name: 'topic_id') @Default('') String topicId,
     @JsonKey(name: 'topic_name') @Default('') String topicName,
+
+    /// `story` or `expressions`.
+    @Default('story') String kind,
+
+    /// Phrases of a phrase set; empty for a story.
+    @JsonKey(includeFromJson: false, includeToJson: false)
+    @Default([])
+    List<PhraseModel> phrases,
   }) = _LessonModel;
 
   const LessonModel._();
@@ -46,12 +56,16 @@ abstract class LessonModel with _$LessonModel {
   factory LessonModel.fromJson(Map<String, dynamic> json) =>
       _$LessonModelFromJson(json);
 
-  /// A lesson from the server together with the local audio path.
-  factory LessonModel.fromDto(LessonDto dto, {required String audioPath}) =>
-      LessonModel(
+  /// A lesson from the server together with the local audio paths: of the
+  /// story or, for a phrase set, inside [phrases].
+  factory LessonModel.fromDto(
+    LessonDto dto, {
+    required String audioPath,
+    List<PhraseModel>? phrases,
+  }) => LessonModel(
         id: dto.id,
         title: dto.title,
-        audioId: dto.audio.id,
+        audioId: dto.audio?.id ?? '',
         audioPath: audioPath,
         durationMs: dto.durationMs,
         createdAt: dto.createdAt,
@@ -59,16 +73,33 @@ abstract class LessonModel with _$LessonModel {
         version: dto.version,
         segments: dto.segments,
         isPublic: dto.isPublic,
-        audioSha256: dto.audio.sha256,
-        audioContentType: dto.audio.contentType,
+        audioSha256: dto.audio?.sha256 ?? '',
+        audioContentType: dto.audio?.contentType ?? '',
         language: dto.language,
         accent: dto.accent ?? '',
         level: dto.level?.wire ?? '',
         topicId: dto.topic?.id ?? '',
         topicName: dto.topic?.name ?? '',
+        kind: dto.kind.wire,
+        phrases: phrases ?? dto.phrases,
       );
 
-  bool get hasAudioFile => audioPath.isNotEmpty;
+  bool get isExpressions => kind == LessonKind.expressions.wire;
+
+  /// Whether every audio the lesson plays is on the device.
+  bool get hasAudioFile => isExpressions
+      ? phrases.every((phrase) => phrase.audioPath.isNotEmpty)
+      : audioPath.isNotEmpty;
+
+  /// Local paths of every audio the lesson plays.
+  List<String> get audioPaths => isExpressions
+      ? [for (final phrase in phrases) phrase.audioPath]
+      : [audioPath];
+
+  /// Ids of every audio the lesson plays.
+  Set<String> get audioIds => isExpressions
+      ? {for (final phrase in phrases) phrase.audio.id}
+      : {audioId};
 
   Lesson toEntity() => Lesson(
     id: id,
@@ -83,5 +114,7 @@ abstract class LessonModel with _$LessonModel {
     accent: accent.isEmpty ? null : accent,
     level: LessonLevel.parse(level),
     topic: topicId.isEmpty ? null : Topic(id: topicId, name: topicName),
+    kind: LessonKind.parse(kind),
+    phrases: [for (final phrase in phrases) phrase.toEntity()],
   );
 }
